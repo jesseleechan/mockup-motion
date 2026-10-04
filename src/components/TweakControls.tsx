@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sliders, Clock, Palette, Sparkles, Smartphone } from 'lucide-react';
+import { Sliders, Clock, Palette, Sparkles, Smartphone, Activity } from 'lucide-react';
 import { MockupConfig, DeviceFrameFinish } from '../types';
 
 interface TweakControlsProps {
@@ -198,6 +198,57 @@ export const TweakControls: React.FC<TweakControlsProps> = ({
               {spd.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* 5. Motion Easing (Smooth vs Linear) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <label className="flex items-center gap-1.5 font-medium text-zinc-300">
+            <Activity className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Motion Easing</span>
+          </label>
+          <span className="text-[11px] text-zinc-400 capitalize">
+            {config.easing}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => onConfigChange({ easing: 'smooth' })}
+            className={`p-2.5 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${
+              config.easing === 'smooth'
+                ? 'bg-zinc-800 border-blue-500/70 text-white font-medium shadow-xs ring-1 ring-blue-500/30'
+                : 'bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/70'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-100">Smooth</span>
+              <span className={`w-2 h-2 rounded-full ${config.easing === 'smooth' ? 'bg-blue-400' : 'bg-transparent'}`} />
+            </div>
+            <span className="text-[10px] text-zinc-400 leading-tight">
+              Natural ease-in / ease-out
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onConfigChange({ easing: 'linear' })}
+            className={`p-2.5 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${
+              config.easing === 'linear'
+                ? 'bg-zinc-800 border-blue-500/70 text-white font-medium shadow-xs ring-1 ring-blue-500/30'
+                : 'bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/70'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-100">Linear</span>
+              <span className={`w-2 h-2 rounded-full ${config.easing === 'linear' ? 'bg-blue-400' : 'bg-transparent'}`} />
+            </div>
+            <span className="text-[10px] text-zinc-400 leading-tight">
+              Constant continuous velocity
+            </span>
+          </button>
         </div>
       </div>
 

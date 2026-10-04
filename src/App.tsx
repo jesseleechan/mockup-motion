@@ -31,6 +31,7 @@ export default function App() {
     showShadows: true,
     showGlare: true,
     scrollSpeed: 'slow',
+    easing: 'smooth',
   });
 
   const [exportProgress, setExportProgress] = useState<ExportProgress>({

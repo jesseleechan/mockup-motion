@@ -328,7 +328,15 @@ function drawIPhoneMockup(
 function renderScreenshotRows(options: DrawSceneOptions) {
   const { ctx, width, height, time, duration, config, images } = options;
 
-  const p = (time % duration) / duration;
+  // Progress and motion easing
+  const rawP = (time % duration) / duration;
+  let loopP = rawP;
+  if (config.easing === 'smooth') {
+    // Smooth sinusoidal easing: soft ease at keyframe cycle boundaries, fluid glide through center
+    loopP = rawP - (0.55 / (2 * Math.PI)) * Math.sin(2 * Math.PI * rawP);
+  }
+  const cycleCount = Math.floor(time / duration);
+  const effectiveTime = (cycleCount + loopP) * duration;
 
   // Calibrated speeds with much slower options
   const speedMult =
@@ -375,7 +383,7 @@ function renderScreenshotRows(options: DrawSceneOptions) {
     const rowY = rowIndex * rowStrideY;
     const direction = rowIndex % 2 === 0 ? -1 : 1;
     const speed = rowStrideX * speedMult * 0.4;
-    const totalRowShift = time * speed * direction;
+    const totalRowShift = effectiveTime * speed * direction;
 
     for (let c = -2; c <= 2; c++) {
       let cardX = c * rowStrideX + totalRowShift;
@@ -399,7 +407,7 @@ function renderScreenshotRows(options: DrawSceneOptions) {
           cornerRadius: cardW * 0.035,
           showShadows: config.showShadows,
           showGlare: config.showGlare,
-          glareProgress: p * 2 + c * 0.2,
+          glareProgress: loopP * 2 + c * 0.2,
         }
       );
     }
@@ -416,7 +424,15 @@ function renderScreenshotRows(options: DrawSceneOptions) {
 function renderIPhoneMockups(options: DrawSceneOptions) {
   const { ctx, width, height, time, duration, config, images } = options;
 
-  const p = (time % duration) / duration;
+  // Progress and motion easing
+  const rawP = (time % duration) / duration;
+  let loopP = rawP;
+  if (config.easing === 'smooth') {
+    // Smooth sinusoidal easing: soft ease at keyframe cycle boundaries, fluid glide through center
+    loopP = rawP - (0.55 / (2 * Math.PI)) * Math.sin(2 * Math.PI * rawP);
+  }
+  const cycleCount = Math.floor(time / duration);
+  const effectiveTime = (cycleCount + loopP) * duration;
 
   // Calibrated speeds with much slower options
   const speedMult =
@@ -460,7 +476,7 @@ function renderIPhoneMockups(options: DrawSceneOptions) {
     // Left column glides down, right column glides up
     const direction = colIdx === 0 ? 1 : -1;
     const speed = rowGapY * 0.35 * speedMult;
-    const totalShift = time * speed * direction;
+    const totalShift = effectiveTime * speed * direction;
 
     // Stacked iPhones along the column with seamless wrap-around
     const phonesPerCol = 5;
@@ -492,7 +508,7 @@ function renderIPhoneMockups(options: DrawSceneOptions) {
           finish: config.deviceFinish,
           showShadows: config.showShadows,
           showGlare: config.showGlare,
-          glareOffset: p + colIdx * 0.3 + r * 0.2,
+          glareOffset: loopP + colIdx * 0.3 + r * 0.2,
           rotation: 0,
           scale: 1.0,
         }

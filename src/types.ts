@@ -6,6 +6,8 @@ export type DeviceFrameFinish = 'midnight' | 'titanium' | 'silver' | 'gold';
 
 export type ScrollSpeed = 'very-slow' | 'slow' | 'normal' | 'fast';
 
+export type MotionEasing = 'smooth' | 'linear';
+
 export interface MockupConfig {
   style: AnimationStyle;
   aspectRatio: AspectRatio;
@@ -16,6 +18,7 @@ export interface MockupConfig {
   showShadows: boolean;
   showGlare: boolean;
   scrollSpeed: ScrollSpeed;
+  easing: MotionEasing;
 }
 
 export interface UploadedImage {
