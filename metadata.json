@@ -1,0 +1,6 @@
+{
+  "name": "MockupMotion - Animated Website Mockup Video Creator",
+  "description": "Turn website screenshots into sleek animated mockup videos with Device Showcase and Scroll-Through animations. Export to MP4.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
