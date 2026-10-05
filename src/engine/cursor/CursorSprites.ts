@@ -17,6 +17,7 @@ function createOffscreen(w: number, h: number): HTMLCanvasElement | OffscreenCan
 
 function createDummyTexture(): THREE.CanvasTexture {
   const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  tex.flipY = false;
   tex.needsUpdate = true;
   return tex as unknown as THREE.CanvasTexture;
 }
@@ -63,6 +64,7 @@ export function getCursorTexture(style: CursorStyle): THREE.CanvasTexture {
       ctx.restore();
 
       arrowTexture = new THREE.CanvasTexture(canvas as unknown as HTMLCanvasElement);
+      arrowTexture.flipY = false;
       arrowTexture.colorSpace = THREE.SRGBColorSpace;
       arrowTexture.minFilter = THREE.LinearFilter;
       arrowTexture.magFilter = THREE.LinearFilter;
@@ -113,6 +115,7 @@ export function getCursorTexture(style: CursorStyle): THREE.CanvasTexture {
       ctx.restore();
 
       pointerTexture = new THREE.CanvasTexture(canvas as unknown as HTMLCanvasElement);
+      pointerTexture.flipY = false;
       pointerTexture.colorSpace = THREE.SRGBColorSpace;
       pointerTexture.minFilter = THREE.LinearFilter;
       pointerTexture.magFilter = THREE.LinearFilter;
@@ -146,6 +149,7 @@ export function getCursorTexture(style: CursorStyle): THREE.CanvasTexture {
     ctx.restore();
 
     dotTexture = new THREE.CanvasTexture(canvas as unknown as HTMLCanvasElement);
+    dotTexture.flipY = false;
     dotTexture.colorSpace = THREE.SRGBColorSpace;
     dotTexture.minFilter = THREE.LinearFilter;
     dotTexture.magFilter = THREE.LinearFilter;
@@ -171,6 +175,7 @@ export function getRippleTexture(): THREE.CanvasTexture {
     ctx.stroke();
 
     rippleTexture = new THREE.CanvasTexture(canvas as unknown as HTMLCanvasElement);
+    rippleTexture.flipY = false;
     rippleTexture.colorSpace = THREE.SRGBColorSpace;
     rippleTexture.minFilter = THREE.LinearFilter;
     rippleTexture.magFilter = THREE.LinearFilter;

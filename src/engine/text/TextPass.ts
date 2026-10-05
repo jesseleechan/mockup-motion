@@ -28,9 +28,8 @@ const textFragmentShader = /* glsl */ `
   varying vec2 vClipUv;
 
   void main() {
-    // Mask reveal: clip from bottom upwards
-    // In local quad coordinates, if vClipUv.y > (1.0 - uClip), discard
-    if (uClip > 0.001 && vClipUv.y > (1.0 - uClip)) {
+    // Keep the bottom portion first, then move the boundary upward.
+    if (uClip > 0.001 && vClipUv.y < uClip) {
       discard;
     }
 
@@ -88,6 +87,7 @@ export class TextPass {
     let tex = this.textures.get(layerId);
     if (!tex) {
       tex = new THREE.Texture(raster.bitmap);
+      tex.flipY = false;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
@@ -261,11 +261,11 @@ export class TextPass {
         pos.setXYZ(3, wx0, wy1, 0);
         pos.needsUpdate = true;
 
-        // Texture UVs (Y is inverted for Canvas2D -> WebGL texture)
+        // Texture UVs preserve the top-down bitmap row order.
         const u0 = wordBox.x / raster.width;
         const u1 = (wordBox.x + wordBox.w) / raster.width;
-        const v0 = 1.0 - wordBox.y / raster.height;
-        const v1 = 1.0 - (wordBox.y + wordBox.h) / raster.height;
+        const v0 = wordBox.y / raster.height;
+        const v1 = (wordBox.y + wordBox.h) / raster.height;
 
         const uvs = item.geometry.attributes.uv as THREE.BufferAttribute;
         uvs.setXY(0, u0, v0);

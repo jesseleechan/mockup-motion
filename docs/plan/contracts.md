@@ -331,6 +331,8 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState;
 
 ## 7. Engine (`src/engine/Engine.ts`)
 
+All image textures are created with `flipY = false`. Texel row 0 is the top of the image (`v = 0`). Every mesh that displays an image maps its top edge to `v = 0`. Never rely on `flipY` for `ImageBitmap`, `OffscreenCanvas`, or `VideoFrame` sources.
+
 ```ts
 export interface EngineOptions {
   width: number; // output px (CSS px × DPR for preview)

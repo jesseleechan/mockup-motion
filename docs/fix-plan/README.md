@@ -85,7 +85,7 @@ The previous run failed mainly because work was marked done without being looked
 | Task | Title | Size | Depends on | Status |
 |---|---|---|---|---|
 | [F00](tasks/F00-test-harness.md) | Test harness that can't lie (Playwright setup, pixel helpers, lint bans) | M | — | Done |
-| [F01](tasks/F01-image-orientation.md) | Image orientation: screenshots, text, cursor, backgrounds, status bar | M | F00 | Not started |
+| [F01](tasks/F01-image-orientation.md) | Image orientation: screenshots, text, cursor, backgrounds, status bar | M | F00 | Done |
 | [F02](tasks/F02-color-pipeline.md) | Colour pipeline: linear working space, sRGB output, exact colours | M | F00 | Not started |
 | [F03](tasks/F03-asset-loading-and-engine-diffing.md) | Load assets for every layout, engine diffing, texture cache | M | F01 | Not started |
 | [F04](tasks/F04-lab-real-assets.md) | `/lab` and template previews use real demo assets | S | F03 | Not started |

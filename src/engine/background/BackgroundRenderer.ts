@@ -169,7 +169,7 @@ const ambientFragmentShader = /* glsl */ `
       return;
     }
 
-    vec4 tex = texture2D(map, vUv);
+    vec4 tex = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));
     vec3 col = tex.rgb * (1.0 - uDim);
     gl_FragColor = vec4(col, 1.0);
   }
