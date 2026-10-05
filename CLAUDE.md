@@ -2,7 +2,9 @@
 
 MockupMotion is a local-first studio that turns website screenshots into short, elegant presentation videos. Think Jitter or shots.so, focused on web designers presenting their work. Everything renders in the browser, with no server, no account, and no watermark.
 
-**The rebuild is in progress.** The plan is in `docs/plan/README.md`. If you were given a work package (WP), read these first, in this order:
+**Current phase: fixing the rebuild.** The October 2026 audit found that the rebuild on `main` renders upside down, has wrong colours, black screens and fake tests. The active plan is **`docs/fix-plan/README.md`**. If you were given a fix task (`Fxx`), read that file in full, especially section 3, "Rules for the executor", and then your task in `docs/fix-plan/tasks/`.
+
+The original rebuild plan is still the reference for *what* to build. If you were given a work package (WP), read these first, in this order:
 
 1. `docs/plan/README.md`: architecture, milestones, and how WPs fit together
 2. `docs/plan/contracts.md`: shared types and module APIs (the source of truth)
@@ -24,13 +26,20 @@ npm run test:e2e      # Playwright (WP-03 sets it up; WP-18 expands it)
 npm run contact-sheet # renders every template at 4 times x all aspects into ./contact-sheet (after WP-11)
 ```
 
-Chromium is preinstalled for Playwright in cloud sessions (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). Do not run `playwright install`. Playwright's bundled Chromium cannot encode H.264, so exports there fall back to WebM. That is expected.
+Playwright browsers:
+- **Locally:** run `npx playwright install chromium` once.
+- **Cloud sessions:** Chromium is preinstalled under `/opt/pw-browsers`, but its build can be older than the one `@playwright/test` expects. If the launch fails with "Executable doesn't exist", point Playwright at the installed browser: `PW_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`. F00 adds support for this variable in `playwright.config.ts`.
+
+Playwright's Chromium cannot encode H.264, so MP4 exports fall back to WebM there. MP4-only assertions must check the encoder at runtime and skip with that reason; no other skips are allowed.
 
 ## Hard rules
 
 - **Determinism.** Nothing under `src/motion/` or the engine render path may read `Date.now()`, `performance.now()`, or unseeded `Math.random()`. A frame is a pure function of `(doc, t, size)`. Use `src/motion/rng.ts` (seeded) for noise or grain.
 - **Module boundaries.** `src/motion/` is pure TypeScript with no DOM, three.js, or React imports, so it can be unit-tested in Node. `src/engine/` has no React. `src/editor/` and `src/ui/` never import three.js directly; they go through `Engine`.
 - **Screens are unlit and color-exact.** Screenshot content uses unlit materials, `SRGBColorSpace` textures, and `NoToneMapping`. A screenshot must look exactly like the PNG.
+- **Image orientation.** Image textures use `flipY = false`, so texel row 0 is the top of the image. Every quad that shows an image maps its top edge to v = 0. WebGL ignores `flipY` for `ImageBitmap`. See `docs/fix-plan/tasks/F01-image-orientation.md`.
+- **Colour pipeline.** Render targets hold linear values, and every custom shader outputs linear. Only the final pass converts to sRGB, followed by grain and dither. See `docs/fix-plan/tasks/F02-color-pipeline.md`.
+- **Tests must be able to fail.** Never weaken, skip, or early-return a test to make it pass. Never swallow errors with `.catch(() => {})` or an empty `catch {}`. Never ship placeholder assets. Look at the pixels you render.
 - **Never crop a screenshot horizontally.** Device screens fit the screenshot to width. Overflow is cropped at the bottom or scrolled (opt-in only). See `quality-bar.md` §3.
 - **No yo-yo motion.** A shot never reverses its main camera or layout movement. Loops come from marquee periods or a wrap crossfade (`contracts.md` §5).
 - **Content scrolling is opt-in.** A tall screenshot never starts scrolling unless the user picks a scroll template or turns scroll on for that shot.
