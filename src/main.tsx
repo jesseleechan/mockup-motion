@@ -4,9 +4,17 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+const isLabUi = import.meta.env.DEV && window.location.pathname.startsWith("/lab/ui");
 const isLab = import.meta.env.DEV && window.location.pathname.startsWith("/lab");
 
-if (isLab) {
+if (isLabUi) {
+  const UiGallery = lazy(() => import("./lab/UiGallery.tsx"));
+  createRoot(document.getElementById("root")!).render(
+    <Suspense fallback={<div className="bg-black text-white p-4">Loading UI Gallery...</div>}>
+      <UiGallery />
+    </Suspense>,
+  );
+} else if (isLab) {
   const LabPage = lazy(() => import("./lab/LabPage.tsx"));
   createRoot(document.getElementById("root")!).render(
     <Suspense fallback={<div className="bg-black text-white p-4">Loading Lab...</div>}>
