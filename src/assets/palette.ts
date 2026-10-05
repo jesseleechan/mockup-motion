@@ -125,7 +125,7 @@ export function dominantColors(rgba: Uint8ClampedArray, w: number, h: number, k 
 }
 
 /**
- * Derives 4 candidate backgrounds (light, dark, mesh, ambient) from the extracted palette per quality-bar Â§6.
+ * Derives 4 candidate backgrounds (light, dark, mesh, ambient) from the extracted palette per quality-bar §6.
  * - Chroma lowered by 40-60% (C <= 0.09 light, C <= 0.12 dark).
  * - Lightness shifted away from the screenshot's average by at least 0.25 L.
  */

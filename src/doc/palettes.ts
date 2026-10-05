@@ -11,7 +11,7 @@ export interface BuiltinPalette {
 }
 
 /**
- * Computes shadow tint for a background per quality-bar Â§5:
+ * Computes shadow tint for a background per quality-bar §5:
  * dominant hue of the background at 25% lightness (L = 0.25 in OKLCH), with subtle chroma.
  */
 export function shadowTintFor(background: Background): string {
@@ -50,7 +50,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 8 Built-in curated palettes from quality-bar Â§6.
+ * 8 Built-in curated palettes from quality-bar §6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [

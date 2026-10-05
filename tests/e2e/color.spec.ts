@@ -282,7 +282,7 @@ test("F02 dither stays below half an sRGB byte", async ({ page }) => {
   const values = new Set<number>();
   for (let y = 260; y < 460; y++)
     for (let x = 540; x < 740; x++) values.add(frame.data[(y * 1280 + x) * 4]);
-  // At an exact byte centre, bounded Ã‚Â±0.5 LSB cannot cross either rounding boundary.
+  // At an exact byte centre, bounded ±0.5 LSB cannot cross either rounding boundary.
   expect([...values]).toEqual([128]);
 });
 

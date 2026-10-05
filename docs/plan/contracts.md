@@ -377,8 +377,6 @@ Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPrefe
 
 Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation uses a linear half-float target before this final pass.
 
-Gradient angles use CSS direction: 0° bottom to top, 90° left to right, 180° top to bottom, in normalized frame coordinates. New gradients carry `angleConvention: "css"`. Persistence converts unmarked v2 math angles once with `normalize(90 − angle)`, including shot overrides and user templates. V1 migration retains its historical CSS angles and stamps the marker. This preserves previous diagonal directions; aspect-dependent CSS gradient length is outside this change.
-
 `TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
 `EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
