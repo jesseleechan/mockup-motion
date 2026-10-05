@@ -238,7 +238,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     removeAsset: async (id: string) => {
-      await deleteBlob(id).catch(() => undefined);
+      try {
+        await deleteBlob(id);
+      } catch (error) {
+        console.error(`Failed to remove stored blob ${id}:`, error);
+      }
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
@@ -256,7 +260,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
       await putBlob(ref.id, blob);
       if (previousId && previousId !== ref.id) {
-        await deleteBlob(previousId).catch(() => undefined);
+        try {
+          await deleteBlob(previousId);
+        } catch (error) {
+          console.error(`Failed to remove replaced audio blob ${previousId}:`, error);
+        }
       }
       get().apply(
         (draft) => {
@@ -290,7 +298,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         },
         { label: "Remove music" },
       );
-      if (id) void deleteBlob(id).catch(() => undefined);
+      if (id) {
+        void deleteBlob(id).catch((error) => {
+          console.error(`Failed to remove stored audio blob ${id}:`, error);
+        });
+      }
     },
 
     setAssetRole: (id: string, role: AssetRole) => {

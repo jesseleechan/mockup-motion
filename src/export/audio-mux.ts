@@ -28,7 +28,8 @@ export async function canEncodeExportAudio(codec: ExportAudioCodec): Promise<boo
       sampleRate: AUDIO_SAMPLE_RATE,
       bitrate: 192_000,
     });
-  } catch {
+  } catch (error) {
+    console.warn("Audio encoder capability probe failed:", error);
     return false;
   }
 }
@@ -56,7 +57,14 @@ export async function prepareExportAudio(
   if (!track) return { warnings: [] };
 
   const asset = doc.assets.find((a) => a.id === track.assetId && a.kind === "audio");
-  const blob = asset && getAudio ? await getAudio(asset.id).catch(() => null) : null;
+  let blob: Blob | null = null;
+  if (asset && getAudio) {
+    try {
+      blob = await getAudio(asset.id);
+    } catch (error) {
+      console.warn("Could not read project audio asset:", error);
+    }
+  }
   if (!blob) {
     return { warnings: ["The music file is missing, so the video was exported without audio."] };
   }
@@ -74,7 +82,8 @@ export async function prepareExportAudio(
     const decoded = await decodeAudioBlob(blob);
     const mix = mixTrack(decoded.channels, track, total, decoded.sampleRate);
     return { audio: { mix, codec }, warnings: [] };
-  } catch {
+  } catch (error) {
+    console.warn("Could not decode project audio:", error);
     return {
       warnings: ["The music file couldn't be decoded, so the video was exported without audio."],
     };

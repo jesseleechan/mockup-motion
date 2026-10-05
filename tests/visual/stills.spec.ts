@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const TEMPLATES = [
@@ -48,15 +47,6 @@ async function openStill(page: Page, fixture: string, aspect: string, t: number)
 async function expectStill(page: Page, name: string) {
   const canvas = page.locator("[data-testid='lab-still'] canvas");
   await expect(canvas).toBeVisible();
-  const snapshotPath = test.info().snapshotPath(name);
-  const updating = test.info().config.updateSnapshots !== "none";
-  if (!fs.existsSync(snapshotPath) && !updating) {
-    test.info().annotations.push({
-      type: "baseline",
-      description: `No baseline for this OS (${name}). Run with --update-snapshots to create it.`,
-    });
-    return;
-  }
   await expect(canvas).toHaveScreenshot(name, { maxDiffPixelRatio: 0.002 });
 }
 

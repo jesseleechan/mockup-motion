@@ -48,7 +48,11 @@ export const ColorField: React.FC<ColorFieldProps> = ({
         onChange(result.sRGBHex);
         setHexInput(result.sRGBHex);
       }
-    } catch {}
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        console.error("EyeDropper failed:", error);
+      }
+    }
   };
 
   const commitHex = (val: string) => {

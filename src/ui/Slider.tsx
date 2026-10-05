@@ -120,9 +120,8 @@ export const ScrubLabel: React.FC<ScrubLabelProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent<HTMLSpanElement>) => {
     if (startState.current) {
-      try {
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {}
+      const target = e.target as HTMLElement;
+      if (target.hasPointerCapture(e.pointerId)) target.releasePointerCapture(e.pointerId);
       startState.current = null;
     }
   };

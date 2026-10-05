@@ -1,5 +1,7 @@
 # MockupMotion rebuild plan
 
+> **Status (5 Oct 2026):** an audit of the implementation on `main` found critical rendering bugs and tests that cannot fail. Every WP below has been reopened. The fixes are tracked in [`docs/fix-plan/README.md`](../fix-plan/README.md).
+
 **Goal:** turn website screenshots into short, elegant presentation videos (Jitter / shots.so quality) that a web designer is proud to put on their site, Dribbble, or social. The app stays local-first: no server, no account, no watermark.
 
 **Status of v0.1:** the plumbing works (upload, autosave, undo, and a fast WebCodecs export), but the output is not usable. Motion is nearly invisible and yo-yos, everything is flat 2D, phone screenshots are cropped, device frames look like placeholders, and the demo content looks like wireframes. The full findings with file and line references and screenshots are in [`audit.md`](audit.md).
@@ -139,27 +141,27 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | **M2 · Feels like a pro tool** | The new dark editor with template gallery, media library, storyboard timeline, text, Scroll Story, cursor, and brand kit. The old UI and renderer are deleted. |
 | **M3 · Ships**                 | Export destinations, web-embed bundle, GIF, 4K, optional audio, cross-browser QA, and visual regression.                                                       |
 
-| WP                                             | Title                                                            | Milestone | Depends on                                           | Size | Status   |
-| ---------------------------------------------- | ---------------------------------------------------------------- | --------- | ---------------------------------------------------- | ---- | -------- |
-| [00](wp/WP-00-repo-hygiene-and-tooling.md)     | Repo hygiene and tooling                                         | M1        | —                                                    | S    | Complete |
-| [01](wp/WP-01-document-model-state-storage.md) | Document model v2, store, storage, migration                     | M1        | 00                                                   | M    | Complete |
-| [02](wp/WP-02-motion-core.md)                  | Motion core: easing, camera, timeline, evaluate                  | M1        | 00                                                   | M    | Complete |
-| [03](wp/WP-03-engine-core.md)                  | three.js engine core, preview, worker export, `/lab`             | M1        | 00                                                   | L    | Complete |
-| [04](wp/WP-04-demo-content-and-capture.md)     | Demo sites, captured screenshots, capture CLI                    | M1        | 00                                                   | M    | Complete |
-| [05](wp/WP-05-design-system.md)                | Design system and UI primitives                                  | M2        | 00                                                   | M    | Complete |
-| [06](wp/WP-06-device-frames.md)                | Device frames                                                    | M1        | 03                                                   | M    | Complete |
-| [07](wp/WP-07-backgrounds-and-atmosphere.md)   | Backgrounds, palettes, atmosphere                                | M1        | 03                                                   | M    | Complete |
-| [08](wp/WP-08-shadows-and-post.md)             | Shadows, anti-aliasing, final pass, motion blur                  | M1        | 03                                                   | M    | Complete |
-| [09](wp/WP-09-layouts.md)                      | Layouts and camera framing                                       | M1        | 02, 03, 06                                           | L    | Complete |
-| [10](wp/WP-10-text-and-typography.md)          | Text and typography                                              | M2        | 02, 03                                               | M    | Complete |
-| [11](wp/WP-11-templates-and-gallery.md)        | Templates, slot filling, previews, contact sheet                 | M1 → M2   | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L    | Complete |
-| [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Complete |
-| [13](wp/WP-13-media-library-and-brand-kit.md)  | Media library, roles, brand kit, projects, My templates          | M2        | 01, 05, 12                                           | M    | Complete |
-| [14](wp/WP-14-storyboard-timeline.md)          | Storyboard timeline and transitions                              | M2        | 02, 03, 12                                           | L    | Complete |
-| [15](wp/WP-15-scroll-story-and-cursor.md)      | Scroll Story and cursor overlay                                  | M2        | 09, 12                                               | M    | Complete |
-| [16](wp/WP-16-export-v2.md)                    | Export v2, destinations, web bundle, GIF                         | M3        | 03, 08                                               | M    | Complete |
-| [17](wp/WP-17-audio.md)                        | Music track (optional)                                           | M3        | 14, 16                                               | S    | Complete |
-| [18](wp/WP-18-qa-and-polish.md)                | Visual regression, e2e, performance, cross-browser, final polish | M3        | all                                                  | L    | Complete |
+| WP                                             | Title                                                            | Milestone | Depends on                                           | Size | Status                                          |
+| ---------------------------------------------- | ---------------------------------------------------------------- | --------- | ---------------------------------------------------- | ---- | ----------------------------------------------- |
+| [00](wp/WP-00-repo-hygiene-and-tooling.md)     | Repo hygiene and tooling                                         | M1        | —                                                    | S    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [01](wp/WP-01-document-model-state-storage.md) | Document model v2, store, storage, migration                     | M1        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [02](wp/WP-02-motion-core.md)                  | Motion core: easing, camera, timeline, evaluate                  | M1        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [03](wp/WP-03-engine-core.md)                  | three.js engine core, preview, worker export, `/lab`             | M1        | 00                                                   | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [04](wp/WP-04-demo-content-and-capture.md)     | Demo sites, captured screenshots, capture CLI                    | M1        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [05](wp/WP-05-design-system.md)                | Design system and UI primitives                                  | M2        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [06](wp/WP-06-device-frames.md)                | Device frames                                                    | M1        | 03                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [07](wp/WP-07-backgrounds-and-atmosphere.md)   | Backgrounds, palettes, atmosphere                                | M1        | 03                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [08](wp/WP-08-shadows-and-post.md)             | Shadows, anti-aliasing, final pass, motion blur                  | M1        | 03                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [09](wp/WP-09-layouts.md)                      | Layouts and camera framing                                       | M1        | 02, 03, 06                                           | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [10](wp/WP-10-text-and-typography.md)          | Text and typography                                              | M2        | 02, 03                                               | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [11](wp/WP-11-templates-and-gallery.md)        | Templates, slot filling, previews, contact sheet                 | M1 → M2   | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [13](wp/WP-13-media-library-and-brand-kit.md)  | Media library, roles, brand kit, projects, My templates          | M2        | 01, 05, 12                                           | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [14](wp/WP-14-storyboard-timeline.md)          | Storyboard timeline and transitions                              | M2        | 02, 03, 12                                           | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [15](wp/WP-15-scroll-story-and-cursor.md)      | Scroll Story and cursor overlay                                  | M2        | 09, 12                                               | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [16](wp/WP-16-export-v2.md)                    | Export v2, destinations, web bundle, GIF                         | M3        | 03, 08                                               | M    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [17](wp/WP-17-audio.md)                        | Music track (optional)                                           | M3        | 14, 16                                               | S    | Reopened: see [fix plan](../fix-plan/README.md) |
+| [18](wp/WP-18-qa-and-polish.md)                | Visual regression, e2e, performance, cross-browser, final polish | M3        | all                                                  | L    | Reopened: see [fix plan](../fix-plan/README.md) |
 
 Sizes: S ≈ half a day of agent work, M ≈ 1–2 days, L ≈ 2–4 days, each including verification.
 

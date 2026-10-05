@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Aspect, ProjectDoc } from "../doc/types";
 import { EngineCanvas } from "../engine/react/EngineCanvas";
-import type { Engine } from "../engine/Engine";
+import type { AssetProvider, Engine } from "../engine/Engine";
 import { exportWithEngine } from "../export/engine-export";
 import { schedule } from "../motion";
 import { useUIStore } from "../state/ui-store";
 import { createLabAssetProvider } from "./asset-provider";
+import type { labTestImages } from "./test-images";
+
+type LabTestImages = typeof labTestImages;
 
 // Fixtures
 import cardHeroFixture from "./fixtures/card-hero.json";
@@ -23,10 +26,13 @@ import { VISUAL_FIXTURES } from "./visual-fixtures";
 declare global {
   interface Window {
     __labReady?: boolean;
+    __labError?: string;
     __labEngine?: Engine;
     __exportWithEngine?: typeof exportWithEngine;
     __createLabAssetProvider?: typeof createLabAssetProvider;
     __fixtures?: Record<string, ProjectDoc>;
+    __labTestImages?: LabTestImages;
+    __labSetDoc?: (doc: ProjectDoc, images?: Record<string, ImageBitmap>) => Promise<void>;
   }
 }
 
@@ -107,34 +113,57 @@ export const LabPage: React.FC = () => {
 
   const { total: docDuration } = useMemo(() => schedule(doc), [doc]);
 
-  const handleEngineReady = useCallback((engine: Engine) => {
-    engineRef.current = engine;
-    window.__labEngine = engine;
+  const handleEngineReady = useCallback(
+    (engine: Engine) => {
+      engineRef.current = engine;
+      window.__labEngine = engine;
 
-    const info = engine.info;
-    setEngineInfo({
-      drawCalls: info.drawCalls,
-      maxTextureSize: info.maxTextureSize,
-      renderer: info.renderer,
-      frameMs: 0,
-    });
-
-    window.__exportWithEngine = exportWithEngine;
-    window.__createLabAssetProvider = createLabAssetProvider;
-    window.__fixtures = FIXTURES;
-    window.__labReady = false;
-    void (async () => {
-      try {
-        await document.fonts?.ready;
-      } catch {
-        // Fonts are optional for the still.
-      }
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      const info = engine.info;
+      setEngineInfo({
+        drawCalls: info.drawCalls,
+        maxTextureSize: info.maxTextureSize,
+        renderer: info.renderer,
+        frameMs: 0,
       });
-      window.__labReady = true;
-    })();
-  }, []);
+
+      window.__exportWithEngine = exportWithEngine;
+      window.__createLabAssetProvider = createLabAssetProvider;
+      window.__fixtures = FIXTURES;
+      window.__labReady = false;
+      if (import.meta.env.DEV) {
+        window.__labSetDoc = async (nextDoc, images = {}, providerOverride?: AssetProvider) => {
+          const testProvider: AssetProvider = providerOverride ?? {
+            async getImage(assetId: string, maxWidth: number) {
+              return images[assetId] ?? provider.getImage(assetId, maxWidth);
+            },
+            getText: provider.getText.bind(provider),
+            getAudio: provider.getAudio?.bind(provider),
+          };
+          await engine.setDocument(nextDoc, testProvider);
+          engine.renderAt(0);
+        };
+      }
+      void (async () => {
+        try {
+          await document.fonts?.ready;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          window.__labError = `Font readiness failed: ${message}`;
+          console.error(window.__labError, error);
+          throw new Error(window.__labError, { cause: error });
+        }
+        if (import.meta.env.DEV) {
+          const { labTestImages } = await import("./test-images");
+          window.__labTestImages = labTestImages;
+        }
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        window.__labReady = true;
+      })();
+    },
+    [provider],
+  );
 
   // Frame readout loop for stats
   useEffect(() => {
