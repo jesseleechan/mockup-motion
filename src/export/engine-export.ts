@@ -167,12 +167,16 @@ export async function exportWithEngine(
   );
   const audio = prepared.audio;
   const warnings = prepared.warnings;
+  // The worker's abort listener is attached only after preparation, so a cancel
+  // during preparation must be checked here or it is lost.
+  signal?.throwIfAborted();
 
   // Decode needed images at export scale
   const neededAssetIds = collectNeededAssetIds(doc);
   const images: Record<string, ImageBitmap> = {};
   for (const id of neededAssetIds) {
     images[id] = await provider.getImage(id, width * (settings.supersample ?? 1));
+    signal?.throwIfAborted();
   }
 
   // Pre-rasterize all text layers at export resolution
@@ -184,6 +188,7 @@ export async function exportWithEngine(
       const frameHeightPx = Math.round(height * ss);
       for (const layer of shot.texts) {
         texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
+        signal?.throwIfAborted();
       }
     }
   }
