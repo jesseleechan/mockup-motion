@@ -37,9 +37,9 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // 1. First run empty state
     await page.goto("/");
-    await expect(page.getByText("Create Motion Mockups")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start with a template" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Drop screenshots" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Choose screenshots" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Try with demo content" })).toBeVisible();
 
     // 2. Click "Try with demo content"
@@ -109,7 +109,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await startExportBtn.click();
 
     // Wait for export to finish
-    await expect(page.getByText("Export Complete!")).toBeVisible({ timeout: 60000 });
+    await expect(page.getByText("Export complete")).toBeVisible({ timeout: 60000 });
     const downloadBtn = page.getByRole("button", { name: /Download/i });
     await expect(downloadBtn).toBeVisible();
 
@@ -251,7 +251,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // 1. Empty state dark
     await page.goto("/");
-    await expect(page.getByText("Create Motion Mockups")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-empty-dark.png") });
 
     // 2. Empty state light

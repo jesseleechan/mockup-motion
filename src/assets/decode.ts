@@ -22,25 +22,32 @@ export async function validateAndDecodeAsset(
   let width = 0;
   let height = 0;
 
-  if (typeof createImageBitmap !== "undefined") {
-    const bitmap = await createImageBitmap(blob);
-    width = bitmap.width;
-    height = bitmap.height;
-    bitmap.close();
-  } else if (typeof Image !== "undefined") {
-    const url = URL.createObjectURL(blob);
-    try {
-      const img = new Image();
-      img.src = url;
-      await img.decode();
-      width = img.naturalWidth;
-      height = img.naturalHeight;
-    } finally {
-      URL.revokeObjectURL(url);
+  try {
+    if (typeof createImageBitmap !== "undefined") {
+      const bitmap = await createImageBitmap(blob);
+      width = bitmap.width;
+      height = bitmap.height;
+      bitmap.close();
+    } else if (typeof Image !== "undefined") {
+      const url = URL.createObjectURL(blob);
+      try {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        width = img.naturalWidth;
+        height = img.naturalHeight;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     }
+  } catch {
+    throw new Error(`${name}: this image couldn't be read.`);
   }
 
-  if (!width || !height || width * height > MAX_MEGAPIXELS) {
+  if (!width || !height) {
+    throw new Error(`${name}: this image couldn't be read.`);
+  }
+  if (width * height > MAX_MEGAPIXELS) {
     throw new Error(`${name}: image is too large. Use an image below 80 megapixels.`);
   }
 
@@ -71,9 +78,7 @@ export async function validateAndDecodeAsset(
     }
     if (canvas) {
       const ctx = canvas.getContext("2d") as
-        | CanvasRenderingContext2D
-        | OffscreenCanvasRenderingContext2D
-        | null;
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
       if (ctx && typeof createImageBitmap !== "undefined") {
         const thumbBmp = await createImageBitmap(blob, {
           resizeWidth: 64,

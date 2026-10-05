@@ -1,29 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { TopBar } from "./shell/TopBar";
 import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
 import { TransportBar } from "./transport/TransportBar";
 import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
-import { ExportModal } from "./export/ExportModal";
 import { ShortcutsModal } from "./dialogs/ShortcutsModal";
 import { ProjectsModal } from "./dialogs/ProjectsModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
+import { useAudioPreview } from "./audio/useAudioPreview";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { Monitor } from "lucide-react";
+
+const ExportModal = lazy(() =>
+  import("./export/ExportModal").then((m) => ({ default: m.ExportModal })),
+);
 
 function isInputElement(el: EventTarget | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
   const tag = el.tagName.toLowerCase();
-  return (
-    tag === "input" ||
-    tag === "textarea" ||
-    tag === "select" ||
-    el.isContentEditable
-  );
+  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
 }
 
 export const EditorShell: React.FC = () => {
@@ -41,6 +40,7 @@ export const EditorShell: React.FC = () => {
   const setSelection = useUIStore((s) => s.setSelection);
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
+  useAudioPreview();
   const togglePanel = useUIStore((s) => s.togglePanel);
   const setTheme = useUIStore((s) => s.setTheme);
 
@@ -300,7 +300,11 @@ export const EditorShell: React.FC = () => {
           {!isMobileScreen && panels.timeline && <TimelineContainer />}
 
           {/* Dialogs */}
-          <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
+          {exportOpen && (
+            <Suspense fallback={null}>
+              <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
+            </Suspense>
+          )}
           <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
           <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
         </div>

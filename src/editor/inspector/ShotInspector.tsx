@@ -67,7 +67,7 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
           target.layout = {
             kind: "single",
             device: "browser",
-            assetId: doc.assets[0]?.id ?? "",
+            assetId: doc.assets.find((a) => a.kind === "image")?.id ?? "",
           };
         }
       },
@@ -231,10 +231,12 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                     onChange={handleAssetChange}
                     options={[
                       { value: "", label: "No screenshot (empty frame)" },
-                      ...doc.assets.map((a) => ({
-                        value: a.id,
-                        label: `${a.name} (${a.role})`,
-                      })),
+                      ...doc.assets
+                        .filter((a) => a.kind === "image")
+                        .map((a) => ({
+                          value: a.id,
+                          label: `${a.name} (${a.role})`,
+                        })),
                     ]}
                   />
                 </div>
@@ -295,7 +297,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                     }
                     options={[
                       { value: "", label: "Select desktop screenshot" },
-                      ...doc.assets.map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
+                      ...doc.assets
+                        .filter((a) => a.kind === "image")
+                        .map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
                     ]}
                   />
                 </div>
@@ -330,7 +334,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                     }
                     options={[
                       { value: "", label: "Select mobile screenshot" },
-                      ...doc.assets.map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
+                      ...doc.assets
+                        .filter((a) => a.kind === "image")
+                        .map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
                     ]}
                   />
                 </div>
@@ -352,7 +358,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                   }
                   options={[
                     { value: "", label: "Select desktop screenshot" },
-                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                    ...doc.assets
+                      .filter((a) => a.kind === "image")
+                      .map((a) => ({ value: a.id, label: a.name })),
                   ]}
                 />
               </Field>
@@ -362,12 +370,15 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                   onChange={(val) =>
                     apply((draft) => {
                       const target = draft.shots.find((s) => s.id === shotId);
-                      if (target && target.layout.kind === "trio") target.layout.tabletId = val || undefined;
+                      if (target && target.layout.kind === "trio")
+                        target.layout.tabletId = val || undefined;
                     })
                   }
                   options={[
                     { value: "", label: "None (falls back to pair)" },
-                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                    ...doc.assets
+                      .filter((a) => a.kind === "image")
+                      .map((a) => ({ value: a.id, label: a.name })),
                   ]}
                 />
               </Field>
@@ -382,7 +393,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                   }
                   options={[
                     { value: "", label: "Select mobile screenshot" },
-                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                    ...doc.assets
+                      .filter((a) => a.kind === "image")
+                      .map((a) => ({ value: a.id, label: a.name })),
                   ]}
                 />
               </Field>
@@ -398,7 +411,8 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                   onChange={(val) =>
                     apply((draft) => {
                       const target = draft.shots.find((s) => s.id === shotId);
-                      if (target && target.layout.kind === "rows") target.layout.rows = parseInt(val, 10) as 1 | 2 | 3;
+                      if (target && target.layout.kind === "rows")
+                        target.layout.rows = parseInt(val, 10) as 1 | 2 | 3;
                     })
                   }
                   options={[
@@ -537,7 +551,8 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                   onChange={(val) =>
                     apply((draft) => {
                       const target = draft.shots.find((s) => s.id === shotId);
-                      if (target && target.layout.kind === "stack") target.layout.device = val as "browser" | "card";
+                      if (target && target.layout.kind === "stack")
+                        target.layout.device = val as "browser" | "card";
                     })
                   }
                   options={[
@@ -918,7 +933,8 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                     onChange={(val) =>
                       apply((draft) => {
                         const target = draft.shots.find((s) => s.id === shotId);
-                        if (target?.cursor) target.cursor.style = val as "arrow" | "pointer" | "dot";
+                        if (target?.cursor)
+                          target.cursor.style = val as "arrow" | "pointer" | "dot";
                       })
                     }
                     options={[
@@ -931,7 +947,8 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
 
                 <div className="p-2 rounded bg-[var(--color-raised)] text-[11px] text-[var(--color-text-2)] leading-relaxed">
                   Click on the mockup screen in the stage to record cursor path.{" "}
-                  <strong className="text-[var(--color-text)]">Alt-click</strong> adds a click ripple.
+                  <strong className="text-[var(--color-text)]">Alt-click</strong> adds a click
+                  ripple.
                 </div>
 
                 <Field label={`Keyframes (${shot.cursor.keys?.length ?? 0})`}>
@@ -958,7 +975,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                             apply((draft) => {
                               const target = draft.shots.find((s) => s.id === shotId);
                               if (target?.cursor) {
-                                target.cursor.keys = target.cursor.keys.filter((_, i) => i !== kIdx);
+                                target.cursor.keys = target.cursor.keys.filter(
+                                  (_, i) => i !== kIdx,
+                                );
                               }
                             });
                           }}
@@ -1079,7 +1098,9 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Icon icon={Type} size={13} className="text-[var(--color-text-3)] shrink-0" />
-                <span className="text-xs text-[var(--color-text)] truncate">{text.text || "Empty text"}</span>
+                <span className="text-xs text-[var(--color-text)] truncate">
+                  {text.text || "Empty text"}
+                </span>
               </div>
               <span className="text-[10px] text-[var(--color-text-3)] font-mono uppercase shrink-0">
                 {text.role}

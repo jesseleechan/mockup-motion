@@ -72,7 +72,7 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
     // Verify Projects dialog opened
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText("Your Projects")).toBeVisible();
+    await expect(dialog.getByText("Your projects")).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "projects-dialog.png") });
   });
 
@@ -84,9 +84,7 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
     // Switch to media tab
     await page.getByRole("tab", { name: "Media" }).click();
 
-    const scanResults = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const scanResults = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
 
     const serious = scanResults.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",

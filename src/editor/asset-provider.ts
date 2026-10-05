@@ -20,7 +20,14 @@ export function createEditorAssetProvider(): AssetProvider {
         }
 
         // 2. If not found in IndexedDB, try fetching if assetId is a URL or demo path
-        if (!blob && assetId && (assetId.startsWith("/") || assetId.startsWith("http") || assetId.startsWith("blob:") || assetId.startsWith("data:"))) {
+        if (
+          !blob &&
+          assetId &&
+          (assetId.startsWith("/") ||
+            assetId.startsWith("http") ||
+            assetId.startsWith("blob:") ||
+            assetId.startsWith("data:"))
+        ) {
           const res = await fetch(assetId);
           if (res.ok) {
             blob = await res.blob();
@@ -63,7 +70,8 @@ export function createEditorAssetProvider(): AssetProvider {
           : document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+      const ctx = canvas.getContext("2d") as
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
       if (ctx) {
         ctx.fillStyle = "#1e1e24";
         ctx.fillRect(0, 0, width, height);
@@ -71,7 +79,11 @@ export function createEditorAssetProvider(): AssetProvider {
         ctx.font = "bold 28px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(assetId ? `Mockup: ${assetId.slice(0, 16)}` : "No screenshot selected", width / 2, height / 2);
+        ctx.fillText(
+          assetId ? `Mockup: ${assetId.slice(0, 16)}` : "No screenshot selected",
+          width / 2,
+          height / 2,
+        );
       }
       const bmp = await createImageBitmap(canvas);
       cache.set(cacheKey, bmp);
@@ -80,6 +92,10 @@ export function createEditorAssetProvider(): AssetProvider {
 
     async getText(layer, style, frameHeightPx): Promise<TextRaster> {
       return rasterizeText(layer, style, frameHeightPx);
+    },
+
+    async getAudio(assetId: string): Promise<Blob | null> {
+      return assetId ? getBlob(assetId) : null;
     },
   };
 }

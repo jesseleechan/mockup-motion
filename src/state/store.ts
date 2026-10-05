@@ -2,8 +2,18 @@ import { create } from "zustand";
 import { produce, current } from "immer";
 import { createDoc, defaultShot } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type { AssetRef, AssetRole, Layout, ProjectDoc, Shot, Style, Transition } from "../doc/types";
-import { getBlob, putBlob, saveProject } from "../storage";
+import type {
+  AssetRef,
+  AssetRole,
+  AudioTrack,
+  Layout,
+  ProjectDoc,
+  Shot,
+  Style,
+  Transition,
+} from "../doc/types";
+import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
+import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -38,6 +48,14 @@ export interface EditorStoreState {
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
   applyBrandKit: (kit: BrandKit) => void;
+
+  // Music track (WP-17)
+  setMusic: (ref: AssetRef, blob: Blob) => Promise<void>;
+  updateMusic: (
+    patch: Partial<Omit<AudioTrack, "assetId">>,
+    opts?: { coalesceKey?: string },
+  ) => void;
+  removeMusic: () => void;
 
   // Timeline / storyboard actions
   addShot: (layout?: Layout, insertAfterIndex?: number) => void;
@@ -220,9 +238,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     removeAsset: async (id: string) => {
+      await deleteBlob(id).catch(() => undefined);
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
+          if (draft.audio?.assetId === id) delete draft.audio;
           // Sanitize references to removed asset across layouts/texts
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
@@ -230,6 +250,47 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         },
         { label: "Remove asset" },
       );
+    },
+
+    setMusic: async (ref: AssetRef, blob: Blob) => {
+      const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
+      await putBlob(ref.id, blob);
+      if (previousId && previousId !== ref.id) {
+        await deleteBlob(previousId).catch(() => undefined);
+      }
+      get().apply(
+        (draft) => {
+          // One music track per project: replace any previous audio asset.
+          draft.assets = draft.assets.filter((a) => a.kind !== "audio");
+          draft.assets.push(ref);
+          draft.audio = defaultAudioTrack(ref.id);
+        },
+        { label: "Add music" },
+      );
+    },
+
+    updateMusic: (patch, opts) => {
+      get().apply(
+        (draft) => {
+          if (!draft.audio) return;
+          draft.audio = clampAudioTrack({ ...draft.audio, ...patch });
+        },
+        { label: "Edit music", coalesceKey: opts?.coalesceKey },
+      );
+    },
+
+    removeMusic: () => {
+      const id = get().doc.audio?.assetId;
+      get().apply(
+        (draft) => {
+          if (!draft.audio) return;
+          const assetId = draft.audio.assetId;
+          delete draft.audio;
+          draft.assets = draft.assets.filter((a) => a.id !== assetId);
+        },
+        { label: "Remove music" },
+      );
+      if (id) void deleteBlob(id).catch(() => undefined);
     },
 
     setAssetRole: (id: string, role: AssetRole) => {
@@ -387,7 +448,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           newS.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
           newS.duration = 4.0;
 
-          if (insertAfterIndex !== undefined && insertAfterIndex >= 0 && insertAfterIndex < draft.shots.length) {
+          if (
+            insertAfterIndex !== undefined &&
+            insertAfterIndex >= 0 &&
+            insertAfterIndex < draft.shots.length
+          ) {
             draft.shots.splice(insertAfterIndex + 1, 0, newS);
           } else {
             draft.shots.push(newS);
@@ -540,7 +605,16 @@ export function setupAutosave(
       await saveProject(docToSave);
       store.getState().setSaveStatus("saved");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Storage error";
+      const quota =
+        (typeof DOMException !== "undefined" &&
+          err instanceof DOMException &&
+          err.name === "QuotaExceededError") ||
+        (err instanceof Error && /quota/i.test(err.name));
+      const msg = quota
+        ? "Not enough storage space."
+        : err instanceof Error
+          ? err.message
+          : "Storage error";
       store.getState().setSaveStatus("error", msg);
     }
   }

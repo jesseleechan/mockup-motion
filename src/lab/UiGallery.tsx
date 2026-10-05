@@ -381,7 +381,7 @@ function GalleryContent() {
                     Cancel
                   </Button>
                   <Button variant="primary" onClick={() => setDialogOpen(false)}>
-                    Start Export
+                    Start export
                   </Button>
                 </div>
               </DialogContent>

@@ -145,13 +145,13 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title="Your Projects"
+        title="Your projects"
         description="Switch between projects, rename, duplicate, or delete."
         className="max-w-2xl"
       >
         <div className="flex justify-between items-center mb-3">
           <span className="text-xs text-[var(--color-text-2)]">
-            {projects.length} saved project(s)
+            {projects.length} {projects.length === 1 ? "project" : "projects"}
           </span>
           <Button
             size="sm"
@@ -159,7 +159,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
             onClick={handleCreateNew}
             icon={<Icon icon={Plus} size={14} />}
           >
-            New Project
+            New project
           </Button>
         </div>
 
@@ -201,7 +201,9 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                       <Icon
                         icon={isCurrent ? Check : FolderOpen}
                         size={28}
-                        className={isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-3)]"}
+                        className={
+                          isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-3)]"
+                        }
                       />
                     )}
                     {isCurrent && (

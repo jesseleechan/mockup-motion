@@ -10,13 +10,16 @@ import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine } from "../engine/Engine";
 import { schedule } from "../motion";
 import type { FromWorker, ToWorker } from "./engine-worker";
-import {
-  calculateBitrate,
-  keyframeIntervalFor,
-  outputDimensions,
-} from "./destinations";
+import { calculateBitrate, keyframeIntervalFor, outputDimensions } from "./destinations";
 import { createWebEmbedBundle } from "./bundle";
 import { encodeGif } from "./gif";
+import {
+  addAudioTrackToOutput,
+  prepareExportAudio,
+  withoutAudio,
+  writeAudio,
+  type ExportAudio,
+} from "./audio-mux";
 
 /**
  * Returns export dimensions (even integers, resolution is short side).
@@ -130,7 +133,7 @@ export async function exportWithEngine(
   settings: ExportSettings,
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
-): Promise<{ blob: Blob; mime: string; bundleSnippet?: string }> {
+): Promise<{ blob: Blob; mime: string; bundleSnippet?: string; warnings?: string[] }> {
   // 1. Single-frame PNG export
   if (settings.format === "png") {
     const { total } = schedule(doc);
@@ -154,6 +157,17 @@ export async function exportWithEngine(
   const container = settings.format === "webm" ? "webm" : "mp4";
   const codec = container === "mp4" ? "avc" : "vp9";
 
+  // Mix the optional music track (absent or unsupported => no audio, reasons in warnings)
+  const { total: audioTotal } = schedule(doc);
+  const prepared = await prepareExportAudio(
+    doc,
+    provider.getAudio?.bind(provider),
+    audioTotal,
+    container,
+  );
+  const audio = prepared.audio;
+  const warnings = prepared.warnings;
+
   // Decode needed images at export scale
   const neededAssetIds = collectNeededAssetIds(doc);
   const images: Record<string, ImageBitmap> = {};
@@ -166,9 +180,7 @@ export async function exportWithEngine(
   const texts: Record<string, import("../engine/Engine").TextRaster> = {};
   for (const shot of doc.shots) {
     if (shot.texts && shot.texts.length > 0) {
-      const shotStyle = shot.styleOverrides
-        ? { ...doc.style, ...shot.styleOverrides }
-        : doc.style;
+      const shotStyle = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
       const frameHeightPx = Math.round(height * ss);
       for (const layer of shot.texts) {
         texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
@@ -178,7 +190,7 @@ export async function exportWithEngine(
 
   // Try Web Worker first if supported
   if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
-    return new Promise<{ blob: Blob; mime: string }>((resolve, reject) => {
+    return new Promise<{ blob: Blob; mime: string; warnings?: string[] }>((resolve, reject) => {
       let worker: Worker;
       try {
         worker = new Worker(new URL("./engine-worker.ts", import.meta.url), { type: "module" });
@@ -194,8 +206,9 @@ export async function exportWithEngine(
           container,
           signal,
           onProgress,
+          audio,
         )
-          .then(resolve)
+          .then((r) => resolve({ ...r, warnings }))
           .catch(reject);
         return;
       }
@@ -218,7 +231,7 @@ export async function exportWithEngine(
           });
         } else if (msg.type === "done") {
           worker.terminate();
-          resolve({ blob: msg.blob, mime: msg.mime });
+          resolve({ blob: msg.blob, mime: msg.mime, warnings });
         } else if (msg.type === "error") {
           worker.terminate();
           reject(new Error(msg.message));
@@ -240,19 +253,21 @@ export async function exportWithEngine(
         container,
         width,
         height,
+        audio,
       };
 
-      // Transfer ImageBitmap ownership to worker
-      const transferList = [
+      // Transfer ImageBitmap and audio buffer ownership to worker
+      const transferList: Transferable[] = [
         ...Object.values(images),
         ...Object.values(texts).map((t) => t.bitmap),
+        ...(audio ? audio.mix.channels.map((c) => c.buffer) : []),
       ];
       worker.postMessage(startMsg, transferList);
     });
   }
 
   // Fallback to main-thread encode
-  return encodeMainThread(
+  const main = await encodeMainThread(
     doc,
     provider,
     settings,
@@ -262,7 +277,9 @@ export async function exportWithEngine(
     container,
     signal,
     onProgress,
+    audio,
   );
+  return { ...main, warnings };
 }
 
 /**
@@ -329,18 +346,14 @@ async function exportGifWithEngine(
 
   onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 80 });
 
-  const { blob, mime } = encodeGif(
-    frames,
-    { width, height, fps, dither: true },
-    (p) => {
-      onProgress?.({
-        stage: "finishing",
-        frame: p.frame,
-        total: p.total,
-        percentage: 80 + Math.round(p.percentage * 0.2),
-      });
-    },
-  );
+  const { blob, mime } = encodeGif(frames, { width, height, fps, dither: true }, (p) => {
+    onProgress?.({
+      stage: "finishing",
+      frame: p.frame,
+      total: p.total,
+      percentage: 80 + Math.round(p.percentage * 0.2),
+    });
+  });
 
   return { blob, mime };
 }
@@ -360,7 +373,7 @@ async function exportBundleWithEngine(
   // 1. Export MP4
   onProgress?.({ stage: "preparing", frame: 0, total: 100, percentage: 5 });
   const mp4Res = await exportWithEngine(
-    doc,
+    withoutAudio(doc),
     provider,
     { ...settings, format: "mp4" },
     signal,
@@ -376,7 +389,7 @@ async function exportBundleWithEngine(
 
   // 2. Export WebM
   const webmRes = await exportWithEngine(
-    doc,
+    withoutAudio(doc),
     provider,
     { ...settings, format: "webm" },
     signal,
@@ -431,6 +444,7 @@ async function encodeMainThread(
   container: "mp4" | "webm",
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
+  audio?: ExportAudio,
 ): Promise<{ blob: Blob; mime: string }> {
   let canvas: HTMLCanvasElement | OffscreenCanvas;
   if (typeof OffscreenCanvas !== "undefined") {
@@ -474,6 +488,7 @@ async function encodeMainThread(
   });
 
   output.addVideoTrack(source, { frameRate: fps });
+  const audioSource = audio ? addAudioTrackToOutput(output, audio) : null;
   await output.start();
 
   for (let frame = 0; frame < totalFrames; frame++) {
@@ -500,6 +515,7 @@ async function encodeMainThread(
   }
 
   onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 100 });
+  if (audio && audioSource) await writeAudio(audioSource, audio);
   await output.finalize();
   engine.dispose();
 

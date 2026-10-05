@@ -15,6 +15,10 @@ export interface EngineCanvasProps {
   ) => void;
   className?: string;
   style?: React.CSSProperties;
+  /** Override device pixel ratio. Visual stills pass 1. */
+  pixelRatio?: number;
+  /** Override the default 1.5 preview supersample. */
+  supersample?: 1 | 1.5 | 2;
 }
 
 export const EngineCanvas: React.FC<EngineCanvasProps> = ({
@@ -25,6 +29,8 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   onCanvasClick,
   className,
   style,
+  pixelRatio,
+  supersample,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,14 +50,14 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
 
     async function init() {
       if (!canvas) return;
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const dpr = pixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
       const width = Math.max(100, Math.round((canvas.clientWidth || 800) * dpr));
       const height = Math.max(100, Math.round((canvas.clientHeight || 450) * dpr));
 
       localEngine = await Engine.create(canvas, {
         width,
         height,
-        supersample: 1.5,
+        supersample: supersample ?? 1.5,
       });
 
       if (disposed) {
@@ -86,7 +92,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const dpr = pixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
       const width = Math.max(10, Math.round(entry.contentRect.width * dpr));
       const height = Math.max(10, Math.round(entry.contentRect.height * dpr));
 
@@ -99,7 +105,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
 
     observer.observe(container);
     return () => observer.disconnect();
-  }, [playhead, time]);
+  }, [pixelRatio, playhead, time]);
 
   // Update doc & assets
   useEffect(() => {

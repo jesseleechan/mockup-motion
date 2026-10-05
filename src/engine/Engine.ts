@@ -26,6 +26,8 @@ export interface AssetProvider {
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
   /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
   getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Raw bytes of an audio asset (music track); absent where audio is unsupported (worker). */
+  getAudio?(assetId: string): Promise<Blob | null>;
 }
 
 import { FinalPass } from "./post/final";
@@ -331,11 +333,16 @@ export class Engine {
         cursorData = frame.cursor;
       }
 
-      const asset = node.assetId ? this.currentDoc?.assets.find((a) => a.id === node.assetId) : null;
+      const asset = node.assetId
+        ? this.currentDoc?.assets.find((a) => a.id === node.assetId)
+        : null;
       const hasStatusBar = Boolean(asset?.meta?.hasStatusBar);
       const isPhone = node.device === "phone";
 
-      dev.compositor.compose(this.renderer, managed, node.scroll, cursorData, { hasStatusBar, isPhone });
+      dev.compositor.compose(this.renderer, managed, node.scroll, cursorData, {
+        hasStatusBar,
+        isPhone,
+      });
       dev.update(node, frame.style, frame.localT);
     }
 
@@ -380,12 +387,7 @@ export class Engine {
     this.renderer.info.reset();
 
     // Render primary layer into targetA
-    this.renderShotToTarget(
-      this.targetA,
-      layers[0].frame,
-      stageAspect,
-      frameState.backgroundPhase,
-    );
+    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect, frameState.backgroundPhase);
 
     if (layers.length > 1 && layers[1].weight > 0) {
       // Transition active: render secondary layer into targetB

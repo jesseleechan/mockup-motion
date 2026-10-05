@@ -1,31 +1,29 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
   Icon,
+  useToast,
 } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { getBlob } from "../../storage/blobs";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
-import {
-  Copy,
-  ImageIcon,
-  Plus,
-  RefreshCw,
-  Tag,
-  Trash2,
-  UploadCloud,
-} from "lucide-react";
+import { validateAndDecodeAsset } from "../../assets/decode";
+import { Copy, ImageIcon, Plus, RefreshCw, Tag, Trash2, UploadCloud } from "lucide-react";
 
 interface MediaTabProps {
   onSelectAsset?: (assetId: string) => void;
 }
 
 export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
-  const doc = useEditorStore((s) => s.doc);
+  const fullDoc = useEditorStore((s) => s.doc);
+  const doc = useMemo(
+    () => ({ ...fullDoc, assets: fullDoc.assets.filter((a) => a.kind === "image") }),
+    [fullDoc],
+  );
   const addAssets = useEditorStore((s) => s.addAssets);
   const replaceAsset = useEditorStore((s) => s.replaceAsset);
   const removeAsset = useEditorStore((s) => s.removeAsset);
@@ -83,9 +81,21 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
       const lay = shot.layout;
       let used = false;
       if (lay.kind === "single" && lay.assetId === assetId) used = true;
-      if (lay.kind === "pair" && (lay.desktopId === assetId || lay.mobileId === assetId)) used = true;
-      if (lay.kind === "trio" && (lay.desktopId === assetId || lay.tabletId === assetId || lay.mobileId === assetId)) used = true;
-      if ((lay.kind === "rows" || lay.kind === "columns" || lay.kind === "wall" || lay.kind === "stack") && lay.assetIds.includes(assetId)) used = true;
+      if (lay.kind === "pair" && (lay.desktopId === assetId || lay.mobileId === assetId))
+        used = true;
+      if (
+        lay.kind === "trio" &&
+        (lay.desktopId === assetId || lay.tabletId === assetId || lay.mobileId === assetId)
+      )
+        used = true;
+      if (
+        (lay.kind === "rows" ||
+          lay.kind === "columns" ||
+          lay.kind === "wall" ||
+          lay.kind === "stack") &&
+        lay.assetIds.includes(assetId)
+      )
+        used = true;
       if (shot.texts?.some((t) => t.logoAssetId === assetId)) used = true;
 
       if (used) shotIndices.push(idx + 1);
@@ -93,71 +103,55 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     return shotIndices;
   };
 
+  const { toast } = useToast();
+
   const handleFileUpload = async (files: File[]) => {
     const newRefs: AssetRef[] = [];
     const blobs: Record<string, Blob> = {};
+    const errors: string[] = [];
 
     for (const file of files) {
-      if (!file.type.startsWith("image/")) continue;
-      const assetId = crypto.randomUUID();
-      blobs[assetId] = file;
+      let validated: { ref: AssetRef; blob: Blob };
+      try {
+        validated = await validateAndDecodeAsset(file, file.name);
+      } catch (err) {
+        errors.push(
+          err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`,
+        );
+        continue;
+      }
 
-      let width = 1920;
-      let height = 1080;
-      let hasAlpha = false;
-      let opaqueFraction = 1.0;
-      let bottomColor = "#000000";
+      const { ref } = validated;
+      blobs[ref.id] = validated.blob;
       let hasStatusBar = false;
-
+      let bottomColor = "#000000";
       try {
         const bmp = await createImageBitmap(file);
-        width = bmp.width;
-        height = bmp.height;
-
-        // Sample pixels to detect alpha and status bar
-        const canvas = new OffscreenCanvas(Math.min(width, 390), Math.min(height, 844));
+        const canvas = new OffscreenCanvas(Math.min(bmp.width, 390), Math.min(bmp.height, 844));
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const analysis = analyzeImage({
             width: canvas.width,
             height: canvas.height,
-            rgba: imgData.data,
+            rgba: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
           });
-          hasAlpha = analysis.role === "logo";
-          opaqueFraction = hasAlpha ? 0.15 : 1.0;
-          bottomColor = analysis.bottomColor;
           hasStatusBar = analysis.hasStatusBar;
+          bottomColor = analysis.bottomColor;
         }
         bmp.close();
       } catch {
-        // fallback
+        // Dimensions already came from validation.
       }
 
-      const role = analyzeImage({ width, height, hasAlpha, opaqueFraction }).role;
-      const isTall = role === "mobile" ? width / height < 0.4 : width / height < 0.5;
-
       newRefs.push({
-        id: assetId,
-        name: file.name,
-        kind: "image",
-        mime: file.type || "image/png",
-        bytes: file.size,
-        role,
-        width,
-        height,
-        meta: {
-          tall: isTall,
-          hasStatusBar,
-          bottomColor,
-        },
+        ...ref,
+        meta: { ...ref.meta, hasStatusBar, bottomColor },
       });
     }
 
-    if (newRefs.length > 0) {
-      await addAssets(newRefs, blobs);
-    }
+    for (const message of errors) toast(message);
+    if (newRefs.length > 0) await addAssets(newRefs, blobs);
   };
 
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,7 +218,9 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept="image/png,image/jpeg,image/webp,image/avif"
+        data-testid="media-input"
+        aria-label="Upload screenshots"
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
@@ -242,7 +238,9 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
 
       {/* Header action bar */}
       <div className="flex justify-between items-center mb-2.5">
-        <span className="text-xs text-[var(--color-text-2)]">{doc.assets.length} file(s)</span>
+        <span className="text-xs text-[var(--color-text-2)]">
+          {doc.assets.length} {doc.assets.length === 1 ? "file" : "files"}
+        </span>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}

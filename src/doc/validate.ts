@@ -1,7 +1,9 @@
+import { clampAudioTrack } from "../audio/mix";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
 import type {
   Aspect,
   AssetRef,
+  AudioTrack,
   AssetRole,
   Background,
   BrowserChrome,
@@ -150,6 +152,9 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
         if (typeof a.family === "string") ref.family = a.family;
         if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;
+        if (Array.isArray(a.peaks)) {
+          ref.peaks = a.peaks.filter((p: unknown): p is number => typeof p === "number");
+        }
 
         assets.push(ref);
         assetIdSet.add(id);
@@ -248,7 +253,27 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     doc.templateId = d.templateId;
   }
 
+  const audio = sanitizeAudio(d.audio, assets, warnings);
+  if (audio) doc.audio = audio;
+
   return { doc, warnings };
+}
+
+function sanitizeAudio(raw: unknown, assets: AssetRef[], warnings: string[]): AudioTrack | null {
+  if (!raw || typeof raw !== "object") return null;
+  const a = raw as Record<string, unknown>;
+  const assetId = typeof a.assetId === "string" ? a.assetId : "";
+  if (!assets.some((x) => x.id === assetId && x.kind === "audio")) {
+    warnings.push(`Music asset '${assetId}' not found. Removed the music track.`);
+    return null;
+  }
+  return clampAudioTrack({
+    assetId,
+    volume: typeof a.volume === "number" ? a.volume : 0.8,
+    fadeIn: typeof a.fadeIn === "number" ? a.fadeIn : 0.5,
+    fadeOut: typeof a.fadeOut === "number" ? a.fadeOut : 1.5,
+    offset: typeof a.offset === "number" ? a.offset : 0,
+  });
 }
 
 function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string[]): Background {

@@ -45,6 +45,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const past = useEditorStore((s) => s.past);
   const future = useEditorStore((s) => s.future);
   const saveStatus = useEditorStore((s) => s.saveStatus);
+  const saveError = useEditorStore((s) => s.saveError);
   const apply = useEditorStore((s) => s.apply);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
@@ -116,23 +117,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              icon={<Icon icon={FilePlus} size={14} />}
-              onClick={() => newDoc()}
-            >
-              New Project
+            <DropdownMenuItem icon={<Icon icon={FilePlus} size={14} />} onClick={() => newDoc()}>
+              New project
             </DropdownMenuItem>
-            <DropdownMenuItem
-              icon={<Icon icon={Copy} size={14} />}
-              onClick={handleDuplicate}
-            >
-              Duplicate Project
+            <DropdownMenuItem icon={<Icon icon={Copy} size={14} />} onClick={handleDuplicate}>
+              Duplicate project
             </DropdownMenuItem>
-            <DropdownMenuItem
-              icon={<Icon icon={FolderOpen} size={14} />}
-              onClick={onOpenProjects}
-            >
-              Projects...
+            <DropdownMenuItem icon={<Icon icon={FolderOpen} size={14} />} onClick={onOpenProjects}>
+              Projects
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -177,9 +169,13 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Save Status indicator */}
         <div className="hidden sm:flex items-center text-[11px] text-[var(--color-text-3)]">
-          {saveStatus === "saving" && <span>Saving...</span>}
-          {saveStatus === "saved" && <span className="text-[var(--color-text-3)]">saved ✓</span>}
-          {saveStatus === "error" && <span className="text-[var(--color-danger)]">Save error</span>}
+          {saveStatus === "saving" && <span>Saving</span>}
+          {saveStatus === "saved" && <span className="text-[var(--color-text-3)]">Saved</span>}
+          {saveStatus === "error" && (
+            <span data-testid="save-error" role="status" className="text-[var(--color-danger)]">
+              {saveError?.toLowerCase().includes("storage") ? "Storage is full" : "Save failed"}
+            </span>
+          )}
         </div>
       </div>
 

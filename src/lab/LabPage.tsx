@@ -18,6 +18,7 @@ import devicesLaptopFixture from "./fixtures/devices-laptop.json";
 import textTitleFixture from "./fixtures/text-title.json";
 
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../templates";
+import { VISUAL_FIXTURES } from "./visual-fixtures";
 
 declare global {
   interface Window {
@@ -45,6 +46,22 @@ for (const t of BUILTIN_TEMPLATES) {
   const pDoc = buildTemplatePreviewDoc(t);
   FIXTURES[`template-${t.id}`] = pDoc;
   FIXTURES[t.id] = pDoc;
+}
+Object.assign(FIXTURES, VISUAL_FIXTURES);
+
+function aspectRatioOf(aspect: Aspect): number {
+  switch (aspect) {
+    case "16:9":
+      return 16 / 9;
+    case "9:16":
+      return 9 / 16;
+    case "4:5":
+      return 4 / 5;
+    case "4:3":
+      return 4 / 3;
+    default:
+      return 1;
+  }
 }
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
@@ -105,9 +122,18 @@ export const LabPage: React.FC = () => {
     window.__exportWithEngine = exportWithEngine;
     window.__createLabAssetProvider = createLabAssetProvider;
     window.__fixtures = FIXTURES;
-
-    // Mark lab ready for automated testing
-    window.__labReady = true;
+    window.__labReady = false;
+    void (async () => {
+      try {
+        await document.fonts?.ready;
+      } catch {
+        // Fonts are optional for the still.
+      }
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      window.__labReady = true;
+    })();
   }, []);
 
   // Frame readout loop for stats
@@ -177,6 +203,26 @@ export const LabPage: React.FC = () => {
         return { aspectRatio: "4 / 3" };
     }
   }, [aspect]);
+
+  const still = urlParams.get("still") === "1";
+  const stillW = Number(urlParams.get("w")) || 640;
+  const stillH = Math.max(1, Math.round(stillW / aspectRatioOf(aspect)));
+
+  if (still) {
+    return (
+      <div data-testid="lab-still" style={{ width: stillW, height: stillH, background: "#000" }}>
+        <EngineCanvas
+          doc={doc}
+          assets={provider}
+          time={playing ? undefined : time}
+          pixelRatio={1}
+          supersample={1}
+          onEngineReady={handleEngineReady}
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#0d0d0f] text-neutral-200 font-sans select-none overflow-hidden">

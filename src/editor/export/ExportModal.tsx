@@ -12,10 +12,7 @@ import {
 } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { createEditorAssetProvider } from "../asset-provider";
-import {
-  exportWithEngine,
-  type ExportProgress,
-} from "../../export/engine-export";
+import { exportWithEngine, type ExportProgress } from "../../export/engine-export";
 import {
   DESTINATION_PRESETS,
   estimateFileSize,
@@ -25,12 +22,7 @@ import {
 import { probeVideoEncoders, type CodecProbeResult } from "../../export/probe";
 import { verifyExportBlob, type VerifyExportResult } from "../../export/verify";
 import { schedule } from "../../motion";
-import type {
-  DestinationId,
-  ExportFormat,
-  ExportQuality,
-  ExportSettings,
-} from "../../doc/types";
+import type { DestinationId, ExportFormat, ExportQuality, ExportSettings } from "../../doc/types";
 import {
   AlertTriangle,
   Check,
@@ -78,15 +70,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyExportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exportWarnings, setExportWarnings] = useState<string[]>([]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeObjectUrlRef = useRef<string | null>(null);
 
   // Computed dimensions
-  const dims = useMemo(
-    () => outputDimensions(doc.aspect, resolution),
-    [doc.aspect, resolution],
-  );
+  const dims = useMemo(() => outputDimensions(doc.aspect, resolution), [doc.aspect, resolution]);
 
   // Estimated file size
   const estimatedBytes = useMemo(() => {
@@ -103,7 +93,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
       doc.aspect,
       duration,
     );
-  }, [destination, resolution, fps, quality, format, supersample, motionBlur, doc.aspect, duration]);
+  }, [
+    destination,
+    resolution,
+    fps,
+    quality,
+    format,
+    supersample,
+    motionBlur,
+    doc.aspect,
+    duration,
+  ]);
 
   // Sync settings when selecting a destination preset
   const handleSelectDestination = (destId: DestinationId) => {
@@ -154,6 +154,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
     setDownloadUrl(null);
     setEmbedSnippet(null);
     setVerifyResult(null);
+    setExportWarnings([]);
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -170,31 +171,25 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
     };
 
     try {
-      const result = await exportWithEngine(
-        doc,
-        provider,
-        settings,
-        controller.signal,
-        (p) => setProgress(p),
+      const result = await exportWithEngine(doc, provider, settings, controller.signal, (p) =>
+        setProgress(p),
       );
 
       const url = URL.createObjectURL(result.blob);
       activeObjectUrlRef.current = url;
 
-      const cleanName = (doc.name || "mockup")
-        .toLowerCase()
-        .replace(/[^a-z0-9_-]+/g, "-");
+      const cleanName = (doc.name || "mockup").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
 
       const ext =
         format === "bundle"
           ? "zip"
           : format === "gif"
-          ? "gif"
-          : format === "png"
-          ? "png"
-          : format === "webm"
-          ? "webm"
-          : "mp4";
+            ? "gif"
+            : format === "png"
+              ? "png"
+              : format === "webm"
+                ? "webm"
+                : "mp4";
 
       const filename = `${cleanName}-${doc.aspect.replace(":", "x")}.${ext}`;
 
@@ -203,6 +198,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
       if (result.bundleSnippet) {
         setEmbedSnippet(result.bundleSnippet);
       }
+      setExportWarnings(result.warnings ?? []);
 
       // Run post-export verification for video formats
       if (format === "mp4" || format === "webm") {
@@ -213,6 +209,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           duration,
           fps,
           codec,
+          audio: Boolean(doc.audio) && (result.warnings ?? []).length === 0,
         }).then(setVerifyResult);
       }
 
@@ -259,7 +256,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
     setTimeout(() => setCopiedSnippet(false), 2000);
   };
 
-  const destinationCards: { id: DestinationId; label: string; icon: React.ComponentType<{ size: number; className?: string }> }[] = [
+  const destinationCards: {
+    id: DestinationId;
+    label: string;
+    icon: React.ComponentType<{ size: number; className?: string }>;
+  }[] = [
     { id: "web-embed", label: "Web Embed", icon: Globe },
     { id: "dribbble", label: "Dribbble", icon: Film },
     { id: "instagram-feed", label: "Instagram Feed", icon: Smartphone },
@@ -310,7 +311,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                       <div className="flex items-center justify-between mb-2">
                         <IconComp
                           size={16}
-                          className={isSelected ? "text-[var(--color-accent)]" : "text-[var(--color-text-2)]"}
+                          className={
+                            isSelected ? "text-[var(--color-accent)]" : "text-[var(--color-text-2)]"
+                          }
                         />
                         {isSelected && <Check size={12} className="text-[var(--color-accent)]" />}
                       </div>
@@ -323,28 +326,30 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               </div>
 
               {/* Aspect Ratio Mismatch Alert & Quick Fix */}
-              {DESTINATION_PRESETS[destination]?.aspect !== doc.aspect && destination !== "custom" && (
-                <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] flex items-center justify-between text-xs">
-                  <div className="text-[var(--color-text-2)]">
-                    Preset recommends <strong>{DESTINATION_PRESETS[destination].aspect}</strong> (current: {doc.aspect})
+              {DESTINATION_PRESETS[destination]?.aspect !== doc.aspect &&
+                destination !== "custom" && (
+                  <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] flex items-center justify-between text-xs">
+                    <div className="text-[var(--color-text-2)]">
+                      Preset recommends <strong>{DESTINATION_PRESETS[destination].aspect}</strong>{" "}
+                      (current: {doc.aspect})
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        apply(
+                          (draft) => {
+                            draft.aspect = DESTINATION_PRESETS[destination].aspect;
+                          },
+                          { label: `Change aspect to ${DESTINATION_PRESETS[destination].aspect}` },
+                        )
+                      }
+                      className="text-[11px] h-7"
+                    >
+                      Switch to {DESTINATION_PRESETS[destination].aspect}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      apply(
-                        (draft) => {
-                          draft.aspect = DESTINATION_PRESETS[destination].aspect;
-                        },
-                        { label: `Change aspect to ${DESTINATION_PRESETS[destination].aspect}` },
-                      )
-                    }
-                    className="text-[11px] h-7"
-                  >
-                    Switch to {DESTINATION_PRESETS[destination].aspect}
-                  </Button>
-                </div>
-              )}
+                )}
             </div>
           )}
 
@@ -430,7 +435,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   <span className="text-xs font-medium text-[var(--color-text-2)]">
                     Motion Blur
                   </span>
-                  <Switch aria-label="Motion Blur" checked={motionBlur} onCheckedChange={setMotionBlur} />
+                  <Switch
+                    aria-label="Motion Blur"
+                    checked={motionBlur}
+                    onCheckedChange={setMotionBlur}
+                  />
                 </div>
               </div>
 
@@ -442,10 +451,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 </div>
               )}
 
+              {/* Music note */}
+              {doc.audio && (
+                <div
+                  data-testid="music-note"
+                  className="p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] text-xs text-[var(--color-text-2)]"
+                >
+                  {format === "mp4" || format === "webm"
+                    ? `Music is mixed into the ${format === "mp4" ? "MP4 (AAC)" : "WebM (Opus)"}.`
+                    : format === "bundle"
+                      ? "Web bundles are silent, so music is left out."
+                      : format === "gif"
+                        ? "GIFs have no sound, so music is left out."
+                        : "Still frames have no sound."}
+                </div>
+              )}
+
               {/* Summary Line */}
               <div className="p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] flex items-center justify-between text-xs text-[var(--color-text-2)] font-mono">
                 <span>
-                  {dims.width} × {dims.height} · {fps} fps · {duration.toFixed(1)}s · {format.toUpperCase()}
+                  {dims.width} × {dims.height} · {fps} fps · {duration.toFixed(1)}s ·{" "}
+                  {format.toUpperCase()}
                 </span>
                 <span className="text-[var(--color-text)] font-semibold">
                   ≈ {formatFileSize(estimatedBytes)}
@@ -465,8 +491,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   {progress.stage === "preparing"
                     ? "Decoding and rasterizing assets..."
                     : progress.stage === "rendering"
-                    ? `Rendering frame ${progress.frame} of ${progress.total}`
-                    : "Finalizing and multiplexing output..."}
+                      ? `Rendering frame ${progress.frame} of ${progress.total}`
+                      : "Finalizing and multiplexing output..."}
                 </h4>
                 <p className="text-xs text-[var(--color-text-3)] font-mono mt-1">
                   {progress.percentage}% complete
@@ -478,9 +504,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               </div>
 
               <div className="pt-2">
-                <Button variant="ghost" size="sm" onClick={handleCancel} className="text-red-400 hover:text-red-300">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="text-red-400 hover:text-red-300"
+                >
                   <XCircle size={14} className="mr-1" />
-                  Cancel Export
+                  Cancel export
                 </Button>
               </div>
             </div>
@@ -491,7 +522,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
             <div className="space-y-4 py-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-[var(--color-text)]">
-                  Export Complete!
+                  Export complete
                 </span>
                 <span className="text-xs text-[var(--color-text-3)] font-mono">
                   {downloadFilename}
@@ -531,6 +562,29 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                     <span>Duration: {verifyResult.actual?.duration.toFixed(2)}s</span>
                     <span>Codec: {verifyResult.actual?.codec || "Verified"}</span>
                   </div>
+                  {verifyResult.actual?.audioDuration !== undefined && (
+                    <div className="text-[var(--color-text-3)] flex justify-between">
+                      <span data-testid="verify-audio">
+                        Audio: {verifyResult.actual.audioDuration.toFixed(2)}s
+                      </span>
+                      <span>{verifyResult.actual.audioCodec}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {exportWarnings.length > 0 && (
+                <div
+                  role="status"
+                  data-testid="export-warnings"
+                  className="p-3 rounded-lg bg-[var(--color-raised)] border border-amber-500/30 text-amber-300 text-xs space-y-1"
+                >
+                  {exportWarnings.map((w) => (
+                    <div key={w} className="flex items-start gap-2">
+                      <AlertTriangle size={14} className="shrink-0 mt-px" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -548,7 +602,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                       onClick={handleCopySnippet}
                       className="text-xs h-7 gap-1"
                     >
-                      {copiedSnippet ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      {copiedSnippet ? (
+                        <Check size={12} className="text-emerald-400" />
+                      ) : (
+                        <Copy size={12} />
+                      )}
                       {copiedSnippet ? "Copied" : "Copy Code"}
                     </Button>
                   </div>
@@ -594,12 +652,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
             </Button>
             <Button
               variant="primary"
-              aria-label="Start Export"
+              aria-label="Start export"
               onClick={handleStartExport}
               className="gap-1.5"
             >
               <Download size={14} />
-              Render & Export
+              Start export
             </Button>
           </div>
         )}

@@ -1,5 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
-import { EngineCanvas } from "../../engine/react/EngineCanvas";
+import React, { lazy, Suspense, useMemo, useRef, useState, useEffect } from "react";
 import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
@@ -7,8 +6,13 @@ import { createEditorAssetProvider } from "../asset-provider";
 import { BUILTIN_TEMPLATES, buildTemplate } from "../../templates";
 import type { AssetRef } from "../../doc/types";
 import { schedule } from "../../motion";
-import { Button, Icon } from "../../ui";
+import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
+import { validateAndDecodeAsset } from "../../assets/decode";
+
+const EngineCanvas = lazy(() =>
+  import("../../engine/react/EngineCanvas").then((m) => ({ default: m.EngineCanvas })),
+);
 
 interface StageProps {
   showSafeMargins: boolean;
@@ -79,6 +83,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const handleFiles = React.useCallback(
     async (files: File[]) => {
@@ -86,36 +91,13 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
       const blobs: Record<string, Blob> = {};
 
       for (const file of files) {
-        if (!file.type.startsWith("image/")) continue;
-        const assetId = crypto.randomUUID();
-        blobs[assetId] = file;
-
-        // Extract image dimensions
-        let width = 1920;
-        let height = 1080;
         try {
-          const bmp = await createImageBitmap(file);
-          width = bmp.width;
-          height = bmp.height;
-          bmp.close();
-        } catch {
-          // use fallback dimensions
+          const result = await validateAndDecodeAsset(file, file.name);
+          newRefs.push(result.ref);
+          blobs[result.ref.id] = result.blob;
+        } catch (err) {
+          toast(err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`);
         }
-
-        const isMobile = height / width > 1.2;
-        const isTall = height / width > 2.0;
-
-        newRefs.push({
-          id: assetId,
-          name: file.name,
-          kind: "image",
-          mime: file.type || "image/png",
-          bytes: file.size,
-          role: isMobile ? "mobile" : "desktop",
-          width,
-          height,
-          meta: { tall: isTall },
-        });
       }
 
       if (newRefs.length > 0) {
@@ -134,7 +116,16 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
         }
       }
     },
-    [addAssets, applyTemplateResult, doc.aspect, doc.assets, doc.name, doc.shots.length, doc.style],
+    [
+      addAssets,
+      applyTemplateResult,
+      doc.aspect,
+      doc.assets,
+      doc.name,
+      doc.shots.length,
+      doc.style,
+      toast,
+    ],
   );
 
   // Global drag-and-drop listener
@@ -189,7 +180,12 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
     pick: { nodeId: string; u: number; v: number } | null,
   ) => {
     const activeShot = doc.shots[selectedShotIndex];
-    if (!pick || !activeShot || activeShot.layout.kind !== "single" || !activeShot.cursor?.enabled) {
+    if (
+      !pick ||
+      !activeShot ||
+      activeShot.layout.kind !== "single" ||
+      !activeShot.cursor?.enabled
+    ) {
       return;
     }
 
@@ -250,11 +246,11 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-lg font-bold text-[var(--color-text)] tracking-tight">
-              Create Motion Mockups
+            <h2 className="text-lg font-semibold text-[var(--color-text)] tracking-tight">
+              Create a presentation
             </h2>
             <p className="text-xs text-[var(--color-text-2)] leading-relaxed">
-              Transform static screenshots into smooth, photorealistic 3D camera animations.
+              Upload screenshots, pick a template, and export a video.
             </p>
           </div>
 
@@ -274,7 +270,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
               onClick={() => fileInputRef.current?.click()}
               icon={<Icon icon={UploadCloud} size={15} />}
             >
-              Drop screenshots
+              Choose screenshots
             </Button>
 
             <Button
@@ -346,14 +342,16 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
                 : "border-[var(--color-line)]"
             }`}
           >
-            <EngineCanvas
-              doc={doc}
-              assets={provider}
-              onEngineReady={(engine) => {
-                engineRef.current = engine;
-              }}
-              onCanvasClick={handleCanvasClick}
-            />
+            <Suspense fallback={null}>
+              <EngineCanvas
+                doc={doc}
+                assets={provider}
+                onEngineReady={(engine) => {
+                  engineRef.current = engine;
+                }}
+                onCanvasClick={handleCanvasClick}
+              />
+            </Suspense>
 
             {/* Hovered Device Drop Indicator */}
             {hoveredNodeId && (

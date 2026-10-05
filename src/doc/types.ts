@@ -16,6 +16,7 @@ export interface AssetRef {
   meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
   family?: string;         // font: CSS family name registered via FontFace
   durationSec?: number;    // audio
+  peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
 }
 
 export interface FontRef {

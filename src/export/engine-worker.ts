@@ -9,6 +9,7 @@ import {
 import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
+import { addAudioTrackToOutput, writeAudio, type ExportAudio } from "./audio-mux";
 
 export type ToWorker =
   | {
@@ -21,6 +22,7 @@ export type ToWorker =
       container: "mp4" | "webm";
       width: number;
       height: number;
+      audio?: ExportAudio;
     }
   | { type: "cancel" };
 
@@ -34,7 +36,12 @@ export type FromWorker =
   | { type: "done"; blob: Blob; mime: string }
   | { type: "error"; message: string };
 
-function calculateBitrate(settings: ExportSettings, codec: "avc" | "vp9" | "av1", width: number, height: number): number {
+function calculateBitrate(
+  settings: ExportSettings,
+  codec: "avc" | "vp9" | "av1",
+  width: number,
+  height: number,
+): number {
   let baseBps = 16_000_000; // high
   if (settings.quality === "web") baseBps = 6_000_000;
   if (settings.quality === "master") baseBps = 28_000_000;
@@ -64,7 +71,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
 
     if (msg.type === "start") {
       isCancelled = false;
-      const { doc, images, settings, codec, container, width, height } = msg;
+      const { doc, images, settings, codec, container, width, height, audio } = msg;
 
       try {
         const post = (data: FromWorker) => self.postMessage(data);
@@ -114,6 +121,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         });
 
         output.addVideoTrack(source, { frameRate: fps });
+        const audioSource = audio ? addAudioTrackToOutput(output, audio) : null;
         await output.start();
 
         for (let frame = 0; frame < totalFrames; frame++) {
@@ -137,6 +145,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         }
 
         post({ type: "progress", stage: "finishing", frame: totalFrames, total: totalFrames });
+        if (audio && audioSource) await writeAudio(audioSource, audio);
         await output.finalize();
         engine.dispose();
 
