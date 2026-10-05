@@ -28,13 +28,7 @@ function samples() {
     return [...desktop, ...mobile];
   })());
 }
-function PresetThumbnail({
-  preset,
-  images,
-}: {
-  preset: Preset;
-  images: UploadedImage[];
-}) {
+function PresetThumbnail({ preset, images }: { preset: Preset; images: UploadedImage[] }) {
   const ref = useRef<HTMLCanvasElement>(null),
     animation = useRef(0);
   const render = (time: number) => {
@@ -52,6 +46,7 @@ function PresetThumbnail({
   useEffect(() => {
     render(0);
     return () => cancelAnimationFrame(animation.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- legacy: render initial preview at t=0 when preset/images change
   }, [preset, images]);
   const animate = () => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -115,10 +110,7 @@ export function PresetsPanel({
         <p>A good starting point. Make it yours.</p>
       </div>
       <div className="preset-filters">
-        <button
-          className={filter === "all" ? "active" : ""}
-          onClick={() => setFilter("all")}
-        >
+        <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>
           All presets
         </button>
         <button
@@ -131,10 +123,7 @@ export function PresetsPanel({
       </div>
       <div className="preset-grid">
         {presets.map((p) => (
-          <div
-            className={`preset-card ${p.id === selectedId ? "selected" : ""}`}
-            key={p.id}
-          >
+          <div className={`preset-card ${p.id === selectedId ? "selected" : ""}`} key={p.id}>
             <button
               className="preset-main"
               onClick={() => onApply(p)}
@@ -150,10 +139,7 @@ export function PresetsPanel({
               aria-label={`${favorites.includes(p.id) ? "Unfavorite" : "Favorite"} ${p.name}`}
               onClick={() => onFavorite(p.id)}
             >
-              <Star
-                size={12}
-                fill={favorites.includes(p.id) ? "currentColor" : "none"}
-              />
+              <Star size={12} fill={favorites.includes(p.id) ? "currentColor" : "none"} />
             </button>
             {p.custom && (
               <button
@@ -167,9 +153,7 @@ export function PresetsPanel({
           </div>
         ))}
       </div>
-      {!presets.length && (
-        <p className="empty-favorites">Star a preset to find it here.</p>
-      )}
+      {!presets.length && <p className="empty-favorites">Star a preset to find it here.</p>}
       <button className="save-preset" onClick={onSave}>
         <BookmarkPlus size={16} />
         Save as preset

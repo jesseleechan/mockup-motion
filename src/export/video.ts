@@ -32,12 +32,7 @@ export async function probeExport(project: Project): Promise<VideoCapability> {
   }
   if (typeof MediaRecorder !== "undefined")
     for (const mimeType of project.exportSettings.format === "mp4"
-      ? [
-          "video/mp4;codecs=avc1",
-          "video/mp4",
-          "video/webm;codecs=vp9",
-          "video/webm",
-        ]
+      ? ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"]
       : ["video/webm;codecs=vp9", "video/webm"])
       if (MediaRecorder.isTypeSupported(mimeType))
         return {
@@ -46,9 +41,7 @@ export async function probeExport(project: Project): Promise<VideoCapability> {
           method: "recorder",
           mimeType,
         };
-  throw new Error(
-    "Video encoding is unavailable in this browser. Try Chrome or export a PNG.",
-  );
+  throw new Error("Video encoding is unavailable in this browser. Try Chrome or export a PNG.");
 }
 function encodeInWorker(
   project: Project,
@@ -77,18 +70,18 @@ function encodeInWorker(
       if (event.data.type === "progress") onProgress(event.data.progress);
       else {
         cleanup();
-        event.data.type === "complete"
-          ? resolve(event.data.blob)
-          : reject(new Error(event.data.error));
+        if (event.data.type === "complete") {
+          resolve(event.data.blob);
+        } else {
+          reject(new Error(event.data.error));
+        }
       }
     };
     worker.onerror = (event) => {
       cleanup();
       reject(new Error(event.message || "The export worker stopped."));
     };
-    const images = project.images.map(
-      ({ imageElement: _element, ...image }) => image,
-    );
+    const images = project.images.map(({ imageElement: _element, ...image }) => image);
     worker.postMessage({ project: { ...project, images }, capability });
   });
 }
@@ -139,8 +132,7 @@ async function recordCanvas(
       if (recorder.state !== "inactive") recorder.stop();
       reject(error);
     };
-    const abort = () =>
-      fail(new DOMException("Export cancelled", "AbortError"));
+    const abort = () => fail(new DOMException("Export cancelled", "AbortError"));
     recorder.ondataavailable = (e) => {
       if (e.data.size) chunks.push(e.data);
     };
@@ -150,9 +142,11 @@ async function recordCanvas(
       if (finished) return;
       finished = true;
       const blob = new Blob(chunks, { type: capability.mimeType });
-      blob.size
-        ? resolve(blob)
-        : reject(new Error("The recorder returned an empty video."));
+      if (blob.size) {
+        resolve(blob);
+      } else {
+        reject(new Error("The recorder returned an empty video."));
+      }
     };
     signal.addEventListener("abort", abort, { once: true });
     if (signal.aborted) {
@@ -164,10 +158,7 @@ async function recordCanvas(
     const draw = (now: number) => {
       if (finished) return;
       try {
-        const time = Math.min(
-          (now - start) / 1000,
-          project.composition.motion.duration,
-        );
+        const time = Math.min((now - start) / 1000, project.composition.motion.duration);
         renderScene({
           ctx,
           width: canvas.width,
@@ -178,14 +169,11 @@ async function recordCanvas(
         });
         onProgress({
           stage: "rendering",
-          percentage: Math.round(
-            (time / project.composition.motion.duration) * 95,
-          ),
+          percentage: Math.round((time / project.composition.motion.duration) * 95),
           currentFrame: Math.round(time * project.exportSettings.fps),
           totalFrames,
         });
-        if (time < project.composition.motion.duration)
-          frame = requestAnimationFrame(draw);
+        if (time < project.composition.motion.duration) frame = requestAnimationFrame(draw);
         else recorder.stop();
       } catch (error) {
         fail(error);
@@ -253,10 +241,7 @@ export function safeName(name: string) {
       .replace(/^-|-$/g, "") || "mockup-motion"
   );
 }
-export async function exportPng(
-  project: Project,
-  time: number,
-): Promise<ExportResult> {
+export async function exportPng(project: Project, time: number): Promise<ExportResult> {
   await document.fonts.ready;
   const { width, height } = outputDimensions(
       project.aspectRatio,
@@ -277,8 +262,7 @@ export async function exportPng(
   });
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (blob) =>
-        blob ? resolve(blob) : reject(new Error("Could not create a PNG.")),
+      (blob) => (blob ? resolve(blob) : reject(new Error("Could not create a PNG."))),
       "image/png",
     ),
   );

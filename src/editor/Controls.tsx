@@ -68,13 +68,7 @@ export function Slider({
             onChange={(e) => {
               if (e.target.value !== "")
                 onChange(
-                  Math.min(
-                    max,
-                    Math.max(
-                      min,
-                      Math.round(Number(e.target.value) / step) * step,
-                    ),
-                  ),
+                  Math.min(max, Math.max(min, Math.round(Number(e.target.value) / step) * step)),
                 );
             }}
           />
@@ -119,11 +113,7 @@ export function Select({
   return (
     <label className="select-control">
       <span>{label}</span>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
+      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}

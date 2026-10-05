@@ -83,7 +83,6 @@ export async function encodeCanvas(
     if (!output.target.buffer) throw new Error("The encoded video is empty.");
     return new Blob([output.target.buffer], { type: capability.mimeType });
   } finally {
-    if (output.state !== "finalized" && output.state !== "canceled")
-      await output.cancel();
+    if (output.state !== "finalized" && output.state !== "canceled") await output.cancel();
   }
 }

@@ -141,7 +141,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 
 | WP | Title | Milestone | Depends on | Size | Status |
 |---|---|---|---|---|---|
-| [00](wp/WP-00-repo-hygiene-and-tooling.md) | Repo hygiene and tooling | M1 | — | S | Not started |
+| [00](wp/WP-00-repo-hygiene-and-tooling.md) | Repo hygiene and tooling | M1 | — | S | Complete |
 | [01](wp/WP-01-document-model-state-storage.md) | Document model v2, store, storage, migration | M1 | 00 | M | Not started |
 | [02](wp/WP-02-motion-core.md) | Motion core: easing, camera, timeline, evaluate | M1 | 00 | M | Not started |
 | [03](wp/WP-03-engine-core.md) | three.js engine core, preview, worker export, `/lab` | M1 | 00 | L | Not started |

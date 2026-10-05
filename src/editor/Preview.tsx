@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { Play, Pause, RotateCcw, Upload, Sparkles } from "lucide-react";
 import type { Project } from "../types";
 import { outputDimensions } from "../rendering/geometry";
@@ -69,9 +63,7 @@ export const Preview = forwardRef<
         const next = clock.current + Math.min((now - last) / 1000, 0.1);
         last = now;
         if (next >= duration) {
-          clock.current = project.composition.motion.loop
-            ? next % duration
-            : duration;
+          clock.current = project.composition.motion.loop ? next % duration : duration;
           if (!project.composition.motion.loop) setPlaying(false);
         } else clock.current = next;
         draw();
@@ -133,8 +125,7 @@ export const Preview = forwardRef<
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, [duration]);
-  const format = (value: number) =>
-    `00:${String(Math.floor(value)).padStart(2, "0")}`;
+  const format = (value: number) => `00:${String(Math.floor(value)).padStart(2, "0")}`;
   return (
     <div className="preview-workspace">
       <div
@@ -158,11 +149,7 @@ export const Preview = forwardRef<
           <canvas ref={canvas} aria-label="Presentation video preview" />
           {!project.images.length && (
             <div className="empty-canvas">
-              <button
-                className="empty-upload"
-                onClick={onUpload}
-                aria-label="Upload screenshots"
-              >
+              <button className="empty-upload" onClick={onUpload} aria-label="Upload screenshots">
                 <Upload size={27} />
               </button>
               <h1>Your work deserves a little motion.</h1>
@@ -234,11 +221,7 @@ export const Preview = forwardRef<
           {format(time)} / {format(duration)}
         </span>
         <div className="playback-divider" />
-        <Toggle
-          label="Loop"
-          checked={project.composition.motion.loop}
-          onChange={onLoop}
-        />
+        <Toggle label="Loop" checked={project.composition.motion.loop} onChange={onLoop} />
       </div>
     </div>
   );

@@ -1,11 +1,5 @@
 import type { Composition, UploadedImage } from "../types";
-import {
-  canScroll,
-  chooseImages,
-  contentProgress,
-  imageRect,
-  motionProgress,
-} from "./geometry";
+import { canScroll, chooseImages, contentProgress, imageRect, motionProgress } from "./geometry";
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 export interface SceneOptions {
   ctx: Context;
@@ -21,14 +15,7 @@ const FINISHES = {
   silver: "#cbd0d8",
   gold: "#b99a65",
 };
-const round = (
-  ctx: Context,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) => {
+const round = (ctx: Context, x: number, y: number, w: number, h: number, r: number) => {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
 };
@@ -46,13 +33,7 @@ function drawImage(
   ctx.fillRect(x, y, w, h);
   if (image?.imageElement?.width) {
     const rect = imageRect(image.width, image.height, w, h, c.image.fit, crop);
-    ctx.drawImage(
-      image.imageElement,
-      x + rect.x,
-      y + rect.y,
-      rect.width,
-      rect.height,
-    );
+    ctx.drawImage(image.imageElement, x + rect.x, y + rect.y, rect.width, rect.height);
   } else {
     ctx.fillStyle = "#b2b0bb";
     ctx.textAlign = "center";
@@ -60,13 +41,7 @@ function drawImage(
     ctx.fillText("Add a screenshot", x + w / 2, y + h / 2);
   }
 }
-function background(
-  ctx: Context,
-  w: number,
-  h: number,
-  c: Composition,
-  images: UploadedImage[],
-) {
+function background(ctx: Context, w: number, h: number, c: Composition, images: UploadedImage[]) {
   const b = c.background;
   ctx.fillStyle = b.color;
   ctx.fillRect(0, 0, w, h);
@@ -74,25 +49,14 @@ function background(
     const image = images.find((i) => i.id === b.imageId);
     if (image?.imageElement) {
       const rect = imageRect(image.width, image.height, w, h, "cover", 0.5);
-      ctx.drawImage(
-        image.imageElement,
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-      );
+      ctx.drawImage(image.imageElement, rect.x, rect.y, rect.width, rect.height);
     }
   } else if (b.type === "gradient") {
     const a = ((b.angle - 90) * Math.PI) / 180,
       length = Math.abs(w * Math.cos(a)) + Math.abs(h * Math.sin(a));
     const dx = (Math.cos(a) * length) / 2,
       dy = (Math.sin(a) * length) / 2;
-    const g = ctx.createLinearGradient(
-      w / 2 - dx,
-      h / 2 - dy,
-      w / 2 + dx,
-      h / 2 + dy,
-    );
+    const g = ctx.createLinearGradient(w / 2 - dx, h / 2 - dy, w / 2 + dx, h / 2 + dy);
     g.addColorStop(0, b.color);
     g.addColorStop(1, b.secondColor);
     ctx.fillStyle = g;
@@ -142,11 +106,7 @@ function frame(
     ctx.fill();
     ctx.restore();
   }
-  ctx.fillStyle = phone
-    ? FINISHES[c.frame.finish]
-    : light
-      ? "#ffffff"
-      : "#272931";
+  ctx.fillStyle = phone ? FINISHES[c.frame.finish] : light ? "#ffffff" : "#272931";
   round(ctx, -w / 2, -h / 2, w, h, radius);
   ctx.fill();
   if (c.frame.border > 0 && type !== "none") {
@@ -219,13 +179,7 @@ function frame(
   }
   ctx.restore();
 }
-function branding(
-  ctx: Context,
-  w: number,
-  h: number,
-  c: Composition,
-  images: UploadedImage[],
-) {
+function branding(ctx: Context, w: number, h: number, c: Composition, images: UploadedImage[]) {
   const b = c.brand,
     y = b.position === "top" ? 52 : h - 48;
   ctx.save();
@@ -242,24 +196,11 @@ function branding(
   const logo = images.find((i) => i.id === b.logoId);
   if (logo?.imageElement) {
     const lw = 52 * logo.aspectRatio;
-    ctx.drawImage(
-      logo.imageElement,
-      32,
-      b.position === "top" ? 28 : h - 80,
-      lw,
-      52,
-    );
+    ctx.drawImage(logo.imageElement, 32, b.position === "top" ? 28 : h - 80, lw, 52);
   }
   ctx.restore();
 }
-export function renderScene({
-  ctx,
-  width,
-  height,
-  time,
-  composition: c,
-  images,
-}: SceneOptions) {
+export function renderScene({ ctx, width, height, time, composition: c, images }: SceneOptions) {
   const logicalW = width >= height ? 1280 : 720,
     factor = width / logicalW,
     w = logicalW,
@@ -275,8 +216,7 @@ export function renderScene({
     sign = c.motion.direction === "forward" ? 1 : -1;
   const visibleImages = images.filter(
     (i) =>
-      (c.background.type !== "image" || i.id !== c.background.imageId) &&
-      i.id !== c.brand.logoId,
+      (c.background.type !== "image" || i.id !== c.background.imageId) && i.id !== c.brand.logoId,
   );
   const selected = chooseImages(c, visibleImages);
   const pool =
@@ -284,16 +224,10 @@ export function renderScene({
       ? visibleImages.filter((i) => i.category === "mobile")
       : visibleImages.filter((i) => i.category !== "mobile");
   const source = pool.length ? pool : visibleImages;
-  const get = (i: number) =>
-    source[((i % source.length) + source.length) % source.length];
+  const get = (i: number) => source[((i % source.length) + source.length) % source.length];
   ctx.save();
   ctx.translate(
-    w / 2 +
-      (c.alignment === "left"
-        ? -w * 0.07
-        : c.alignment === "right"
-          ? w * 0.07
-          : 0),
+    w / 2 + (c.alignment === "left" ? -w * 0.07 : c.alignment === "right" ? w * 0.07 : 0),
     h / 2,
   );
   if (c.motion.type === "zoom") {
@@ -324,57 +258,13 @@ export function renderScene({
     if (w >= h) {
       const fw = Math.min(w * scale * 0.8, h * scale * 1.6),
         ph = h * scale * 0.92;
-      frame(
-        ctx,
-        -w * 0.05,
-        0,
-        fw,
-        fw / 1.6,
-        selected.primary,
-        c,
-        time,
-        false,
-        "browser",
-      );
-      frame(
-        ctx,
-        fw * 0.44,
-        ph * 0.12,
-        ph * 0.48,
-        ph,
-        selected.mobile,
-        c,
-        time,
-        false,
-        "phone",
-      );
+      frame(ctx, -w * 0.05, 0, fw, fw / 1.6, selected.primary, c, time, false, "browser");
+      frame(ctx, fw * 0.44, ph * 0.12, ph * 0.48, ph, selected.mobile, c, time, false, "phone");
     } else {
       const fw = w * scale;
-      frame(
-        ctx,
-        0,
-        -h * 0.15,
-        fw,
-        fw / 1.6,
-        selected.primary,
-        c,
-        time,
-        false,
-        "browser",
-      );
+      frame(ctx, 0, -h * 0.15, fw, fw / 1.6, selected.primary, c, time, false, "browser");
       const ph = Math.min(h * scale * 0.43, w * 1.3);
-      frame(
-        ctx,
-        fw * 0.15,
-        h * 0.23,
-        ph * 0.48,
-        ph,
-        selected.mobile,
-        c,
-        time,
-        false,
-        "phone",
-      );
+      frame(ctx, fw * 0.15, h * 0.23, ph * 0.48, ph, selected.mobile, c, time, false, "phone");
     }
   } else if (c.layout === "grid") {
     const n = Math.max(1, Math.min(9, source.length)),
@@ -405,9 +295,7 @@ export function renderScene({
       stride = fh + c.spacing;
     for (let col = 0; col < count; col++) {
       const shift =
-        c.motion.type === "glide"
-          ? p * stride * amount * 1.5 * (col % 2 ? -1 : 1) * sign
-          : 0;
+        c.motion.type === "glide" ? p * stride * amount * 1.5 * (col % 2 ? -1 : 1) * sign : 0;
       const number = Math.ceil(h / stride) + 2;
       for (let row = -number; row <= number; row++)
         frame(
@@ -432,9 +320,7 @@ export function renderScene({
       number = Math.ceil(w / stride) + 2;
     for (let row = 0; row < count; row++) {
       const shift =
-        c.motion.type === "glide"
-          ? p * stride * amount * 1.5 * (row % 2 ? -1 : 1) * sign
-          : 0;
+        c.motion.type === "glide" ? p * stride * amount * 1.5 * (row % 2 ? -1 : 1) * sign : 0;
       for (let col = -number; col <= number; col++)
         frame(
           ctx,

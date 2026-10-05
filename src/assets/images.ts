@@ -14,9 +14,7 @@ export async function decodeImage(
     const width = imageElement.naturalWidth,
       height = imageElement.naturalHeight;
     if (!width || !height || width * height > 80_000_000)
-      throw new Error(
-        "This image is too large. Use an image below 80 megapixels.",
-      );
+      throw new Error("This image is too large. Use an image below 80 megapixels.");
     return {
       id,
       name,
@@ -37,11 +35,7 @@ export async function decodeImage(
 export async function loadFiles(files: File[]) {
   const results = await Promise.allSettled(
     files.map(async (file) => {
-      if (
-        !["image/png", "image/jpeg", "image/webp", "image/avif"].includes(
-          file.type,
-        )
-      )
+      if (!["image/png", "image/jpeg", "image/webp", "image/avif"].includes(file.type))
         throw new Error(`${file.name}: use PNG, JPG, WebP, or AVIF.`);
       if (file.size > 35 * 1024 * 1024)
         throw new Error(`${file.name}: images must be below 35 MB.`);
@@ -66,11 +60,7 @@ export function releaseUnusedImages(retained: UploadedImage[]) {
 export async function loadDemoImages(): Promise<UploadedImage[]> {
   const response = await fetch("/demo/aurelia.png");
   if (response.ok) {
-    const hero = await decodeImage(
-      await response.blob(),
-      "Aurelia — Lake House.png",
-      "demo-hero",
-    );
+    const hero = await decodeImage(await response.blob(), "Aurelia — Lake House.png", "demo-hero");
     const { loadDefaultDesktopImages, loadDefaultMobileImages } =
       await import("../utils/sampleImages");
     const [desktop, mobile] = await Promise.all([

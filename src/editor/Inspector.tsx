@@ -1,14 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import type { Composition, Project } from "../types";
 import { canScroll, chooseImages } from "../rendering/geometry";
-import {
-  Section,
-  Select,
-  Slider,
-  Toggle,
-  Segments,
-  TextField,
-} from "./Controls";
+import { Section, Select, Slider, Toggle, Segments, TextField } from "./Controls";
 import { createComposition } from "../presets/presets";
 const PALETTES = [
   ["#b8b0fa", "#fff3e5"],
@@ -17,8 +10,7 @@ const PALETTES = [
   ["#9fc5ff", "#e8f0ff"],
   ["#171b25", "#454667"],
 ];
-const opts = (values: [string, string][]) =>
-  values.map(([value, label]) => ({ value, label }));
+const opts = (values: [string, string][]) => values.map(([value, label]) => ({ value, label }));
 export function Inspector({
   project,
   change,
@@ -44,13 +36,8 @@ export function Inspector({
     onChange: (v: number) => void,
     unit = "",
     step = 1,
-  ) => (
-    <Slider {...{ label, value, min, max, onChange, unit, step, begin, end }} />
-  );
-  const group = <K extends keyof Composition>(
-    key: K,
-    patch: Partial<Composition[K]>,
-  ) =>
+  ) => <Slider {...{ label, value, min, max, onChange, unit, step, begin, end }} />;
+  const group = <K extends keyof Composition>(key: K, patch: Partial<Composition[K]>) =>
     change({
       [key]: { ...(c[key] as object), ...(patch as object) },
     } as Partial<Composition>);
@@ -72,9 +59,7 @@ export function Inspector({
       <Section
         title="Layout"
         open
-        onReset={() =>
-          change({ scale: 78, spacing: 24, rotation: 0, alignment: "center" })
-        }
+        onReset={() => change({ scale: 78, spacing: 24, rotation: 0, alignment: "center" })}
       >
         <Select
           label="Layout"
@@ -93,37 +78,16 @@ export function Inspector({
             })
           }
         />
-        {slider(
-          "Composition size",
-          c.scale,
-          35,
-          110,
-          (v) => change({ scale: v }),
-          "%",
-        )}
+        {slider("Composition size", c.scale, 35, 110, (v) => change({ scale: v }), "%")}
         {c.layout !== "hero" &&
-          slider(
-            "Spacing",
-            c.spacing,
-            0,
-            100,
-            (v) => change({ spacing: v }),
-            "px",
-          )}
+          slider("Spacing", c.spacing, 0, 100, (v) => change({ spacing: v }), "px")}
         {["rows", "grid", "columns"].includes(c.layout) &&
           slider(c.layout === "rows" ? "Rows" : "Columns", c.count, 1, 4, (v) =>
             change({ count: v }),
           )}
         <details className="advanced">
           <summary>More layout settings</summary>
-          {slider(
-            "Rotation",
-            c.rotation,
-            -20,
-            20,
-            (v) => change({ rotation: v }),
-            "°",
-          )}
+          {slider("Rotation", c.rotation, -20, 20, (v) => change({ rotation: v }), "°")}
           <Segments
             label="Alignment"
             value={c.alignment}
@@ -132,19 +96,14 @@ export function Inspector({
               ["center", "Center"],
               ["right", "Right"],
             ])}
-            onChange={(v) =>
-              change({ alignment: v as Composition["alignment"] })
-            }
+            onChange={(v) => change({ alignment: v as Composition["alignment"] })}
           />
         </details>
         {c.layout === "hero" && (
           <Select
             label="Screenshot"
             value={c.assetIds.primary}
-            options={[
-              { value: "", label: "First compatible image" },
-              ...assetOptions.slice(1),
-            ]}
+            options={[{ value: "", label: "First compatible image" }, ...assetOptions.slice(1)]}
             onChange={(v) => group("assetIds", { primary: v })}
           />
         )}
@@ -162,17 +121,11 @@ export function Inspector({
               options={assetOptions}
               onChange={(v) => group("assetIds", { mobile: v })}
             />
-            <p className="control-hint">
-              Assign the desktop and mobile versions of your design.
-            </p>
+            <p className="control-hint">Assign the desktop and mobile versions of your design.</p>
           </>
         )}
       </Section>
-      <Section
-        title="Frame"
-        open
-        onReset={() => group("frame", defaults.frame)}
-      >
+      <Section title="Frame" open onReset={() => group("frame", defaults.frame)}>
         {c.layout !== "pair" && c.layout !== "columns" && (
           <Segments
             label="Frame style"
@@ -183,9 +136,7 @@ export function Inspector({
               ["none", "None"],
               ["phone", "Phone"],
             ])}
-            onChange={(v) =>
-              group("frame", { type: v as Composition["frame"]["type"] })
-            }
+            onChange={(v) => group("frame", { type: v as Composition["frame"]["type"] })}
           />
         )}
         <details className="advanced">
@@ -197,13 +148,9 @@ export function Inspector({
               ["light", "Light"],
               ["dark", "Dark"],
             ])}
-            onChange={(v) =>
-              group("frame", { appearance: v as "light" | "dark" })
-            }
+            onChange={(v) => group("frame", { appearance: v as "light" | "dark" })}
           />
-          {c.frame.type === "phone" ||
-          c.layout === "columns" ||
-          c.layout === "pair" ? (
+          {c.frame.type === "phone" || c.layout === "columns" || c.layout === "pair" ? (
             <>
               <Select
                 label="Device finish"
@@ -254,10 +201,7 @@ export function Inspector({
           )}
         </details>
       </Section>
-      <Section
-        title="Screenshot"
-        onReset={() => group("image", defaults.image)}
-      >
+      <Section title="Screenshot" onReset={() => group("image", defaults.image)}>
         <Segments
           label="Image fit"
           value={c.image.fit}
@@ -272,21 +216,14 @@ export function Inspector({
           cropImage?.crop ?? c.image.crop,
           0,
           100,
-          (v) =>
-            cropImage
-              ? onImageCrop(cropImage.id, v)
-              : group("image", { crop: v }),
+          (v) => (cropImage ? onImageCrop(cropImage.id, v) : group("image", { crop: v })),
           "%",
         )}
         <p className="control-hint">
           Choose the visible part of tall screenshots. Content stays still.
         </p>
       </Section>
-      <Section
-        title="Background"
-        open
-        onReset={() => group("background", defaults.background)}
-      >
+      <Section title="Background" open onReset={() => group("background", defaults.background)}>
         <Segments
           label="Background style"
           value={c.background.type}
@@ -346,9 +283,7 @@ export function Inspector({
                   aria-label="First background color"
                   type="color"
                   value={c.background.color}
-                  onChange={(e) =>
-                    group("background", { color: e.target.value })
-                  }
+                  onChange={(e) => group("background", { color: e.target.value })}
                 />
                 <span>{c.background.color}</span>
               </label>
@@ -358,9 +293,7 @@ export function Inspector({
                     aria-label="Second background color"
                     type="color"
                     value={c.background.secondColor}
-                    onChange={(e) =>
-                      group("background", { secondColor: e.target.value })
-                    }
+                    onChange={(e) => group("background", { secondColor: e.target.value })}
                   />
                   <span>{c.background.secondColor}</span>
                 </label>
@@ -391,19 +324,8 @@ export function Inspector({
           </>
         )}
       </Section>
-      <Section
-        title="Motion"
-        open
-        onReset={() => group("motion", defaults.motion)}
-      >
-        {slider(
-          "Duration",
-          c.motion.duration,
-          3,
-          20,
-          (v) => group("motion", { duration: v }),
-          "s",
-        )}
+      <Section title="Motion" open onReset={() => group("motion", defaults.motion)}>
+        {slider("Duration", c.motion.duration, 3, 20, (v) => group("motion", { duration: v }), "s")}
         <Select
           label="Motion"
           value={c.motion.type}
@@ -413,9 +335,7 @@ export function Inspector({
             ["glide", "Slow glide"],
             ["zoom", "Gentle zoom"],
           ])}
-          onChange={(v) =>
-            group("motion", { type: v as Composition["motion"]["type"] })
-          }
+          onChange={(v) => group("motion", { type: v as Composition["motion"]["type"] })}
         />
         {c.motion.type !== "still" &&
           slider(
@@ -435,9 +355,7 @@ export function Inspector({
               ["forward", "Forward"],
               ["reverse", "Reverse"],
             ])}
-            onChange={(v) =>
-              group("motion", { direction: v as "forward" | "reverse" })
-            }
+            onChange={(v) => group("motion", { direction: v as "forward" | "reverse" })}
           />
           <Select
             label="Easing"
@@ -446,9 +364,7 @@ export function Inspector({
               ["smooth", "Smooth"],
               ["linear", "Linear"],
             ])}
-            onChange={(v) =>
-              group("motion", { easing: v as "smooth" | "linear" })
-            }
+            onChange={(v) => group("motion", { easing: v as "smooth" | "linear" })}
           />
           {slider(
             "Start / end hold",
@@ -497,17 +413,12 @@ export function Inspector({
                 "s",
                 0.1,
               )}
-              <p className="control-hint">
-                Loop mode gently returns to the starting crop.
-              </p>
+              <p className="control-hint">Loop mode gently returns to the starting crop.</p>
             </>
           )}
         </details>
       </Section>
-      <Section
-        title="Effects"
-        onReset={() => group("effects", defaults.effects)}
-      >
+      <Section title="Effects" onReset={() => group("effects", defaults.effects)}>
         {slider(
           "Shadow strength",
           c.effects.shadow,
@@ -516,14 +427,7 @@ export function Inspector({
           (v) => group("effects", { shadow: v }),
           "%",
         )}
-        {slider(
-          "Shadow blur",
-          c.effects.blur,
-          0,
-          70,
-          (v) => group("effects", { blur: v }),
-          "px",
-        )}
+        {slider("Shadow blur", c.effects.blur, 0, 70, (v) => group("effects", { blur: v }), "px")}
         {slider(
           "Shadow offset",
           c.effects.offset,
@@ -563,14 +467,7 @@ export function Inspector({
           ])}
           onChange={(v) => group("brand", { position: v as "top" | "bottom" })}
         />
-        {slider(
-          "Title size",
-          c.brand.size,
-          16,
-          64,
-          (v) => group("brand", { size: v }),
-          "px",
-        )}
+        {slider("Title size", c.brand.size, 16, 64, (v) => group("brand", { size: v }), "px")}
         <label className="color-label">
           Text color
           <input

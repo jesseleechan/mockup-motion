@@ -1,9 +1,7 @@
 import type { Project } from "../types";
 import { outputDimensions } from "../rendering/geometry";
 import { encodeCanvas, type VideoCapability } from "./encode";
-self.onmessage = async (
-  event: MessageEvent<{ project: Project; capability: VideoCapability }>,
-) => {
+self.onmessage = async (event: MessageEvent<{ project: Project; capability: VideoCapability }>) => {
   const { project, capability } = event.data;
   const bitmaps: ImageBitmap[] = [];
   try {

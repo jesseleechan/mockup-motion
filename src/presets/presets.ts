@@ -59,59 +59,35 @@ function preset(
   return { id, name, description, category, composition };
 }
 export const PRESETS: Preset[] = [
-  preset(
-    "clean-hero",
-    "Clean Hero",
-    "A little room for your best work.",
-    "desktop",
-    () => {},
-  ),
-  preset(
-    "soft-studio",
-    "Soft Studio",
-    "Warm tones. A quiet floating canvas.",
-    "desktop",
-    (c) => {
-      c.frame.type = "none";
-      c.background.color = "#eadbd1";
-      c.background.secondColor = "#f8eee6";
-      c.motion.type = "drift";
-      c.scale = 75;
-    },
-  ),
-  preset(
-    "midnight-rows",
-    "Midnight Rows",
-    "Your portfolio, moving in rhythm.",
-    "desktop",
-    (c) => {
-      c.layout = "rows";
-      c.frame.type = "rounded";
-      c.frame.appearance = "dark";
-      c.background.type = "spotlight";
-      c.background.color = "#171b25";
-      c.background.secondColor = "#424765";
-      c.motion.type = "glide";
-      c.motion.amount = 22;
-      c.scale = 85;
-      c.spacing = 22;
-    },
-  ),
-  preset(
-    "gallery-wall",
-    "Gallery Wall",
-    "A collection with space to breathe.",
-    "desktop",
-    (c) => {
-      c.layout = "grid";
-      c.frame.type = "rounded";
-      c.background.color = "#d6dde3";
-      c.background.secondColor = "#edf0f1";
-      c.motion.type = "drift";
-      c.scale = 80;
-      c.spacing = 22;
-    },
-  ),
+  preset("clean-hero", "Clean Hero", "A little room for your best work.", "desktop", () => {}),
+  preset("soft-studio", "Soft Studio", "Warm tones. A quiet floating canvas.", "desktop", (c) => {
+    c.frame.type = "none";
+    c.background.color = "#eadbd1";
+    c.background.secondColor = "#f8eee6";
+    c.motion.type = "drift";
+    c.scale = 75;
+  }),
+  preset("midnight-rows", "Midnight Rows", "Your portfolio, moving in rhythm.", "desktop", (c) => {
+    c.layout = "rows";
+    c.frame.type = "rounded";
+    c.frame.appearance = "dark";
+    c.background.type = "spotlight";
+    c.background.color = "#171b25";
+    c.background.secondColor = "#424765";
+    c.motion.type = "glide";
+    c.motion.amount = 22;
+    c.scale = 85;
+    c.spacing = 22;
+  }),
+  preset("gallery-wall", "Gallery Wall", "A collection with space to breathe.", "desktop", (c) => {
+    c.layout = "grid";
+    c.frame.type = "rounded";
+    c.background.color = "#d6dde3";
+    c.background.secondColor = "#edf0f1";
+    c.motion.type = "drift";
+    c.scale = 80;
+    c.spacing = 22;
+  }),
   preset(
     "angled-gallery",
     "Angled Gallery",
@@ -144,21 +120,15 @@ export const PRESETS: Preset[] = [
       c.count = 2;
     },
   ),
-  preset(
-    "phone-spotlight",
-    "Phone Spotlight",
-    "One screen. All the attention.",
-    "mobile",
-    (c) => {
-      c.frame.type = "phone";
-      c.background.type = "spotlight";
-      c.background.color = "#201b37";
-      c.background.secondColor = "#a493e8";
-      c.background.intensity = 75;
-      c.motion.type = "drift";
-      c.scale = 82;
-    },
-  ),
+  preset("phone-spotlight", "Phone Spotlight", "One screen. All the attention.", "mobile", (c) => {
+    c.frame.type = "phone";
+    c.background.type = "spotlight";
+    c.background.color = "#201b37";
+    c.background.secondColor = "#a493e8";
+    c.background.intensity = 75;
+    c.motion.type = "drift";
+    c.scale = 82;
+  }),
   preset(
     "responsive-pair",
     "Responsive Pair",

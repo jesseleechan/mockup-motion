@@ -1,6 +1,5 @@
 import type { AspectRatio, Composition, UploadedImage } from "../types";
-export const clamp = (n: number, min = 0, max = 1) =>
-  Math.min(max, Math.max(min, n));
+export const clamp = (n: number, min = 0, max = 1) => Math.min(max, Math.max(min, n));
 export const smooth = (p: number) => p * p * (3 - 2 * p);
 export function outputDimensions(ratio: AspectRatio, resolution = 1080) {
   switch (ratio) {
@@ -31,8 +30,7 @@ export function imageRect(
   fit: "cover" | "contain",
   crop: number,
 ) {
-  const scale =
-    fit === "contain" ? Math.min(vw / iw, vh / ih) : Math.max(vw / iw, vh / ih);
+  const scale = fit === "contain" ? Math.min(vw / iw, vh / ih) : Math.max(vw / iw, vh / ih);
   const width = iw * scale,
     height = ih * scale;
   return {
@@ -54,30 +52,20 @@ export function motionProgress(time: number, c: Composition) {
 }
 export function contentProgress(time: number, c: Composition) {
   const p = clamp(
-    (time - c.contentMotion.hold) /
-      Math.max(0.1, c.motion.duration - c.contentMotion.hold * 2),
+    (time - c.contentMotion.hold) / Math.max(0.1, c.motion.duration - c.contentMotion.hold * 2),
   );
-  const travel = c.motion.loop
-    ? (1 - Math.cos(p * Math.PI * 2)) / 2
-    : smooth(p);
-  return (
-    (c.contentMotion.start +
-      (c.contentMotion.end - c.contentMotion.start) * travel) /
-    100
-  );
+  const travel = c.motion.loop ? (1 - Math.cos(p * Math.PI * 2)) / 2 : smooth(p);
+  return (c.contentMotion.start + (c.contentMotion.end - c.contentMotion.start) * travel) / 100;
 }
 export function chooseImages(c: Composition, images: UploadedImage[]) {
   const primary =
     images.find((i) => i.id === c.assetIds.primary) ??
     images.find((i) =>
-      c.frame.type === "phone"
-        ? i.category === "mobile"
-        : i.category !== "mobile",
+      c.frame.type === "phone" ? i.category === "mobile" : i.category !== "mobile",
     ) ??
     images[0];
   const mobile =
-    images.find((i) => i.id === c.assetIds.mobile) ??
-    images.find((i) => i.category === "mobile");
+    images.find((i) => i.id === c.assetIds.mobile) ?? images.find((i) => i.category === "mobile");
   return { primary, mobile };
 }
 export function canScroll(c: Composition, images: UploadedImage[]) {

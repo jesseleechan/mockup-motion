@@ -1,18 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Download,
-  Check,
-  Film,
-  Image,
-  LoaderCircle,
-  AlertCircle,
-} from "lucide-react";
-import type {
-  Project,
-  ExportSettings,
-  ExportResult,
-  ExportProgress,
-} from "../types";
+import { Download, Check, Film, Image, LoaderCircle, AlertCircle } from "lucide-react";
+import type { Project, ExportSettings, ExportResult, ExportProgress } from "../types";
 import type { VideoCapability } from "../export/video";
 import { outputDimensions } from "../rendering/geometry";
 import { Modal } from "./Modal";
@@ -40,12 +28,10 @@ export function ExportDialog({
   const controller = useRef<AbortController | null>(null),
     resultUrl = useRef("");
   const settings = project.exportSettings,
-    { width, height } = outputDimensions(
-      project.aspectRatio,
-      settings.resolution,
-    );
+    { width, height } = outputDimensions(project.aspectRatio, settings.resolution);
   useEffect(() => {
     let live = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- legacy: reset probe state on export setting changes
     setChecking(true);
     setCapability(null);
     setError("");
@@ -63,6 +49,7 @@ export function ExportDialog({
     return () => {
       live = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- legacy: probe only depends on aspectRatio and export settings
   }, [project.aspectRatio, settings]);
   useEffect(
     () => () => {
@@ -71,8 +58,7 @@ export function ExportDialog({
     },
     [],
   );
-  const change = (s: Partial<ExportSettings>) =>
-    onSettings({ ...settings, ...s });
+  const change = (s: Partial<ExportSettings>) => onSettings({ ...settings, ...s });
   const close = () => {
     controller.current?.abort();
     onBusy(false);
@@ -95,12 +81,7 @@ export function ExportDialog({
       const output =
         kind === "png"
           ? await m.exportPng(project, time)
-          : await m.exportVideo(
-              project,
-              capability!,
-              abort.signal,
-              setProgress,
-            );
+          : await m.exportVideo(project, capability!, abort.signal, setProgress);
       if (abort.signal.aborted) {
         URL.revokeObjectURL(output.url);
         return;
@@ -117,10 +98,7 @@ export function ExportDialog({
     }
   };
   return (
-    <Modal
-      title={result ? "Ready for its close-up." : "Export your presentation"}
-      onClose={close}
-    >
+    <Modal title={result ? "Ready for its close-up." : "Export your presentation"} onClose={close}>
       {result ? (
         <div className="export-complete">
           <div className="success-mark">
@@ -133,16 +111,10 @@ export function ExportDialog({
           )}
           <p>
             {result.width} × {result.height}
-            {result.fps
-              ? ` · ${result.fps} FPS · ${result.duration}s`
-              : ""} · {result.extension.toUpperCase()} ·{" "}
-            {(result.size / 1024 / 1024).toFixed(1)} MB
+            {result.fps ? ` · ${result.fps} FPS · ${result.duration}s` : ""} ·{" "}
+            {result.extension.toUpperCase()} · {(result.size / 1024 / 1024).toFixed(1)} MB
           </p>
-          <a
-            className="primary-button"
-            href={result.url}
-            download={result.filename}
-          >
+          <a className="primary-button" href={result.url} download={result.filename}>
             <Download size={16} />
             Download {result.extension.toUpperCase()}
           </a>
@@ -167,18 +139,13 @@ export function ExportDialog({
               {progress.currentFrame} / {progress.totalFrames} frames
             </span>
           </div>
-          <button
-            className="subtle-button"
-            onClick={() => controller.current?.abort()}
-          >
+          <button className="subtle-button" onClick={() => controller.current?.abort()}>
             Cancel export
           </button>
         </div>
       ) : (
         <>
-          <p className="modal-description">
-            Beautiful, shareable, and completely yours.
-          </p>
+          <p className="modal-description">Beautiful, shareable, and completely yours.</p>
           <Segments
             label="Export type"
             value={kind}
@@ -216,9 +183,7 @@ export function ExportDialog({
                     { value: "standard", label: "Standard" },
                     { value: "high", label: "High" },
                   ]}
-                  onChange={(v) =>
-                    change({ quality: v as "standard" | "high" })
-                  }
+                  onChange={(v) => change({ quality: v as "standard" | "high" })}
                 />
                 <Select
                   label="Format"
@@ -241,18 +206,15 @@ export function ExportDialog({
                 : " · PNG"}
             </span>
           </div>
-          {kind === "video" &&
-            capability?.format !== settings.format &&
-            capability && (
-              <p className="notice">
-                MP4 isn’t available with these settings in this browser. Your
-                video will export as WebM.
-              </p>
-            )}
+          {kind === "video" && capability?.format !== settings.format && capability && (
+            <p className="notice">
+              MP4 isn’t available with these settings in this browser. Your video will export as
+              WebM.
+            </p>
+          )}
           {kind === "video" && capability?.method === "recorder" && (
             <p className="notice">
-              This browser records in real time. Keep this tab visible during
-              export.
+              This browser records in real time. Keep this tab visible during export.
             </p>
           )}
           {error && (
@@ -276,14 +238,9 @@ export function ExportDialog({
             ) : (
               <Download size={16} />
             )}
-            Export{" "}
-            {kind === "png"
-              ? "PNG"
-              : (capability?.format.toUpperCase() ?? "video")}
+            Export {kind === "png" ? "PNG" : (capability?.format.toUpperCase() ?? "video")}
           </button>
-          <p className="privacy-note">
-            Rendered on your device. No uploads, no watermark.
-          </p>
+          <p className="privacy-note">Rendered on your device. No uploads, no watermark.</p>
         </>
       )}
     </Modal>

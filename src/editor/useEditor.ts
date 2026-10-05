@@ -33,12 +33,8 @@ export function useEditor() {
     let live = true;
     restoreProject()
       .then((project) => {
-        if (live && project)
-          setHistory({ past: [], present: project, future: [] });
-        if (live)
-          setSaveStatus(
-            project ? "Restored on this device" : "Saved on this device",
-          );
+        if (live && project) setHistory({ past: [], present: project, future: [] });
+        if (live) setSaveStatus(project ? "Restored on this device" : "Saved on this device");
       })
       .catch(() => {
         if (live) setSaveStatus("Autosave unavailable");
@@ -53,14 +49,14 @@ export function useEditor() {
   useEffect(() => {
     if (!ready) return;
     const revision = ++saveRevision.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- legacy: autosave state indication
     setSaveStatus("Saving…");
     const timer = setTimeout(() => {
       queue.current = queue.current
         .catch(() => {})
         .then(() => saveProject(history.present))
         .then(() => {
-          if (saveRevision.current === revision)
-            setSaveStatus("Saved on this device");
+          if (saveRevision.current === revision) setSaveStatus("Saved on this device");
         })
         .catch(() => {
           if (saveRevision.current === revision)
@@ -71,19 +67,16 @@ export function useEditor() {
   }, [history.present, ready]);
   useEffect(() => {
     releaseUnusedImages(
-      [...history.past, history.present, ...history.future].flatMap(
-        (p) => p.images,
-      ),
+      [...history.past, history.present, ...history.future].flatMap((p) => p.images),
     );
   }, [history]);
   const present = useRef(history.present);
+  // eslint-disable-next-line react-hooks/refs -- legacy: mutable ref keeping track of latest history present
   present.current = history.present;
   const update = useCallback((change: (p: Project) => Project) => {
     const editing = transaction.current !== null;
     setHistory((h) =>
-      editing
-        ? { ...h, present: change(h.present), future: [] }
-        : commit(h, change(h.present)),
+      editing ? { ...h, present: change(h.present), future: [] } : commit(h, change(h.present)),
     );
   }, []);
   const begin = useCallback(() => {
@@ -94,9 +87,7 @@ export function useEditor() {
     transaction.current = null;
     if (original)
       setHistory((h) =>
-        original !== h.present
-          ? { ...h, past: [...h.past, original].slice(-60), future: [] }
-          : h,
+        original !== h.present ? { ...h, past: [...h.past, original].slice(-60), future: [] } : h,
       );
   }, []);
   const changeComposition = useCallback(
@@ -135,9 +126,7 @@ export function useEditor() {
     setPresets(next);
   };
   const toggleFavorite = (id: string) => {
-    const next = favorites.includes(id)
-      ? favorites.filter((f) => f !== id)
-      : [...favorites, id];
+    const next = favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id];
     localStorage.setItem("mockupmotion-favorites", JSON.stringify(next));
     setFavorites(next);
   };

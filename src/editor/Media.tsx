@@ -9,7 +9,7 @@ import {
   Smartphone,
   MoreHorizontal,
 } from "lucide-react";
-import type { Project, UploadedImage } from "../types";
+import type { Project } from "../types";
 import { Select } from "./Controls";
 interface MediaProps {
   project: Project;
@@ -22,16 +22,7 @@ interface MediaProps {
   onCategory: (id: string, category: "desktop" | "mobile") => void;
 }
 export function MediaPanel(props: MediaProps) {
-  const {
-    project,
-    onUpload,
-    onDemo,
-    onRemove,
-    onReplace,
-    onReorder,
-    onCategory,
-    onSelect,
-  } = props;
+  const { project, onUpload, onDemo, onRemove, onReplace, onReorder, onCategory, onSelect } = props;
   return (
     <div className="media-panel">
       <div className="library-heading">
@@ -134,11 +125,7 @@ export function MediaStrip({
             <img src={i.url} alt={i.name} />
             <span className="image-number">{index + 1}</span>
             <span className="image-type">
-              {i.category === "mobile" ? (
-                <Smartphone size={12} />
-              ) : (
-                <Monitor size={12} />
-              )}
+              {i.category === "mobile" ? <Smartphone size={12} /> : <Monitor size={12} />}
             </span>
           </button>
           <details className="media-menu">
@@ -147,10 +134,7 @@ export function MediaStrip({
             </summary>
             <div>
               <button onClick={() => onReplace(i.id)}>Replace image</button>
-              <button
-                disabled={index === 0}
-                onClick={() => onReorder(i.id, -1)}
-              >
+              <button disabled={index === 0} onClick={() => onReorder(i.id, -1)}>
                 Move earlier
               </button>
               <button

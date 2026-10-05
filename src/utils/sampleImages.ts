@@ -83,11 +83,7 @@ function createMobileEditorialMaison(): string {
   // Monograph description
   ctx.fillStyle = "#57534E";
   ctx.font = "400 18px Georgia, serif";
-  ctx.fillText(
-    "A curated dialogue between natural daylight, raw basalt,",
-    48,
-    790,
-  );
+  ctx.fillText("A curated dialogue between natural daylight, raw basalt,", 48, 790);
   ctx.fillText("and architectural proportion for modern life.", 48, 820);
 
   // Table summary
@@ -432,16 +428,8 @@ function createEditorialDesktopScreenshot(): string {
 
   ctx.fillStyle = "#57534E";
   ctx.font = "400 19px Georgia, serif";
-  ctx.fillText(
-    "A curated dialogue between natural daylight, raw basalt,",
-    90,
-    410,
-  );
-  ctx.fillText(
-    "and architectural proportion designed for modern life.",
-    90,
-    442,
-  );
+  ctx.fillText("A curated dialogue between natural daylight, raw basalt,", 90, 410);
+  ctx.fillText("and architectural proportion designed for modern life.", 90, 442);
 
   // Right photo
   const imgX = 720;

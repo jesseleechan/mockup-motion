@@ -11,8 +11,9 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    ref.current?.showModal();
-    return () => ref.current?.close();
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
   }, []);
   return (
     <dialog
@@ -26,11 +27,7 @@ export function Modal({
     >
       <div className="modal-heading">
         <h2>{title}</h2>
-        <button
-          className="icon-button"
-          aria-label="Close dialog"
-          onClick={onClose}
-        >
+        <button className="icon-button" aria-label="Close dialog" onClick={onClose}>
           <X size={19} />
         </button>
       </div>

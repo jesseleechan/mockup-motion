@@ -27,9 +27,7 @@ export default function App() {
   const editor = useEditor(),
     { project, update, changeComposition } = editor;
   const [tab, setTab] = useState<"presets" | "media">("presets"),
-    [mobilePanel, setMobilePanel] = useState<"library" | "settings" | null>(
-      null,
-    ),
+    [mobilePanel, setMobilePanel] = useState<"library" | "settings" | null>(null),
     [exportOpen, setExportOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
@@ -62,14 +60,11 @@ export default function App() {
           update((p) => {
             const images = target
               ? p.images.map((i) =>
-                  i.id === target
-                    ? { ...result.images[0], id: i.id, category: i.category }
-                    : i,
+                  i.id === target ? { ...result.images[0], id: i.id, category: i.category } : i,
                 )
               : [
                   ...p.images.filter(
-                    (i) =>
-                      !i.id.startsWith("sample-") && !i.id.startsWith("demo-"),
+                    (i) => !i.id.startsWith("sample-") && !i.id.startsWith("demo-"),
                   ),
                   ...result.images,
                 ];
@@ -81,11 +76,7 @@ export default function App() {
             `${result.images.length} screenshot${result.images.length === 1 ? "" : "s"} added.`,
           );
       } catch (error) {
-        notify(
-          error instanceof Error
-            ? error.message
-            : "Could not load the screenshots.",
-        );
+        notify(error instanceof Error ? error.message : "Could not load the screenshots.");
       } finally {
         setLoading(false);
       }
@@ -108,9 +99,7 @@ export default function App() {
       update((p) => (p.images.length ? p : { ...p, images }));
       notify("Demo loaded. Your first upload replaces these samples.");
     } catch (error) {
-      notify(
-        error instanceof Error ? error.message : "Could not load the demo.",
-      );
+      notify(error instanceof Error ? error.message : "Could not load the demo.");
     } finally {
       setLoading(false);
     }
@@ -126,26 +115,16 @@ export default function App() {
       composition: {
         ...p.composition,
         assetIds: {
-          primary:
-            p.composition.assetIds.primary === id
-              ? ""
-              : p.composition.assetIds.primary,
-          mobile:
-            p.composition.assetIds.mobile === id
-              ? ""
-              : p.composition.assetIds.mobile,
+          primary: p.composition.assetIds.primary === id ? "" : p.composition.assetIds.primary,
+          mobile: p.composition.assetIds.mobile === id ? "" : p.composition.assetIds.mobile,
         },
         background: {
           ...p.composition.background,
-          imageId:
-            p.composition.background.imageId === id
-              ? ""
-              : p.composition.background.imageId,
+          imageId: p.composition.background.imageId === id ? "" : p.composition.background.imageId,
         },
         brand: {
           ...p.composition.brand,
-          logoId:
-            p.composition.brand.logoId === id ? "" : p.composition.brand.logoId,
+          logoId: p.composition.brand.logoId === id ? "" : p.composition.brand.logoId,
         },
       },
     }));
@@ -201,12 +180,16 @@ export default function App() {
         return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        e.shiftKey ? editor.redo() : editor.undo();
+        if (e.shiftKey) {
+          editor.redo();
+        } else {
+          editor.undo();
+        }
       }
     };
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
-  }, [editor.undo, editor.redo]);
+  }, [editor]);
   const finishSavePreset = () => {
     if (!presetName.trim()) return;
     try {
@@ -331,18 +314,10 @@ export default function App() {
           aria-label="Presets and media"
         >
           <div className="library-tabs" role="tablist" aria-label="Library">
-            <button
-              role="tab"
-              aria-selected={tab === "presets"}
-              onClick={() => setTab("presets")}
-            >
+            <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>
               Presets
             </button>
-            <button
-              role="tab"
-              aria-selected={tab === "media"}
-              onClick={() => setTab("media")}
-            >
+            <button role="tab" aria-selected={tab === "media"} onClick={() => setTab("media")}>
               Media
               {project.images.length > 0 && (
                 <span className="media-count">{project.images.length}</span>
@@ -389,16 +364,11 @@ export default function App() {
           <div className="workspace-toolbar">
             <div className="breadcrumb">
               <span>{selected.name}</span>
-              {project.customized && (
-                <span className="modified-dot" title="Customized" />
-              )}
+              {project.customized && <span className="modified-dot" title="Customized" />}
               <ChevronRight size={13} />
               <span>Preview</span>
             </div>
-            <button
-              className="toolbar-button start-over"
-              onClick={() => setStartOver(true)}
-            >
+            <button className="toolbar-button start-over" onClick={() => setStartOver(true)}>
               <RotateCcw size={13} />
               Start over
             </button>
@@ -417,27 +387,17 @@ export default function App() {
           />
           <MediaStrip {...mediaProps} />
           <div className="mobile-tools">
-            <button
-              onClick={() =>
-                setMobilePanel(mobilePanel === "library" ? null : "library")
-              }
-            >
+            <button onClick={() => setMobilePanel(mobilePanel === "library" ? null : "library")}>
               <PanelsTopLeft size={17} />
               Presets & media
             </button>
-            <button
-              onClick={() =>
-                setMobilePanel(mobilePanel === "settings" ? null : "settings")
-              }
-            >
+            <button onClick={() => setMobilePanel(mobilePanel === "settings" ? null : "settings")}>
               <SlidersHorizontal size={17} />
               Settings
             </button>
           </div>
         </section>
-        <div
-          className={`inspector-wrapper ${mobilePanel === "settings" ? "mobile-open" : ""}`}
-        >
+        <div className={`inspector-wrapper ${mobilePanel === "settings" ? "mobile-open" : ""}`}>
           <button
             className="mobile-close close-settings icon-button"
             aria-label="Close settings"
@@ -451,9 +411,7 @@ export default function App() {
             onImageCrop={(id, value) =>
               update((p) => ({
                 ...p,
-                images: p.images.map((i) =>
-                  i.id === id ? { ...i, crop: value } : i,
-                ),
+                images: p.images.map((i) => (i.id === id ? { ...i, crop: value } : i)),
               }))
             }
             begin={editor.begin}
@@ -491,10 +449,7 @@ export default function App() {
       {message && (
         <div className="toast" role="status">
           <span>{message}</span>
-          <button
-            aria-label="Dismiss notification"
-            onClick={() => setMessage("")}
-          >
+          <button aria-label="Dismiss notification" onClick={() => setMessage("")}>
             <X size={14} />
           </button>
         </div>
@@ -502,10 +457,9 @@ export default function App() {
       {exportOpen && (
         <ExportDialog
           project={project}
+          // eslint-disable-next-line react-hooks/refs -- legacy: preview ref accessed to read current playback time on dialog open
           time={preview.current?.time() ?? 0}
-          onSettings={(settings) =>
-            update((p) => ({ ...p, exportSettings: settings }))
-          }
+          onSettings={(settings) => update((p) => ({ ...p, exportSettings: settings }))}
           onClose={() => setExportOpen(false)}
           onBusy={setBusy}
         />
@@ -538,13 +492,9 @@ export default function App() {
         </Modal>
       )}
       {startOver && (
-        <Modal
-          title="Start a fresh presentation?"
-          onClose={() => setStartOver(false)}
-        >
+        <Modal title="Start a fresh presentation?" onClose={() => setStartOver(false)}>
           <p className="modal-description">
-            Clear the screenshots and reset this composition. You can undo this
-            change.
+            Clear the screenshots and reset this composition. You can undo this change.
           </p>
           <button
             className="primary-button export-start"
