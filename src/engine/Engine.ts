@@ -326,7 +326,16 @@ export class Engine {
         managed = this.textureManager.getLoadedTexture(node.assetId);
       }
 
-      dev.compositor.compose(this.renderer, managed, node.scroll);
+      let cursorData = undefined;
+      if (frame.cursor && (frame.cursor.nodeId === node.id || frame.nodes.length === 1)) {
+        cursorData = frame.cursor;
+      }
+
+      const asset = node.assetId ? this.currentDoc?.assets.find((a) => a.id === node.assetId) : null;
+      const hasStatusBar = Boolean(asset?.meta?.hasStatusBar);
+      const isPhone = node.device === "phone";
+
+      dev.compositor.compose(this.renderer, managed, node.scroll, cursorData, { hasStatusBar, isPhone });
       dev.update(node, frame.style, frame.localT);
     }
 
@@ -499,8 +508,8 @@ export class Engine {
       let curr: THREE.Object3D | null = hit.object;
       while (curr) {
         if (curr.userData?.nodeId) {
-          const u = hit.uv ? hit.uv.x : 0.5;
-          const v = hit.uv ? hit.uv.y : 0.5;
+          const u = hit.uv ? Math.max(0, Math.min(1, hit.uv.x)) : 0.5;
+          const v = hit.uv ? Math.max(0, Math.min(1, 1.0 - hit.uv.y)) : 0.5;
           return { nodeId: curr.userData.nodeId, u, v };
         }
         curr = curr.parent;
@@ -523,6 +532,26 @@ export class Engine {
 
   getCurrentAssets(): AssetProvider | null {
     return this.currentAssets;
+  }
+
+  /**
+   * Reads RGBA pixels from the current render output buffer into a top-to-bottom buffer.
+   */
+  readPixels(target?: Uint8ClampedArray | Uint8Array): Uint8ClampedArray {
+    const w = this.opts.width;
+    const h = this.opts.height;
+    const gl = this.renderer.getContext();
+    const raw = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, raw);
+
+    const out = target ? (target as Uint8ClampedArray) : new Uint8ClampedArray(w * h * 4);
+    const rowBytes = w * 4;
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * rowBytes;
+      const dstRow = y * rowBytes;
+      out.set(raw.subarray(srcRow, srcRow + rowBytes), dstRow);
+    }
+    return out;
   }
 
   dispose(): void {

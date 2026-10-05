@@ -8,12 +8,12 @@ import type {
   Transition,
 } from "../doc/types";
 import { cameraPose } from "./camera";
-import { ease } from "./easing";
 import { frameDistance } from "./framing";
 import { type LayoutNode, resolveLayout } from "./layouts";
 import { scrollPosition } from "./scroll";
 import { textFrame, type TextFrame } from "./text-anim";
 import { activeLayers, schedule } from "./timeline";
+import { evaluateCursorMotion } from "./cursor";
 
 export interface ShotFrame {
   shotId: string;
@@ -21,7 +21,16 @@ export interface ShotFrame {
   camera: CameraPose;
   nodes: LayoutNode[];
   texts: TextFrame[];
-  cursor?: { x: number; y: number; pressed: number; nodeId: string };
+  cursor?: {
+    x: number;
+    y: number;
+    pressed: number;
+    nodeId: string;
+    scale?: number;
+    rippleRadius?: number;
+    rippleOpacity?: number;
+    style?: "arrow" | "pointer" | "dot";
+  };
   style: Style;
 }
 
@@ -91,46 +100,19 @@ function evaluateCursor(
   localT: number,
   firstNodeId: string,
 ): ShotFrame["cursor"] | undefined {
-  if (!shot.cursor?.enabled || !shot.cursor.keys || shot.cursor.keys.length === 0) {
-    return undefined;
-  }
+  const result = evaluateCursorMotion(shot.cursor, localT);
+  if (!result) return undefined;
 
-  const keys = shot.cursor.keys;
-  let x = keys[0].x;
-  let y = keys[0].y;
-  let pressed = 0;
-
-  if (localT <= keys[0].t) {
-    x = keys[0].x;
-    y = keys[0].y;
-  } else if (localT >= keys[keys.length - 1].t) {
-    const last = keys[keys.length - 1];
-    x = last.x;
-    y = last.y;
-  } else {
-    for (let i = 1; i < keys.length; i++) {
-      if (localT <= keys[i].t) {
-        const prev = keys[i - 1];
-        const next = keys[i];
-        const dur = next.t - prev.t;
-        const p = dur > 0 ? (localT - prev.t) / dur : 1;
-        const e = ease("smooth", Math.max(0, Math.min(1, p)));
-        x = prev.x + (next.x - prev.x) * e;
-        y = prev.y + (next.y - prev.y) * e;
-        break;
-      }
-    }
-  }
-
-  // Check clicks for ripple
-  for (const k of keys) {
-    if (k.click && localT >= k.t && localT < k.t + 0.3) {
-      const clickP = (localT - k.t) / 0.3;
-      pressed = Math.max(pressed, ease("backOut", 1 - clickP));
-    }
-  }
-
-  return { x, y, pressed, nodeId: firstNodeId };
+  return {
+    x: result.x,
+    y: result.y,
+    pressed: result.pressed,
+    nodeId: firstNodeId,
+    scale: result.scale,
+    rippleRadius: result.ripple?.radius,
+    rippleOpacity: result.ripple?.opacity,
+    style: result.style,
+  };
 }
 
 /**

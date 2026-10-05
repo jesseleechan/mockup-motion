@@ -1,13 +1,18 @@
 import React, { useState } from "react";
-import { Tabs, TabsList, TabsContent, Icon, Tooltip } from "../../ui";
+import { Tabs, TabsList, TabsContent, Button, Icon, Tooltip } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import { BUILTIN_TEMPLATES, buildTemplate } from "../../templates";
+import {
+  BUILTIN_TEMPLATES,
+  buildTemplate,
+  validateTemplateRequirements,
+} from "../../templates";
 import { MediaTab } from "./MediaTab";
 import { BrandTab } from "./BrandTab";
 import { UserTemplatesSection } from "./UserTemplatesSection";
 import { CaptureHelpModal } from "../dialogs/CaptureHelpModal";
 import { SaveTemplateModal } from "../dialogs/SaveTemplateModal";
+import { TemplateGalleryModal } from "../dialogs/TemplateGalleryModal";
 import {
   BookmarkPlus,
   Camera,
@@ -15,6 +20,7 @@ import {
   FolderOpen,
   Palette,
   PanelLeftClose,
+  Sparkles,
 } from "lucide-react";
 
 export const LibraryPanel: React.FC = () => {
@@ -24,6 +30,7 @@ export const LibraryPanel: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>("templates");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
   const [saveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
 
@@ -47,6 +54,10 @@ export const LibraryPanel: React.FC = () => {
   return (
     <aside className="w-[280px] bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden">
       {/* Dialogs */}
+      <TemplateGalleryModal
+        open={galleryModalOpen}
+        onOpenChange={setGalleryModalOpen}
+      />
       <CaptureHelpModal open={captureModalOpen} onOpenChange={setCaptureModalOpen} />
       <SaveTemplateModal
         open={saveTemplateModalOpen}
@@ -112,7 +123,19 @@ export const LibraryPanel: React.FC = () => {
 
           {/* Templates Content */}
           <TabsContent value="templates" className="flex-1 flex flex-col min-h-0 px-3 pt-2">
-            {/* Category Chips */}
+            {/* Gallery Button & Category Chips */}
+            <div className="flex items-center gap-1.5 pb-2 shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full text-xs gap-1.5 justify-center py-1.5 mb-1"
+                onClick={() => setGalleryModalOpen(true)}
+              >
+                <Icon icon={Sparkles} size={13} className="text-[var(--color-accent)]" />
+                Browse All Templates
+              </Button>
+            </div>
+
             <div className="flex items-center gap-1 overflow-x-auto pb-2 shrink-0">
               {categories.map((cat) => (
                 <button
@@ -137,14 +160,22 @@ export const LibraryPanel: React.FC = () => {
               className="flex-1 overflow-y-auto space-y-2.5 pr-1 py-1 focus:outline-none"
             >
               {filteredTemplates.map((template) => {
+                const validation = validateTemplateRequirements(template, doc.assets);
                 const requiredSlots = template.slots.filter((s) => s.required);
-                const hasEnoughAssets = doc.assets.length >= requiredSlots.length;
 
                 return (
                   <div
                     key={template.id}
-                    onClick={() => handleApplyTemplate(template.id)}
-                    className="p-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] cursor-pointer transition-all group"
+                    onClick={() => {
+                      if (validation.valid) {
+                        handleApplyTemplate(template.id);
+                      }
+                    }}
+                    className={`p-3 rounded-lg border transition-all ${
+                      validation.valid
+                        ? "border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] cursor-pointer group"
+                        : "border-[var(--color-line)] bg-[var(--color-panel)] opacity-75 cursor-not-allowed"
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
@@ -166,9 +197,9 @@ export const LibraryPanel: React.FC = () => {
                           : `${requiredSlots.length} slot${requiredSlots.length > 1 ? "s" : ""}`}
                       </span>
 
-                      {!hasEnoughAssets && requiredSlots.length > 0 && (
+                      {!validation.valid && (
                         <span className="text-[9px] text-[var(--color-accent)] font-medium">
-                          Needs {requiredSlots.length}
+                          {validation.reason}
                         </span>
                       )}
                     </div>

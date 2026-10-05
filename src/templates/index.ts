@@ -1,2 +1,16 @@
 export * from "./types";
+export * from "./slots";
 export * from "./registry";
+export * from "./demo-preview";
+export { quietHeroTemplate } from "./quiet-hero";
+export { tiltedShowcaseTemplate } from "./tilted-showcase";
+export { responsivePairTemplate } from "./responsive-pair";
+export { responsiveTrioTemplate } from "./responsive-trio";
+export { phoneSpotlightTemplate } from "./phone-spotlight";
+export { phoneParadeTemplate } from "./phone-parade";
+export { portfolioRowsTemplate } from "./portfolio-rows";
+export { isometricWallTemplate } from "./isometric-wall";
+export { cascadeStackTemplate } from "./cascade-stack";
+export { scrollStoryTemplate } from "./scroll-story";
+export { launchReelTemplate } from "./launch-reel";
+export { caseStudyReelTemplate } from "./case-study-reel";

@@ -17,6 +17,8 @@ import devicesTabletFixture from "./fixtures/devices-tablet.json";
 import devicesLaptopFixture from "./fixtures/devices-laptop.json";
 import textTitleFixture from "./fixtures/text-title.json";
 
+import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../templates";
+
 declare global {
   interface Window {
     __labReady?: boolean;
@@ -37,6 +39,13 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "devices-laptop": devicesLaptopFixture as unknown as ProjectDoc,
   "text-title": textTitleFixture as unknown as ProjectDoc,
 };
+
+// Register all 12 built-in templates into fixtures
+for (const t of BUILTIN_TEMPLATES) {
+  const pDoc = buildTemplatePreviewDoc(t);
+  FIXTURES[`template-${t.id}`] = pDoc;
+  FIXTURES[t.id] = pDoc;
+}
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
 

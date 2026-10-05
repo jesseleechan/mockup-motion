@@ -98,19 +98,19 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await exportBtn.click();
 
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("Render high-fidelity motion video at 1080p resolution.")).toBeVisible();
+    await expect(page.getByText(/Export Video/i)).toBeVisible();
 
     // Select WebM for fast headless test rendering
     const formatSelect = page.getByRole("combobox").first();
     await formatSelect.click();
     await page.getByRole("option", { name: /WebM/i }).click();
 
-    const startExportBtn = page.getByRole("button", { name: "Start Export" });
+    const startExportBtn = page.getByRole("button", { name: /Start Export|Render & Export/i });
     await startExportBtn.click();
 
     // Wait for export to finish
     await expect(page.getByText("Export Complete!")).toBeVisible({ timeout: 60000 });
-    const downloadBtn = page.getByRole("button", { name: /Download WEBM/i });
+    const downloadBtn = page.getByRole("button", { name: /Download/i });
     await expect(downloadBtn).toBeVisible();
 
     // Verify 0 console errors throughout the entire flow

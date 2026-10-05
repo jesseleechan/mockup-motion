@@ -6,6 +6,7 @@ import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
 import { BUILTIN_TEMPLATES, buildTemplate } from "../../templates";
 import type { AssetRef } from "../../doc/types";
+import { schedule } from "../../motion";
 import { Button, Icon } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 
@@ -56,12 +57,14 @@ function aspectToRatio(aspect: string): number {
 
 export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }) => {
   const doc = useEditorStore((s) => s.doc);
+  const apply = useEditorStore((s) => s.apply);
   const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
   const addAssets = useEditorStore((s) => s.addAssets);
   const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
 
   const stageZoom = useUIStore((s) => s.stageZoom);
   const selection = useUIStore((s) => s.selection);
+  const playhead = useUIStore((s) => s.playhead);
   const selectedShotIndex = useMemo(() => {
     if (selection.kind === "shot") {
       const idx = doc.shots.findIndex((s) => s.id === selection.id);
@@ -179,6 +182,45 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
       style: doc.style,
     });
     applyTemplateResult(res, template.id);
+  };
+
+  const handleCanvasClick = (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    pick: { nodeId: string; u: number; v: number } | null,
+  ) => {
+    const activeShot = doc.shots[selectedShotIndex];
+    if (!pick || !activeShot || activeShot.layout.kind !== "single" || !activeShot.cursor?.enabled) {
+      return;
+    }
+
+    const isClick = e.altKey;
+    const { shots: schedShots } = schedule(doc);
+    const sched = schedShots[selectedShotIndex];
+    const localT = sched
+      ? Math.max(0, Math.min(activeShot.duration, playhead - sched.start))
+      : playhead;
+
+    apply(
+      (draft) => {
+        const target = draft.shots.find((s) => s.id === activeShot.id);
+        if (!target) return;
+        if (!target.cursor) {
+          target.cursor = { enabled: true, style: "arrow", keys: [] };
+        }
+        const newKey = {
+          t: Number(localT.toFixed(2)),
+          x: Number(pick.u.toFixed(3)),
+          y: Number(pick.v.toFixed(3)),
+          click: isClick,
+        };
+        target.cursor.keys = (target.cursor.keys || []).filter(
+          (k) => Math.abs(k.t - newKey.t) > 0.05,
+        );
+        target.cursor.keys.push(newKey);
+        target.cursor.keys.sort((a, b) => a.t - b.t);
+      },
+      { label: isClick ? "Add cursor click" : "Add cursor key" },
+    );
   };
 
   const ratio = aspectToRatio(doc.aspect);
@@ -310,6 +352,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
               onEngineReady={(engine) => {
                 engineRef.current = engine;
               }}
+              onCanvasClick={handleCanvasClick}
             />
 
             {/* Hovered Device Drop Indicator */}

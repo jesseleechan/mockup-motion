@@ -34,14 +34,22 @@ export type FromWorker =
   | { type: "done"; blob: Blob; mime: string }
   | { type: "error"; message: string };
 
-function calculateBitrate(settings: ExportSettings, width: number, height: number): number {
+function calculateBitrate(settings: ExportSettings, codec: "avc" | "vp9" | "av1", width: number, height: number): number {
   let baseBps = 16_000_000; // high
   if (settings.quality === "web") baseBps = 6_000_000;
-  if (settings.quality === "master") baseBps = 40_000_000;
+  if (settings.quality === "master") baseBps = 28_000_000;
+
+  if (codec === "av1" || codec === "vp9") {
+    baseBps *= 0.55;
+  }
 
   const pixelScale = (width * height) / (1920 * 1080);
-  const fpsScale = settings.fps / 30;
+  const fpsScale = Math.pow(Math.max(1, settings.fps) / 30, 0.75);
   return Math.round(baseBps * pixelScale * fpsScale);
+}
+
+function keyframeIntervalFor(settings: ExportSettings): number {
+  return settings.quality === "web" ? 4 : 2;
 }
 
 let isCancelled = false;
@@ -66,11 +74,14 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
 
         post({ type: "progress", stage: "preparing", frame: 0, total: totalFrames });
 
+        const ss = settings.supersample;
+        const supersampleVal: 1 | 1.5 | 2 = ss === 2 ? 2 : ss === 1.5 ? 1.5 : 1;
+
         const canvas = new OffscreenCanvas(width, height);
         const engine = await Engine.create(canvas, {
           width,
           height,
-          supersample: settings.supersample ?? 1,
+          supersample: supersampleVal,
           preserveDrawingBuffer: true,
         });
 
@@ -98,8 +109,8 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         const output = new Output({ format, target });
         const source = new CanvasSource(canvas, {
           codec,
-          quality: new Quality({ bitrate: calculateBitrate(settings, width, height) }),
-          keyFrameInterval: 2,
+          quality: new Quality({ bitrate: calculateBitrate(settings, codec, width, height) }),
+          keyFrameInterval: keyframeIntervalFor(settings),
         });
 
         output.addVideoTrack(source, { frameRate: fps });

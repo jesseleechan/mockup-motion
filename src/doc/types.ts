@@ -138,13 +138,16 @@ export interface AudioTrack { assetId: string; volume: number; fadeIn: number; f
 export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
   | "linkedin" | "x" | "presentation-4k";
 
+export type ExportQuality = "web" | "high" | "master";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+
 export interface ExportSettings {
   destination: DestinationId;
-  resolution: 720 | 1080 | 1200 | 1440 | 2160; // short side in px (16:9 1080 → 1920×1080, 4:3 1200 → 1600×1200, 4:5 1080 → 1080×1350)
-  fps: 24 | 30 | 60;
-  quality: "web" | "high" | "master";
-  format: "mp4" | "webm";
-  supersample: 1 | 1.5 | 2;
+  resolution: number; // short side in px (16:9 1080 → 1920×1080, 4:3 1200 → 1600×1200, 4:5 1080 → 1080×1350)
+  fps: number;
+  quality: ExportQuality;
+  format: ExportFormat;
+  supersample: number;
   motionBlur: boolean;
 }
 

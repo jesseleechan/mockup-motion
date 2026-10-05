@@ -9,6 +9,10 @@ export interface EngineCanvasProps {
   assets: AssetProvider;
   time?: number;
   onEngineReady?: (engine: Engine) => void;
+  onCanvasClick?: (
+    e: React.MouseEvent<HTMLCanvasElement>,
+    pickResult: { nodeId: string; u: number; v: number } | null,
+  ) => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -18,6 +22,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   assets,
   time,
   onEngineReady,
+  onCanvasClick,
   className,
   style,
 }) => {
@@ -154,13 +159,27 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
     return () => cancelAnimationFrame(rafId);
   }, [playing, doc, playhead, time, setPlayhead]);
 
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onCanvasClick || !canvasRef.current || !engineRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const x = (e.clientX - rect.left) * dpr;
+    const y = (e.clientY - rect.top) * dpr;
+    const pickResult = engineRef.current.pick(x, y);
+    onCanvasClick(e, pickResult);
+  };
+
   return (
     <div
       ref={containerRef}
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={style}
     >
-      <canvas ref={canvasRef} className="w-full h-full block" />
+      <canvas
+        ref={canvasRef}
+        onClick={handleClick}
+        className="w-full h-full block cursor-crosshair"
+      />
     </div>
   );
 };

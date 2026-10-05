@@ -57,7 +57,7 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     await transitionChips.first().click();
 
     // Popover should be open
-    await expect(page.getByText("Transition", { exact: false })).toBeVisible();
+    await expect(page.getByText("Transition", { exact: true })).toBeVisible();
     // Select "Fade"
     const fadeBtn = page.getByRole("button", { name: /Fade/i });
     if (await fadeBtn.isVisible()) {
@@ -74,7 +74,7 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     // Verify export dialog is visible
     const exportDialog = page.getByRole("dialog");
     await expect(exportDialog).toBeVisible();
-    await expect(exportDialog.getByText("Export Video")).toBeVisible();
+    await expect(exportDialog.getByText(/Export Video/i)).toBeVisible();
   });
 
   test("keyboard navigation & accessibility: Tab, Arrow keys, Enter on transition, Axe clean", async ({

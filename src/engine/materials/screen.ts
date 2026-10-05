@@ -1,5 +1,16 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
+import { getCursorTexture, getRippleTexture, type CursorStyle } from "../cursor/CursorSprites";
+
+export interface ScreenCursorData {
+  x: number;
+  y: number;
+  scale?: number;
+  pressed?: number;
+  rippleRadius?: number;
+  rippleOpacity?: number;
+  style?: "arrow" | "pointer" | "dot";
+}
 
 export interface ScreenCompositorOptions {
   viewportWidthPx: number;
@@ -67,8 +78,13 @@ export class ScreenCompositor {
   private stripMeshes: THREE.Mesh[] = [];
   private fillMesh: THREE.Mesh;
 
+  private cursorMesh: THREE.Mesh | null = null;
+  private rippleMesh: THREE.Mesh | null = null;
+  private statusBarMesh: THREE.Mesh | null = null;
+
   private lastScroll = -1;
   private lastAssetId = "";
+  private lastCursorKey = "";
   private widthPx: number;
   private heightPx: number;
 
@@ -95,6 +111,35 @@ export class ScreenCompositor {
     this.fillMesh = new THREE.Mesh(fillGeo, fillMat);
     this.fillMesh.visible = false;
     this.orthoScene.add(this.fillMesh);
+
+    // Status bar overlay mesh
+    const sbGeo = new THREE.PlaneGeometry(1, 1);
+    sbGeo.translate(0.5, 0.5, 0);
+    const sbMat = new THREE.MeshBasicMaterial({ transparent: true });
+    this.statusBarMesh = new THREE.Mesh(sbGeo, sbMat);
+    this.statusBarMesh.visible = false;
+    this.orthoScene.add(this.statusBarMesh);
+
+    // Cursor mesh
+    const curGeo = new THREE.PlaneGeometry(1, 1);
+    const curMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      depthTest: false,
+    });
+    this.cursorMesh = new THREE.Mesh(curGeo, curMat);
+    this.cursorMesh.visible = false;
+    this.orthoScene.add(this.cursorMesh);
+
+    // Ripple mesh
+    const ripGeo = new THREE.PlaneGeometry(1, 1);
+    const ripMat = new THREE.MeshBasicMaterial({
+      map: getRippleTexture(),
+      transparent: true,
+      depthTest: false,
+    });
+    this.rippleMesh = new THREE.Mesh(ripGeo, ripMat);
+    this.rippleMesh.visible = false;
+    this.orthoScene.add(this.rippleMesh);
 
     this.material = new THREE.ShaderMaterial({
       vertexShader,
@@ -130,14 +175,30 @@ export class ScreenCompositor {
     this.material.uniforms.uRadius.value = radius;
   }
 
-  compose(renderer: THREE.WebGLRenderer, managed: ManagedTexture | null, scroll: number): void {
-    // Only re-render when scroll or texture changes
+  compose(
+    renderer: THREE.WebGLRenderer,
+    managed: ManagedTexture | null,
+    scroll: number,
+    cursor?: ScreenCursorData,
+    options?: { hasStatusBar?: boolean; isPhone?: boolean },
+  ): void {
     const assetId = managed?.assetId ?? "";
-    if (this.lastScroll === scroll && this.lastAssetId === assetId) {
+    const cursorKey = cursor
+      ? `${cursor.x.toFixed(3)},${cursor.y.toFixed(3)},${(cursor.scale ?? 1).toFixed(2)},${(cursor.rippleOpacity ?? 0).toFixed(2)},${cursor.style}`
+      : "none";
+
+    // Only skip render if scroll, texture, and cursor have not changed
+    if (
+      this.lastScroll === scroll &&
+      this.lastAssetId === assetId &&
+      this.lastCursorKey === cursorKey
+    ) {
       return;
     }
+
     this.lastScroll = scroll;
     this.lastAssetId = assetId;
+    this.lastCursorKey = cursorKey;
 
     // Clean up old strip meshes
     for (const mesh of this.stripMeshes) {
@@ -153,6 +214,9 @@ export class ScreenCompositor {
       this.fillMesh.scale.set(this.widthPx, this.heightPx, 1);
       this.fillMesh.position.set(0, 0, 0);
       (this.fillMesh.material as THREE.MeshBasicMaterial).color.set(0x18181b);
+      if (this.statusBarMesh) this.statusBarMesh.visible = false;
+      if (this.cursorMesh) this.cursorMesh.visible = false;
+      if (this.rippleMesh) this.rippleMesh.visible = false;
 
       const prevTarget = renderer.getRenderTarget();
       renderer.setRenderTarget(this.renderTarget);
@@ -213,6 +277,66 @@ export class ScreenCompositor {
       this.fillMesh.visible = false;
     }
 
+    // Phone status bar safe zone pinning while scrolling
+    if (
+      options?.isPhone &&
+      options?.hasStatusBar &&
+      scrollY > 0 &&
+      managed.strips.length > 0 &&
+      this.statusBarMesh
+    ) {
+      const sbHeight = Math.round(this.heightPx * 0.055);
+      const firstStrip = managed.strips[0];
+      const mat = this.statusBarMesh.material as THREE.MeshBasicMaterial;
+      mat.map = firstStrip.texture;
+      mat.transparent = true;
+      this.statusBarMesh.visible = true;
+      this.statusBarMesh.scale.set(this.widthPx, sbHeight, 1);
+      this.statusBarMesh.position.set(0, this.heightPx - sbHeight, 0.2);
+    } else if (this.statusBarMesh) {
+      this.statusBarMesh.visible = false;
+    }
+
+    // Cursor rendering (in viewport coordinates, unaffected by scroll)
+    if (cursor && this.cursorMesh) {
+      const cursorSize = Math.max(24, Math.round(this.widthPx * 0.038)) * (cursor.scale ?? 1.0);
+      const style: CursorStyle = cursor.style ?? "arrow";
+      const curMat = this.cursorMesh.material as THREE.MeshBasicMaterial;
+      curMat.map = getCursorTexture(style);
+      curMat.transparent = true;
+      this.cursorMesh.visible = true;
+      this.cursorMesh.scale.set(cursorSize, cursorSize, 1);
+
+      // Hotspot offset: arrow/pointer at top-left, dot at center
+      let cx = cursor.x * this.widthPx;
+      let cy = this.heightPx - cursor.y * this.heightPx;
+      if (style === "arrow" || style === "pointer") {
+        cx += cursorSize * 0.35;
+        cy -= cursorSize * 0.35;
+      }
+      this.cursorMesh.position.set(cx, cy, 0.6);
+
+      // Ripple rendering
+      if (cursor.rippleOpacity && cursor.rippleOpacity > 0.01 && this.rippleMesh) {
+        const rSize = (cursor.rippleRadius ?? 0.02) * this.widthPx * 2;
+        const ripMat = this.rippleMesh.material as THREE.MeshBasicMaterial;
+        ripMat.opacity = cursor.rippleOpacity;
+        ripMat.transparent = true;
+        this.rippleMesh.visible = true;
+        this.rippleMesh.scale.set(rSize, rSize, 1);
+        this.rippleMesh.position.set(
+          cursor.x * this.widthPx,
+          this.heightPx - cursor.y * this.heightPx,
+          0.5,
+        );
+      } else if (this.rippleMesh) {
+        this.rippleMesh.visible = false;
+      }
+    } else {
+      if (this.cursorMesh) this.cursorMesh.visible = false;
+      if (this.rippleMesh) this.rippleMesh.visible = false;
+    }
+
     // Render into target
     const prevTarget = renderer.getRenderTarget();
     renderer.setRenderTarget(this.renderTarget);
@@ -228,6 +352,18 @@ export class ScreenCompositor {
     this.stripMeshes = [];
     this.fillMesh.geometry.dispose();
     (this.fillMesh.material as THREE.Material).dispose();
+    if (this.statusBarMesh) {
+      this.statusBarMesh.geometry.dispose();
+      (this.statusBarMesh.material as THREE.Material).dispose();
+    }
+    if (this.cursorMesh) {
+      this.cursorMesh.geometry.dispose();
+      (this.cursorMesh.material as THREE.Material).dispose();
+    }
+    if (this.rippleMesh) {
+      this.rippleMesh.geometry.dispose();
+      (this.rippleMesh.material as THREE.Material).dispose();
+    }
     this.renderTarget.dispose();
     this.material.dispose();
   }

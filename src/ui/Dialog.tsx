@@ -7,6 +7,8 @@ import { Icon } from "./Icon";
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
+export const DialogTitle = DialogPrimitive.Title;
+export const DialogDescription = DialogPrimitive.Description;
 
 export interface DialogContentProps extends Omit<DialogPrimitive.DialogContentProps, "title"> {
   title?: React.ReactNode;
