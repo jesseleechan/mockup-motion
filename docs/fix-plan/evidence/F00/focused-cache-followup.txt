@@ -1,0 +1,6 @@
+F00 isolated-cache URL follow-up (native Chromium, 2026-10-05)
+Command: npx playwright test --config=playwright.f00.config.ts --project=chromium tests/e2e/assets.spec.ts --grep "responsive-pair WebM export" --reporter=json
+Vite cache: .execution/vite-cache-f00; test server: port 3100.
+Playwright JSON stats: 1 expected, 0 unexpected, 0 skipped.
+Mediabunny lookup/import and WebM export completed. The test reached the intended F03 desktop pixel assertion: red count 2; expected >100 (assets.spec.ts:351).
+Raw structured report: focused-cache-followup.json.

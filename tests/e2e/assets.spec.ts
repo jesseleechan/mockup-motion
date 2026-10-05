@@ -249,7 +249,7 @@ test("F03 known bug: responsive-pair WebM export contains both screen assets", a
     performance
       .getEntriesByType("resource")
       .map((entry) => entry.name)
-      .find((name) => name.includes("/node_modules/.vite/deps/mediabunny.js")),
+      .find((name) => new URL(name).pathname.endsWith("/deps/mediabunny.js")),
   );
   if (!mediabunnyUrl)
     throw new Error("Mediabunny's already-loaded browser module URL was not found");
