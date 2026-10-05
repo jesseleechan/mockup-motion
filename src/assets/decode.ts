@@ -1,4 +1,5 @@
 import type { AssetRef } from "../doc/types";
+import { dominantColors } from "./palette";
 
 const ALLOWED_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/avif"]);
 
@@ -58,6 +59,36 @@ export async function validateAndDecodeAsset(
     role,
     meta: { tall },
   };
+
+  try {
+    let canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
+    if (typeof OffscreenCanvas !== "undefined") {
+      canvas = new OffscreenCanvas(64, 64);
+    } else if (typeof document !== "undefined") {
+      canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 64;
+    }
+    if (canvas) {
+      const ctx = canvas.getContext("2d") as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D
+        | null;
+      if (ctx && typeof createImageBitmap !== "undefined") {
+        const thumbBmp = await createImageBitmap(blob, {
+          resizeWidth: 64,
+          resizeHeight: 64,
+          resizeQuality: "low",
+        });
+        ctx.drawImage(thumbBmp, 0, 0);
+        thumbBmp.close();
+        const imgData = ctx.getImageData(0, 0, 64, 64);
+        ref.palette = dominantColors(imgData.data, 64, 64);
+      }
+    }
+  } catch {
+    // Ignore palette extraction fallback in test or headless environments
+  }
 
   return { ref, blob };
 }

@@ -272,16 +272,31 @@ export class Engine {
     target: THREE.WebGLRenderTarget,
     frame: ShotFrame,
     stageAspect: number,
+    backgroundPhase = 0,
   ): void {
     // 1. Clear background
-    this.backgroundRenderer.render(this.renderer, target, frame);
+    this.backgroundRenderer.render(
+      this.renderer,
+      target,
+      frame,
+      backgroundPhase,
+      this.textureManager,
+    );
 
     // 2. Position camera
     applyCameraPose(this.camera, frame.camera, stageAspect);
 
     // 3. Update / compose devices
+    const activeNodeIds = new Set(frame.nodes.map((n) => n.id));
+    for (const [id, dev] of this.deviceInstances.entries()) {
+      if (!activeNodeIds.has(id)) {
+        dev.object3d.visible = false;
+      }
+    }
+
     for (const node of frame.nodes) {
       const dev = this.getOrCreateDevice(node, frame.style);
+      dev.object3d.visible = true;
 
       let managed = null;
       if (node.assetId) {
@@ -314,11 +329,21 @@ export class Engine {
     this.renderer.info.reset();
 
     // Render primary layer into targetA
-    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect);
+    this.renderShotToTarget(
+      this.targetA,
+      layers[0].frame,
+      stageAspect,
+      frameState.backgroundPhase,
+    );
 
     if (layers.length > 1 && layers[1].weight > 0) {
       // Transition active: render secondary layer into targetB
-      this.renderShotToTarget(this.targetB, layers[1].frame, stageAspect);
+      this.renderShotToTarget(
+        this.targetB,
+        layers[1].frame,
+        stageAspect,
+        frameState.backgroundPhase,
+      );
 
       this.blitMaterial.uniforms.mapA.value = this.targetA.texture;
       this.blitMaterial.uniforms.mapB.value = this.targetB.texture;
