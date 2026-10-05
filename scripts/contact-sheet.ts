@@ -93,11 +93,11 @@ export async function generateContactSheet() {
               { waitUntil: "domcontentloaded" },
             );
 
-            await page.waitForFunction(() => window.__labReady === true, { timeout: 8000 }).catch(() => {});
+            await page.waitForFunction(() => window.__labReady === true, { timeout: 8000 });
             await page.waitForTimeout(400);
 
             const canvas = page.locator("canvas").first();
-            if (await canvas.count() > 0) {
+            if ((await canvas.count()) > 0) {
               const buffer = await canvas.screenshot();
               await sharp(buffer).png().toFile(filePath);
             } else {
@@ -113,7 +113,8 @@ export async function generateContactSheet() {
               filePath: fileName,
             });
           } catch (err) {
-            console.warn(`Failed snapshot for ${template.id} ${aspect} t=${t}:`, err);
+            console.error(`Failed snapshot for ${template.id} ${aspect} t=${t}:`, err);
+            throw err;
           }
         }
       }
@@ -168,7 +169,9 @@ export async function generateContactSheet() {
 </html>`;
 
     fs.writeFileSync(path.join(outDir, "index.html"), html, "utf-8");
-    console.log(`\n[Contact Sheet] Complete! Written to ${outDir}/index.html (${manifest.length} frames)`);
+    console.log(
+      `\n[Contact Sheet] Complete! Written to ${outDir}/index.html (${manifest.length} frames)`,
+    );
   } finally {
     await browser.close();
     server.close();

@@ -63,9 +63,20 @@ export async function verifyExportBlob(
     const height = videoTrack.displayHeight ?? videoTrack.codedHeight;
     const trackCodec = videoTrack.codec;
 
-    let duration = await input.computeDuration().catch(() => null);
+    let duration: number | null;
+    try {
+      duration = await input.computeDuration();
+    } catch (error) {
+      console.warn("Container duration probe failed; trying metadata:", error);
+      duration = null;
+    }
     if (duration === null) {
-      duration = await input.getDurationFromMetadata().catch(() => null);
+      try {
+        duration = await input.getDurationFromMetadata();
+      } catch (error) {
+        warnings.push(`Could not read export duration metadata: ${String(error)}`);
+        duration = null;
+      }
     }
     const actualDuration = duration ?? 0;
 
@@ -94,7 +105,13 @@ export async function verifyExportBlob(
     // 3. Verify the audio track (WP-17): present with length `total` ±1 audio frame, or absent
     const audioTrack = await input.getPrimaryAudioTrack();
     if (audioTrack) {
-      const audioDuration = await audioTrack.computeDuration().catch(() => 0);
+      let audioDuration: number;
+      try {
+        audioDuration = await audioTrack.computeDuration();
+      } catch (error) {
+        warnings.push(`Could not read exported audio duration: ${String(error)}`);
+        audioDuration = 0;
+      }
       actual.audioDuration = audioDuration;
       actual.audioCodec = audioTrack.codec ?? undefined;
       if (expected.audio === false) {

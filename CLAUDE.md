@@ -4,7 +4,7 @@ MockupMotion is a local-first studio that turns website screenshots into short, 
 
 **Current phase: fixing the rebuild.** The October 2026 audit found that the rebuild on `main` renders upside down, has wrong colours, black screens and fake tests. The active plan is **`docs/fix-plan/README.md`**. If you were given a fix task (`Fxx`), read that file in full, especially section 3, "Rules for the executor", and then your task in `docs/fix-plan/tasks/`.
 
-The original rebuild plan is still the reference for *what* to build. If you were given a work package (WP), read these first, in this order:
+The original rebuild plan is still the reference for _what_ to build. If you were given a work package (WP), read these first, in this order:
 
 1. `docs/plan/README.md`: architecture, milestones, and how WPs fit together
 2. `docs/plan/contracts.md`: shared types and module APIs (the source of truth)
@@ -27,8 +27,9 @@ npm run contact-sheet # renders every template at 4 times x all aspects into ./c
 ```
 
 Playwright browsers:
+
 - **Locally:** run `npx playwright install chromium` once.
-- **Cloud sessions:** Chromium is preinstalled under `/opt/pw-browsers`, but its build can be older than the one `@playwright/test` expects. If the launch fails with "Executable doesn't exist", point Playwright at the installed browser: `PW_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`. F00 adds support for this variable in `playwright.config.ts`.
+- **Cloud sessions:** Chromium may be preinstalled under `/opt/pw-browsers` with a build older than the one `@playwright/test` expects. When versions differ, set `PW_CHROMIUM_EXECUTABLE` to the installed binary: `PW_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e`.
 
 Playwright's Chromium cannot encode H.264, so MP4 exports fall back to WebM there. MP4-only assertions must check the encoder at runtime and skip with that reason; no other skips are allowed.
 

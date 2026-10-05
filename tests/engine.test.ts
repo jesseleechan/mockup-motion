@@ -56,6 +56,18 @@ describe("Stage & Camera (src/engine/stage.ts)", () => {
   });
 });
 
+describe("F01 known texture orientation bug", () => {
+  it.fails("TextureManager textures use the top-left image convention", () => {
+    const manager = new TextureManager();
+    const createTexture = Reflect.get(manager, "createTexture") as (
+      source: ImageBitmap,
+    ) => THREE.Texture;
+    const texture = createTexture({} as ImageBitmap);
+    expect(texture.flipY).toBe(false);
+    texture.dispose();
+  });
+});
+
 describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
   it("caches textures and splits tall images into vertical strips", async () => {
     const tm = new TextureManager(2048, 4);

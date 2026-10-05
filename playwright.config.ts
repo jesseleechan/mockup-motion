@@ -8,6 +8,13 @@ if (fs.existsSync("/opt/pw-browsers")) {
 const chrome =
   process.platform === "win32" &&
   fs.existsSync("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
+const executablePath = process.env.PW_CHROMIUM_EXECUTABLE;
+const swiftShaderArgs = [
+  "--use-gl=angle",
+  "--use-angle=swiftshader",
+  "--enable-unsafe-swiftshader",
+  "--ignore-gpu-blocklist",
+];
 
 export default defineConfig({
   timeout: 45000,
@@ -31,6 +38,10 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         channel: chrome ? "chrome" : undefined,
+        launchOptions: {
+          ...(executablePath ? { executablePath } : {}),
+          args: swiftShaderArgs,
+        },
       },
     },
     {
@@ -40,7 +51,8 @@ export default defineConfig({
         viewport: { width: 900, height: 900 },
         deviceScaleFactor: 1,
         launchOptions: {
-          args: ["--use-gl=angle", "--use-angle=swiftshader"],
+          ...(executablePath ? { executablePath } : {}),
+          args: swiftShaderArgs,
         },
       },
     },
@@ -50,6 +62,10 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         channel: chrome ? "chrome" : undefined,
+        launchOptions: {
+          ...(executablePath ? { executablePath } : {}),
+          args: swiftShaderArgs,
+        },
       },
     },
   ],

@@ -78,48 +78,35 @@ export async function generateTemplatePreviews() {
         });
 
         // Wait for __labReady
-        await page.waitForFunction(() => window.__labReady === true, { timeout: 10000 }).catch(() => {});
+        await page.waitForFunction(() => window.__labReady === true, { timeout: 10000 });
         await page.waitForTimeout(600);
 
         // Take snapshot of canvas for poster
         const canvas = page.locator("canvas").first();
-        if (await canvas.count() > 0) {
+        if ((await canvas.count()) > 0) {
           const pngBuffer = await canvas.screenshot();
           await sharp(pngBuffer).webp({ quality: 85 }).toFile(posterPath);
           console.log(`  -> Saved poster: ${template.id}.webp`);
         } else {
-          // Fallback screenshot
-          const pngBuffer = await page.screenshot();
-          await sharp(pngBuffer).resize(640, 360).webp({ quality: 85 }).toFile(posterPath);
-          console.log(`  -> Saved fallback poster: ${template.id}.webp`);
+          throw new Error(`Canvas missing while generating ${template.id} poster`);
         }
 
-        // Create poster placeholder for webm if webm encoder is headless
         if (!fs.existsSync(videoPath)) {
-          // We can copy webp or create dummy webm placeholder
-          fs.writeFileSync(videoPath, Buffer.from(""));
+          console.info(
+            `No video preview produced for ${template.id}; poster generation succeeded.`,
+          );
         }
       } catch (err) {
-        console.warn(`Warning generating preview for ${template.id}:`, err);
-        // Create fallback poster
-        if (!fs.existsSync(posterPath)) {
-          await sharp({
-            create: {
-              width: 640,
-              height: 360,
-              channels: 4,
-              background: { r: 24, g: 25, b: 28, alpha: 1 },
-            },
-          })
-            .webp()
-            .toFile(posterPath);
-        }
+        console.error(`Failed to generate preview for ${template.id}:`, err);
+        throw err;
       } finally {
         await ctx.close();
       }
     }
 
-    console.log(`\n[Template Previews] All 12 template previews generated successfully in ${outDir}!`);
+    console.log(
+      `\n[Template Previews] All 12 template previews generated successfully in ${outDir}!`,
+    );
   } finally {
     await browser.close();
     server.close();

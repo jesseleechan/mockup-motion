@@ -1,0 +1,3 @@
+
+> mockup-motion@0.1.0 typecheck
+> tsc --noEmit
