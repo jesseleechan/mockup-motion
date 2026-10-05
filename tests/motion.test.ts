@@ -504,8 +504,9 @@ describe("Layouts (src/motion/layouts.ts)", () => {
     expect(phoneNodes[0].screenAspect).toBeCloseTo(0.4615);
   });
 
-  it('throws NotImplemented("WP-09") for unsupported layout kinds', () => {
-    expect(() => resolveLayout({ kind: "title" } as never, "16:9", [], 0, 5)).toThrowError(
+  it('supports layout.kind === "title" and throws NotImplemented("WP-09") for other kinds', () => {
+    expect(resolveLayout({ kind: "title" }, "16:9", [], 0, 5)).toEqual([]);
+    expect(() => resolveLayout({ kind: "pair" } as never, "16:9", [], 0, 5)).toThrowError(
       'NotImplemented("WP-09")',
     );
   });

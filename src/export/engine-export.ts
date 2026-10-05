@@ -84,6 +84,21 @@ export async function exportWithEngine(
     images[id] = await provider.getImage(id, width * (settings.supersample ?? 1));
   }
 
+  // Pre-rasterize all text layers at export resolution
+  const ss = settings.supersample ?? 1;
+  const texts: Record<string, import("../engine/Engine").TextRaster> = {};
+  for (const shot of doc.shots) {
+    if (shot.texts && shot.texts.length > 0) {
+      const shotStyle = shot.styleOverrides
+        ? { ...doc.style, ...shot.styleOverrides }
+        : doc.style;
+      const frameHeightPx = Math.round(height * ss);
+      for (const layer of shot.texts) {
+        texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
+      }
+    }
+  }
+
   // Try Web Worker if Worker and OffscreenCanvas are supported
   if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
     return new Promise<{ blob: Blob; mime: string }>((resolve, reject) => {
@@ -142,7 +157,7 @@ export async function exportWithEngine(
         type: "start",
         doc,
         images,
-        texts: {},
+        texts,
         settings,
         codec,
         container,
@@ -151,7 +166,10 @@ export async function exportWithEngine(
       };
 
       // Transfer ImageBitmap ownership to worker
-      const transferList = Object.values(images);
+      const transferList = [
+        ...Object.values(images),
+        ...Object.values(texts).map((t) => t.bitmap),
+      ];
       worker.postMessage(startMsg, transferList);
     });
   }

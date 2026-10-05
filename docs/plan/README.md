@@ -151,7 +151,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [07](wp/WP-07-backgrounds-and-atmosphere.md) | Backgrounds, palettes, atmosphere | M1 | 03 | M | Complete |
 | [08](wp/WP-08-shadows-and-post.md) | Shadows, anti-aliasing, final pass, motion blur | M1 | 03 | M | Complete |
 | [09](wp/WP-09-layouts.md) | Layouts and camera framing | M1 | 02, 03, 06 | L | Not started |
-| [10](wp/WP-10-text-and-typography.md) | Text and typography | M2 | 02, 03 | M | Not started |
+| [10](wp/WP-10-text-and-typography.md) | Text and typography | M2 | 02, 03 | M | Complete |
 | [11](wp/WP-11-templates-and-gallery.md) | Templates, slot filling, previews, contact sheet | M1 → M2 | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L | Not started |
 | [12](wp/WP-12-editor-shell-and-inspector.md) | Editor shell and contextual inspector | M2 | 01, 03, 05 | L | Not started |
 | [13](wp/WP-13-media-library-and-brand-kit.md) | Media library, roles, brand kit, projects, My templates | M2 | 01, 05, 12 | M | Not started |

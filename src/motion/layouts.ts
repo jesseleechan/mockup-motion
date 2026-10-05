@@ -62,6 +62,9 @@ export function resolveLayout(
   _shotDuration: number,
   entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
+  if (layout.kind === "title") {
+    return [];
+  }
   if (layout.kind !== "single") {
     throw new Error('NotImplemented("WP-09")');
   }

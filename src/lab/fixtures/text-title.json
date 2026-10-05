@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "id": "fixture-text-title",
+  "name": "Title Shot & Typography",
+  "createdAt": 1728000000000,
+  "updatedAt": 1728000000000,
+  "aspect": "16:9",
+  "loop": true,
+  "assets": [],
+  "style": {
+    "background": {
+      "kind": "gradient",
+      "stops": ["#141417", "#2A2A30"],
+      "angle": 135
+    },
+    "frameAppearance": "dark",
+    "deviceFinish": "graphite",
+    "browserChrome": "standard",
+    "browserUrl": "",
+    "shadow": "soft",
+    "grain": 0.25,
+    "vignette": 0.06,
+    "fonts": {
+      "display": { "source": "builtin", "family": "Fraunces", "weight": 600 },
+      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
+    },
+    "textColor": "",
+    "accent": "#7C93FF"
+  },
+  "shots": [
+    {
+      "id": "shot-title-1",
+      "duration": 5,
+      "layout": {
+        "kind": "title"
+      },
+      "camera": {
+        "preset": "static",
+        "intensity": 0,
+        "easing": "smooth",
+        "float": 0
+      },
+      "entrance": "none",
+      "texts": [
+        {
+          "id": "text-title-layer",
+          "text": "Crafting Calm Digital Experiences",
+          "role": "title",
+          "font": "display",
+          "size": 6.0,
+          "anchor": "center",
+          "align": "center",
+          "color": "",
+          "animation": "maskReveal",
+          "delay": 0
+        },
+        {
+          "id": "text-sub-layer",
+          "text": "Curated typography with balanced wrapping and kinetic reveals",
+          "role": "subtitle",
+          "font": "body",
+          "size": 2.5,
+          "anchor": "bottom",
+          "align": "center",
+          "color": "",
+          "animation": "fadeUp",
+          "delay": 0.3
+        }
+      ],
+      "transitionIn": {
+        "kind": "cut",
+        "duration": 0,
+        "easing": "quintInOut"
+      }
+    }
+  ],
+  "export": {
+    "destination": "custom",
+    "resolution": 1080,
+    "fps": 30,
+    "quality": "high",
+    "format": "mp4",
+    "supersample": 1.5,
+    "motionBlur": false
+  }
+}

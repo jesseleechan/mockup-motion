@@ -29,6 +29,7 @@ export interface AssetProvider {
 }
 
 import { FinalPass } from "./post/final";
+import { TextPass } from "./text/TextPass";
 
 export class Engine {
   private renderer: THREE.WebGLRenderer;
@@ -39,6 +40,8 @@ export class Engine {
   private camera: THREE.PerspectiveCamera;
   private textureManager: TextureManager;
   private backgroundRenderer: BackgroundRenderer;
+  private textPass: TextPass;
+  private textRasters = new Map<string, TextRaster>();
 
   private targetA: THREE.WebGLRenderTarget;
   private targetB: THREE.WebGLRenderTarget;
@@ -70,6 +73,7 @@ export class Engine {
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
     this.textureManager = new TextureManager(maxTex, maxAniso);
     this.backgroundRenderer = new BackgroundRenderer();
+    this.textPass = new TextPass();
 
     this.scene = new THREE.Scene();
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
@@ -248,6 +252,20 @@ export class Engine {
           this.textureManager.getTexture(shot.layout.assetId, targetWidthPx, assets),
         );
       }
+      if (shot.texts && shot.texts.length > 0) {
+        const shotStyle = shot.styleOverrides
+          ? { ...doc.style, ...shot.styleOverrides }
+          : doc.style;
+        const frameHeightPx = Math.round(this.opts.height * ss);
+        for (const layer of shot.texts) {
+          loadPromises.push(
+            assets.getText(layer, shotStyle, frameHeightPx).then((raster) => {
+              this.textRasters.set(layer.id, raster);
+              this.textPass.setTextRaster(layer.id, raster);
+            }),
+          );
+        }
+      }
     }
 
     await Promise.all(loadPromises);
@@ -315,6 +333,24 @@ export class Engine {
     this.renderer.setRenderTarget(target);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(prevTarget);
+
+    // 5. Render screen-space text overlay into MSAA target
+    const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
+    if (shot && shot.texts && shot.texts.length > 0) {
+      const ss = this.opts.supersample ?? 1;
+      const renderW = Math.round(this.opts.width * ss);
+      const renderH = Math.round(this.opts.height * ss);
+      this.textPass.render(
+        this.renderer,
+        target,
+        frame,
+        shot.texts,
+        this.textRasters,
+        this.currentDoc?.aspect ?? "16:9",
+        renderW,
+        renderH,
+      );
+    }
   }
 
   /**
@@ -468,6 +504,8 @@ export class Engine {
 
     this.textureManager.dispose();
     this.backgroundRenderer.dispose();
+    this.textPass.dispose();
+    this.textRasters.clear();
 
     this.targetA.dispose();
     this.targetB.dispose();

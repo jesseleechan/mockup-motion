@@ -1,4 +1,5 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
+import { rasterizeText } from "../text";
 
 export function createLabAssetProvider(): AssetProvider {
   const cache = new Map<string, ImageBitmap>();
@@ -59,8 +60,8 @@ export function createLabAssetProvider(): AssetProvider {
       }
     },
 
-    async getText(): Promise<TextRaster> {
-      throw new Error("Text rasterization in Lab not implemented (WP-10)");
+    async getText(layer, style, frameHeightPx): Promise<TextRaster> {
+      return rasterizeText(layer, style, frameHeightPx);
     },
   };
 }

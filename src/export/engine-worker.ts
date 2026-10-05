@@ -80,8 +80,10 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
             if (!bmp) throw new Error(`Asset not provided to worker: ${assetId}`);
             return bmp;
           },
-          getText: async () => {
-            throw new Error("Text layer rasterization in worker not yet implemented (WP-10)");
+          getText: async (layer) => {
+            const raster = msg.texts[layer.id];
+            if (!raster) throw new Error(`Text raster not provided to worker: ${layer.id}`);
+            return raster;
           },
         };
 

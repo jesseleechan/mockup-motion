@@ -141,7 +141,7 @@ export function createAssetProvider(
     },
 
     async getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster> {
-      return rasterizeText(layer, style, frameHeightPx);
+      return rasterizeText(layer, style, frameHeightPx, getBlob);
     },
   };
 }
