@@ -1,0 +1,32 @@
+
+[WebServer] (node:33080) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:28176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f02.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 14 tests using 1 worker
+
+
+(node:5596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/14] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #808080 preserves exact colour
+[2/14] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #18191B preserves exact colour
+[3/14] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #F1EDE6 preserves exact colour
+[4/14] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 constant gradient outputs linear values
+[5/14] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 constant mesh outputs linear values
+[6/14] [chromium] › tests\e2e\color.spec.ts:52:1 › F02 screenshot band centres preserve RGB in source top-to-bottom order
+[7/14] [chromium] › tests\e2e\color.spec.ts:77:3 › F02 CSS gradient 90 degrees runs in the correct direction
+[8/14] [chromium] › tests\e2e\color.spec.ts:77:3 › F02 CSS gradient 180 degrees runs in the correct direction
+[9/14] [chromium] › tests\e2e\color.spec.ts:92:1 › F02 grain is zero-mean monochrome, bounded and deterministic in every channel
+[10/14] [chromium] › tests\e2e\color.spec.ts:121:1 › F02 static accumulated frame preserves colour for 2, 4 and 8 samples
+[11/14] [chromium] › tests\e2e\color.spec.ts:137:1 › F02 transition fade blends in linear light
+[12/14] [chromium] › tests\e2e\color.spec.ts:167:3 › F02 coverage glyph alpha plateaus composite without fringes
+[13/14] [chromium] › tests\e2e\color.spec.ts:167:3 › F02 generic raster alpha plateaus composite without fringes
+[14/14] [chromium] › tests\e2e\color.spec.ts:205:1 › F02 dither stays below half an sRGB byte
+  14 passed (47.2s)

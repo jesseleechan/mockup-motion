@@ -1,0 +1,140 @@
+
+
+
+
+Running 5 tests using 1 worker
+
+
+
+[1/5] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #808080 preserves exact colour
+  1) [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #808080 preserves exact colour ──────────
+
+    Error: Expected RGB (128, 128, 128) ±1, received (55.0, 55.0, 55.0)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:46:5
+
+    Error Context: test-results\color-F02-solid-808080-preserves-exact-colour-chromium\error-context.md
+
+
+
+
+[2/5] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #18191B preserves exact colour
+  2) [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #18191B preserves exact colour ──────────
+
+    Error: Expected RGB (24, 25, 27) ±1, received (2.2, 2.5, 2.9)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:46:5
+
+    Error Context: test-results\color-F02-solid-18191B-preserves-exact-colour-chromium\error-context.md
+
+
+
+
+[3/5] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #F1EDE6 preserves exact colour
+  3) [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #F1EDE6 preserves exact colour ──────────
+
+    Error: Expected RGB (241, 237, 230) ±1, received (224.2, 216.0, 201.9)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:46:5
+
+    Error Context: test-results\color-F02-solid-F1EDE6-preserves-exact-colour-chromium\error-context.md
+
+
+
+
+[4/5] [chromium] › tests\e2e\color.spec.ts:60:1 › F02 screenshot band centres preserve RGB in source top-to-bottom order
+  4) [chromium] › tests\e2e\color.spec.ts:60:1 › F02 screenshot band centres preserve RGB in source top-to-bottom order 
+
+    Error: Expected RGB (128, 128, 128) ±2, received (55.0, 55.0, 55.0)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:96:5
+
+    Error Context: test-results\color-F02-screenshot-band--49480--source-top-to-bottom-order-chromium\error-context.md
+
+
+
+
+[5/5] [chromium] › tests\e2e\color.spec.ts:168:1 › F02 transition fade blends in linear light
+  5) [chromium] › tests\e2e\color.spec.ts:168:1 › F02 transition fade blends in linear light ───────
+
+    Error: Expected RGB (188, 188, 188) ±1, received (127.5, 127.5, 127.5)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:192:3
+
+    Error Context: test-results\color-F02-transition-fade-blends-in-linear-light-chromium\error-context.md
+
+
+  5 failed
+    [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #808080 preserves exact colour ───────────
+    [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #18191B preserves exact colour ───────────
+    [chromium] › tests\e2e\color.spec.ts:43:3 › F02 solid #F1EDE6 preserves exact colour ───────────
+    [chromium] › tests\e2e\color.spec.ts:60:1 › F02 screenshot band centres preserve RGB in source top-to-bottom order 
+    [chromium] › tests\e2e\color.spec.ts:168:1 › F02 transition fade blends in linear light ────────
+
+[WebServer] (node:47112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:47324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f02.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:48376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33832) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:42292) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

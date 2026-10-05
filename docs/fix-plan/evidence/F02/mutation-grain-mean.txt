@@ -1,0 +1,40 @@
+
+
+
+
+Running 1 test using 1 worker
+
+
+
+[1/1] [chromium] › tests\e2e\color.spec.ts:120:1 › F02 grain is zero-mean monochrome, bounded and deterministic in every channel
+  1) [chromium] › tests\e2e\color.spec.ts:120:1 › F02 grain is zero-mean monochrome, bounded and deterministic in every channel 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 129.5
+    Received:    131.13695
+
+      144 |     expect(maximum).toBeLessThanOrEqual(7);
+      145 |     expect(mean[channel]).toBeGreaterThanOrEqual(126.5);
+    > 146 |     expect(mean[channel]).toBeLessThanOrEqual(129.5);
+          |                           ^
+      147 |     const deviation = Math.sqrt(variance / 40000);
+      148 |     expect(deviation).toBeGreaterThan(1);
+      149 |     expect(deviation).toBeLessThan(8);
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:146:27
+
+    Error Context: test-results\color-F02-grain-is-zero-me-add22-erministic-in-every-channel-chromium\error-context.md
+
+
+  1 failed
+    [chromium] › tests\e2e\color.spec.ts:120:1 › F02 grain is zero-mean monochrome, bounded and deterministic in every channel 
+
+[WebServer] (node:44860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:30820) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f02.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:6436) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

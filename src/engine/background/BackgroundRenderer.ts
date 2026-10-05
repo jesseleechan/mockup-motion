@@ -17,12 +17,7 @@ const bgVertexShader = /* glsl */ `
 
 // Helper GLSL functions for OKLab to linear sRGB
 const oklabGlsl = /* glsl */ `
-  float linear_to_srgb_f(float c) {
-    c = clamp(c, 0.0, 1.0);
-    return c > 0.0031308 ? (1.055 * pow(c, 1.0 / 2.4) - 0.055) : (c * 12.92);
-  }
-
-  vec3 oklab_to_srgb(vec3 c) {
+  vec3 oklab_to_linear_srgb(vec3 c) {
     float l_ = c.x + 0.3963377774 * c.y + 0.2158037573 * c.z;
     float m_ = c.x - 0.1055613458 * c.y - 0.0638541728 * c.z;
     float s_ = c.x - 0.0894841775 * c.y - 1.2914855480 * c.z;
@@ -37,11 +32,7 @@ const oklabGlsl = /* glsl */ `
       -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
     );
 
-    return vec3(
-      linear_to_srgb_f(lrgb.r),
-      linear_to_srgb_f(lrgb.g),
-      linear_to_srgb_f(lrgb.b)
-    );
+    return lrgb;
   }
 `;
 
@@ -63,7 +54,7 @@ const gradientFragmentShader = /* glsl */ `
   ${oklabGlsl}
 
   void main() {
-    vec2 dir = vec2(cos(uAngleRad), sin(uAngleRad));
+    vec2 dir = vec2(sin(uAngleRad), cos(uAngleRad));
     // Center gradient at (0.5, 0.5)
     float t = dot(vUv - 0.5, dir) + 0.5;
     t = clamp(t, 0.0, 1.0);
@@ -79,7 +70,7 @@ const gradientFragmentShader = /* glsl */ `
       }
     }
 
-    gl_FragColor = vec4(oklab_to_srgb(lab), 1.0);
+    gl_FragColor = vec4(oklab_to_linear_srgb(lab), 1.0);
   }
 `;
 
@@ -152,7 +143,7 @@ const meshFragmentShader = /* glsl */ `
       blendedLab /= totalWeight;
     }
 
-    gl_FragColor = vec4(oklab_to_srgb(blendedLab), 1.0);
+    gl_FragColor = vec4(oklab_to_linear_srgb(blendedLab), 1.0);
   }
 `;
 
@@ -220,7 +211,7 @@ export class BackgroundRenderer {
         uColor1Lab: { value: new THREE.Vector3(0.8, 0, 0) },
         uColor2Lab: { value: new THREE.Vector3(0.7, 0, 0) },
         uStopCount: { value: 2 },
-        uAngleRad: { value: (135 * Math.PI) / 180 },
+        uAngleRad: { value: (315 * Math.PI) / 180 },
       },
       depthWrite: false,
       depthTest: false,
@@ -307,11 +298,14 @@ export class BackgroundRenderer {
       this.gradientMat.uniforms.uColor1Lab.value.set(lab1[0], lab1[1], lab1[2]);
       this.gradientMat.uniforms.uColor2Lab.value.set(lab2[0], lab2[1], lab2[2]);
       this.gradientMat.uniforms.uStopCount.value = Math.min(3, stops.length);
-      this.gradientMat.uniforms.uAngleRad.value = ((bg.angle ?? 135) * Math.PI) / 180;
+      this.gradientMat.uniforms.uAngleRad.value = ((bg.angle ?? 315) * Math.PI) / 180;
       this.quadMesh.material = this.gradientMat;
     } else if (bg.kind === "mesh") {
       this.meshMat.uniforms.uPanOffset.value.copy(panOffset);
-      const colors = bg.colors && bg.colors.length >= 3 ? bg.colors : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"];
+      const colors =
+        bg.colors && bg.colors.length >= 3
+          ? bg.colors
+          : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"];
       const count = Math.min(5, colors.length);
 
       for (let i = 0; i < 5; i++) {

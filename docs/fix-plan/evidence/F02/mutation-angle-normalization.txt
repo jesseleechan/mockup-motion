@@ -1,0 +1,92 @@
+
+ RUN  v5.0.3 C:/Users/trevo/Developer/motion-mockup/.execution/f02
+
+ ❯ tests/doc.test.ts (22 tests | 1 failed | 20 skipped) 10ms
+   ❯ F02 CSS angle compatibility (2)
+     × converts unmarked v2 style and override gradients exactly once 8ms
+ ❯ tests/storage.test.ts (8 tests | 2 failed | 6 skipped) 10ms
+   × F02 legacy user-template load, list and slot fill normalize angles once 8ms
+   × F02 saves user-template CSS angles with a durable idempotent marker 1ms
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 1 passed | 26 skipped (30)
+   Start at  17:43:50
+   Duration  238ms (transform 58%, import 31%, tests 9%, worker 3%)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/doc.test.ts > F02 CSS angle compatibility > converts unmarked v2 style and override gradients exactly once
+AssertionError: expected { kind: 'gradient', …(2) } to deeply equal { kind: 'gradient', …(3) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,7 @@
+  {
+-   "angle": 315,
+-   "angleConvention": "css",
++   "angle": 135,
+    "kind": "gradient",
+    "stops": [
+      "#000000",
+      "#FFFFFF",
+    ],
+
+ ❯ tests/doc.test.ts:316:36
+    314|     };
+    315|     const first = sanitizeDoc(raw).doc;
+    316|     expect(first.style.background).toEqual({
+       |                                    ^
+    317|       kind: "gradient",
+    318|       stops: ["#000000", "#FFFFFF"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/storage.test.ts > F02 legacy user-template load, list and slot fill normalize angles once
+AssertionError: expected { kind: 'gradient', …(2) } to match object { angle: 305, angleConvention: 'css' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "angle": 305,
+-   "angleConvention": "css",
++   "angle": 145,
+  }
+
+ ❯ tests/storage.test.ts:342:36
+    340|   await db.put("userTemplates", template);
+    341|   const loaded = await loadUserTemplate(template.id);
+    342|   expect(loaded?.style.background).toMatchObject({ angle: 305, angleCo…
+       |                                    ^
+    343|   expect(loaded?.shots[0].styleOverrides?.background).toMatchObject({
+    344|     angle: 270,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/storage.test.ts > F02 saves user-template CSS angles with a durable idempotent marker
+AssertionError: expected { kind: 'gradient', …(2) } to match object { angle: 300, angleConvention: 'css' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "angle": 300,
+-   "angleConvention": "css",
++   "angle": 150,
+  }
+
+ ❯ tests/storage.test.ts:364:36
+    362|   const db = await getDB();
+    363|   const stored = await db.get('userTemplates', template.id);
+    364|   expect(stored?.style.background).toMatchObject({ angle: 300, angleCo…
+       |                                    ^
+    365|   if (!stored) throw new Error('Template not saved');
+    366|   await saveUserTemplate(stored);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

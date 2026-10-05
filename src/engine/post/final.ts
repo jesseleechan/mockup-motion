@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import type { Style, Transition } from "../../doc/types";
 
+// Render targets hold linear-light sRGB-primaries values (sRGB byte targets
+// encode on write and decode on sampling). Only this final pass explicitly
+// converts to sRGB; grain and dither follow that conversion. No colorspace include.
+
 const finalVertexShader = /* glsl */ `
   varying vec2 vUv;
   void main() {
@@ -30,6 +34,12 @@ const finalFragmentShader = /* glsl */ `
   // PRNG
   float hash1(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  vec3 linearToSrgb(vec3 c) {
+    c = max(c, vec3(0.0));
+    return mix(1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
+      12.92 * c, lessThanEqual(c, vec3(0.0031308)));
   }
 
   // 13-tap Jimenez downsample filter
@@ -171,18 +181,22 @@ const finalFragmentShader = /* glsl */ `
       color = mix(color, color * (1.0 - uVignette), vig);
     }
 
-    // 3. Monochrome grain (1.5-4% amplitude, seeded per frame index)
+    color = linearToSrgb(color);
+
+    // Monochrome zero-mean grain: peak amplitude 1.5–4%, 2.5% at 0.25 (§5).
     if (uGrain > 0.0) {
-      float grainAmp = mix(0.015, 0.04, uGrain);
+      float g = clamp(uGrain, 0.0, 1.0);
+      float grainAmp = g <= 0.25 ? mix(0.015, 0.025, g / 0.25)
+        : mix(0.025, 0.04, (g - 0.25) / 0.75);
       vec2 seedCoord = gl_FragCoord.xy + vec2(uFrameSeed * 17.13, uFrameSeed * 31.41);
-      float noise = hash1(seedCoord) - 0.5;
+      float noise = hash1(seedCoord) * 2.0 - 1.0;
       color += vec3(noise * grainAmp);
     }
 
     // 4. Triangular dither (±0.5 LSB before 8-bit quantization to prevent H.264 banding)
     float d1 = hash1(gl_FragCoord.xy + vec2(0.1, 0.3));
     float d2 = hash1(gl_FragCoord.xy + vec2(0.7, 0.9));
-    float triangularDither = (d1 + d2 - 1.0) / 255.0;
+    float triangularDither = (d1 + d2 - 1.0) * (0.5 / 255.0);
     color += vec3(triangularDither);
 
     gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);

@@ -6,6 +6,8 @@ export interface TextRaster {
   words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
+  /** Exact monochrome glyph colour; bitmap alpha is coverage including fill alpha. */
+  color?: string;
 }
 
 /**
@@ -14,7 +16,10 @@ export interface TextRaster {
 export function getRelativeLuminance(hexColor: string): number {
   let hex = hexColor.replace("#", "").trim();
   if (hex.length === 3) {
-    hex = hex.split("").map((c) => c + c).join("");
+    hex = hex
+      .split("")
+      .map((c) => c + c)
+      .join("");
   }
   if (hex.length < 6) return 0.5;
 
@@ -22,8 +27,7 @@ export function getRelativeLuminance(hexColor: string): number {
   const g = parseInt(hex.slice(2, 4), 16) / 255;
   const b = parseInt(hex.slice(4, 6), 16) / 255;
 
-  const toLin = (c: number) =>
-    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const toLin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
 
   return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
 }
@@ -67,7 +71,10 @@ export function getBackgroundLuminance(background: Background): number {
  * Computes auto text color against background luminance per quality-bar §7:
  * WCAG ≥ 4.5:1 for captions/labels, ≥ 3:1 for titles.
  */
-export function getAutoTextColor(background: Background, role: TextLayer["role"] = "title"): string {
+export function getAutoTextColor(
+  background: Background,
+  role: TextLayer["role"] = "title",
+): string {
   const bgL = getBackgroundLuminance(background);
 
   // If background is light (L > 0.4), use dark text; otherwise use light text
@@ -104,8 +111,7 @@ export function wrapBalancedText(text: string, maxCharsPerLine = 22): string[] {
   const maxWordLen = Math.max(...wordLengths);
   const effectiveMaxChars = Math.max(maxCharsPerLine, maxWordLen);
 
-  const totalCharsWithSpaces =
-    wordLengths.reduce((a, b) => a + b, 0) + (words.length - 1);
+  const totalCharsWithSpaces = wordLengths.reduce((a, b) => a + b, 0) + (words.length - 1);
   const minLines = Math.max(2, Math.ceil(totalCharsWithSpaces / effectiveMaxChars));
   const maxLines = words.length;
 
@@ -136,13 +142,11 @@ export function wrapBalancedText(text: string, maxCharsPerLine = 22): string[] {
         const start = partition[p];
         const end = p + 1 < partition.length ? partition[p + 1] : words.length;
         const lineSlice = words.slice(start, end);
-        const lLen =
-          lineSlice.reduce((acc, w) => acc + w.length, 0) + (lineSlice.length - 1);
+        const lLen = lineSlice.reduce((acc, w) => acc + w.length, 0) + (lineSlice.length - 1);
         allLineLengths.push(lLen);
       }
 
-      const mean =
-        allLineLengths.reduce((a, b) => a + b, 0) / allLineLengths.length;
+      const mean = allLineLengths.reduce((a, b) => a + b, 0) / allLineLengths.length;
       const variance =
         allLineLengths.reduce((acc, len) => acc + Math.pow(len - mean, 2), 0) /
         allLineLengths.length;
@@ -176,13 +180,7 @@ export function wrapBalancedText(text: string, maxCharsPerLine = 22): string[] {
     if (remainingWords < remainingLines) return;
 
     // Option A: Split here
-    search(
-      wordIdx + 1,
-      wordIdx + 1,
-      linesMade + 1,
-      targetLines,
-      [...currentSplit, wordIdx + 1],
-    );
+    search(wordIdx + 1, wordIdx + 1, linesMade + 1, targetLines, [...currentSplit, wordIdx + 1]);
 
     // Option B: Continue extending current line
     search(wordIdx + 1, currentLineStart, linesMade, targetLines, currentSplit);
@@ -224,8 +222,7 @@ export async function rasterizeText(
   frameHeightPx: number,
   getAssetBlob?: (assetId: string) => Promise<Blob | null>,
 ): Promise<TextRaster> {
-  const fontRef: FontRef =
-    layer.font === "display" ? style.fonts.display : style.fonts.body;
+  const fontRef: FontRef = layer.font === "display" ? style.fonts.display : style.fonts.body;
 
   // 1. Ensure fonts are loaded
   await ensureFonts(style, [layer], getAssetBlob);
@@ -361,8 +358,7 @@ export async function rasterizeText(
       ? new OffscreenCanvas(100, 100)
       : document.createElement("canvas");
   const testCtx = testCanvas.getContext("2d") as
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D;
+    CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
   const fontStyle = `${fontRef.weight || 600} ${fontSizePx}px "${fontRef.family}", sans-serif`;
   testCtx.font = fontStyle;
@@ -392,8 +388,7 @@ export async function rasterizeText(
   drawCanvas.height = totalHeight;
 
   const ctx = drawCanvas.getContext("2d") as
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D;
+    CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
   ctx.clearRect(0, 0, totalWidth, totalHeight);
   ctx.font = fontStyle;
@@ -401,6 +396,24 @@ export async function rasterizeText(
     (ctx as unknown as { letterSpacing: string }).letterSpacing = `${trackingEm}em`;
   }
   ctx.fillStyle = textColor;
+  // Canvas accepts CSS colours that THREE.Color cannot parse (e.g. #RRGGBBAA).
+  // Resolve its opaque RGB separately; the glyph bitmap retains fill alpha.
+  const resolvedColor = ctx.fillStyle;
+  const opaqueColor =
+    resolvedColor.startsWith("#") && resolvedColor.length === 9
+      ? resolvedColor.slice(0, 7)
+      : resolvedColor
+          .replace(/^rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)$/, "rgb($1,$2,$3)")
+          .replace(/\s*\/[^)]+\)/, ")");
+  const swatch = new OffscreenCanvas(1, 1);
+  const swatchContext = swatch.getContext("2d");
+  if (!swatchContext) throw new Error("Text colour normalization requires a 2D context");
+  swatchContext.fillStyle = opaqueColor;
+  swatchContext.fillRect(0, 0, 1, 1);
+  const rgba = swatchContext.getImageData(0, 0, 1, 1).data;
+  const glyphColor = `#${Array.from(rgba.slice(0, 3))
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`;
   ctx.textBaseline = "top";
 
   const words: { x: number; y: number; w: number; h: number }[] = [];
@@ -433,15 +446,11 @@ export async function rasterizeText(
     }
   });
 
-  let bitmap: ImageBitmap;
-  if ("transferToImageBitmap" in drawCanvas) {
-    bitmap = (drawCanvas as OffscreenCanvas).transferToImageBitmap();
-  } else {
-    bitmap = await createImageBitmap(drawCanvas as HTMLCanvasElement);
-  }
+  const bitmap = await createImageBitmap(drawCanvas, { premultiplyAlpha: "premultiply" });
 
   const result: TextRaster = {
     bitmap,
+    color: glyphColor,
     words,
     width: totalWidth,
     height: totalHeight,

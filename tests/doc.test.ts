@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
-import { V1_PRESETS } from "./fixtures/v1-presets";
+import { V1_PRESETS, createV1Project } from "./fixtures/v1-presets";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -299,6 +299,45 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.shots[0].scroll?.enabled).toBe(true);
       expect(doc.shots[0].scroll?.stops).toEqual([0, 0.75]);
       expect(doc.shots[0].scroll?.hold).toBe(1.2);
+    });
+  });
+});
+
+// F02: persistence preserves the visual direction of legacy documents.
+describe("F02 CSS angle compatibility", () => {
+  it("converts unmarked v2 style and override gradients exactly once", () => {
+    const raw = createDoc();
+    raw.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 135 };
+    raw.shots[0].styleOverrides = {
+      background: { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 0 },
+      grain: 0.2,
+    };
+    const first = sanitizeDoc(raw).doc;
+    expect(first.style.background).toEqual({
+      kind: "gradient",
+      stops: ["#000000", "#FFFFFF"],
+      angle: 315,
+      angleConvention: "css",
+    });
+    expect(first.shots[0].styleOverrides).toEqual({
+      background: {
+        kind: "gradient",
+        stops: ["#000000", "#FFFFFF"],
+        angle: 90,
+        angleConvention: "css",
+      },
+      grain: 0.2,
+    });
+    expect(sanitizeDoc(first).doc).toEqual(first);
+  });
+  it("retains historical v1 CSS angles during migration", () => {
+    const preset = createV1Project();
+    preset.composition.background.type = "gradient";
+    preset.composition.background.angle = 180;
+    expect(migrateV1Project(preset).style.background).toMatchObject({
+      kind: "gradient",
+      angle: 180,
+      angleConvention: "css",
     });
   });
 });

@@ -5,7 +5,8 @@ export function defaultStyle(): Style {
     background: {
       kind: "gradient",
       stops: ["#F1EDE6", "#E3DCD0"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     deviceFinish: "silver",

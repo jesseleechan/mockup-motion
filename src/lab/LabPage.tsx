@@ -246,6 +246,11 @@ export const LabPage: React.FC = () => {
           time={playing ? undefined : time}
           pixelRatio={1}
           supersample={1}
+          cameraDistanceOverride={
+            import.meta.env.DEV && urlParams.has("cameraDistance")
+              ? Number(urlParams.get("cameraDistance"))
+              : undefined
+          }
           onEngineReady={handleEngineReady}
           className="w-full h-full"
         />

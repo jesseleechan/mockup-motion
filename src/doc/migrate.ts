@@ -228,6 +228,7 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
       kind: "gradient",
       stops: [comp.background.color || "#1F2B45", comp.background.secondColor || "#0D1424"],
       angle: comp.background.angle ?? 135,
+      angleConvention: "css",
     };
   } else if (bgType === "image") {
     background = {

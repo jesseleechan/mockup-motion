@@ -1,0 +1,38 @@
+
+ RUN  v5.0.3 C:/Users/trevo/Developer/motion-mockup/.execution/f02
+
+ ❯ tests/storage.test.ts (8 tests | 1 failed | 6 skipped) 12ms
+   × F02 saves user-template CSS angles with a durable idempotent marker 5ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 3 passed | 26 skipped (30)
+   Start at  17:43:53
+   Duration  228ms (transform 59%, import 30%, tests 8%, worker 3%)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/storage.test.ts > F02 saves user-template CSS angles with a durable idempotent marker
+AssertionError: expected { kind: 'gradient', …(2) } to match object { angle: 300, angleConvention: 'css' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "angle": 300,
+-   "angleConvention": "css",
++   "angle": 150,
+  }
+
+ ❯ tests/storage.test.ts:364:36
+    362|   const db = await getDB();
+    363|   const stored = await db.get('userTemplates', template.id);
+    364|   expect(stored?.style.background).toMatchObject({ angle: 300, angleCo…
+       |                                    ^
+    365|   if (!stored) throw new Error('Template not saved');
+    366|   await saveUserTemplate(stored);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

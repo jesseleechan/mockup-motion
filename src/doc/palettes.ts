@@ -11,7 +11,7 @@ export interface BuiltinPalette {
 }
 
 /**
- * Computes shadow tint for a background per quality-bar §5:
+ * Computes shadow tint for a background per quality-bar Â§5:
  * dominant hue of the background at 25% lightness (L = 0.25 in OKLCH), with subtle chroma.
  */
 export function shadowTintFor(background: Background): string {
@@ -50,7 +50,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 8 Built-in curated palettes from quality-bar §6.
+ * 8 Built-in curated palettes from quality-bar Â§6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [
@@ -61,7 +61,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#F1EDE6", "#E3DCD0"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#1C1917",
@@ -74,7 +75,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#EEF1F4", "#D9DFE6"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#0F172A",
@@ -87,7 +89,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#141417", "#2A2A30"],
-      angle: 145,
+      angle: 305,
+      angleConvention: "css",
     },
     frameAppearance: "dark",
     textColor: "#F4F4F5",
@@ -100,7 +103,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#0D1424", "#1F2B45"],
-      angle: 150,
+      angle: 300,
+      angleConvention: "css",
     },
     frameAppearance: "dark",
     textColor: "#F8FAFC",
@@ -113,7 +117,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#E4E9E1", "#C9D3C4"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#1B221B",
@@ -126,7 +131,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#EBDDD3", "#D2B8A6"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#261914",

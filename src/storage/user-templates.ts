@@ -1,4 +1,5 @@
 import { getDB } from "./db";
+import { normalizeStyleAngles } from "../doc/gradient-angle";
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 
 export interface UserTemplate {
@@ -13,18 +14,18 @@ export interface UserTemplate {
 
 export async function listUserTemplates(): Promise<UserTemplate[]> {
   const db = await getDB();
-  return db.getAll("userTemplates");
+  return (await db.getAll("userTemplates")).map(normalizeStyleAngles);
 }
 
 export async function loadUserTemplate(id: string): Promise<UserTemplate | null> {
   const db = await getDB();
   const t = await db.get("userTemplates", id);
-  return t ?? null;
+  return t ? normalizeStyleAngles(t) : null;
 }
 
 export async function saveUserTemplate(template: UserTemplate): Promise<void> {
   const db = await getDB();
-  await db.put("userTemplates", template);
+  await db.put("userTemplates", normalizeStyleAngles(template));
 }
 
 export async function deleteUserTemplate(id: string): Promise<void> {
@@ -37,7 +38,7 @@ export async function renameUserTemplate(id: string, newName: string): Promise<v
   const t = await db.get("userTemplates", id);
   if (t) {
     t.name = newName;
-    await db.put("userTemplates", t);
+    await db.put("userTemplates", normalizeStyleAngles(t));
   }
 }
 
@@ -129,6 +130,7 @@ export function fillUserTemplateSlots(
   template: UserTemplate,
   assets: AssetRef[],
 ): { style: Style; shots: Shot[]; loop: boolean } {
+  template = normalizeStyleAngles(template);
   // Group available assets by role
   const assetsByRole: Record<string, AssetRef[]> = {
     desktop: [],

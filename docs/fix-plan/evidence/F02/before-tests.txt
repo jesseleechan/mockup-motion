@@ -1,0 +1,22 @@
+
+[WebServer] (node:12800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:46964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f02.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+
+Running 4 tests using 1 worker
+
+(node:35168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/4] [chromium] › tests\e2e\color.spec.ts:16:3 › F02 colour pipeline known bug › solid sRGB midtone reads back exactly
+[2/4] [chromium] › tests\e2e\color.spec.ts:57:3 › F02 colour pipeline known bug › grain is zero-mean and stays within the specified range
+[3/4] [chromium] › tests\e2e\color.spec.ts:93:3 › F02 colour pipeline known bug › screen pixels preserve all source band colors
+[4/4] [chromium] › tests\e2e\color.spec.ts:149:3 › F02 colour pipeline known bug › CSS gradient angles run from left to right at 90 degrees
+  4 passed (32.6s)

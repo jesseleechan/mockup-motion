@@ -106,7 +106,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
   - Ambient: blur 6% (soft) / 8% (medium) / 11% (dramatic), opacity 0.10 / 0.16 / 0.24, offset y 2.5% / 3.5% / 5%.
   - Shadow color is the background's dominant hue at 25% lightness, not black.
   - On tilted layouts the shadow projects onto a ground plane, falling off with distance.
-- **Grain:** monochrome, 1.5–4% amplitude (default 2.5%), seeded per frame index, applied in the final pass. It is always on for gradients and dark backgrounds, because it removes banding in 8-bit H.264. Add ±0.5 LSB triangular dither before quantization.
+- **Grain:** monochrome, zero-mean, 1.5–4% peak amplitude (default 2.5% at `Style.grain = 0.25`), seeded per frame index, applied after the final sRGB transfer. Zero disables grain. Positive values interpolate from 1.5% to 2.5% over `(0, 0.25]`, then to 4% over `(0.25, 1]`. Templates enable it for gradients and dark backgrounds to reduce 8-bit H.264 banding. Add ±0.5 LSB triangular dither after grain and before quantization.
 - **Vignette:** 0–12% darkening at the corners (default 6%), elliptical, matched to the aspect.
 - **No lens flares, bloom on screenshots, chromatic aberration, or glossy reflections across screen content.** A screen sheen (at most 4% opacity, static gradient, only on `dark` frames) is the maximum.
 

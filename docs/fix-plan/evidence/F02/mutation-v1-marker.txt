@@ -1,0 +1,40 @@
+
+ RUN  v5.0.3 C:/Users/trevo/Developer/motion-mockup/.execution/f02
+
+ ❯ tests/doc.test.ts (22 tests | 1 failed | 20 skipped) 10ms
+   ❯ F02 CSS angle compatibility (2)
+     × retains historical v1 CSS angles during migration 5ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 3 passed | 26 skipped (30)
+   Start at  17:43:50
+   Duration  240ms (transform 60%, import 29%, tests 8%, worker 3%)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/doc.test.ts > F02 CSS angle compatibility > retains historical v1 CSS angles during migration
+AssertionError: expected { kind: 'gradient', …(3) } to match object { kind: 'gradient', angle: 180, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "angle": 180,
++   "angle": 270,
+    "angleConvention": "css",
+    "kind": "gradient",
+  }
+
+ ❯ tests/doc.test.ts:337:55
+    335|     preset.composition.background.type = "gradient";
+    336|     preset.composition.background.angle = 180;
+    337|     expect(migrateV1Project(preset).style.background).toMatchObject({
+       |                                                       ^
+    338|       kind: "gradient",
+    339|       angle: 180,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -27,6 +27,7 @@ import {
   saveUserTemplate,
   loadUserTemplate,
   deleteUserTemplate,
+  renameUserTemplate,
 } from "../src/storage/user-templates";
 import { useEditorStore } from "../src/state/store";
 
@@ -325,5 +326,65 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       await deleteUserTemplate(template.id);
       expect(await loadUserTemplate(template.id)).toBeNull();
     });
+  });
+});
+
+it("F02 legacy user-template load, list and slot fill normalize angles once", async () => {
+  const doc = createDoc();
+  doc.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 145 };
+  doc.shots[0].styleOverrides = {
+    background: { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 180 },
+  };
+  const template = convertDocToUserTemplate(doc, "Legacy F02");
+  // Write the old shape directly to represent a saved template predating F02.
+  const db = await getDB();
+  await db.put("userTemplates", template);
+  const loaded = await loadUserTemplate(template.id);
+  expect(loaded?.style.background).toMatchObject({ angle: 305, angleConvention: "css" });
+  expect(loaded?.shots[0].styleOverrides?.background).toMatchObject({
+    angle: 270,
+    angleConvention: "css",
+  });
+  const filled = fillUserTemplateSlots(template, []);
+  expect(filled.style.background).toMatchObject({ angle: 305, angleConvention: "css" });
+  const { listUserTemplates } = await import("../src/storage/user-templates");
+  const listed = (await listUserTemplates()).find((t) => t.id === template.id);
+  expect(listed?.style.background).toEqual(loaded?.style.background);
+  if (!loaded) throw new Error("Saved template not found");
+  await saveUserTemplate(loaded);
+  expect((await loadUserTemplate(template.id))?.style.background).toEqual(loaded.style.background);
+});
+
+it("F02 saves user-template CSS angles with a durable idempotent marker", async () => {
+  const doc = createDoc();
+  doc.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 150 };
+  const template = convertDocToUserTemplate(doc, "Legacy save F02");
+  await saveUserTemplate(template);
+  const db = await getDB();
+  const stored = await db.get("userTemplates", template.id);
+  expect(stored?.style.background).toMatchObject({ angle: 300, angleConvention: "css" });
+  if (!stored) throw new Error("Template not saved");
+  await saveUserTemplate(stored);
+  expect((await db.get("userTemplates", template.id))?.style.background).toEqual(
+    stored.style.background,
+  );
+});
+
+it("F02 rename writes canonical legacy user-template angles", async () => {
+  const doc = createDoc();
+  doc.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 135 };
+  doc.shots[0].styleOverrides = {
+    background: { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 180 },
+  };
+  const template = convertDocToUserTemplate(doc, "Before rename");
+  const db = await getDB();
+  await db.put("userTemplates", template);
+  await renameUserTemplate(template.id, "After rename");
+  const stored = await db.get("userTemplates", template.id);
+  expect(stored?.name).toBe("After rename");
+  expect(stored?.style.background).toMatchObject({ angle: 315, angleConvention: "css" });
+  expect(stored?.shots[0].styleOverrides?.background).toMatchObject({
+    angle: 270,
+    angleConvention: "css",
   });
 });

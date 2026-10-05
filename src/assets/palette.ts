@@ -12,12 +12,7 @@ export interface LabColor {
  * Extracts k dominant colors from an RGBA image buffer using k-means clustering in OKLab space.
  * Weights pixels by chromaticity so plain white/grey web page backgrounds do not displace brand colors.
  */
-export function dominantColors(
-  rgba: Uint8ClampedArray,
-  w: number,
-  h: number,
-  k = 5,
-): string[] {
+export function dominantColors(rgba: Uint8ClampedArray, w: number, h: number, k = 5): string[] {
   if (rgba.length === 0 || w <= 0 || h <= 0) {
     return ["#141417", "#2A2A30", "#F1EDE6", "#3B82F6", "#64748B"];
   }
@@ -130,7 +125,7 @@ export function dominantColors(
 }
 
 /**
- * Derives 4 candidate backgrounds (light, dark, mesh, ambient) from the extracted palette per quality-bar §6.
+ * Derives 4 candidate backgrounds (light, dark, mesh, ambient) from the extracted palette per quality-bar Â§6.
  * - Chroma lowered by 40-60% (C <= 0.09 light, C <= 0.12 dark).
  * - Lightness shifted away from the screenshot's average by at least 0.25 L.
  */
@@ -139,7 +134,7 @@ export function suggestBackgrounds(palette: string[], assetId = ""): Background[
   if (parsed.length === 0) {
     return [
       { kind: "solid", color: "#F1EDE6" },
-      { kind: "gradient", stops: ["#141417", "#2A2A30"], angle: 145 },
+      { kind: "gradient", stops: ["#141417", "#2A2A30"], angle: 305, angleConvention: "css" },
       { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.05, seed: 1 },
       { kind: "ambient", assetId, blur: 0.8, dim: 0.2 },
     ];
@@ -157,26 +152,46 @@ export function suggestBackgrounds(palette: string[], assetId = ""): Background[
   // with chroma lowered by 50% (capped at 0.04 for calm elegance)
   const lightTargetL = Math.max(0.88, avgL + 0.25 > 1 ? 0.92 : avgL + 0.25);
   const lightChroma = Math.min((primary.c ?? 0.02) * 0.5, 0.035);
-  const lightColor1 = formatHex(oklch({ mode: "oklch", l: lightTargetL, c: lightChroma, h: primary.h ?? 60 }));
-  const lightColor2 = formatHex(oklch({ mode: "oklch", l: lightTargetL - 0.06, c: lightChroma * 0.8, h: secondary.h ?? (primary.h ?? 60) + 20 }));
+  const lightColor1 = formatHex(
+    oklch({ mode: "oklch", l: lightTargetL, c: lightChroma, h: primary.h ?? 60 }),
+  );
+  const lightColor2 = formatHex(
+    oklch({
+      mode: "oklch",
+      l: lightTargetL - 0.06,
+      c: lightChroma * 0.8,
+      h: secondary.h ?? (primary.h ?? 60) + 20,
+    }),
+  );
 
   const lightBg: Background = {
     kind: "gradient",
     stops: [lightColor1 ?? "#F1EDE6", lightColor2 ?? "#E3DCD0"],
-    angle: 135,
+    angle: 315,
+    angleConvention: "css",
   };
 
   // Dark suggestion: Lightness <= 0.22 (ensuring |L - avgL| >= 0.25 when avgL is light/mid),
   // with chroma lowered by 50% (capped at 0.05)
   const darkTargetL = Math.min(0.22, avgL - 0.25 < 0 ? 0.16 : avgL - 0.25);
   const darkChroma = Math.min((primary.c ?? 0.03) * 0.5, 0.045);
-  const darkColor1 = formatHex(oklch({ mode: "oklch", l: darkTargetL, c: darkChroma, h: primary.h ?? 260 }));
-  const darkColor2 = formatHex(oklch({ mode: "oklch", l: darkTargetL + 0.08, c: darkChroma * 1.2, h: secondary.h ?? (primary.h ?? 260) + 30 }));
+  const darkColor1 = formatHex(
+    oklch({ mode: "oklch", l: darkTargetL, c: darkChroma, h: primary.h ?? 260 }),
+  );
+  const darkColor2 = formatHex(
+    oklch({
+      mode: "oklch",
+      l: darkTargetL + 0.08,
+      c: darkChroma * 1.2,
+      h: secondary.h ?? (primary.h ?? 260) + 30,
+    }),
+  );
 
   const darkBg: Background = {
     kind: "gradient",
     stops: [darkColor1 ?? "#141417", darkColor2 ?? "#2A2A30"],
-    angle: 145,
+    angle: 305,
+    angleConvention: "css",
   };
 
   // Mesh suggestion: 4 harmonious low-chroma colors

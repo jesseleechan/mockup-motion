@@ -1,0 +1,38 @@
+
+ RUN  v5.0.3 C:/Users/trevo/Developer/motion-mockup/.execution/f02
+
+ ❯ tests/storage.test.ts (8 tests | 1 failed | 6 skipped) 11ms
+   × F02 legacy user-template load, list and slot fill normalize angles once 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 3 passed | 26 skipped (30)
+   Start at  17:43:52
+   Duration  227ms (transform 60%, import 30%, tests 7%, worker 3%)
+
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/storage.test.ts > F02 legacy user-template load, list and slot fill normalize angles once
+AssertionError: expected { kind: 'gradient', …(2) } to match object { angle: 305, angleConvention: 'css' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "angle": 305,
+-   "angleConvention": "css",
++   "angle": 145,
+  }
+
+ ❯ tests/storage.test.ts:348:35
+    346|   });
+    347|   const filled = fillUserTemplateSlots(template, []);
+    348|   expect(filled.style.background).toMatchObject({ angle: 305, angleCon…
+       |                                   ^
+    349|   const { listUserTemplates } = await import("../src/storage/user-temp…
+    350|   const listed = (await listUserTemplates()).find((t) => t.id === temp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

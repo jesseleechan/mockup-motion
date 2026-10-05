@@ -272,6 +272,7 @@ export class ScreenCompositor {
           color[0],
           color[1],
           color[2],
+          THREE.SRGBColorSpace,
         );
       } else {
         (this.fillMesh.material as THREE.MeshBasicMaterial).color.set(0x1e1e21);

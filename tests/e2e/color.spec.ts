@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
-import type { ProjectDoc } from "../../src/doc/types";
-import type { Engine } from "../../src/engine/Engine";
-import { avgRegion, expectRgbNear } from "../helpers/pixels";
+import { expect, test, type Page } from "@playwright/test";
+import type { Background, ProjectDoc } from "../../src/doc/types";
+import type { AssetProvider, Engine } from "../../src/engine/Engine";
+import { avgRegion, expectRgbNear, type PixelBuffer } from "../helpers/pixels";
 
 declare global {
   interface Window {
@@ -11,187 +11,449 @@ declare global {
     __fixtures?: Record<string, ProjectDoc>;
   }
 }
-
-test.describe("F02 colour pipeline known bug", () => {
-  test("solid sRGB midtone reads back exactly", async ({ page }) => {
-    test.fail(true, "Known bug, fixed by F02");
-    await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-    await page.waitForFunction(() => window.__labReady === true);
-    const samples = await page.evaluate(async () => {
-      const doc = structuredClone(window.__fixtures?.["card-hero"]);
+async function ready(page: Page, extra = ""): Promise<void> {
+  await page.goto(`/lab?still=1&fixture=device-card-frontal&t=0&aspect=16:9&w=1280${extra}`);
+  await page.waitForFunction(() => window.__labReady === true);
+}
+async function background(page: Page, bg: Background, grain = 0): Promise<PixelBuffer> {
+  return page.evaluate(
+    async ({ bg, grain }) => {
+      const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
-      if (!doc || !engine || !setDoc) throw new Error("F02 pixel hook is unavailable");
-      engine.resize(1280, 720);
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      doc.shots[0].layout = { kind: "title" };
-      doc.shots[0].texts = [];
-      const cases = [
-        ["#808080", [128, 128, 128]],
-        ["#18191B", [24, 25, 27]],
-        ["#F1EDE6", [241, 237, 230]],
-      ] as const;
-      const samples: { color: string; expected: readonly number[]; actual: number[] }[] = [];
-      for (const [color, expected] of cases) {
-        doc.style.background = { kind: "solid", color };
-        await setDoc(doc);
-        engine.renderAt(0);
-        const data = engine.readPixels();
-        const i = (360 * 1280 + 640) * 4;
-        samples.push({ color, expected, actual: [data[i], data[i + 1], data[i + 2]] });
-      }
-      return samples;
-    });
-    for (const { color, expected, actual } of samples) {
-      try {
-        expectRgbNear(actual, expected, 1);
-      } catch (error) {
-        throw new Error(`${color}: ${error instanceof Error ? error.message : String(error)}`, {
-          cause: error,
-        });
-      }
-    }
-  });
-
-  test("grain is zero-mean and stays within the specified range", async ({ page }) => {
-    test.fail(true, "Known bug, fixed by F02");
-    await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-    await page.waitForFunction(() => window.__labReady === true);
-    const pixels = await page.evaluate(async () => {
-      const doc = structuredClone(window.__fixtures?.["card-hero"]);
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      if (!doc || !engine || !setDoc) throw new Error("F02 pixel hook is unavailable");
-      engine.resize(1280, 720);
-      doc.style.background = { kind: "solid", color: "#808080" };
-      doc.style.grain = 0.25;
+      if (!doc || !engine || !setDoc) throw new Error("F02 fixture hooks unavailable");
+      doc.loop = false;
+      doc.style.background = bg;
+      doc.style.grain = grain;
       doc.style.vignette = 0;
       doc.shots[0].layout = { kind: "title" };
       doc.shots[0].texts = [];
       await setDoc(doc);
       engine.renderAt(0);
       return { width: 1280, height: 720, data: engine.readPixels() };
+    },
+    { bg, grain },
+  );
+}
+for (const [hex, rgb] of [
+  ["#808080", [128, 128, 128]],
+  ["#18191B", [24, 25, 27]],
+  ["#F1EDE6", [241, 237, 230]],
+] as const) {
+  test(`F02 solid ${hex} preserves exact colour`, async ({ page }) => {
+    await ready(page);
+    const frame = await background(page, { kind: "solid", color: hex });
+    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), rgb, 1);
+  });
+}
+for (const kind of ["gradient", "mesh"] as const) {
+  test(`F02 constant ${kind} outputs linear values`, async ({ page }) => {
+    await ready(page);
+    const bg: Background =
+      kind === "gradient"
+        ? { kind, stops: ["#3366CC", "#3366CC"], angle: 90, angleConvention: "css" }
+        : { kind, colors: ["#3366CC", "#3366CC", "#3366CC"], drift: 0, seed: 1 };
+    const frame = await background(page, bg);
+    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+  });
+}
+test("F02 screenshot band centres preserve RGB in source top-to-bottom order", async ({ page }) => {
+  await ready(page, "&cameraDistance=0.7");
+  const pixels = await page.evaluate(async () => {
+    const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    const images = window.__labTestImages;
+    if (!doc || !engine || !setDoc || !images) throw new Error("F02 band hooks unavailable");
+    const assetId = "f02-source-bands";
+    doc.shots[0].layout = { kind: "single", device: "card", assetId };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].entrance = "none";
+    doc.style.grain = doc.style.vignette = 0;
+    doc.style.shadow = "none";
+    doc.assets.push({
+      id: assetId,
+      kind: "image",
+      name: assetId,
+      mime: "image/png",
+      bytes: 1,
+      width: 1600,
+      height: 1000,
     });
-    const mean = avgRegion(pixels, 540, 260, 740, 460);
-    let variance = 0;
-    let count = 0;
-    for (let y = 260; y < 460; y++) {
-      for (let x = 540; x < 740; x++) {
-        const i = (y * pixels.width + x) * 4;
-        variance += (pixels.data[i] - mean[0]) ** 2;
-        count++;
-      }
+    await setDoc(doc, {
+      [assetId]: await images.bands(1600, 1000, ["#808080", "#3366CC", "#F1EDE6", "#18191B"]),
+    });
+    engine.renderAt(0);
+    return { width: 1280, height: 720, data: engine.readPixels() };
+  });
+  // Static card is .68 * 16/9 stage units wide; distance .7 gives 1243x777px.
+  for (const [y, rgb] of [
+    [69, [128, 128, 128]],
+    [263, [51, 102, 204]],
+    [457, [241, 237, 230]],
+    [651, [24, 25, 27]],
+  ] as const) {
+    expectRgbNear(avgRegion(pixels, 630, y - 3, 650, y + 3), rgb, 2);
+  }
+});
+for (const angle of [90, 180] as const) {
+  test(`F02 CSS gradient ${angle} degrees runs in the correct direction`, async ({ page }) => {
+    await ready(page);
+    const frame = await background(page, {
+      kind: "gradient",
+      stops: ["#000000", "#FFFFFF"],
+      angle,
+      angleConvention: "css",
+    });
+    const sample = (x: number, y: number) => avgRegion(frame, x, y, x + 4, y + 4)[0];
+    if (angle === 90) {
+      expect(sample(0, 358)).toBeLessThan(10);
+      expect(sample(1276, 358)).toBeGreaterThan(245);
+      expect(Math.abs(sample(638, 40) - sample(638, 676))).toBeLessThanOrEqual(1);
+    } else {
+      expect(sample(638, 0)).toBeLessThan(10);
+      expect(sample(638, 716)).toBeGreaterThan(245);
+      expect(Math.abs(sample(40, 358) - sample(1236, 358))).toBeLessThanOrEqual(1);
     }
-    const deviation = Math.sqrt(variance / count);
-    expect(mean[0]).toBeGreaterThanOrEqual(126.5);
-    expect(mean[0]).toBeLessThanOrEqual(129.5);
+  });
+}
+test("F02 grain is zero-mean monochrome, bounded and deterministic in every channel", async ({
+  page,
+}) => {
+  await ready(page);
+  const frame = await background(page, { kind: "solid", color: "#808080" }, 0.25);
+  const repeat = await page.evaluate(() => {
+    if (!window.__labEngine) throw new Error("Engine unavailable");
+    window.__labEngine.renderAt(0);
+    return window.__labEngine.readPixels();
+  });
+  expect(Array.from(repeat)).toEqual(Array.from(frame.data));
+  const mean = avgRegion(frame, 540, 260, 740, 460);
+  for (let channel = 0; channel < 3; channel++) {
+    let variance = 0;
+    let monochrome = true;
+    let maximum = 0;
+    for (let y = 260; y < 460; y++)
+      for (let x = 540; x < 740; x++) {
+        const i = (y * 1280 + x) * 4;
+        variance += (frame.data[i + channel] - mean[channel]) ** 2;
+        monochrome &&= frame.data[i + channel] === frame.data[i];
+        maximum = Math.max(maximum, Math.abs(frame.data[i + channel] - 128));
+      }
+    expect(monochrome).toBe(true);
+    expect(maximum).toBeLessThanOrEqual(7);
+    expect(mean[channel]).toBeGreaterThanOrEqual(126.5);
+    expect(mean[channel]).toBeLessThanOrEqual(129.5);
+    const deviation = Math.sqrt(variance / 40000);
     expect(deviation).toBeGreaterThan(1);
     expect(deviation).toBeLessThan(8);
-  });
-
-  test("screen pixels preserve all source band colors", async ({ page }) => {
-    test.fail(true, "Known bug, fixed by F02");
-    await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-    await page.waitForFunction(() => window.__labReady === true);
-    const matches = await page.evaluate(async () => {
-      const doc = structuredClone(window.__fixtures?.["card-hero"]);
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      const images = window.__labTestImages;
-      if (!doc || !engine || !setDoc || !images)
-        throw new Error("F02 screenshot fixture hook is unavailable");
-      engine.resize(1280, 720);
-      const assetId = "f02-source-bands";
-      const colors = ["#808080", "#3366CC", "#F1EDE6", "#18191B"];
-      const layout = doc.shots[0].layout;
-      if (layout.kind !== "single") throw new Error("Expected a single card layout");
-      layout.device = "card";
-      layout.assetId = assetId;
-      doc.assets.push({
-        id: assetId,
-        kind: "image",
-        name: assetId,
-        mime: "image/png",
-        bytes: 1,
-        width: 1600,
-        height: 1000,
-      });
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      await setDoc(doc, { [assetId]: await images.bands(1600, 1000, colors) });
-      engine.renderAt(0);
-      return Array.from(engine.readPixels());
+  }
+});
+test("F02 static accumulated frame preserves colour for 2, 4 and 8 samples", async ({ page }) => {
+  await ready(page);
+  const base = await background(page, { kind: "solid", color: "#3366CC" });
+  const accumulated = await page.evaluate(() => {
+    const engine = window.__labEngine;
+    if (!engine) throw new Error("Engine unavailable");
+    return [2, 4, 8].map((samples) => {
+      engine.renderAccumulated(1, 0.2, samples);
+      return { width: 1280, height: 720, data: engine.readPixels() };
     });
-    const expected = [
-      [128, 128, 128],
-      [51, 102, 204],
-      [241, 237, 230],
-      [24, 25, 27],
-    ];
-    for (const rgb of expected) {
-      let matched = 0;
-      for (let i = 0; i < matches.length; i += 4) {
-        if (
-          Math.abs(matches[i] - rgb[0]) <= 2 &&
-          Math.abs(matches[i + 1] - rgb[1]) <= 2 &&
-          Math.abs(matches[i + 2] - rgb[2]) <= 2
-        )
-          matched++;
-      }
-      expect(matched, `source band ${rgb.join(", ")} should survive rendering`).toBeGreaterThan(
-        100,
+  });
+  for (const frame of accumulated) {
+    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), avgRegion(base, 600, 320, 680, 400), 1);
+  }
+});
+test("F02 transition fade blends in linear light", async ({ page }) => {
+  await ready(page);
+  const pixels = await page.evaluate(async () => {
+    const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    if (!doc || !engine || !setDoc) throw new Error("Fixture unavailable");
+    doc.loop = false;
+    doc.style.background = { kind: "solid", color: "#000000" };
+    doc.style.grain = doc.style.vignette = 0;
+    const shot = doc.shots[0];
+    shot.layout = { kind: "title" };
+    shot.texts = [];
+    shot.duration = 2;
+    doc.shots.push({
+      ...structuredClone(shot),
+      id: "white-shot",
+      styleOverrides: { background: { kind: "solid", color: "#FFFFFF" } },
+      transitionIn: { kind: "fade", duration: 1, easing: "linear" },
+    });
+    await setDoc(doc);
+    engine.renderAt(1.5);
+    return { width: 1280, height: 720, data: engine.readPixels() };
+  });
+  expectRgbNear(avgRegion(pixels, 600, 320, 680, 400), [188, 188, 188], 1);
+});
+
+function decode(channel: number): number {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+function encode(c: number): number {
+  return (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055) * 255;
+}
+for (const coverageOnly of [true, false]) {
+  test(`F02 ${coverageOnly ? "coverage glyph" : "generic raster"} alpha plateaus composite without fringes`, async ({
+    page,
+  }) => {
+    await ready(page);
+    for (const [fg, bg] of [
+      ["#FFFFFF", "#18191B"],
+      ["#3366CC", "#F1EDE6"],
+      ["#FFFFFF", "#F1EDE6"],
+      ["#3366CC", "#18191B"],
+    ]) {
+      const frame = await page.evaluate(
+        async ({ fg, bg, coverageOnly }) => {
+          const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
+          const engine = window.__labEngine;
+          const setDoc = window.__labSetDoc;
+          const provider = window.__createLabAssetProvider?.();
+          if (!doc || !engine || !setDoc || !provider) throw new Error("Alpha fixture unavailable");
+          doc.style.background = { kind: "solid", color: bg };
+          doc.style.grain = doc.style.vignette = 0;
+          doc.shots[0].layout = { kind: "title" };
+          doc.shots[0].texts = [
+            {
+              id: "alpha-plateaus",
+              text: "alpha",
+              role: "title",
+              font: "display",
+              size: 20,
+              anchor: "center",
+              align: "center",
+              color: fg,
+              animation: "none",
+              delay: 0,
+            },
+          ];
+          const canvas = new OffscreenCanvas(200, 100);
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Alpha canvas unavailable");
+          for (let i = 0; i < 4; i++) {
+            context.fillStyle = fg;
+            context.globalAlpha = [64, 128, 192, 255][i] / 255;
+            context.fillRect(i * 50, 0, 50, 100);
+          }
+          const bitmap = await createImageBitmap(canvas, { premultiplyAlpha: "premultiply" });
+          await (
+            setDoc as (
+              doc: ProjectDoc,
+              images: Record<string, ImageBitmap>,
+              provider: AssetProvider,
+            ) => Promise<void>
+          )(
+            doc,
+            {},
+            {
+              ...provider,
+              getText: async () => ({
+                bitmap,
+                width: 200,
+                height: 100,
+                words: [{ x: 0, y: 0, w: 200, h: 100 }],
+                ...(coverageOnly ? { color: fg } : {}),
+              }),
+            },
+          );
+          engine.renderAt(0);
+          return { width: 1280, height: 720, data: engine.readPixels() };
+        },
+        { fg, bg, coverageOnly },
       );
+      const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const foreground = channels(fg);
+      const backdrop = channels(bg);
+      for (let i = 0; i < 4; i++) {
+        const alpha = [64, 128, 192, 255][i] / 255;
+        const expected = foreground.map((c, channel) =>
+          encode(decode(c) * alpha + decode(backdrop[channel]) * (1 - alpha)),
+        );
+        expectRgbNear(avgRegion(frame, 563 + i * 50, 350, 567 + i * 50, 370), expected, 2);
+      }
     }
   });
+}
 
-  test("CSS gradient angles run from left to right at 90 degrees", async ({ page }) => {
-    test.fail(true, "Known bug, fixed by F02");
-    await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-    await page.waitForFunction(() => window.__labReady === true);
-    const samples = await page.evaluate(async () => {
-      const doc = structuredClone(window.__fixtures?.["card-hero"]);
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      if (!doc || !engine || !setDoc) throw new Error("F02 pixel hook is unavailable");
-      engine.resize(1280, 720);
-      doc.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 90 };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      doc.shots[0].layout = { kind: "title" };
-      doc.shots[0].texts = [];
-      doc.style.background = { kind: "gradient", stops: ["#3366CC", "#3366CC"], angle: 90 };
-      await setDoc(doc);
-      engine.renderAt(0);
-      const gradient = engine.readPixels();
-      doc.style.background = {
-        kind: "mesh",
-        colors: ["#3366CC", "#3366CC", "#3366CC"],
-        drift: 0,
-        seed: 1,
-      };
-      await setDoc(doc);
-      engine.renderAt(0);
-      const mesh = engine.readPixels();
-      doc.style.background = { kind: "gradient", stops: ["#000000", "#FFFFFF"], angle: 90 };
-      await setDoc(doc);
-      engine.renderAt(0);
-      const directed = engine.readPixels();
-      const rgbAt = (data: Uint8ClampedArray, x: number) => {
-        const i = (360 * 1280 + x) * 4;
-        return [data[i], data[i + 1], data[i + 2]];
-      };
-      return {
-        gradient: rgbAt(gradient, 640),
-        mesh: rgbAt(mesh, 640),
-        left: rgbAt(directed, 20)[0],
-        right: rgbAt(directed, 1260)[0],
-      };
-    });
-    expectRgbNear(samples.gradient, [51, 102, 204], 1);
-    expectRgbNear(samples.mesh, [51, 102, 204], 1);
-    expect(samples.left).toBeLessThan(10);
-    expect(samples.right).toBeGreaterThan(245);
+test("F02 dither stays below half an sRGB byte", async ({ page }) => {
+  await ready(page);
+  const frame = await background(page, { kind: "solid", color: "#808080" });
+  const values = new Set<number>();
+  for (let y = 260; y < 460; y++)
+    for (let x = 540; x < 740; x++) values.add(frame.data[(y * 1280 + x) * 4]);
+  // At an exact byte centre, bounded Â±0.5 LSB cannot cross either rounding boundary.
+  expect([...values]).toEqual([128]);
+});
+import { evaluate } from "../../src/motion";
+
+for (const [fg, bg, animation] of [
+  ["#FFFFFF", "#18191B", "none"],
+  ["#3366CC80", "#18191B", "none"],
+  ["#3366CC", "#F1EDE6", "blurIn"],
+] as const) {
+  test(`F02 real glyph ${fg} on ${bg} ${animation} matches independent linear coverage oracle`, async ({
+    page,
+  }) => {
+    await ready(page);
+    const result = await page.evaluate(
+      async ({ fg, bg, animation }) => {
+        const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
+        const engine = window.__labEngine;
+        const setDoc = window.__labSetDoc;
+        const provider = window.__createLabAssetProvider?.();
+        if (!doc || !engine || !setDoc || !provider)
+          throw new Error("Real glyph fixture unavailable");
+        doc.loop = false;
+        doc.style.background = { kind: "solid", color: bg };
+        doc.style.grain = doc.style.vignette = 0;
+        doc.style.fonts.display = { source: "builtin", family: "Inter Display", weight: 600 };
+        const layer: ProjectDoc["shots"][number]["texts"][number] = {
+          id: "real-glyph",
+          text: "T",
+          role: "title",
+          font: "display",
+          size: 20,
+          anchor: "center",
+          align: "center",
+          color: fg,
+          animation,
+          delay: 0,
+        };
+        doc.shots[0].layout = { kind: "title" };
+        doc.shots[0].texts = [layer];
+        const raster = await provider.getText(layer, doc.style, 720);
+        const canvas = new OffscreenCanvas(raster.width, raster.height);
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Coverage readback unavailable");
+        context.drawImage(raster.bitmap, 0, 0);
+        const data = context.getImageData(0, 0, raster.width, raster.height).data;
+        const alpha: number[] = [];
+        for (let i = 3; i < data.length; i += 4) alpha.push(data[i] / 255);
+        await (
+          setDoc as (
+            doc: ProjectDoc,
+            images: Record<string, ImageBitmap>,
+            provider: AssetProvider,
+          ) => Promise<void>
+        )(doc, {}, { ...provider, getText: async () => raster });
+        const t = animation === "none" ? 1 : 0.12;
+        engine.renderAt(t);
+        return {
+          doc,
+          t,
+          width: raster.width,
+          height: raster.height,
+          words: raster.words,
+          alpha,
+          color: raster.color,
+          pixels: engine.readPixels(),
+        };
+      },
+      { fg, bg, animation },
+    );
+    expect(result.color?.toLowerCase()).toBe(fg.slice(0, 7).toLowerCase());
+    const textFrame = evaluate(result.doc, result.t).layers[0].frame.texts[0];
+    const wordFrame = textFrame.words[0];
+    const opacity = wordFrame.opacity * textFrame.opacity;
+    const word = result.words[0];
+    const blockX = Math.round((1280 - result.width) / 2);
+    const blockY = Math.round((720 - result.height) / 2) + (wordFrame.dy * 720) / 100;
+    const alphaAt = (x: number, y: number) => {
+      const at = (x: number, y: number) =>
+        result.alpha[
+          Math.max(0, Math.min(result.height - 1, y)) * result.width +
+            Math.max(0, Math.min(result.width - 1, x))
+        ];
+      const x0 = Math.floor(x);
+      const y0 = Math.floor(y);
+      const fx = x - x0;
+      const fy = y - y0;
+      return (
+        (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) +
+        (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy
+      );
+    };
+    const taps = [
+      [0, 0, 0.25],
+      [1, 0, 0.125],
+      [-1, 0, 0.125],
+      [0, 1, 0.125],
+      [0, -1, 0.125],
+      [1, 1, 0.0625],
+      [-1, 1, 0.0625],
+      [1, -1, 0.0625],
+      [-1, -1, 0.0625],
+    ];
+    const foreground = [1, 3, 5].map((i) => parseInt(fg.slice(i, i + 2), 16));
+    const backdrop = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16));
+    let checked = 0;
+    let maximumError = 0;
+    for (let y = Math.ceil(blockY + word.y + 2); y < blockY + word.y + word.h - 2; y++) {
+      for (let x = blockX + word.x + 2; x < blockX + word.x + word.w - 2; x++) {
+        const localX = x - blockX;
+        const localY = y - blockY;
+        const coverage =
+          wordFrame.blur > 0.001
+            ? taps.reduce(
+                (sum, [dx, dy, weight]) =>
+                  sum +
+                  alphaAt(localX + dx * wordFrame.blur, localY + dy * wordFrame.blur) * weight,
+                0,
+              )
+            : alphaAt(localX, localY);
+        const alpha = coverage * opacity;
+        if (alpha <= 0.02 || alpha >= 0.98) continue;
+        checked++;
+        for (let channel = 0; channel < 3; channel++) {
+          const expected = encode(
+            decode(foreground[channel]) * alpha + decode(backdrop[channel]) * (1 - alpha),
+          );
+          maximumError = Math.max(
+            maximumError,
+            Math.abs(result.pixels[(y * 1280 + x) * 4 + channel] - expected),
+          );
+        }
+      }
+    }
+    expect(checked, "real translucent edge pixels must be measured").toBeGreaterThan(50);
+    expect(
+      maximumError,
+      "glyph edges must match independent linear compositing",
+    ).toBeLessThanOrEqual(2);
   });
+}
+
+test("F02 short phone screenshot bottom fill is sRGB exact", async ({ page }) => {
+  await ready(page);
+  const frame = await page.evaluate(async () => {
+    const doc = structuredClone(window.__fixtures?.["device-phone-frontal"]);
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    const images = window.__labTestImages;
+    if (!doc || !engine || !setDoc || !images) throw new Error("Fill fixture unavailable");
+    const id = "f02-short-phone";
+    doc.shots[0].layout = { kind: "single", device: "phone", assetId: id };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.style.grain = doc.style.vignette = 0;
+    doc.assets.push({
+      id,
+      kind: "image",
+      name: id,
+      mime: "image/png",
+      bytes: 1,
+      width: 780,
+      height: 100,
+    });
+    await setDoc(doc, { [id]: await images.bands(780, 100, ["#3366CC"]) });
+    engine.renderAt(0);
+    return { width: 1280, height: 720, data: engine.readPixels() };
+  });
+  expectRgbNear(avgRegion(frame, 630, 510, 650, 530), [51, 102, 204], 2);
 });

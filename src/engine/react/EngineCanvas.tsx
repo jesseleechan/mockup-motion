@@ -19,6 +19,8 @@ export interface EngineCanvasProps {
   pixelRatio?: number;
   /** Override the default 1.5 preview supersample. */
   supersample?: 1 | 1.5 | 2;
+  /** Isolated lab fixtures only; does not change CameraMove or saved projects. */
+  cameraDistanceOverride?: number;
 }
 
 export const EngineCanvas: React.FC<EngineCanvasProps> = ({
@@ -31,6 +33,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   style,
   pixelRatio,
   supersample,
+  cameraDistanceOverride,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +61,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
         width,
         height,
         supersample: supersample ?? 1.5,
+        cameraDistanceOverride,
       });
 
       if (disposed) {

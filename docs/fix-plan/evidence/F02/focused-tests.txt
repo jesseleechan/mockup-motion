@@ -1,0 +1,52 @@
+
+[WebServer] (node:29140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:45832) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f02.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+
+Running 21 tests using 1 worker
+
+(node:21896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/21] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #808080 preserves exact colour
+[2/21] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #18191B preserves exact colour
+[3/21] [chromium] › tests\e2e\color.spec.ts:36:3 › F02 solid #F1EDE6 preserves exact colour
+[4/21] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 constant gradient outputs linear values
+[5/21] [chromium] › tests\e2e\color.spec.ts:43:3 › F02 constant mesh outputs linear values
+[6/21] [chromium] › tests\e2e\color.spec.ts:52:1 › F02 screenshot band centres preserve RGB in source top-to-bottom order
+[7/21] [chromium] › tests\e2e\color.spec.ts:77:3 › F02 CSS gradient 90 degrees runs in the correct direction
+[8/21] [chromium] › tests\e2e\color.spec.ts:77:3 › F02 CSS gradient 180 degrees runs in the correct direction
+[9/21] [chromium] › tests\e2e\color.spec.ts:92:1 › F02 grain is zero-mean monochrome, bounded and deterministic in every channel
+[10/21] [chromium] › tests\e2e\color.spec.ts:121:1 › F02 static accumulated frame preserves colour for 2, 4 and 8 samples
+[11/21] [chromium] › tests\e2e\color.spec.ts:137:1 › F02 transition fade blends in linear light
+[12/21] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 card screen maps all four source quadrants upright
+[13/21] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 browser screen maps all four source quadrants upright
+[14/21] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 phone screen maps all four source quadrants upright
+[15/21] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 tablet screen maps all four source quadrants upright
+[16/21] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 laptop screen maps all four source quadrants upright
+[17/21] [chromium] › tests\e2e\orientation.spec.ts:148:1 › F01 tall screenshot scroll preserves top-down color bands at both endpoints
+  1) [chromium] › tests\e2e\orientation.spec.ts:148:1 › F01 tall screenshot scroll preserves top-down color bands at both endpoints 
+
+    Test timeout of 45000ms exceeded.
+
+    Error Context: test-results\orientation-F01-tall-scree-33cd7-lor-bands-at-both-endpoints-chromium\error-context.md
+
+
+
+(node:38528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[18/21] [chromium] › tests\e2e\orientation.spec.ts:197:1 › F01 capital T has its crossbar at the top of glyph ink bounds
+[19/21] [chromium] › tests\e2e\orientation.spec.ts:241:1 › F01 maskReveal exposes lower glyph ink before its upper crossbar
+[20/21] [chromium] › tests\e2e\orientation.spec.ts:283:1 › F01 image background maps its top edge to the source top row
+[21/21] [chromium] › tests\e2e\orientation.spec.ts:313:1 › F01 decoded WebM frame preserves card quadrant orientation
+  1 failed
+    [chromium] › tests\e2e\orientation.spec.ts:148:1 › F01 tall screenshot scroll preserves top-down color bands at both endpoints 
+  20 passed (2.2m)

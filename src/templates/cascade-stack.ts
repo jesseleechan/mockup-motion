@@ -53,7 +53,8 @@ export const cascadeStackTemplate: Template = {
       background: {
         kind: "gradient",
         stops: ["#EEF2F6", "#E2E8F0"],
-        angle: 120,
+        angle: 330,
+        angleConvention: "css",
       },
       shadow: "medium",
       browserChrome: "standard",

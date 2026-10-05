@@ -1,0 +1,55 @@
+[
+  {
+    "asset": "/demo/aurelia/desktop-hero.webp",
+    "width": 2880,
+    "height": 1800,
+    "background": {
+      "kind": "solid",
+      "color": "#18191B"
+    }
+  },
+  {
+    "asset": "/demo/aurelia/mobile-hero.webp",
+    "width": 780,
+    "height": 1688,
+    "background": {
+      "kind": "solid",
+      "color": "#0F1117"
+    }
+  },
+  {
+    "asset": "/demo/aurelia/desktop-hero.webp",
+    "width": 2880,
+    "height": 1800,
+    "background": {
+      "kind": "solid",
+      "color": "#F5F3EF"
+    }
+  },
+  {
+    "asset": "/demo/aurelia/desktop-hero.webp",
+    "width": 2880,
+    "height": 1800,
+    "background": {
+      "kind": "solid",
+      "color": "#F1EDE6"
+    }
+  },
+  {
+    "asset": "/demo/aurelia.png",
+    "width": 1586,
+    "height": 992,
+    "sourceCrop": [
+      430,
+      260,
+      640,
+      400
+    ],
+    "renderCrop": {
+      "left": 355,
+      "top": 175,
+      "width": 502,
+      "height": 314
+    }
+  }
+]
