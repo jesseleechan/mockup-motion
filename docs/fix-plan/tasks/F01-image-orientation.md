@@ -58,7 +58,7 @@ Create `tests/e2e/orientation.spec.ts`:
 
 ## Acceptance criteria
 
-- [x] All orientation tests pass. With the fix reverted (`flipY` back to default and the old UVs), the screen, text, and exported-video tests fail at their pixel assertions. See the mutation logs under `docs/fix-plan/evidence/F01/`.
+- [x] All orientation tests pass. With the fix reverted (`flipY` back to default and the old UVs), the screen, text, and exported-video tests fail at their pixel assertions. The failing runs are in the F01 pull request.
 - [x] Commit these stills, rendered at 1200 px wide, under `docs/fix-plan/evidence/F01/`: `quiet-hero`, `phone-spotlight`, `scroll-story` at the end of its scroll, `launch-reel` at its title, and the decoded export frame. Each was inspected; text reads normally.
 - [x] The cursor arrow points up-left with the tip at the click point (cursor still under `docs/fix-plan/evidence/F01/`).
 - [x] Scrolling a tall screenshot allocates no new geometries per frame (geometry count stays constant over 60 scrolled frames).
