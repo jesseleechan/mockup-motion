@@ -2,6 +2,8 @@
 
 A local screenshot presentation studio. Upload website screenshots, choose a preset, adjust the composition, and export a video or PNG.
 
+> **Rebuild in progress.** This README describes v0.1. The audit and the rebuild plan (three.js engine, templates, storyboard timeline, export destinations) are in [`docs/plan/`](docs/plan/README.md). Agents should start with [`CLAUDE.md`](CLAUDE.md).
+
 ## Run
 
 Use Node.js 22.12 or later and npm:
@@ -52,6 +54,6 @@ The unit tests cover image fitting/crop bounds, output geometry, preset applicat
 - `src/storage`: local project persistence.
 - `src/export`: codec probing, encoding worker, fallback recorder, and output metadata.
 
-The visual direction is recorded in `docs/editor-concept.png`. The architecture website demo in `public/demo/aurelia.png` was generated with the built-in image generation tool from an architecture-homepage brief; it is a demo asset, not a user upload. Existing Canvas-generated desktop/mobile samples provide the other demo screens. The original implementation plan is in `IMPLEMENTATION_PLAN.md`.
+The v0.1 design concept and original plan are archived in `docs/archive/`. The architecture website demo in `public/demo/aurelia.png` was generated with the built-in image generation tool from an architecture-homepage brief; it is a demo asset, not a user upload. Existing Canvas-generated desktop/mobile samples provide the other demo screens.
 
 Current scope is one locally saved project with reusable presets. Multi-scene timelines, audio, 3D devices, cloud sync, 4K, and batch export are future additions. Automated browser checks currently cover Chrome; Safari/Firefox compatibility still needs separate verification.
