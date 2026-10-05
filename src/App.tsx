@@ -1,258 +1,566 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { StyleSelector } from './components/StyleSelector';
-import { UploadSection } from './components/UploadSection';
-import { PreviewStage } from './components/PreviewStage';
-import { TweakControls } from './components/TweakControls';
-import { ExportModal } from './components/ExportModal';
-import { MockupConfig, UploadedImage, ExportProgress, AnimationStyle, AspectRatio } from './types';
-import { loadDefaultDesktopImages, loadDefaultMobileImages } from './utils/sampleImages';
-import { exportMockupVideo } from './utils/videoExporter';
-import { Download, Sparkles, ChevronLeft, Upload as UploadIcon, Layers } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Clapperboard,
+  Upload,
+  Undo2,
+  Redo2,
+  Check,
+  LoaderCircle,
+  ChevronRight,
+  SlidersHorizontal,
+  PanelsTopLeft,
+  X,
+  RotateCcw,
+} from "lucide-react";
+import { useEditor } from "./editor/useEditor";
+import { PRESETS, applyPreset } from "./presets/presets";
+import { loadFiles, loadDemoImages } from "./assets/images";
+import type { AspectRatio, Preset } from "./types";
+import { PresetsPanel } from "./editor/Presets";
+import { MediaPanel, MediaStrip } from "./editor/Media";
+import { Inspector } from "./editor/Inspector";
+import { Preview, type PreviewHandle } from "./editor/Preview";
+import { ExportDialog } from "./editor/ExportDialog";
+import { Modal } from "./editor/Modal";
 
 export default function App() {
-  // Step 1: Style -> Step 2: Upload -> Step 3: Preview & Tweak
-  const [activeStep, setActiveStep] = useState<number>(1);
-  const [desktopImages, setDesktopImages] = useState<UploadedImage[]>([]);
-  const [mobileImages, setMobileImages] = useState<UploadedImage[]>([]);
-
-  const [config, setConfig] = useState<MockupConfig>({
-    style: 'iphone-mockups',
-    aspectRatio: '16:9',
-    durationSeconds: 6,
-    backgroundColor: '#0A0D14',
-    backgroundStyle: 'spotlight',
-    deviceFinish: 'titanium',
-    showShadows: true,
-    showGlare: true,
-    scrollSpeed: 'slow',
-    easing: 'smooth',
-  });
-
-  const [exportProgress, setExportProgress] = useState<ExportProgress>({
-    isExporting: false,
-    currentFrame: 0,
-    totalFrames: 0,
-    percentage: 0,
-    stage: 'preparing',
-  });
-
-  // Preload high-res sample images for both Mobile (9:16) and Desktop
+  const editor = useEditor(),
+    { project, update, changeComposition } = editor;
+  const [tab, setTab] = useState<"presets" | "media">("presets"),
+    [mobilePanel, setMobilePanel] = useState<"library" | "settings" | null>(
+      null,
+    ),
+    [exportOpen, setExportOpen] = useState(false),
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(false),
+    [dragging, setDragging] = useState(false),
+    [message, setMessage] = useState(""),
+    [presetModal, setPresetModal] = useState(false),
+    [presetName, setPresetName] = useState(""),
+    [startOver, setStartOver] = useState(false);
+  const input = useRef<HTMLInputElement>(null),
+    replaceId = useRef<string | null>(null),
+    preview = useRef<PreviewHandle>(null),
+    dragDepth = useRef(0);
+  const allPresets = [...PRESETS, ...editor.presets],
+    selected = allPresets.find((p) => p.id === project.presetId) ?? PRESETS[0];
+  const notify = useCallback((text: string) => setMessage(text), []);
   useEffect(() => {
-    let isMounted = true;
-    Promise.all([loadDefaultDesktopImages(), loadDefaultMobileImages()]).then(
-      ([desktops, mobiles]) => {
-        if (isMounted) {
-          setDesktopImages(desktops);
-          setMobileImages(mobiles);
-        }
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(""), 6000);
+    return () => clearTimeout(timer);
+  }, [message]);
+  const addFiles = useCallback(
+    async (files: File[]) => {
+      if (!files.length || !editor.ready) return;
+      const target = replaceId.current;
+      replaceId.current = null;
+      setLoading(true);
+      try {
+        const result = await loadFiles(files);
+        if (result.images.length)
+          update((p) => {
+            const images = target
+              ? p.images.map((i) =>
+                  i.id === target
+                    ? { ...result.images[0], id: i.id, category: i.category }
+                    : i,
+                )
+              : [
+                  ...p.images.filter(
+                    (i) =>
+                      !i.id.startsWith("sample-") && !i.id.startsWith("demo-"),
+                  ),
+                  ...result.images,
+                ];
+            return { ...p, images };
+          });
+        if (result.errors.length) notify(result.errors.join(" "));
+        else if (result.images.length)
+          notify(
+            `${result.images.length} screenshot${result.images.length === 1 ? "" : "s"} added.`,
+          );
+      } catch (error) {
+        notify(
+          error instanceof Error
+            ? error.message
+            : "Could not load the screenshots.",
+        );
+      } finally {
+        setLoading(false);
       }
-    );
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleConfigChange = (changes: Partial<MockupConfig>) => {
-    setConfig((prev) => ({ ...prev, ...changes }));
+    },
+    [editor.ready, update, notify],
+  );
+  const onUpload = () => {
+    replaceId.current = null;
+    input.current?.click();
   };
-
-  // Determine which image set to render based on selected style
-  const activeImages =
-    config.style === 'iphone-mockups'
-      ? (mobileImages.length > 0 ? mobileImages : desktopImages)
-      : (desktopImages.length > 0 ? desktopImages : mobileImages);
-
-  const handleExport = async () => {
-    if (activeImages.length === 0) {
-      setActiveStep(2);
-      return;
-    }
-
+  const onReplace = (id: string) => {
+    replaceId.current = id;
+    input.current?.click();
+  };
+  const onDemo = async () => {
+    if (loading || !editor.ready) return;
+    setLoading(true);
     try {
-      await exportMockupVideo({
-        config,
-        images: activeImages,
-        onProgress: setExportProgress,
-      });
-    } catch (err) {
-      console.error('Export error:', err);
-      setExportProgress((prev) => ({
-        ...prev,
-        isExporting: false,
-        stage: 'error',
-        errorMessage: err instanceof Error ? err.message : 'Export failed.',
-      }));
+      const images = await loadDemoImages();
+      update((p) => (p.images.length ? p : { ...p, images }));
+      notify("Demo loaded. Your first upload replaces these samples.");
+    } catch (error) {
+      notify(
+        error instanceof Error ? error.message : "Could not load the demo.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleCloseExportModal = () => {
-    setExportProgress((prev) => ({
-      ...prev,
-      isExporting: false,
-      stage: 'preparing',
+  const onSelect = (id: string) =>
+    changeComposition({
+      assetIds: { ...project.composition.assetIds, primary: id },
+    });
+  const onRemove = (id: string) =>
+    update((p) => ({
+      ...p,
+      images: p.images.filter((i) => i.id !== id),
+      composition: {
+        ...p.composition,
+        assetIds: {
+          primary:
+            p.composition.assetIds.primary === id
+              ? ""
+              : p.composition.assetIds.primary,
+          mobile:
+            p.composition.assetIds.mobile === id
+              ? ""
+              : p.composition.assetIds.mobile,
+        },
+        background: {
+          ...p.composition.background,
+          imageId:
+            p.composition.background.imageId === id
+              ? ""
+              : p.composition.background.imageId,
+        },
+        brand: {
+          ...p.composition.brand,
+          logoId:
+            p.composition.brand.logoId === id ? "" : p.composition.brand.logoId,
+        },
+      },
     }));
+  const onReorder = (id: string, direction: number) =>
+    update((p) => {
+      const images = [...p.images],
+        index = images.findIndex((i) => i.id === id),
+        next = index + direction;
+      if (index < 0 || next < 0 || next >= images.length) return p;
+      [images[index], images[next]] = [images[next], images[index]];
+      return { ...p, images };
+    });
+  const onCategory = (id: string, category: "desktop" | "mobile") =>
+    update((p) => ({
+      ...p,
+      images: p.images.map((i) => (i.id === id ? { ...i, category } : i)),
+    }));
+  const mediaProps = {
+    project,
+    onUpload,
+    onDemo,
+    onSelect,
+    onRemove,
+    onReplace,
+    onReorder,
+    onCategory,
   };
-
+  const selectPreset = (p: Preset) => {
+    update((current) => applyPreset(current, p));
+    setMobilePanel(null);
+  };
+  useEffect(() => {
+    const listener = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+      const files = Array.from(e.clipboardData?.files ?? []);
+      if (files.length) {
+        e.preventDefault();
+        addFiles(files);
+      }
+    };
+    window.addEventListener("paste", listener);
+    return () => window.removeEventListener("paste", listener);
+  }, [addFiles]);
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+        target.isContentEditable ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        e.shiftKey ? editor.redo() : editor.undo();
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, [editor.undo, editor.redo]);
+  const finishSavePreset = () => {
+    if (!presetName.trim()) return;
+    try {
+      editor.savePreset(presetName.trim());
+      setPresetModal(false);
+      notify("Your preset is saved.");
+    } catch {
+      notify("Could not save this preset. Device storage may be full.");
+    }
+  };
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600/30 selection:text-white">
-      {/* 3-Zone Top Navigation Bar */}
-      <Header
-        onExportClick={handleExport}
-        isExporting={exportProgress.isExporting}
-        activeStep={activeStep}
-        onStepClick={setActiveStep}
-      />
-
-      {/* Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        {/* Step 1: Pick Style First */}
-        {activeStep === 1 && (
-          <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
-            <StyleSelector
-              selectedStyle={config.style}
-              onStyleSelect={(style: AnimationStyle) =>
-                handleConfigChange({ style })
+    <div
+      className={`app-shell ${dragging ? "drag-over" : ""}`}
+      aria-busy={!editor.ready || loading}
+      onDragEnter={(e) => {
+        if (e.dataTransfer.types.includes("Files")) {
+          e.preventDefault();
+          dragDepth.current++;
+          setDragging(true);
+        }
+      }}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
+      onDragLeave={() => {
+        dragDepth.current--;
+        if (dragDepth.current <= 0) {
+          dragDepth.current = 0;
+          setDragging(false);
+        }
+      }}
+      onDrop={(e) => {
+        if (e.dataTransfer.files.length) {
+          e.preventDefault();
+          dragDepth.current = 0;
+          setDragging(false);
+          replaceId.current = null;
+          addFiles(Array.from(e.dataTransfer.files));
+        }
+      }}
+    >
+      <header className="topbar">
+        <a className="wordmark" href="/" aria-label="MockupMotion home">
+          <span className="brand-mark">
+            <Clapperboard size={19} />
+          </span>
+          <strong>MockupMotion</strong>
+        </a>
+        <div className="project-title">
+          <input
+            aria-label="Project name"
+            value={project.name}
+            maxLength={80}
+            disabled={!editor.ready}
+            onChange={(e) => update((p) => ({ ...p, name: e.target.value }))}
+          />
+          <span className="save-state" role="status">
+            {editor.saveStatus === "Saving…" || !editor.ready ? (
+              <LoaderCircle size={13} className="spin" />
+            ) : (
+              <Check size={13} />
+            )}
+            <span>{editor.saveStatus}</span>
+          </span>
+        </div>
+        <div className="toolbar-actions">
+          <button
+            className="toolbar-button"
+            aria-label="Undo"
+            title="Undo (⌘Z)"
+            disabled={!editor.canUndo}
+            onClick={editor.undo}
+          >
+            <Undo2 size={16} />
+            <span>Undo</span>
+          </button>
+          <button
+            className="toolbar-button"
+            aria-label="Redo"
+            title="Redo (⇧⌘Z)"
+            disabled={!editor.canRedo}
+            onClick={editor.redo}
+          >
+            <Redo2 size={16} />
+            <span>Redo</span>
+          </button>
+          <label className="ratio-control">
+            <span className="sr-only">Output aspect ratio</span>
+            <select
+              aria-label="Output aspect ratio"
+              value={project.aspectRatio}
+              onChange={(e) =>
+                update((p) => ({
+                  ...p,
+                  aspectRatio: e.target.value as AspectRatio,
+                }))
               }
-              onContinue={() => setActiveStep(2)}
+            >
+              {(["16:9", "9:16", "1:1", "4:5"] as const).map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="primary-button"
+            disabled={!project.images.length || busy || !editor.ready}
+            onClick={() => {
+              preview.current?.pause();
+              setExportOpen(true);
+            }}
+          >
+            <Upload size={16} />
+            <span>Export video</span>
+          </button>
+        </div>
+      </header>
+      <main className="editor-grid">
+        <aside
+          className={`library ${mobilePanel === "library" ? "mobile-open" : ""}`}
+          aria-label="Presets and media"
+        >
+          <div className="library-tabs" role="tablist" aria-label="Library">
+            <button
+              role="tab"
+              aria-selected={tab === "presets"}
+              onClick={() => setTab("presets")}
+            >
+              Presets
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "media"}
+              onClick={() => setTab("media")}
+            >
+              Media
+              {project.images.length > 0 && (
+                <span className="media-count">{project.images.length}</span>
+              )}
+            </button>
+            <button
+              className="mobile-close icon-button"
+              aria-label="Close library"
+              onClick={() => setMobilePanel(null)}
+            >
+              <X size={16} />
+            </button>
+          </div>
+          {tab === "presets" ? (
+            <PresetsPanel
+              selectedId={project.presetId}
+              onApply={selectPreset}
+              custom={editor.presets}
+              favorites={editor.favorites}
+              onFavorite={(id) => {
+                try {
+                  editor.toggleFavorite(id);
+                } catch {
+                  notify("Could not save favorites.");
+                }
+              }}
+              onSave={() => {
+                setPresetName(`${selected.name} — My edit`);
+                setPresetModal(true);
+              }}
+              onDelete={(id) => {
+                try {
+                  editor.removePreset(id);
+                } catch {
+                  notify("Could not remove the preset.");
+                }
+              }}
             />
-          </div>
-        )}
-
-        {/* Step 2: Upload Screenshots (Separate Mobile & Desktop sections) */}
-        {activeStep === 2 && (
-          <div className="max-w-4xl mx-auto animate-in fade-in duration-200">
-            <UploadSection
-              activeStyle={config.style}
-              desktopImages={desktopImages}
-              mobileImages={mobileImages}
-              onDesktopImagesChange={setDesktopImages}
-              onMobileImagesChange={setMobileImages}
-              onNext={() => setActiveStep(3)}
-              onBack={() => setActiveStep(1)}
-            />
-          </div>
-        )}
-
-        {/* Step 3: Preview & Tweak */}
-        {activeStep === 3 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Quick breadcrumb navigation */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-800/60">
-              <div className="flex items-center gap-3 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveStep(1)}
-                  className="text-zinc-400 hover:text-zinc-200 flex items-center gap-1 cursor-pointer"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Style: <strong className="text-zinc-200 capitalize">{config.style.replace('-', ' ')}</strong></span>
-                </button>
-                <span className="text-zinc-600">·</span>
-                <button
-                  type="button"
-                  onClick={() => setActiveStep(2)}
-                  className="text-zinc-400 hover:text-zinc-200 flex items-center gap-1 cursor-pointer"
-                >
-                  <UploadIcon className="w-3.5 h-3.5" />
-                  <span>
-                    Screenshots (
-                    {config.style === 'iphone-mockups'
-                      ? `${mobileImages.length} mobile`
-                      : `${desktopImages.length} desktop`}
-                    )
-                  </span>
-                </button>
-              </div>
-
-              {/* Style quick pill switcher */}
-              <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-xl border border-zinc-800 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleConfigChange({ style: 'screenshot-rows' })}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    config.style === 'screenshot-rows'
-                      ? 'bg-blue-600 text-white font-medium shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  Screenshot Rows
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleConfigChange({ style: 'iphone-mockups' })}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    config.style === 'iphone-mockups'
-                      ? 'bg-blue-600 text-white font-medium shadow-xs'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  iPhone Mockups
-                </button>
-              </div>
+          ) : (
+            <MediaPanel {...mediaProps} />
+          )}
+        </aside>
+        <section className="studio" aria-label="Presentation workspace">
+          <div className="workspace-toolbar">
+            <div className="breadcrumb">
+              <span>{selected.name}</span>
+              {project.customized && (
+                <span className="modified-dot" title="Customized" />
+              )}
+              <ChevronRight size={13} />
+              <span>Preview</span>
             </div>
-
-            {/* Main Stage Grid: Canvas on Left/Center, Tweaks on Right */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left / Center: Interactive Preview Canvas */}
-              <div className="lg:col-span-8 flex flex-col items-center">
-                <PreviewStage
-                  config={config}
-                  images={activeImages}
-                  onAspectRatioChange={(aspectRatio: AspectRatio) =>
-                    handleConfigChange({ aspectRatio })
-                  }
-                />
-              </div>
-
-              {/* Right: Tweak Basics Controls */}
-              <div className="lg:col-span-4 space-y-4">
-                <TweakControls
-                  config={config}
-                  onConfigChange={handleConfigChange}
-                />
-
-                {/* Primary Export CTA */}
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={exportProgress.isExporting || activeImages.length === 0}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/25 transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {exportProgress.isExporting ? (
-                    <>
-                      <Sparkles className="w-4 h-4 animate-spin" />
-                      <span>Exporting MP4...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      <span>Export High-Quality MP4</span>
-                    </>
-                  )}
-                </button>
-
-                <p className="text-[11px] text-center text-zinc-500 leading-relaxed">
-                  Renders at 60 FPS in {config.aspectRatio} resolution. No watermark. No accounts required.
-                </p>
-              </div>
-            </div>
+            <button
+              className="toolbar-button start-over"
+              onClick={() => setStartOver(true)}
+            >
+              <RotateCcw size={13} />
+              Start over
+            </button>
           </div>
-        )}
+          <Preview
+            ref={preview}
+            project={project}
+            busy={busy}
+            onUpload={onUpload}
+            onDemo={onDemo}
+            onLoop={(v) =>
+              changeComposition({
+                motion: { ...project.composition.motion, loop: v },
+              })
+            }
+          />
+          <MediaStrip {...mediaProps} />
+          <div className="mobile-tools">
+            <button
+              onClick={() =>
+                setMobilePanel(mobilePanel === "library" ? null : "library")
+              }
+            >
+              <PanelsTopLeft size={17} />
+              Presets & media
+            </button>
+            <button
+              onClick={() =>
+                setMobilePanel(mobilePanel === "settings" ? null : "settings")
+              }
+            >
+              <SlidersHorizontal size={17} />
+              Settings
+            </button>
+          </div>
+        </section>
+        <div
+          className={`inspector-wrapper ${mobilePanel === "settings" ? "mobile-open" : ""}`}
+        >
+          <button
+            className="mobile-close close-settings icon-button"
+            aria-label="Close settings"
+            onClick={() => setMobilePanel(null)}
+          >
+            <X size={18} />
+          </button>
+          <Inspector
+            project={project}
+            change={changeComposition}
+            onImageCrop={(id, value) =>
+              update((p) => ({
+                ...p,
+                images: p.images.map((i) =>
+                  i.id === id ? { ...i, crop: value } : i,
+                ),
+              }))
+            }
+            begin={editor.begin}
+            end={editor.end}
+            reset={() => update((p) => applyPreset(p, selected))}
+          />
+        </div>
       </main>
-
-      {/* Export Progress Modal */}
-      {exportProgress.stage !== 'preparing' && (
-        <ExportModal
-          progress={exportProgress}
-          onClose={handleCloseExportModal}
-          onRetry={handleExport}
+      <input
+        ref={input}
+        type="file"
+        className="sr-only"
+        tabIndex={-1}
+        aria-label="Upload screenshot files"
+        accept="image/png,image/jpeg,image/webp,image/avif"
+        multiple
+        onChange={(e) => {
+          addFiles(Array.from(e.target.files ?? []));
+          e.target.value = "";
+        }}
+      />
+      {dragging && (
+        <div className="drop-overlay">
+          <Upload size={34} />
+          <h2>Drop your screenshots</h2>
+          <p>Let’s make something beautiful.</p>
+        </div>
+      )}
+      {loading && (
+        <div className="loading-pill" role="status">
+          <LoaderCircle size={15} className="spin" />
+          Opening screenshots…
+        </div>
+      )}
+      {message && (
+        <div className="toast" role="status">
+          <span>{message}</span>
+          <button
+            aria-label="Dismiss notification"
+            onClick={() => setMessage("")}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {exportOpen && (
+        <ExportDialog
+          project={project}
+          time={preview.current?.time() ?? 0}
+          onSettings={(settings) =>
+            update((p) => ({ ...p, exportSettings: settings }))
+          }
+          onClose={() => setExportOpen(false)}
+          onBusy={setBusy}
         />
+      )}
+      {presetModal && (
+        <Modal title="Save your look" onClose={() => setPresetModal(false)}>
+          <p className="modal-description">
+            Keep these settings as a starting point for your next project.
+          </p>
+          <label className="text-field">
+            <span>Preset name</span>
+            <input
+              autoFocus
+              aria-label="Preset name"
+              value={presetName}
+              maxLength={50}
+              onChange={(e) => setPresetName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") finishSavePreset();
+              }}
+            />
+          </label>
+          <button
+            className="primary-button export-start"
+            onClick={finishSavePreset}
+            disabled={!presetName.trim()}
+          >
+            Save preset
+          </button>
+        </Modal>
+      )}
+      {startOver && (
+        <Modal
+          title="Start a fresh presentation?"
+          onClose={() => setStartOver(false)}
+        >
+          <p className="modal-description">
+            Clear the screenshots and reset this composition. You can undo this
+            change.
+          </p>
+          <button
+            className="primary-button export-start"
+            onClick={() => {
+              update((p) => ({
+                ...applyPreset(p, PRESETS[0]),
+                images: [],
+                name: "Untitled project",
+                composition: structuredClone(PRESETS[0].composition),
+              }));
+              setStartOver(false);
+            }}
+          >
+            Start over
+          </button>
+        </Modal>
       )}
     </div>
   );
