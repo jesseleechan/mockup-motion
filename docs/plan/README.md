@@ -147,7 +147,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [03](wp/WP-03-engine-core.md) | three.js engine core, preview, worker export, `/lab` | M1 | 00 | L | Complete |
 | [04](wp/WP-04-demo-content-and-capture.md) | Demo sites, captured screenshots, capture CLI | M1 | 00 | M | Complete |
 | [05](wp/WP-05-design-system.md) | Design system and UI primitives | M2 | 00 | M | Complete |
-| [06](wp/WP-06-device-frames.md) | Device frames | M1 | 03 | M | Not started |
+| [06](wp/WP-06-device-frames.md) | Device frames | M1 | 03 | M | Complete |
 | [07](wp/WP-07-backgrounds-and-atmosphere.md) | Backgrounds, palettes, atmosphere | M1 | 03 | M | Not started |
 | [08](wp/WP-08-shadows-and-post.md) | Shadows, anti-aliasing, final pass, motion blur | M1 | 03 | M | Not started |
 | [09](wp/WP-09-layouts.md) | Layouts and camera framing | M1 | 02, 03, 06 | L | Not started |

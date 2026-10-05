@@ -11,6 +11,10 @@ import { createLabAssetProvider } from "./asset-provider";
 import cardHeroFixture from "./fixtures/card-hero.json";
 import cardScrollFixture from "./fixtures/card-scroll.json";
 import orbitLoopFixture from "./fixtures/orbit-loop.json";
+import devicesBrowserFixture from "./fixtures/devices-browser.json";
+import devicesPhoneFixture from "./fixtures/devices-phone.json";
+import devicesTabletFixture from "./fixtures/devices-tablet.json";
+import devicesLaptopFixture from "./fixtures/devices-laptop.json";
 
 declare global {
   interface Window {
@@ -26,6 +30,10 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "card-hero": cardHeroFixture as unknown as ProjectDoc,
   "card-scroll": cardScrollFixture as unknown as ProjectDoc,
   "orbit-loop": orbitLoopFixture as unknown as ProjectDoc,
+  "devices-browser": devicesBrowserFixture as unknown as ProjectDoc,
+  "devices-phone": devicesPhoneFixture as unknown as ProjectDoc,
+  "devices-tablet": devicesTabletFixture as unknown as ProjectDoc,
+  "devices-laptop": devicesLaptopFixture as unknown as ProjectDoc,
 };
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];

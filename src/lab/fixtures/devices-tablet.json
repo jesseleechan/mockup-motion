@@ -1,0 +1,72 @@
+{
+  "version": 2,
+  "id": "fixture-devices-tablet",
+  "name": "Tablet Static Frontal",
+  "createdAt": 1728000000000,
+  "updatedAt": 1728000000000,
+  "aspect": "16:9",
+  "loop": true,
+  "assets": [
+    {
+      "id": "demo-aurelia",
+      "kind": "image",
+      "name": "aurelia.png",
+      "mime": "image/png",
+      "bytes": 2020268,
+      "width": 1440,
+      "height": 3600
+    }
+  ],
+  "style": {
+    "background": {
+      "kind": "solid",
+      "color": "#F1EDE6"
+    },
+    "frameAppearance": "light",
+    "deviceFinish": "graphite",
+    "browserChrome": "standard",
+    "browserUrl": "",
+    "shadow": "soft",
+    "grain": 0.25,
+    "vignette": 0.06,
+    "fonts": {
+      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
+      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
+    },
+    "textColor": "",
+    "accent": "#000000"
+  },
+  "shots": [
+    {
+      "id": "shot-1",
+      "duration": 5,
+      "layout": {
+        "kind": "single",
+        "device": "tablet",
+        "assetId": "demo-aurelia"
+      },
+      "camera": {
+        "preset": "static",
+        "intensity": 0,
+        "easing": "smooth",
+        "float": 0
+      },
+      "entrance": "none",
+      "texts": [],
+      "transitionIn": {
+        "kind": "cut",
+        "duration": 0,
+        "easing": "quintInOut"
+      }
+    }
+  ],
+  "export": {
+    "destination": "custom",
+    "resolution": 1080,
+    "fps": 30,
+    "quality": "high",
+    "format": "mp4",
+    "supersample": 1,
+    "motionBlur": false
+  }
+}

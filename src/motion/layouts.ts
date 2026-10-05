@@ -27,6 +27,30 @@ const ENTRANCE_DURATION = 0.8;
 
 /**
  * Resolves layout nodes for a shot.
+/**
+ * Computes screen viewport aspect ratio (width / height) for a device and asset per quality-bar §3.1.
+ * - Phone: 0.4615 (9:19.5)
+ * - Tablet: 0.75 (4:3)
+ * - Desktop browser, laptop, card: clamp(imageAspect, 1.25, 2.0) when image is short, else 1.6
+ */
+export function screenAspectFor(device: DeviceKind, asset?: AssetRef | null): number {
+  if (device === "phone") {
+    return 0.4615;
+  }
+  if (device === "tablet") {
+    return 0.75;
+  }
+  if (asset?.width && asset?.height && asset.height > 0) {
+    const imgAspect = asset.width / asset.height;
+    if (imgAspect >= 1.25) {
+      return Math.max(1.25, Math.min(2.0, imgAspect));
+    }
+  }
+  return 1.6;
+}
+
+/**
+ * Resolves layout nodes for a shot.
  * Currently implements kind: "single" adhering to quality-bar §3 and §4.
  * Other layout kinds throw NotImplemented("WP-09").
  */
@@ -43,27 +67,8 @@ export function resolveLayout(
   }
 
   const { device, assetId } = layout;
-
-  // Screen aspect rules (contracts.md §4):
-  // phone: 0.4615 (9:19.5), tablet: 0.75, desktop/laptop: clamp(imageAspect, 1.25, 2.0) if short, else 1.6
-  let screenAspect: number;
-  if (device === "phone") {
-    screenAspect = 0.4615;
-  } else if (device === "tablet") {
-    screenAspect = 0.75;
-  } else {
-    const asset = assets.find((a) => a.id === assetId);
-    if (asset?.width && asset?.height && asset.height > 0) {
-      const imgAspect = asset.width / asset.height;
-      if (imgAspect >= 1.25) {
-        screenAspect = Math.max(1.25, Math.min(2.0, imgAspect));
-      } else {
-        screenAspect = 1.6;
-      }
-    } else {
-      screenAspect = 1.6;
-    }
-  }
+  const asset = assets.find((a) => a.id === assetId);
+  const screenAspect = screenAspectFor(device, asset);
 
   // Device outer sizing in stage units (H = 1.0)
   const W = aspectRatioValue(aspect);

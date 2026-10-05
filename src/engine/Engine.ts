@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { ProjectDoc, Style, TextLayer } from "../doc/types";
 import { evaluate, type FrameState, type LayoutNode, type ShotFrame } from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
-import { buildCardDevice, type DeviceInstance } from "./devices/DeviceBuilder";
+import { buildDevice, type DeviceInstance } from "./devices/DeviceBuilder";
 import { applyCameraPose } from "./stage";
 import { TextureManager } from "./textures/TextureManager";
 
@@ -93,6 +93,15 @@ export class Engine {
     this.backgroundRenderer = new BackgroundRenderer();
 
     this.scene = new THREE.Scene();
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    this.scene.add(ambientLight);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(2, 4, 3);
+    this.scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    fillLight.position.set(-2, -1, 2);
+    this.scene.add(fillLight);
+
     this.camera = new THREE.PerspectiveCamera(22, opts.width / opts.height, 0.05, 50);
 
     const ss = opts.supersample ?? 1;
@@ -248,7 +257,7 @@ export class Engine {
     let dev = this.deviceInstances.get(node.id);
     if (!dev) {
       const ss = this.opts.supersample ?? 1;
-      dev = buildCardDevice(node, style, {
+      dev = buildDevice(node, style, {
         outputWidthPx: this.opts.width,
         outputHeightPx: this.opts.height,
         supersample: ss,
