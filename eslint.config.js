@@ -61,4 +61,25 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/engine/**/*.{ts,tsx}'],
+    ignores: ['src/engine/react/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'src/engine outside react/ must not import React.' },
+            { name: 'react-dom', message: 'src/engine outside react/ must not import React.' },
+          ],
+          patterns: [
+            {
+              group: ['react/*', 'react-dom/*'],
+              message: 'src/engine outside react/ must not import React.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
