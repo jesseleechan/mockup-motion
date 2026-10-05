@@ -1,0 +1,36 @@
+
+> mockup-motion@0.1.0 test
+> vitest run tests/engine.test.ts -t TextureManager textures use the top-left image convention --reporter=dot
+
+
+ RUN  v5.0.3 C:/Users/trevo/Developer/motion-mockup/.execution/f01
+
+--x-----
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/engine.test.ts > F01 image orientation > TextureManager textures use the top-left image convention
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/engine.test.ts:66:27
+     64|     ) => THREE.Texture;
+     65|     const texture = createTexture.call(manager, {} as ImageBitmap);
+     66|     expect(texture.flipY).toBe(false);
+       |                           ^
+     67|     texture.dispose();
+     68|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 skipped (8)
+   Start at  17:21:08
+   Duration  318ms (import 51%, transform 46%, tests 2%, worker 1%)
+

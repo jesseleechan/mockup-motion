@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
 import { getCursorTexture, getRippleTexture, type CursorStyle } from "../cursor/CursorSprites";
+import { createTopLeftQuad, createTopLeftQuadSubrange } from "../geometry/quads";
 
 export interface ScreenCursorData {
   x: number;
@@ -105,23 +106,21 @@ export class ScreenCompositor {
     this.orthoScene = new THREE.Scene();
 
     // Default fill quad for blank screens or short image bottoms
-    const fillGeo = new THREE.PlaneGeometry(1, 1);
-    fillGeo.translate(0.5, 0.5, 0); // Origin at top-left
+    const fillGeo = createTopLeftQuad();
     const fillMat = new THREE.MeshBasicMaterial({ color: 0x1e1e21 });
     this.fillMesh = new THREE.Mesh(fillGeo, fillMat);
     this.fillMesh.visible = false;
     this.orthoScene.add(this.fillMesh);
 
     // Status bar overlay mesh
-    const sbGeo = new THREE.PlaneGeometry(1, 1);
-    sbGeo.translate(0.5, 0.5, 0);
+    const sbGeo = createTopLeftQuadSubrange(0);
     const sbMat = new THREE.MeshBasicMaterial({ transparent: true });
     this.statusBarMesh = new THREE.Mesh(sbGeo, sbMat);
     this.statusBarMesh.visible = false;
     this.orthoScene.add(this.statusBarMesh);
 
     // Cursor mesh
-    const curGeo = new THREE.PlaneGeometry(1, 1);
+    const curGeo = createTopLeftQuad();
     const curMat = new THREE.MeshBasicMaterial({
       transparent: true,
       depthTest: false,
@@ -131,7 +130,7 @@ export class ScreenCompositor {
     this.orthoScene.add(this.cursorMesh);
 
     // Ripple mesh
-    const ripGeo = new THREE.PlaneGeometry(1, 1);
+    const ripGeo = createTopLeftQuad();
     const ripMat = new THREE.MeshBasicMaterial({
       map: getRippleTexture(),
       transparent: true,
@@ -200,15 +199,8 @@ export class ScreenCompositor {
     this.lastAssetId = assetId;
     this.lastCursorKey = cursorKey;
 
-    // Clean up old strip meshes
-    for (const mesh of this.stripMeshes) {
-      this.orthoScene.remove(mesh);
-      mesh.geometry.dispose();
-      (mesh.material as THREE.Material).dispose();
-    }
-    this.stripMeshes = [];
-
     if (!managed || managed.strips.length === 0) {
+      for (const mesh of this.stripMeshes) mesh.visible = false;
       // Empty state
       this.fillMesh.visible = true;
       this.fillMesh.scale.set(this.widthPx, this.heightPx, 1);
@@ -230,30 +222,35 @@ export class ScreenCompositor {
     const scrollablePx = Math.max(0, totalRenderedHeight - this.heightPx);
     const scrollY = scroll * scrollablePx;
 
-    // Build strip quads
-    for (const strip of managed.strips) {
+    // Keep one mesh and material per texture strip; scrolling only changes transforms.
+    while (this.stripMeshes.length < managed.strips.length) {
+      const strip = managed.strips[this.stripMeshes.length];
+      const material = new THREE.MeshBasicMaterial({ map: strip.texture, transparent: false });
+      const mesh = new THREE.Mesh(createTopLeftQuad(), material);
+      this.stripMeshes.push(mesh);
+      this.orthoScene.add(mesh);
+    }
+    for (let index = 0; index < this.stripMeshes.length; index++) {
+      const mesh = this.stripMeshes[index];
+      if (index >= managed.strips.length) {
+        mesh.visible = false;
+        continue;
+      }
+      const strip = managed.strips[index];
+      (mesh.material as THREE.MeshBasicMaterial).map = strip.texture;
       const stripY = strip.yOffset * scaleFactor - scrollY;
       const stripH = strip.height * scaleFactor;
 
       // Check visibility within viewport [0, heightPx]
       if (stripY + stripH < 0 || stripY > this.heightPx) {
+        mesh.visible = false;
         continue;
       }
-
-      const geo = new THREE.PlaneGeometry(1, 1);
-      geo.translate(0.5, 0.5, 0); // Origin at top-left
-      const mat = new THREE.MeshBasicMaterial({
-        map: strip.texture,
-        transparent: false,
-      });
-
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh.visible = true;
       mesh.scale.set(this.widthPx, stripH, 1);
       // In Three Orthographic camera top is heightPx, so y starts at heightPx - stripY - stripH
       mesh.position.set(0, this.heightPx - stripY - stripH, 0);
 
-      this.orthoScene.add(mesh);
-      this.stripMeshes.push(mesh);
     }
 
     // Fill bottom if screenshot is shorter than viewport
@@ -287,6 +284,14 @@ export class ScreenCompositor {
     ) {
       const sbHeight = Math.round(this.heightPx * 0.055);
       const firstStrip = managed.strips[0];
+      const sbSourcePx = sbHeight / scaleFactor;
+      const vMax = Math.min(1, sbSourcePx / firstStrip.height);
+      const sbPosition = this.statusBarMesh.geometry.attributes.position;
+      const sbUv = this.statusBarMesh.geometry.attributes.uv as THREE.BufferAttribute;
+      for (let i = 0; i < sbPosition.count; i++) {
+        sbUv.setY(i, sbPosition.getY(i) > 0 ? 0 : vMax);
+      }
+      sbUv.needsUpdate = true;
       const mat = this.statusBarMesh.material as THREE.MeshBasicMaterial;
       mat.map = firstStrip.texture;
       mat.transparent = true;
@@ -307,12 +312,18 @@ export class ScreenCompositor {
       this.cursorMesh.visible = true;
       this.cursorMesh.scale.set(cursorSize, cursorSize, 1);
 
-      // Hotspot offset: arrow/pointer at top-left, dot at center
+      // Place the actual glyph hotspot, including its transparent canvas inset, on the click.
       let cx = cursor.x * this.widthPx;
       let cy = this.heightPx - cursor.y * this.heightPx;
-      if (style === "arrow" || style === "pointer") {
-        cx += cursorSize * 0.35;
-        cy -= cursorSize * 0.35;
+      if (style === "arrow") {
+        cx -= cursorSize * (14 / 128);
+        cy -= cursorSize * (1 - 14 / 128);
+      } else if (style === "pointer") {
+        cx -= cursorSize * (28 / 128);
+        cy -= cursorSize * (1 - 18 / 128);
+      } else {
+        cx -= cursorSize / 2;
+        cy -= cursorSize / 2;
       }
       this.cursorMesh.position.set(cx, cy, 0.6);
 
@@ -325,8 +336,8 @@ export class ScreenCompositor {
         this.rippleMesh.visible = true;
         this.rippleMesh.scale.set(rSize, rSize, 1);
         this.rippleMesh.position.set(
-          cursor.x * this.widthPx,
-          this.heightPx - cursor.y * this.heightPx,
+          cursor.x * this.widthPx - rSize / 2,
+          this.heightPx - cursor.y * this.heightPx - rSize / 2,
           0.5,
         );
       } else if (this.rippleMesh) {
@@ -346,22 +357,18 @@ export class ScreenCompositor {
 
   dispose(): void {
     for (const mesh of this.stripMeshes) {
-      mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
     }
     this.stripMeshes = [];
-    this.fillMesh.geometry.dispose();
     (this.fillMesh.material as THREE.Material).dispose();
     if (this.statusBarMesh) {
       this.statusBarMesh.geometry.dispose();
       (this.statusBarMesh.material as THREE.Material).dispose();
     }
     if (this.cursorMesh) {
-      this.cursorMesh.geometry.dispose();
       (this.cursorMesh.material as THREE.Material).dispose();
     }
     if (this.rippleMesh) {
-      this.rippleMesh.geometry.dispose();
       (this.rippleMesh.material as THREE.Material).dispose();
     }
     this.renderTarget.dispose();

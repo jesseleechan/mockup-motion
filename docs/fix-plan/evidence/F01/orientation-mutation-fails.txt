@@ -1,0 +1,66 @@
+
+[WebServer] (node:19424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:7812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f01.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+
+Running 2 tests using 1 worker
+
+(node:18028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/2] [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 card screen maps all four source quadrants upright
+  1) [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 card screen maps all four source quadrants upright 
+
+    Error: red must be above blue
+
+    expect(received).toBeLessThan(expected)
+
+    Expected: < 223.5416670189292
+    Received:   495.45833298107084
+
+      126 |     expect(first.red.x, "red must be left of green").toBeLessThan(first.green.x);
+      127 |     expect(lower.blue.x, "blue must be left of yellow").toBeLessThan(lower.yellow.x);
+    > 128 |     expect(first.red.y, "red must be above blue").toBeLessThan(lower.blue.y);
+          |                                                   ^
+      129 |     expect(first.green.y, "green must be above yellow").toBeLessThan(lower.yellow.y);
+      130 |   });
+      131 | }
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f01\tests\e2e\orientation.spec.ts:128:51
+
+    Error Context: test-results\orientation-F01-card-scree-917e0-ur-source-quadrants-upright-chromium\error-context.md
+
+
+
+(node:43332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2/2] [chromium] › tests\e2e\orientation.spec.ts:182:1 › F01 capital T has its crossbar at the top of glyph ink bounds
+  2) [chromium] › tests\e2e\orientation.spec.ts:182:1 › F01 capital T has its crossbar at the top of glyph ink bounds 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 4464
+    Received:   467
+
+      221 |   const topInk = rows.slice(0, quarter).reduce((sum, n) => sum + n, 0);
+      222 |   const bottomInk = rows.slice(rows.length - quarter).reduce((sum, n) => sum + n, 0);
+    > 223 |   expect(topInk).toBeGreaterThan(bottomInk * 3);
+          |                  ^
+      224 | });
+      225 |
+      226 | test("F01 maskReveal exposes lower glyph ink before its upper crossbar", async ({ page }) => {
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f01\tests\e2e\orientation.spec.ts:223:18
+
+    Error Context: test-results\orientation-F01-capital-T--4c6ed-the-top-of-glyph-ink-bounds-chromium\error-context.md
+
+
+  2 failed
+    [chromium] › tests\e2e\orientation.spec.ts:117:3 › F01 card screen maps all four source quadrants upright 
+    [chromium] › tests\e2e\orientation.spec.ts:182:1 › F01 capital T has its crossbar at the top of glyph ink bounds 

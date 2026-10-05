@@ -1,0 +1,39 @@
+
+[WebServer] (node:33232) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:35984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - import "./vite.config" without a file extension (vite.f01.config.ts:2:20). Add the file extension
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 1 test using 1 worker
+
+(node:15112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/1] [chromium] › tests\e2e\orientation.spec.ts:226:1 › F01 maskReveal exposes lower glyph ink before its upper crossbar
+  1) [chromium] › tests\e2e\orientation.spec.ts:226:1 › F01 maskReveal exposes lower glyph ink before its upper crossbar 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1317
+
+      263 |   });
+      264 |   expect(bands.bottom).toBeGreaterThan(0);
+    > 265 |   expect(bands.top).toBe(0);
+          |                     ^
+      266 | });
+      267 |
+      268 | test("F01 image background maps its top edge to the source top row", async ({ page }) => {
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f01\tests\e2e\orientation.spec.ts:265:21
+
+    Error Context: test-results\orientation-F01-maskReveal-f85a7-k-before-its-upper-crossbar-chromium\error-context.md
+
+
+  1 failed
+    [chromium] › tests\e2e\orientation.spec.ts:226:1 › F01 maskReveal exposes lower glyph ink before its upper crossbar 

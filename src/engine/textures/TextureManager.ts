@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import type { AssetProvider } from "../Engine";
 
+// Image sources are top-down: row 0 is v=0. Never rely on flipY for
+// ImageBitmap, OffscreenCanvas, or VideoFrame because WebGL may ignore it.
+
 export interface TextureStrip {
   texture: THREE.Texture;
   yOffset: number; // in pixels from top of full image
@@ -116,6 +119,7 @@ export class TextureManager {
 
   private createTexture(imageSource: ImageBitmap | HTMLCanvasElement): THREE.Texture {
     const texture = new THREE.Texture(imageSource);
+    texture.flipY = false;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.generateMipmaps = true;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
