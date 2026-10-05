@@ -92,9 +92,7 @@ export async function generateTemplatePreviews() {
         }
 
         if (!fs.existsSync(videoPath)) {
-          console.info(
-            `No video preview produced for ${template.id}; poster generation succeeded.`,
-          );
+          throw new Error(`Video preview missing for ${template.id}: ${videoPath}`);
         }
       } catch (err) {
         console.error(`Failed to generate preview for ${template.id}:`, err);
@@ -104,9 +102,7 @@ export async function generateTemplatePreviews() {
       }
     }
 
-    console.log(
-      `\n[Template Previews] All 12 template previews generated successfully in ${outDir}!`,
-    );
+    console.log(`\n[Template Previews] Posters and videos generated successfully in ${outDir}!`);
   } finally {
     await browser.close();
     server.close();

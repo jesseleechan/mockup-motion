@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
-import type { Engine } from "../../src/engine/Engine";
+import type { AssetProvider, Engine, TextRaster } from "../../src/engine/Engine";
+import type { exportWithEngine } from "../../src/export/engine-export";
 
 declare global {
   interface Window {
@@ -12,12 +13,24 @@ declare global {
       edgeColumns(w: number, h: number): Promise<ImageBitmap>;
     };
     __labSetDoc?: (doc: ProjectDoc, images?: Record<string, ImageBitmap>) => Promise<void>;
+    __createLabAssetProvider?: () => AssetProvider;
+    __exportWithEngine?: typeof exportWithEngine;
+    __mediabunnyTest?: {
+      ALL_FORMATS: unknown;
+      BlobSource: new (blob: Blob) => unknown;
+      Input: new (options: { source: unknown; formats: unknown }) => {
+        getPrimaryVideoTrack(): Promise<unknown>;
+        dispose(): void;
+      };
+      CanvasSink: new (track: unknown) => {
+        getCanvas(time: number): Promise<{ canvas: HTMLCanvasElement | OffscreenCanvas } | null>;
+      };
+    };
     __fixtures?: Record<string, ProjectDoc>;
   }
 }
 
 test("F03 known bug: pair layouts preload both screen assets", async ({ page }) => {
-  test.fail(true, "Known bug, fixed by F03");
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const greenPixels = await page.evaluate(async () => {
@@ -54,23 +67,282 @@ test("F03 known bug: pair layouts preload both screen assets", async ({ page }) 
     doc.style.vignette = 0;
     doc.shots[0].layout = { kind: "pair", desktopId, mobileId, arrangement: "overlap" };
     doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-    const bitmap = await images.quadrants(1600, 1000);
-    await setDoc(doc, { [desktopId]: bitmap, [mobileId]: bitmap });
+    const desktopBitmap = await images.bands(1600, 1000, ["#FF0000"]);
+    const mobileBitmap = await images.bands(780, 1688, ["#00FF00"]);
+    await setDoc(doc, { [desktopId]: desktopBitmap, [mobileId]: mobileBitmap });
     engine.renderAt(2.5);
     const pixels = engine.readPixels();
-    let count = 0;
+    let red = 0;
+    let green = 0;
     for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i + 1] > 180 && pixels[i] < 100 && pixels[i + 2] < 100) count++;
+      if (pixels[i] > 180 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
+      if (pixels[i + 1] > 180 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
     }
-    return count;
+    return { red, green };
   });
-  expect(greenPixels, "loaded pair screens should contain the green test quadrant").toBeGreaterThan(
+  test.fail(true, "Known bug, fixed by F03");
+  expect(greenPixels.red, "desktop screen should show its independent red source").toBeGreaterThan(
     100,
   );
+  expect(
+    greenPixels.green,
+    "phone screen should show its independent green source",
+  ).toBeGreaterThan(100);
+});
+
+test("F03 known bug: every multi-asset layout requests each independent image", async ({
+  page,
+}) => {
+  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
+  await page.waitForFunction(() => window.__labReady === true);
+  const missing = await page.evaluate(async () => {
+    const base = window.__fixtures?.["card-hero"];
+    const engine = window.__labEngine;
+    const images = window.__labTestImages;
+    const createProvider = window.__createLabAssetProvider;
+    if (!base || !engine || !images || !createProvider)
+      throw new Error("F03 multi-layout fixture hooks are unavailable");
+    engine.resize(1280, 720);
+    const layouts = [
+      { kind: "pair", desktopId: "pair-desktop", mobileId: "pair-mobile", arrangement: "overlap" },
+      { kind: "trio", desktopId: "trio-desktop", tabletId: "trio-tablet", mobileId: "trio-mobile" },
+      {
+        kind: "rows",
+        assetIds: ["rows-a", "rows-b", "rows-c"],
+        rows: 2,
+        device: "browser",
+        tilt: 0,
+        speed: 0,
+      },
+      {
+        kind: "columns",
+        assetIds: ["columns-a", "columns-b", "columns-c"],
+        columns: 3,
+        tilt: 0,
+        speed: 0,
+      },
+      { kind: "wall", assetIds: ["wall-a", "wall-b", "wall-c"], columns: 3, speed: 0 },
+      { kind: "stack", assetIds: ["stack-a", "stack-b", "stack-c"], device: "browser", spread: 0 },
+    ] as const;
+    const missing: string[] = [];
+    for (const layout of layouts) {
+      const doc = structuredClone(base);
+      const ids: string[] =
+        "assetIds" in layout
+          ? [...layout.assetIds]
+          : layout.kind === "pair"
+            ? [layout.desktopId, layout.mobileId]
+            : [layout.desktopId, layout.tabletId, layout.mobileId];
+      doc.shots[0].layout = layout as (typeof doc.shots)[number]["layout"];
+      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+      doc.style.background = { kind: "solid", color: "#808080" };
+      doc.style.grain = 0;
+      doc.style.vignette = 0;
+      doc.assets = ids.map((id) => ({
+        id,
+        kind: "image" as const,
+        name: id,
+        mime: "image/png",
+        bytes: 1,
+        width: 1200,
+        height: 900,
+      }));
+      const bitmapById = Object.fromEntries(
+        await Promise.all(
+          ids.map(async (id) => [id, await images.bands(1200, 900, ["#00FF00"])] as const),
+        ),
+      );
+      const requested = new Set<string>();
+      const provider = createProvider();
+      await engine.setDocument(doc, {
+        async getImage(id, width) {
+          requested.add(id);
+          return bitmapById[id] ?? provider.getImage(id, width);
+        },
+        getText: provider.getText.bind(provider),
+        getAudio: provider.getAudio?.bind(provider),
+      });
+      engine.renderAt(3);
+      missing.push(...ids.filter((id) => !requested.has(id)).map((id) => `${layout.kind}:${id}`));
+    }
+    return missing;
+  });
+  test.fail(true, "Known bug, fixed by F03");
+  expect(missing, "every layout asset must be loaded before rendering").toEqual([]);
+});
+
+test("F03 known bug: a slower earlier setDocument cannot replace the newer text raster", async ({
+  page,
+}) => {
+  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
+  await page.waitForFunction(() => window.__labReady === true);
+  const textColors = await page.evaluate(async () => {
+    const base = window.__fixtures?.["card-hero"];
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc as
+      | ((
+          doc: ProjectDoc,
+          images: Record<string, ImageBitmap>,
+          provider: AssetProvider,
+        ) => Promise<void>)
+      | undefined;
+    const createProvider = window.__createLabAssetProvider;
+    if (!base || !engine || !setDoc || !createProvider)
+      throw new Error("F03 race fixture hooks are unavailable");
+    engine.resize(640, 360);
+    const provider = createProvider();
+    const makeDoc = (text: string, color: string) => {
+      const doc = structuredClone(base);
+      doc.shots[0].layout = { kind: "title" };
+      doc.shots[0].texts = [
+        {
+          id: "f03-race-shared-layer",
+          text,
+          role: "title",
+          font: "display",
+          size: 20,
+          anchor: "center",
+          align: "center",
+          color,
+          animation: "none",
+          delay: 0,
+        },
+      ];
+      doc.style.background = { kind: "solid", color: "#808080" };
+      doc.style.grain = 0;
+      doc.style.vignette = 0;
+      return doc;
+    };
+    const delayedProvider: AssetProvider = {
+      getImage: provider.getImage.bind(provider),
+      async getText(layer, style, frameHeightPx): Promise<TextRaster> {
+        if (layer.text === "OLD") await new Promise((resolve) => setTimeout(resolve, 300));
+        return provider.getText(layer, style, frameHeightPx);
+      },
+    };
+    const earlier = setDoc(makeDoc("OLD", "#FF0000"), {}, delayedProvider);
+    const newer = setDoc(makeDoc("NEW", "#00FF00"), {}, delayedProvider);
+    await Promise.all([earlier, newer]);
+    engine.renderAt(0);
+    const pixels = engine.readPixels();
+    let red = 0;
+    let green = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] > 150 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
+      if (pixels[i + 1] > 150 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
+    }
+    return { red, green };
+  });
+  test.fail(true, "Known bug, fixed by F03");
+  expect(
+    textColors.green,
+    "the final frame should use the newer green text raster",
+  ).toBeGreaterThan(20);
+  expect(textColors.red, "the final frame must not use the stale red text raster").toBe(0);
+});
+
+test("F03 known bug: responsive-pair WebM export contains both screen assets", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
+  await page.waitForFunction(() => window.__labReady === true);
+  await page.addScriptTag({
+    type: "module",
+    content:
+      'import * as media from "/node_modules/mediabunny/dist/modules/src/index.js"; window.__mediabunnyTest = media;',
+  });
+  const colors = await page.evaluate(async () => {
+    const base = window.__fixtures?.["card-hero"];
+    const images = window.__labTestImages;
+    const createProvider = window.__createLabAssetProvider;
+    const exportFn = window.__exportWithEngine;
+    const media = window.__mediabunnyTest;
+    if (!base || !images || !createProvider || !exportFn || !media)
+      throw new Error("F03 export fixture hooks are unavailable");
+    const doc = structuredClone(base);
+    const desktopId = "f03-export-desktop";
+    const mobileId = "f03-export-mobile";
+    doc.aspect = "16:9";
+    doc.assets = [
+      {
+        id: desktopId,
+        kind: "image",
+        name: desktopId,
+        mime: "image/png",
+        bytes: 1,
+        width: 640,
+        height: 360,
+      },
+      {
+        id: mobileId,
+        kind: "image",
+        name: mobileId,
+        mime: "image/png",
+        bytes: 1,
+        width: 360,
+        height: 780,
+      },
+    ];
+    doc.shots = [
+      {
+        ...doc.shots[0],
+        duration: 1,
+        layout: { kind: "pair", desktopId, mobileId, arrangement: "overlap" },
+        camera: { preset: "static", intensity: 0, easing: "smooth", float: 0 },
+      },
+    ];
+    doc.style.background = { kind: "solid", color: "#808080" };
+    doc.style.grain = 0;
+    doc.style.vignette = 0;
+    const bitmaps: Record<string, ImageBitmap> = {
+      [desktopId]: await images.bands(640, 360, ["#FF0000"]),
+      [mobileId]: await images.bands(360, 780, ["#00FF00"]),
+    };
+    const baseProvider = createProvider();
+    const provider: AssetProvider = {
+      async getImage(id, maxWidth) {
+        return bitmaps[id] ?? baseProvider.getImage(id, maxWidth);
+      },
+      getText: baseProvider.getText.bind(baseProvider),
+      getAudio: baseProvider.getAudio?.bind(baseProvider),
+    };
+    const result = await exportFn(doc, provider, {
+      destination: "custom",
+      resolution: 360,
+      fps: 30,
+      quality: "web",
+      format: "webm",
+      supersample: 1,
+      motionBlur: false,
+    });
+    const input = new media.Input({
+      source: new media.BlobSource(result.blob),
+      formats: media.ALL_FORMATS,
+    });
+    const track = await input.getPrimaryVideoTrack();
+    if (!track) throw new Error("Exported WebM has no video track");
+    const sink = new media.CanvasSink(track);
+    const wrapped = await sink.getCanvas(0.5);
+    if (!wrapped) throw new Error("Could not decode the exported WebM at 0.5 seconds");
+    const context = wrapped.canvas.getContext("2d");
+    if (!context) throw new Error("Decoded WebM canvas has no 2D context");
+    const pixels = context.getImageData(0, 0, wrapped.canvas.width, wrapped.canvas.height).data;
+    let red = 0;
+    let green = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] > 180 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
+      if (pixels[i + 1] > 180 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
+    }
+    input.dispose();
+    return { red, green, mime: result.mime, bytes: result.blob.size };
+  });
+  test.fail(true, "Known bug, fixed by F03");
+  expect(colors.mime).toBe("video/webm");
+  expect(colors.bytes).toBeGreaterThan(1000);
+  expect(colors.red, "exported desktop screen should retain its red image").toBeGreaterThan(100);
+  expect(colors.green, "exported phone screen should retain its green image").toBeGreaterThan(100);
 });
 
 test("F03 known bug: alternating documents releases old textures", async ({ page }) => {
-  test.fail(true, "Known bug, fixed by F03");
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const counts = await page.evaluate(async () => {
@@ -114,6 +386,7 @@ test("F03 known bug: alternating documents releases old textures", async ({ page
     const afterTwentieth = engine.getMemoryInfo();
     return { afterSecond, afterTwentieth };
   });
+  test.fail(true, "Known bug, fixed by F03");
   expect(counts.afterTwentieth.geometries).toBe(counts.afterSecond.geometries);
   expect(counts.afterTwentieth.textures).toBe(counts.afterSecond.textures);
 });

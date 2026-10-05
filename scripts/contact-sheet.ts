@@ -97,13 +97,11 @@ export async function generateContactSheet() {
             await page.waitForTimeout(400);
 
             const canvas = page.locator("canvas").first();
-            if ((await canvas.count()) > 0) {
-              const buffer = await canvas.screenshot();
-              await sharp(buffer).png().toFile(filePath);
-            } else {
-              const buffer = await page.screenshot();
-              await sharp(buffer).png().toFile(filePath);
+            if ((await canvas.count()) === 0) {
+              throw new Error(`Canvas missing while rendering ${template.id} ${aspect} t=${t}`);
             }
+            const buffer = await canvas.screenshot();
+            await sharp(buffer).png().toFile(filePath);
 
             manifest.push({
               templateId: template.id,

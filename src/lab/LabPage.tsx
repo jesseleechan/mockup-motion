@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Aspect, ProjectDoc } from "../doc/types";
 import { EngineCanvas } from "../engine/react/EngineCanvas";
-import type { Engine } from "../engine/Engine";
+import type { AssetProvider, Engine } from "../engine/Engine";
 import { exportWithEngine } from "../export/engine-export";
 import { schedule } from "../motion";
 import { useUIStore } from "../state/ui-store";
@@ -26,6 +26,7 @@ import { VISUAL_FIXTURES } from "./visual-fixtures";
 declare global {
   interface Window {
     __labReady?: boolean;
+    __labError?: string;
     __labEngine?: Engine;
     __exportWithEngine?: typeof exportWithEngine;
     __createLabAssetProvider?: typeof createLabAssetProvider;
@@ -130,8 +131,8 @@ export const LabPage: React.FC = () => {
       window.__fixtures = FIXTURES;
       window.__labReady = false;
       if (import.meta.env.DEV) {
-        window.__labSetDoc = async (nextDoc, images = {}) => {
-          const testProvider = {
+        window.__labSetDoc = async (nextDoc, images = {}, providerOverride?: AssetProvider) => {
+          const testProvider: AssetProvider = providerOverride ?? {
             async getImage(assetId: string, maxWidth: number) {
               return images[assetId] ?? provider.getImage(assetId, maxWidth);
             },
@@ -145,8 +146,11 @@ export const LabPage: React.FC = () => {
       void (async () => {
         try {
           await document.fonts?.ready;
-        } catch {
-          // Fonts are optional for the still.
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          window.__labError = `Font readiness failed: ${message}`;
+          console.error(window.__labError, error);
+          throw new Error(window.__labError, { cause: error });
         }
         if (import.meta.env.DEV) {
           const { labTestImages } = await import("./test-images");
