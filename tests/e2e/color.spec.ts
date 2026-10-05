@@ -1,3 +1,4 @@
+import { decode, encode, expectGlyphCompositing } from "../helpers/glyph-oracle";
 import { expect, test, type Page } from "@playwright/test";
 import type { Background, ProjectDoc } from "../../src/doc/types";
 import type { AssetProvider, Engine } from "../../src/engine/Engine";
@@ -192,13 +193,6 @@ test("F02 transition fade blends in linear light", async ({ page }) => {
   expectRgbNear(avgRegion(pixels, 600, 320, 680, 400), [188, 188, 188], 1);
 });
 
-function decode(channel: number): number {
-  const c = channel / 255;
-  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-}
-function encode(c: number): number {
-  return (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055) * 255;
-}
 for (const coverageOnly of [true, false]) {
   test(`F02 ${coverageOnly ? "coverage glyph" : "generic raster"} alpha plateaus composite without fringes`, async ({
     page,
@@ -288,10 +282,9 @@ test("F02 dither stays below half an sRGB byte", async ({ page }) => {
   const values = new Set<number>();
   for (let y = 260; y < 460; y++)
     for (let x = 540; x < 740; x++) values.add(frame.data[(y * 1280 + x) * 4]);
-  // At an exact byte centre, bounded Â±0.5 LSB cannot cross either rounding boundary.
+  // At an exact byte centre, bounded Ã‚Â±0.5 LSB cannot cross either rounding boundary.
   expect([...values]).toEqual([128]);
 });
-import { evaluate } from "../../src/motion";
 
 for (const [fg, bg, animation] of [
   ["#FFFFFF", "#18191B", "none"],
@@ -359,74 +352,7 @@ for (const [fg, bg, animation] of [
       { fg, bg, animation },
     );
     expect(result.color?.toLowerCase()).toBe(fg.slice(0, 7).toLowerCase());
-    const textFrame = evaluate(result.doc, result.t).layers[0].frame.texts[0];
-    const wordFrame = textFrame.words[0];
-    const opacity = wordFrame.opacity * textFrame.opacity;
-    const word = result.words[0];
-    const blockX = Math.round((1280 - result.width) / 2);
-    const blockY = Math.round((720 - result.height) / 2) + (wordFrame.dy * 720) / 100;
-    const alphaAt = (x: number, y: number) => {
-      const at = (x: number, y: number) =>
-        result.alpha[
-          Math.max(0, Math.min(result.height - 1, y)) * result.width +
-            Math.max(0, Math.min(result.width - 1, x))
-        ];
-      const x0 = Math.floor(x);
-      const y0 = Math.floor(y);
-      const fx = x - x0;
-      const fy = y - y0;
-      return (
-        (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) +
-        (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy
-      );
-    };
-    const taps = [
-      [0, 0, 0.25],
-      [1, 0, 0.125],
-      [-1, 0, 0.125],
-      [0, 1, 0.125],
-      [0, -1, 0.125],
-      [1, 1, 0.0625],
-      [-1, 1, 0.0625],
-      [1, -1, 0.0625],
-      [-1, -1, 0.0625],
-    ];
-    const foreground = [1, 3, 5].map((i) => parseInt(fg.slice(i, i + 2), 16));
-    const backdrop = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16));
-    let checked = 0;
-    let maximumError = 0;
-    for (let y = Math.ceil(blockY + word.y + 2); y < blockY + word.y + word.h - 2; y++) {
-      for (let x = blockX + word.x + 2; x < blockX + word.x + word.w - 2; x++) {
-        const localX = x - blockX;
-        const localY = y - blockY;
-        const coverage =
-          wordFrame.blur > 0.001
-            ? taps.reduce(
-                (sum, [dx, dy, weight]) =>
-                  sum +
-                  alphaAt(localX + dx * wordFrame.blur, localY + dy * wordFrame.blur) * weight,
-                0,
-              )
-            : alphaAt(localX, localY);
-        const alpha = coverage * opacity;
-        if (alpha <= 0.02 || alpha >= 0.98) continue;
-        checked++;
-        for (let channel = 0; channel < 3; channel++) {
-          const expected = encode(
-            decode(foreground[channel]) * alpha + decode(backdrop[channel]) * (1 - alpha),
-          );
-          maximumError = Math.max(
-            maximumError,
-            Math.abs(result.pixels[(y * 1280 + x) * 4 + channel] - expected),
-          );
-        }
-      }
-    }
-    expect(checked, "real translucent edge pixels must be measured").toBeGreaterThan(50);
-    expect(
-      maximumError,
-      "glyph edges must match independent linear compositing",
-    ).toBeLessThanOrEqual(2);
+    expectGlyphCompositing(result, fg, bg);
   });
 }
 

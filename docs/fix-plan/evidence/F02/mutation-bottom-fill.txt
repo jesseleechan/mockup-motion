@@ -1,0 +1,30 @@
+
+Running 1 test using 1 worker
+
+
+
+[1/1] [chromium] › tests\e2e\color.spec.ts:359:1 › F02 short phone screenshot bottom fill is sRGB exact
+  1) [chromium] › tests\e2e\color.spec.ts:359:1 › F02 short phone screenshot bottom fill is sRGB exact 
+
+    Error: Expected RGB (51, 102, 204) ±2, received (124.0, 170.0, 231.0)
+
+       at tests\helpers\pixels.ts:53
+
+      51 |   const differences = actual.map((value, i) => Math.abs(value - expected[i]));
+      52 |   if (differences.some((difference) => difference > tolerance)) {
+    > 53 |     throw new Error(
+         |           ^
+      54 |       `Expected RGB (${expected.join(", ")}) ±${tolerance}, received (${actual.map((n) => n.toFixed(1)).join(", ")})`,
+      55 |     );
+      56 |   }
+        at expectRgbNear (C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\helpers\pixels.ts:53:11)
+        at C:\Users\trevo\Developer\motion-mockup\.execution\f02\tests\e2e\color.spec.ts:384:3
+
+    Error Context: test-results\color-F02-short-phone-screenshot-bottom-fill-is-sRGB-exact-chromium\error-context.md
+
+
+  1 failed
+    [chromium] › tests\e2e\color.spec.ts:359:1 › F02 short phone screenshot bottom fill is sRGB exact 
+
+(node:3940) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
