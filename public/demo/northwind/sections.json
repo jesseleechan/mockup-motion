@@ -1,0 +1,64 @@
+{
+  "url": "http://localhost:3591/northwind/",
+  "viewportWidth": 1440,
+  "scale": 1,
+  "pageHeight": 4052,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 0,
+      "height": 76
+    },
+    {
+      "tag": "section",
+      "id": "hero",
+      "className": "hero-section",
+      "top": 0,
+      "height": 631
+    },
+    {
+      "tag": "section",
+      "id": "dashboard",
+      "className": "dashboard-section",
+      "top": 631,
+      "height": 690
+    },
+    {
+      "tag": "section",
+      "id": "features",
+      "className": "features-section",
+      "top": 1322,
+      "height": 707
+    },
+    {
+      "tag": "section",
+      "id": "code",
+      "className": "code-section",
+      "top": 2029,
+      "height": 560
+    },
+    {
+      "tag": "section",
+      "id": "social",
+      "className": "social-section",
+      "top": 2590,
+      "height": 243
+    },
+    {
+      "tag": "section",
+      "id": "pricing",
+      "className": "pricing-section",
+      "top": 2832,
+      "height": 812
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 3644,
+      "height": 408
+    }
+  ]
+}

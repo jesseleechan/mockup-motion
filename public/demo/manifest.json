@@ -1,0 +1,202 @@
+[
+  {
+    "site": "aurelia",
+    "file": "aurelia/desktop-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 2880,
+    "height": 1800,
+    "category": "desktop",
+    "sizeBytes": 348640
+  },
+  {
+    "site": "aurelia",
+    "file": "aurelia/desktop-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 1440,
+    "height": 4300,
+    "category": "desktop",
+    "sizeBytes": 367382
+  },
+  {
+    "site": "aurelia",
+    "file": "aurelia/mobile-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 780,
+    "height": 1688,
+    "category": "mobile",
+    "sizeBytes": 159248
+  },
+  {
+    "site": "aurelia",
+    "file": "aurelia/mobile-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 780,
+    "height": 13372,
+    "category": "mobile",
+    "sizeBytes": 482306
+  },
+  {
+    "site": "northwind",
+    "file": "northwind/desktop-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 2880,
+    "height": 1800,
+    "category": "desktop",
+    "sizeBytes": 138828
+  },
+  {
+    "site": "northwind",
+    "file": "northwind/desktop-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 1440,
+    "height": 4052,
+    "category": "desktop",
+    "sizeBytes": 269130
+  },
+  {
+    "site": "northwind",
+    "file": "northwind/mobile-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 780,
+    "height": 1688,
+    "category": "mobile",
+    "sizeBytes": 84948
+  },
+  {
+    "site": "northwind",
+    "file": "northwind/mobile-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 780,
+    "height": 15006,
+    "category": "mobile",
+    "sizeBytes": 553414
+  },
+  {
+    "site": "maison-oak",
+    "file": "maison-oak/desktop-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 2880,
+    "height": 1800,
+    "category": "desktop",
+    "sizeBytes": 294530
+  },
+  {
+    "site": "maison-oak",
+    "file": "maison-oak/desktop-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 1440,
+    "height": 3519,
+    "category": "desktop",
+    "sizeBytes": 285688
+  },
+  {
+    "site": "maison-oak",
+    "file": "maison-oak/mobile-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 780,
+    "height": 1688,
+    "category": "mobile",
+    "sizeBytes": 118674
+  },
+  {
+    "site": "maison-oak",
+    "file": "maison-oak/mobile-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 780,
+    "height": 13340,
+    "category": "mobile",
+    "sizeBytes": 487518
+  },
+  {
+    "site": "field-notes",
+    "file": "field-notes/desktop-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 2880,
+    "height": 1800,
+    "category": "desktop",
+    "sizeBytes": 278324
+  },
+  {
+    "site": "field-notes",
+    "file": "field-notes/desktop-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 1440,
+    "height": 4261,
+    "category": "desktop",
+    "sizeBytes": 477240
+  },
+  {
+    "site": "field-notes",
+    "file": "field-notes/mobile-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 780,
+    "height": 1688,
+    "category": "mobile",
+    "sizeBytes": 111360
+  },
+  {
+    "site": "field-notes",
+    "file": "field-notes/mobile-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 844,
+    "height": 13370,
+    "category": "mobile",
+    "sizeBytes": 833468
+  },
+  {
+    "site": "studio-kova",
+    "file": "studio-kova/desktop-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 2880,
+    "height": 1800,
+    "category": "desktop",
+    "sizeBytes": 116764
+  },
+  {
+    "site": "studio-kova",
+    "file": "studio-kova/desktop-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 1440,
+    "height": 4365,
+    "category": "desktop",
+    "sizeBytes": 254500
+  },
+  {
+    "site": "studio-kova",
+    "file": "studio-kova/mobile-hero.webp",
+    "role": "hero",
+    "tall": false,
+    "width": 780,
+    "height": 1688,
+    "category": "mobile",
+    "sizeBytes": 61640
+  },
+  {
+    "site": "studio-kova",
+    "file": "studio-kova/mobile-full.webp",
+    "role": "full",
+    "tall": true,
+    "width": 780,
+    "height": 11634,
+    "category": "mobile",
+    "sizeBytes": 398942
+  }
+]

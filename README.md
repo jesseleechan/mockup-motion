@@ -15,6 +15,21 @@ npm run dev
 
 Open http://localhost:3000. `npm run build` type-checks and builds the production app; `npm run preview` serves that build.
 
+### Screenshot Capture CLI
+
+Capture full-page and hero screenshots of any website locally using Playwright:
+
+```sh
+# Local browser setup (one time; cloud sessions use the preinstalled browser)
+npx playwright install chromium
+
+# Capture any website
+npm run capture -- https://example.com --unstick
+
+# Re-capture the 5 built-in demo sites
+npm run demo:capture
+```
+
 ## Editor
 
 - Eight presets: Clean Hero, Soft Studio, Midnight Rows, Gallery Wall, Angled Gallery, Phone Columns, Phone Spotlight, and Responsive Pair.

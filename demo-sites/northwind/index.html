@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Northwind — Distributed Edge Infrastructure</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="header" class="site-header">
+    <div class="logo-row">
+      <div class="logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+        </svg>
+      </div>
+      <span>Northwind</span>
+    </div>
+    <nav class="site-nav">
+      <a href="#hero" class="nav-link">Platform</a>
+      <a href="#dashboard" class="nav-link">Console</a>
+      <a href="#features" class="nav-link">Architecture</a>
+      <a href="#code" class="nav-link">Developers</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+    </nav>
+    <div class="header-actions">
+      <a href="#pricing" class="btn-secondary">Log In</a>
+      <a href="#dashboard" class="btn-primary">Start Building</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="hero" class="hero-section">
+      <div class="hero-glow"></div>
+      <div class="container">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span>Northwind Engine 3.4 is live across 210 edge points</span>
+        </div>
+        <h1 class="hero-title">Distributed Edge Infrastructure Built for Millisecond Compute</h1>
+        <p class="hero-subhead">
+          Deploy streaming RPC functions, distributed key-value stores, and AI inferencing at the nearest node with zero container cold starts.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#dashboard" class="btn-primary" style="padding: 12px 28px; font-size: 14px;">Deploy Free Cluster</a>
+          <a href="#code" class="btn-secondary" style="padding: 12px 28px; font-size: 14px;">Explore Architecture</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="dashboard-section">
+      <div class="container">
+        <div class="dash-window">
+          <div class="window-bar">
+            <div class="window-dots">
+              <span class="window-dot" style="background: #EF4444;"></span>
+              <span class="window-dot" style="background: #F59E0B;"></span>
+              <span class="window-dot" style="background: #10B981;"></span>
+            </div>
+            <div class="window-title">northwind-console / cluster-prod-us-east-1</div>
+            <div style="font-size: 11px; color: #10B981; font-family: monospace;">HEALTHY · 184 REGIONS</div>
+          </div>
+          <div class="dash-body">
+            <div>
+              <div class="metric-cards">
+                <div class="m-card">
+                  <div class="m-label">P99 Global Latency</div>
+                  <div class="m-val">3.8 ms</div>
+                  <div class="m-diff">&minus;1.2ms vs last 24h</div>
+                </div>
+                <div class="m-card">
+                  <div class="m-label">Network Ingress</div>
+                  <div class="m-val">2.84 GB/s</div>
+                  <div class="m-diff">+14.2% throughput</div>
+                </div>
+                <div class="m-card">
+                  <div class="m-label">Active Edge Replicas</div>
+                  <div class="m-val">1,842</div>
+                  <div class="m-diff">Global consensus OK</div>
+                </div>
+              </div>
+
+              <div class="dash-chart">
+                <div class="chart-header">
+                  <span class="chart-title">Real-Time Edge Routing Telemetry</span>
+                  <span style="font-size: 11px; color: var(--text-muted);">Sampling rate: 50ms</span>
+                </div>
+                <svg width="100%" height="220" viewBox="0 0 700 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.35"/>
+                      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+                  <line x1="0" y1="50" x2="700" y2="50" stroke="#1E293B" stroke-dasharray="3 3"/>
+                  <line x1="0" y1="110" x2="700" y2="110" stroke="#1E293B" stroke-dasharray="3 3"/>
+                  <line x1="0" y1="170" x2="700" y2="170" stroke="#1E293B" stroke-dasharray="3 3"/>
+                  <path d="M0 160 C80 140, 140 180, 220 120 C300 70, 380 90, 460 60 C540 30, 620 70, 700 40 L700 220 L0 220 Z" fill="url(#chartGrad)"/>
+                  <path d="M0 160 C80 140, 140 180, 220 120 C300 70, 380 90, 460 60 C540 30, 620 70, 700 40" stroke="#6366F1" stroke-width="2.5"/>
+                  <circle cx="460" cy="60" r="5" fill="#38BDF8"/>
+                  <circle cx="700" cy="40" r="5" fill="#10B981"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="dash-sidebar">
+              <div class="feed-item">
+                <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 4px;">FRA-01 (Frankfurt)</div>
+                <div style="color: var(--text-muted);">Consensus reached in 1.4ms · Raft leader elected</div>
+              </div>
+              <div class="feed-item">
+                <div style="color: var(--accent-indigo); font-weight: 600; margin-bottom: 4px;">NRT-04 (Tokyo)</div>
+                <div style="color: var(--text-muted);">Autoscaled 32 worker threads for LLM prompt cache</div>
+              </div>
+              <div class="feed-item">
+                <div style="color: var(--accent-emerald); font-weight: 600; margin-bottom: 4px;">SFO-02 (San Francisco)</div>
+                <div style="color: var(--text-muted);">Zero packet loss during multi-gigabit spike</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features-section">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Built for Sub-Millisecond Precision</h2>
+          <p class="section-desc">Traditional clouds route traffic to remote centralized regions. Northwind processes data where your users already live.</p>
+        </div>
+        <div class="bento-grid">
+          <div class="bento-card bento-span-2">
+            <h3 class="bento-title">Smart Anycast Edge Mesh</h3>
+            <p class="bento-text">
+              Proprietary BGP routing automatically routes packets around fiber cuts and internet congestion, dropping cross-continental latency by up to 68%.
+            </p>
+          </div>
+          <div class="bento-card">
+            <h3 class="bento-title">Sub-0.2ms KV Cache</h3>
+            <p class="bento-text">
+              Strongly consistent localized storage backed by geo-replicated state machines.
+            </p>
+          </div>
+          <div class="bento-card">
+            <h3 class="bento-title">Native TLS &amp; WAF Defense</h3>
+            <p class="bento-text">
+              Zero-handshake session resumption with automated multi-terabit layer 7 mitigation.
+            </p>
+          </div>
+          <div class="bento-card bento-span-2">
+            <h3 class="bento-title">Atomic 12ms Instant Rollbacks</h3>
+            <p class="bento-text">
+              Every build publishes an immutable content-addressed binary. Revert bad production releases globally in a single atomic network frame.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="code" class="code-section">
+      <div class="container">
+        <div class="code-layout">
+          <div>
+            <h2 class="section-title">One SDK, Infinite Edge Reach</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.7;">
+              Write standard TypeScript or Rust. Our compilation toolchain bundles functions into micro-sandboxes with sub-millisecond warmups.
+            </p>
+            <a href="#pricing" class="btn-primary">View API Reference &rarr;</a>
+          </div>
+          <div class="code-block">
+            <span style="color: #64748B;">// edge-handler.ts</span><br>
+            <span style="color: #F43F5E;">import</span> { EdgeHandler, kv } <span style="color: #F43F5E;">from</span> <span style="color: #10B981;">'@northwind/runtime'</span>;<br><br>
+            <span style="color: #F43F5E;">export default</span> <span style="color: #38BDF8;">new</span> <span style="color: #FBBF24;">EdgeHandler</span>({<br>
+            &nbsp;&nbsp;<span style="color: #6366F1;">async</span> <span style="color: #60A5FA;">fetch</span>(req, env) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #64748B;">// Inspect geo distance and nearest vector shard</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> cache = <span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">getNearest</span>(req.clientGeo);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">if</span> (cache) <span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(cache);<br><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> result = <span style="color: #F43F5E;">await</span> env.ENGINE.<span style="color: #60A5FA;">infer</span>(req.body);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">replicate</span>(req.clientGeo, result);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(result);<br>
+            &nbsp;&nbsp;}<br>
+            });
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="social" class="social-section">
+      <div class="container">
+        <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted);">
+          Empowering mission-critical web applications globally
+        </div>
+        <div class="logo-strip">
+          <span class="logo-item">VORTEX.AI</span>
+          <span class="logo-item">PRISMA</span>
+          <span class="logo-item">KINETIC</span>
+          <span class="logo-item">LATTICE</span>
+          <span class="logo-item">HYPERION</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="pricing-section">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Simple, Usage-Based Economics</h2>
+          <p class="section-desc">Transparent billing per million edge invocations. No egress surcharges.</p>
+        </div>
+        <div class="pricing-grid">
+          <div class="price-card">
+            <h3 style="font-size: 18px; font-weight: 600;">Developer</h3>
+            <p style="color: var(--text-muted); font-size: 13px;">For experiments and personal side projects</p>
+            <div class="price-val">$0<span style="font-size: 14px; color: var(--text-muted); font-weight: 400;"> / month</span></div>
+            <ul class="price-features">
+              <li>100,000 requests / day</li>
+              <li>Global edge cache (10 regions)</li>
+              <li>Community Discord support</li>
+            </ul>
+            <a href="#dashboard" class="btn-secondary" style="text-align: center;">Get Started Free</a>
+          </div>
+
+          <div class="price-card price-featured">
+            <h3 style="font-size: 18px; font-weight: 600; color: #A5B4FC;">Production</h3>
+            <p style="color: var(--text-muted); font-size: 13px;">For fast-growing SaaS startups</p>
+            <div class="price-val">$49<span style="font-size: 14px; color: var(--text-muted); font-weight: 400;"> / month</span></div>
+            <ul class="price-features">
+              <li>25M monthly edge requests included</li>
+              <li>Full 210+ point edge topology</li>
+              <li>Custom domains with wildcard TLS</li>
+              <li>99.99% uptime SLA guarantee</li>
+            </ul>
+            <a href="#dashboard" class="btn-primary" style="text-align: center;">Start 14-Day Trial</a>
+          </div>
+
+          <div class="price-card">
+            <h3 style="font-size: 18px; font-weight: 600;">Enterprise</h3>
+            <p style="color: var(--text-muted); font-size: 13px;">For global financial and telemetry scale</p>
+            <div class="price-val">Custom</div>
+            <ul class="price-features">
+              <li>Dedicated fiber peering</li>
+              <li>Custom edge kernel isolation</li>
+              <li>24/7 dedicated solutions engineer</li>
+              <li>SOC2 Type II &amp; HIPAA certified</li>
+            </ul>
+            <a href="#footer" class="btn-secondary" style="text-align: center;">Contact Sales</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo-row" style="margin-bottom: 12px;">
+            <div class="logo-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+              </svg>
+            </div>
+            <span>Northwind Edge</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 13px; max-width: 280px; line-height: 1.6;">
+            Next-generation distributed edge runtime for low-latency web platforms.
+          </p>
+        </div>
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-links">
+            <li><a href="#features">Anycast Mesh</a></li>
+            <li><a href="#features">Distributed KV</a></li>
+            <li><a href="#features">AI Inference</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Developers</div>
+          <ul class="footer-links">
+            <li><a href="#code">Documentation</a></li>
+            <li><a href="#code">CLI &amp; SDK</a></li>
+            <li><a href="#dashboard">Console</a></li>
+            <li><a href="#hero">Changelog</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-links">
+            <li><a href="#hero">About Northwind</a></li>
+            <li><a href="#hero">Security &amp; Trust</a></li>
+            <li><a href="#hero">Careers</a></li>
+            <li><a href="#footer">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Northwind Technologies Inc. All systems operational.</span>
+        <span>San Francisco · Dublin · Singapore</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

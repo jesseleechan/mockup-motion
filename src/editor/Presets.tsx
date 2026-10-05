@@ -4,28 +4,10 @@ import type { Preset, UploadedImage } from "../types";
 import { PRESETS } from "../presets/presets";
 import { renderScene } from "../rendering/renderer";
 let samplePromise: Promise<UploadedImage[]> | undefined;
-function samples() {
+function samples(): Promise<UploadedImage[]> {
   return (samplePromise ??= (async () => {
-    const { loadDefaultDesktopImages, loadDefaultMobileImages } =
-      await import("../utils/sampleImages");
-    const [desktop, mobile] = await Promise.all([
-      loadDefaultDesktopImages(),
-      loadDefaultMobileImages(),
-    ]);
-    const imageElement = new Image();
-    imageElement.src = "/demo/aurelia.png";
-    try {
-      await imageElement.decode();
-      desktop[0] = {
-        ...desktop[0],
-        url: imageElement.src,
-        imageElement,
-        width: imageElement.width,
-        height: imageElement.height,
-        aspectRatio: imageElement.width / imageElement.height,
-      };
-    } catch {}
-    return [...desktop, ...mobile];
+    const { loadDemoImages } = await import("../assets/images");
+    return loadDemoImages();
   })());
 }
 function PresetThumbnail({ preset, images }: { preset: Preset; images: UploadedImage[] }) {

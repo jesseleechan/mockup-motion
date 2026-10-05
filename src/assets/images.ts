@@ -58,33 +58,40 @@ export function releaseUnusedImages(retained: UploadedImage[]) {
     }
 }
 export async function loadDemoImages(): Promise<UploadedImage[]> {
-  const response = await fetch("/demo/aurelia.png");
-  if (response.ok) {
-    const hero = await decodeImage(await response.blob(), "Aurelia — Lake House.png", "demo-hero");
-    const { loadDefaultDesktopImages, loadDefaultMobileImages } =
-      await import("../utils/sampleImages");
-    const [desktop, mobile] = await Promise.all([
-      loadDefaultDesktopImages(),
-      loadDefaultMobileImages(),
-    ]);
-    const others = await Promise.all(
-      [desktop[1], desktop[2], mobile[0], mobile[1]].map(async (i) => ({
-        ...i,
-        blob: await (await fetch(i.url)).blob(),
-      })),
-    );
-    return [hero, ...others];
-  }
-  const { loadDefaultDesktopImages, loadDefaultMobileImages } =
-    await import("../utils/sampleImages");
-  const [desktop, mobile] = await Promise.all([
-    loadDefaultDesktopImages(),
-    loadDefaultMobileImages(),
-  ]);
+  const demoList = [
+    { file: "/demo/aurelia/desktop-hero.webp", name: "Aurelia — Lake House", id: "demo-aurelia" },
+    {
+      file: "/demo/northwind/desktop-hero.webp",
+      name: "Northwind — Edge Infrastructure",
+      id: "demo-northwind",
+    },
+    {
+      file: "/demo/studio-kova/desktop-hero.webp",
+      name: "Studio Kova — Digital Engineering",
+      id: "demo-kova",
+    },
+    {
+      file: "/demo/maison-oak/mobile-hero.webp",
+      name: "Maison Oak — Atelier Furniture",
+      id: "demo-maison",
+    },
+    {
+      file: "/demo/field-notes/mobile-hero.webp",
+      name: "Field Notes — High Alpine Journal",
+      id: "demo-field-notes",
+    },
+  ];
+
   return Promise.all(
-    [...desktop, ...mobile].map(async (i) => ({
-      ...i,
-      blob: await (await fetch(i.url)).blob(),
-    })),
+    demoList.map(async (item) => {
+      const res = await fetch(item.file);
+      if (!res.ok) {
+        const fallback = await fetch("/demo/aurelia.png");
+        const blob = await fallback.blob();
+        return decodeImage(blob, item.name, item.id);
+      }
+      const blob = await res.blob();
+      return decodeImage(blob, item.name, item.id);
+    }),
   );
 }

@@ -14,7 +14,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests"
+    "format:check": "prettier --check src tests",
+    "capture": "tsx scripts/capture.ts",
+    "demo:capture": "tsx scripts/demo-capture.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -29,6 +31,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.14.0",
@@ -43,6 +48,7 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "prettier": "^3.6.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",

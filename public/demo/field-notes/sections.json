@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:3591/field-notes/",
+  "viewportWidth": 1440,
+  "scale": 1,
+  "pageHeight": 4261,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 0,
+      "height": 49
+    },
+    {
+      "tag": "section",
+      "id": "hero",
+      "className": "hero-section",
+      "top": 192,
+      "height": 1128
+    },
+    {
+      "tag": "section",
+      "id": "article",
+      "className": "article-section",
+      "top": 1320,
+      "height": 871
+    },
+    {
+      "tag": "section",
+      "id": "dispatch",
+      "className": "dispatch-section",
+      "top": 2191,
+      "height": 472
+    },
+    {
+      "tag": "section",
+      "id": "photo-essay",
+      "className": "photo-essay-section",
+      "top": 2663,
+      "height": 690
+    },
+    {
+      "tag": "section",
+      "id": "related",
+      "className": "related-section",
+      "top": 3353,
+      "height": 428
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 3781,
+      "height": 480
+    }
+  ]
+}
