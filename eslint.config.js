@@ -33,4 +33,32 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/motion/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'src/motion must be pure TypeScript (no React).' },
+            { name: 'react-dom', message: 'src/motion must be pure TypeScript (no React).' },
+            { name: 'three', message: 'src/motion must be pure TypeScript (no Three.js).' },
+          ],
+          patterns: [
+            {
+              group: ['react/*', 'three/*', '*/engine/*', '*/ui/*'],
+              message: 'src/motion must be pure TypeScript and not depend on engine, UI, or DOM.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        { name: 'window', message: 'src/motion must not access window.' },
+        { name: 'document', message: 'src/motion must not access document.' },
+        { name: 'navigator', message: 'src/motion must not access navigator.' },
+        { name: 'HTMLElement', message: 'src/motion must not access HTMLElement.' },
+      ],
+    },
+  },
 );
