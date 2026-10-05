@@ -141,8 +141,8 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | **M2 · Feels like a pro tool** | The new dark editor with template gallery, media library, storyboard timeline, text, Scroll Story, cursor, and brand kit. The old UI and renderer are deleted. |
 | **M3 · Ships**                 | Export destinations, web-embed bundle, GIF, 4K, optional audio, cross-browser QA, and visual regression.                                                       |
 
-| WP                                             | Title                                                            | Milestone | Depends on                                           | Size | Status   |
-| ---------------------------------------------- | ---------------------------------------------------------------- | --------- | ---------------------------------------------------- | ---- | -------- |
+| WP                                             | Title                                                            | Milestone | Depends on                                           | Size | Status                                          |
+| ---------------------------------------------- | ---------------------------------------------------------------- | --------- | ---------------------------------------------------- | ---- | ----------------------------------------------- |
 | [00](wp/WP-00-repo-hygiene-and-tooling.md)     | Repo hygiene and tooling                                         | M1        | —                                                    | S    | Reopened: see [fix plan](../fix-plan/README.md) |
 | [01](wp/WP-01-document-model-state-storage.md) | Document model v2, store, storage, migration                     | M1        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
 | [02](wp/WP-02-motion-core.md)                  | Motion core: easing, camera, timeline, evaluate                  | M1        | 00                                                   | M    | Reopened: see [fix plan](../fix-plan/README.md) |
@@ -162,6 +162,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [16](wp/WP-16-export-v2.md)                    | Export v2, destinations, web bundle, GIF                         | M3        | 03, 08                                               | M    | Reopened: see [fix plan](../fix-plan/README.md) |
 | [17](wp/WP-17-audio.md)                        | Music track (optional)                                           | M3        | 14, 16                                               | S    | Reopened: see [fix plan](../fix-plan/README.md) |
 | [18](wp/WP-18-qa-and-polish.md)                | Visual regression, e2e, performance, cross-browser, final polish | M3        | all                                                  | L    | Reopened: see [fix plan](../fix-plan/README.md) |
+
 Sizes: S ≈ half a day of agent work, M ≈ 1–2 days, L ≈ 2–4 days, each including verification.
 
 ### Dependency graph and parallel lanes

@@ -48,7 +48,9 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
   test("width-fit: test pattern screenshot shows full width without horizontal crop", async ({
     page,
   }) => {
-    await page.goto("/lab?fixture=devices-browser&t=0&aspect=16:9");
+    // Still mode fixes the canvas at 1280×720, so the lab's ResizeObserver cannot
+    // shrink it while the test bitmap loads.
+    await page.goto("/lab?still=1&fixture=devices-browser&t=0&aspect=16:9&w=1280");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
     await page.waitForFunction(() => Boolean(window.__labTestImages && window.__labSetDoc));
     await page.evaluate(async () => {
