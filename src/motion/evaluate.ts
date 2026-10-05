@@ -2,7 +2,6 @@ import type {
   Aspect,
   AssetRef,
   CameraPose,
-  Layout,
   ProjectDoc,
   Shot,
   Style,
@@ -10,6 +9,7 @@ import type {
 } from "../doc/types";
 import { cameraPose } from "./camera";
 import { ease } from "./easing";
+import { frameDistance } from "./framing";
 import { type LayoutNode, resolveLayout } from "./layouts";
 import { scrollPosition } from "./scroll";
 import { textFrame, type TextFrame } from "./text-anim";
@@ -37,52 +37,12 @@ export interface FrameState {
   };
 }
 
-interface BaseLayoutCacheEntry {
-  sig: string;
-  baseNodes: LayoutNode[];
-}
-
-// Layout memoization cache: (shot.id + aspect) -> BaseLayoutCacheEntry
-const layoutCache = new Map<string, BaseLayoutCacheEntry>();
-
-function getAssetsSignature(assets: AssetRef[]): string {
-  let sig = "";
-  for (let i = 0; i < assets.length; i++) {
-    const a = assets[i];
-    sig += `${a.id}:${a.width ?? 0}x${a.height ?? 0};`;
-  }
-  return sig;
-}
-
 /**
  * Clear the layout cache (useful for tests or full document reloads).
  */
 export function clearLayoutCache(): void {
-  layoutCache.clear();
+  // Modular layouts resolve deterministically
 }
-
-function getBaseLayoutNodes(
-  shotId: string,
-  layout: Layout,
-  aspect: Aspect,
-  assets: AssetRef[],
-  duration: number,
-): LayoutNode[] {
-  const assetsSig = getAssetsSignature(assets);
-  const cacheKey = `${shotId}:${aspect}`;
-  const cached = layoutCache.get(cacheKey);
-
-  if (cached && cached.sig === assetsSig) {
-    return cached.baseNodes;
-  }
-
-  // Base layout evaluated with entrance 'none' at time 0
-  const baseNodes = resolveLayout(layout, aspect, assets, 0, duration, "none");
-  layoutCache.set(cacheKey, { sig: assetsSig, baseNodes });
-  return baseNodes;
-}
-
-const ENTRANCE_DURATION = 0.8;
 
 function evaluateNodes(
   shot: Shot,
@@ -90,59 +50,30 @@ function evaluateNodes(
   assets: AssetRef[],
   localT: number,
 ): LayoutNode[] {
-  const baseNodes = getBaseLayoutNodes(shot.id, shot.layout, aspect, assets, shot.duration);
-  const entrance = shot.entrance ?? "none";
+  const nodes = resolveLayout(
+    shot.layout,
+    aspect,
+    assets,
+    localT,
+    shot.duration,
+    shot.entrance ?? "none",
+  );
 
-  // Compute entrance transform & opacity
-  const p = Math.max(0, Math.min(1, localT / ENTRANCE_DURATION));
-  const e = ease("expoOut", p);
-
-  return baseNodes.map((base, idx) => {
-    let opacity: number;
-    const transform = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0, scale: 1.0 };
-
-    switch (entrance) {
-      case "rise":
-        opacity = e;
-        transform.y = -(1 - e) * 0.03;
-        break;
-      case "scale":
-        opacity = e;
-        transform.scale = 0.97 + 0.03 * e;
-        break;
-      case "stagger": {
-        const staggerP = Math.max(0, Math.min(1, (localT - idx * 0.1) / ENTRANCE_DURATION));
-        const staggerE = ease("expoOut", staggerP);
-        opacity = staggerE;
-        transform.y = -(1 - staggerE) * 0.03;
-        transform.scale = 0.97 + 0.03 * staggerE;
-        break;
-      }
-      case "none":
-      default:
-        opacity = 1.0;
-        break;
-    }
-
-    // Scroll calculation
-    let scroll = 0;
-    if (shot.scroll?.enabled && base.assetId) {
+  // Scroll calculation (honoured for single-device layouts)
+  if (shot.scroll?.enabled && shot.layout.kind === "single" && nodes.length > 0) {
+    const base = nodes[0];
+    if (base.assetId) {
       const asset = assets.find((a) => a.id === base.assetId);
       let scrollableFrames = 0;
       if (asset?.width && asset?.height && asset.height > 0) {
         const imgAspect = asset.width / asset.height;
         scrollableFrames = Math.max(0, base.screenAspect / imgAspect - 1);
       }
-      scroll = scrollPosition(shot.scroll, localT, shot.duration, scrollableFrames);
+      base.scroll = scrollPosition(shot.scroll, localT, shot.duration, scrollableFrames);
     }
+  }
 
-    return {
-      ...base,
-      transform,
-      opacity,
-      scroll,
-    };
-  });
+  return nodes;
 }
 
 function evaluateTexts(shot: Shot, localT: number): TextFrame[] {
@@ -229,10 +160,27 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
 
     // Camera pose evaluation
     const p = shot.duration > 0 ? Math.max(0, Math.min(1, localT / shot.duration)) : 0;
-    const camera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
+    const baseCamera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
 
     // Nodes evaluation with entrance and scroll
     const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT);
+
+    // Auto-framing: keep safe margins under camera moves for bounded layouts
+    let camera = baseCamera;
+    const isFullBleed =
+      shot.layout.kind === "rows" ||
+      shot.layout.kind === "columns" ||
+      shot.layout.kind === "wall" ||
+      shot.layout.kind === "title";
+    if (!isFullBleed && nodes.length > 0) {
+      const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
+      if (multiplier > 1.0) {
+        camera = {
+          ...baseCamera,
+          distance: baseCamera.distance * multiplier,
+        };
+      }
+    }
 
     // Text frames
     const texts = evaluateTexts(shot, localT);

@@ -6,6 +6,7 @@ export interface FieldProps {
   children: React.ReactNode;
   hint?: string;
   className?: string;
+  htmlFor?: string;
 }
 
 export const Field: React.FC<FieldProps> = ({ label, children, hint, className }) => {

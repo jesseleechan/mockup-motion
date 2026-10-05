@@ -78,8 +78,10 @@ export function cameraPose(
   shotDuration: number,
 ): CameraPose {
   const base = PRESET_POSES[move.preset] ?? PRESET_POSES.static;
+  const [pStart, pEnd] = move.progressRange ?? [0, 1];
   const clampedP = Math.max(0, Math.min(1, p));
-  const easedP = ease(move.easing, clampedP);
+  const effectiveP = pStart + clampedP * (pEnd - pStart);
+  const easedP = ease(move.easing, effectiveP);
   const intensity = Math.max(0, Math.min(1, move.intensity));
 
   // Base aspect scaling for dolly

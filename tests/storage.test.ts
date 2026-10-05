@@ -13,7 +13,22 @@ import { putBlob, getBlob, listBlobKeys } from "../src/storage/blobs";
 import { getDB } from "../src/storage/db";
 import { createDoc } from "../src/doc/defaults";
 import type { V1Project } from "../src/doc/migrate";
+import type { AssetRef } from "../src/doc/types";
 import { V1_PRESETS } from "./fixtures/v1-presets";
+import {
+  saveBrandKit,
+  loadBrandKit,
+  getDefaultBrandKit,
+  type BrandKit,
+} from "../src/storage/brand-kits";
+import {
+  convertDocToUserTemplate,
+  fillUserTemplateSlots,
+  saveUserTemplate,
+  loadUserTemplate,
+  deleteUserTemplate,
+} from "../src/storage/user-templates";
+import { useEditorStore } from "../src/state/store";
 
 describe("WP-01: Storage with fake-indexeddb", () => {
   beforeEach(async () => {
@@ -186,5 +201,129 @@ describe("WP-01: Storage with fake-indexeddb", () => {
 
     const projects = await listProjects();
     expect(projects.length).toBe(2);
+  });
+
+  describe("WP-13: Brand Kit & User Templates Storage", () => {
+    it("brand kit persists across reloads, applies in one undo step, and default kit applies", async () => {
+      const kit1: BrandKit = {
+        id: "kit-1",
+        name: "Acme Corp",
+        colors: ["#111111", "#FF5500", "#FFFFFF"],
+        fontDisplay: "Fraunces",
+        fontBody: "Inter",
+        browserUrl: "acme.io",
+        isDefault: true,
+        updatedAt: Date.now(),
+      };
+      await saveBrandKit(kit1);
+
+      const loadedKit = await loadBrandKit("kit-1");
+      expect(loadedKit).not.toBeNull();
+      expect(loadedKit?.name).toBe("Acme Corp");
+      expect(loadedKit?.browserUrl).toBe("acme.io");
+
+      const defaultKit = await getDefaultBrandKit();
+      expect(defaultKit?.id).toBe("kit-1");
+
+      // Verify applying kit to editor store in one undo step
+      const store = useEditorStore;
+      const initialDoc = createDoc({ name: "Brand Test Doc" });
+      store.getState().loadDoc(initialDoc);
+
+      const beforeTextColor = store.getState().doc.style.textColor;
+      const beforeAccent = store.getState().doc.style.accent;
+
+      store.getState().applyBrandKit(kit1);
+      expect(store.getState().doc.style.textColor).toBe("#111111");
+      expect(store.getState().doc.style.accent).toBe("#FF5500");
+      expect(store.getState().doc.style.browserUrl).toBe("acme.io");
+      expect(store.getState().doc.style.fonts.display.family).toBe("Fraunces");
+
+      // Undo restores the previous state in one step
+      store.getState().undo();
+      expect(store.getState().doc.style.textColor).toBe(beforeTextColor);
+      expect(store.getState().doc.style.accent).toBe(beforeAccent);
+
+      // Redo reapplies
+      store.getState().redo();
+      expect(store.getState().doc.style.textColor).toBe("#111111");
+      expect(store.getState().doc.style.accent).toBe("#FF5500");
+    });
+
+    it("user template replaces asset IDs with slot keys, re-applies to new assets, and persists", async () => {
+      const doc = createDoc({ name: "Responsive Template Doc" });
+      const desktopAsset: AssetRef = {
+        id: "asset-desktop-1",
+        name: "hero.png",
+        kind: "image",
+        mime: "image/png",
+        bytes: 1000,
+        role: "desktop",
+      };
+      const mobileAsset: AssetRef = {
+        id: "asset-mobile-1",
+        name: "mobile.png",
+        kind: "image",
+        mime: "image/png",
+        bytes: 500,
+        role: "mobile",
+      };
+      doc.assets = [desktopAsset, mobileAsset];
+      doc.shots[0].layout = {
+        kind: "pair",
+        desktopId: "asset-desktop-1",
+        mobileId: "asset-mobile-1",
+        arrangement: "overlap",
+      };
+
+      // Convert doc to template
+      const template = convertDocToUserTemplate(doc, "Responsive Showcase", "Pair layout demo");
+      expect(template.name).toBe("Responsive Showcase");
+
+      // Check slot keys
+      const templatedLayout = template.shots[0].layout;
+      expect(templatedLayout.kind).toBe("pair");
+      if (templatedLayout.kind === "pair") {
+        expect(templatedLayout.desktopId).toBe("slot:desktop:0");
+        expect(templatedLayout.mobileId).toBe("slot:mobile:0");
+      }
+
+      // Save to IndexedDB
+      await saveUserTemplate(template);
+      const retrieved = await loadUserTemplate(template.id);
+      expect(retrieved).not.toBeNull();
+      expect(retrieved?.name).toBe("Responsive Showcase");
+
+      // Fill slots with a completely different project's assets
+      const newDesktop: AssetRef = {
+        id: "client-desktop-99",
+        name: "client.png",
+        kind: "image",
+        mime: "image/png",
+        bytes: 2000,
+        role: "desktop",
+      };
+      const newMobile: AssetRef = {
+        id: "client-mobile-99",
+        name: "client-m.png",
+        kind: "image",
+        mime: "image/png",
+        bytes: 800,
+        role: "mobile",
+      };
+
+      const filled = fillUserTemplateSlots(retrieved!, [newDesktop, newMobile]);
+      expect(filled.shots.length).toBe(1);
+      const filledLayout = filled.shots[0].layout;
+      expect(filledLayout.kind).toBe("pair");
+      if (filledLayout.kind === "pair") {
+        expect(filledLayout.desktopId).toBe("client-desktop-99");
+        expect(filledLayout.mobileId).toBe("client-mobile-99");
+      }
+
+      // Cleanup
+      await deleteUserTemplate(template.id);
+      expect(await loadUserTemplate(template.id)).toBeNull();
+    });
   });
 });

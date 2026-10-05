@@ -79,6 +79,11 @@ export const EditorShell: React.FC = () => {
         console.warn("[Migration] v1 migration check encountered:", err);
       });
 
+    if (import.meta.env.DEV) {
+      (window as unknown as { __editorStore: unknown }).__editorStore = useEditorStore;
+      (window as unknown as { __uiStore: unknown }).__uiStore = useUIStore;
+    }
+
     // 4. Mobile screen resize listener (< 1024px)
     const checkMobile = () => {
       setIsMobileScreen(window.innerWidth < 1024);

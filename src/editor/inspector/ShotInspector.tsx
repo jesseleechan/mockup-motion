@@ -1,11 +1,11 @@
 import React from "react";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import type { CameraPresetId, DeviceKind, EasingId, Shot } from "../../doc/types";
+import type { CameraPresetId, DeviceKind, EasingId, Layout, Shot } from "../../doc/types";
 import { Button, Field, Icon, Section, Select, Slider } from "../../ui";
 import { Copy, Plus, Trash2, Type } from "lucide-react";
 
-type LayoutKind = "single" | "title";
+type LayoutKind = Layout["kind"];
 
 interface ShotInspectorProps {
   shotId: string;
@@ -175,33 +175,25 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
           </Field>
 
           <Field label="Layout Type">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleLayoutKindChange("single")}
-                className={`py-1.5 px-3 rounded-md text-xs font-medium border transition-colors ${
-                  !isTitleLayout
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
-                    : "border-[var(--color-line)] text-[var(--color-text-2)] hover:text-[var(--color-text)]"
-                }`}
-              >
-                Device Mockup
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLayoutKindChange("title")}
-                className={`py-1.5 px-3 rounded-md text-xs font-medium border transition-colors ${
-                  isTitleLayout
-                    ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
-                    : "border-[var(--color-line)] text-[var(--color-text-2)] hover:text-[var(--color-text)]"
-                }`}
-              >
-                Title Card
-              </button>
-            </div>
+            <Select
+              aria-label="Layout Type"
+              value={shot.layout.kind}
+              onChange={(val) => handleLayoutKindChange(val as Layout["kind"])}
+              options={[
+                { value: "single", label: "Single Device" },
+                { value: "pair", label: "Responsive Pair" },
+                { value: "trio", label: "Responsive Trio" },
+                { value: "rows", label: "Marquee Rows" },
+                { value: "columns", label: "Phone Columns" },
+                { value: "wall", label: "Isometric Wall" },
+                { value: "stack", label: "Cascading Stack" },
+                { value: "title", label: "Title Card" },
+              ]}
+            />
           </Field>
 
-          {!isTitleLayout && shot.layout.kind === "single" && (
+          {/* Single Layout Controls */}
+          {shot.layout.kind === "single" && (
             <>
               <Field label="Device Frame">
                 <Select
@@ -217,17 +209,354 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
                 />
               </Field>
 
-              <Field label="Screenshot Asset">
+              <Field label="Screenshot Asset (Drop media here)">
+                <div
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "copy";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    const id = e.dataTransfer.getData("application/x-mockup-asset-id");
+                    if (id) {
+                      e.preventDefault();
+                      handleAssetChange(id);
+                    }
+                  }}
+                >
+                  <Select
+                    value={shot.layout.assetId || ""}
+                    onChange={handleAssetChange}
+                    options={[
+                      { value: "", label: "No screenshot (empty frame)" },
+                      ...doc.assets.map((a) => ({
+                        value: a.id,
+                        label: `${a.name} (${a.role})`,
+                      })),
+                    ]}
+                  />
+                </div>
+              </Field>
+            </>
+          )}
+
+          {/* Pair Layout Controls */}
+          {shot.layout.kind === "pair" && (
+            <>
+              <Field label="Arrangement">
                 <Select
-                  value={shot.layout.assetId || ""}
-                  onChange={handleAssetChange}
+                  value={shot.layout.arrangement}
+                  onChange={(val) =>
+                    apply(
+                      (draft) => {
+                        const target = draft.shots.find((s) => s.id === shotId);
+                        if (target && target.layout.kind === "pair") {
+                          target.layout.arrangement = val as "overlap" | "side";
+                        }
+                      },
+                      { label: "Change pair arrangement" },
+                    )
+                  }
                   options={[
-                    { value: "", label: "No screenshot (empty frame)" },
-                    ...doc.assets.map((a) => ({
-                      value: a.id,
-                      label: a.name,
-                    })),
+                    { value: "overlap", label: "Overlap (phone in front)" },
+                    { value: "side", label: "Side by Side" },
                   ]}
+                />
+              </Field>
+
+              <Field label="Desktop Asset (Drop media here)">
+                <div
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "copy";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    const id = e.dataTransfer.getData("application/x-mockup-asset-id");
+                    if (id) {
+                      e.preventDefault();
+                      apply((draft) => {
+                        const target = draft.shots.find((s) => s.id === shotId);
+                        if (target && target.layout.kind === "pair") target.layout.desktopId = id;
+                      });
+                    }
+                  }}
+                >
+                  <Select
+                    value={shot.layout.desktopId || ""}
+                    onChange={(val) =>
+                      apply((draft) => {
+                        const target = draft.shots.find((s) => s.id === shotId);
+                        if (target && target.layout.kind === "pair") target.layout.desktopId = val;
+                      })
+                    }
+                    options={[
+                      { value: "", label: "Select desktop screenshot" },
+                      ...doc.assets.map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
+                    ]}
+                  />
+                </div>
+              </Field>
+
+              <Field label="Mobile Asset (Drop media here)">
+                <div
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "copy";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    const id = e.dataTransfer.getData("application/x-mockup-asset-id");
+                    if (id) {
+                      e.preventDefault();
+                      apply((draft) => {
+                        const target = draft.shots.find((s) => s.id === shotId);
+                        if (target && target.layout.kind === "pair") target.layout.mobileId = id;
+                      });
+                    }
+                  }}
+                >
+                  <Select
+                    value={shot.layout.mobileId || ""}
+                    onChange={(val) =>
+                      apply((draft) => {
+                        const target = draft.shots.find((s) => s.id === shotId);
+                        if (target && target.layout.kind === "pair") target.layout.mobileId = val;
+                      })
+                    }
+                    options={[
+                      { value: "", label: "Select mobile screenshot" },
+                      ...doc.assets.map((a) => ({ value: a.id, label: `${a.name} (${a.role})` })),
+                    ]}
+                  />
+                </div>
+              </Field>
+            </>
+          )}
+
+          {/* Trio Layout Controls */}
+          {shot.layout.kind === "trio" && (
+            <>
+              <Field label="Desktop Asset">
+                <Select
+                  value={shot.layout.desktopId || ""}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "trio") target.layout.desktopId = val;
+                    })
+                  }
+                  options={[
+                    { value: "", label: "Select desktop screenshot" },
+                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                  ]}
+                />
+              </Field>
+              <Field label="Tablet Asset (optional)">
+                <Select
+                  value={shot.layout.tabletId || ""}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "trio") target.layout.tabletId = val || undefined;
+                    })
+                  }
+                  options={[
+                    { value: "", label: "None (falls back to pair)" },
+                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                  ]}
+                />
+              </Field>
+              <Field label="Mobile Asset">
+                <Select
+                  value={shot.layout.mobileId || ""}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "trio") target.layout.mobileId = val;
+                    })
+                  }
+                  options={[
+                    { value: "", label: "Select mobile screenshot" },
+                    ...doc.assets.map((a) => ({ value: a.id, label: a.name })),
+                  ]}
+                />
+              </Field>
+            </>
+          )}
+
+          {/* Rows / Marquee Controls */}
+          {shot.layout.kind === "rows" && (
+            <>
+              <Field label="Rows Count">
+                <Select
+                  value={String(shot.layout.rows)}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "rows") target.layout.rows = parseInt(val, 10) as 1 | 2 | 3;
+                    })
+                  }
+                  options={[
+                    { value: "1", label: "1 Row" },
+                    { value: "2", label: "2 Rows" },
+                    { value: "3", label: "3 Rows" },
+                  ]}
+                />
+              </Field>
+              <Field label={`3D Tilt (${shot.layout.tilt}°)`}>
+                <Slider
+                  min={-30}
+                  max={30}
+                  step={1}
+                  value={shot.layout.tilt}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "rows") target.layout.tilt = val;
+                    })
+                  }
+                />
+              </Field>
+              <Field label={`Speed (${(shot.layout.speed * 100).toFixed(0)}%)`}>
+                <Slider
+                  min={0.05}
+                  max={1.0}
+                  step={0.05}
+                  value={shot.layout.speed}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "rows") target.layout.speed = val;
+                    })
+                  }
+                />
+              </Field>
+            </>
+          )}
+
+          {/* Columns Phone Marquee */}
+          {shot.layout.kind === "columns" && (
+            <>
+              <Field label="Columns Count">
+                <Select
+                  value={String(shot.layout.columns)}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "columns")
+                        target.layout.columns = parseInt(val, 10) as 2 | 3 | 4 | 5;
+                    })
+                  }
+                  options={[
+                    { value: "2", label: "2 Columns" },
+                    { value: "3", label: "3 Columns" },
+                    { value: "4", label: "4 Columns" },
+                    { value: "5", label: "5 Columns" },
+                  ]}
+                />
+              </Field>
+              <Field label={`3D Tilt (${shot.layout.tilt}°)`}>
+                <Slider
+                  min={-30}
+                  max={30}
+                  step={1}
+                  value={shot.layout.tilt}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "columns") target.layout.tilt = val;
+                    })
+                  }
+                />
+              </Field>
+              <Field label={`Speed (${(shot.layout.speed * 100).toFixed(0)}%)`}>
+                <Slider
+                  min={0.05}
+                  max={1.0}
+                  step={0.05}
+                  value={shot.layout.speed}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "columns") target.layout.speed = val;
+                    })
+                  }
+                />
+              </Field>
+            </>
+          )}
+
+          {/* Isometric Wall */}
+          {shot.layout.kind === "wall" && (
+            <>
+              <Field label="Columns">
+                <Select
+                  value={String(shot.layout.columns)}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "wall")
+                        target.layout.columns = parseInt(val, 10) as 3 | 4 | 5;
+                    })
+                  }
+                  options={[
+                    { value: "3", label: "3 Columns" },
+                    { value: "4", label: "4 Columns" },
+                    { value: "5", label: "5 Columns" },
+                  ]}
+                />
+              </Field>
+              <Field label={`Speed (${(shot.layout.speed * 100).toFixed(0)}%)`}>
+                <Slider
+                  min={0.05}
+                  max={1.0}
+                  step={0.05}
+                  value={shot.layout.speed}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "wall") target.layout.speed = val;
+                    })
+                  }
+                />
+              </Field>
+            </>
+          )}
+
+          {/* Cascading Stack */}
+          {shot.layout.kind === "stack" && (
+            <>
+              <Field label="Device Frame">
+                <Select
+                  value={shot.layout.device}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "stack") target.layout.device = val as "browser" | "card";
+                    })
+                  }
+                  options={[
+                    { value: "browser", label: "Browser" },
+                    { value: "card", label: "Card" },
+                  ]}
+                />
+              </Field>
+              <Field label={`Depth Spread (${(shot.layout.spread * 100).toFixed(0)}%)`}>
+                <Slider
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  value={shot.layout.spread}
+                  onChange={(val) =>
+                    apply((draft) => {
+                      const target = draft.shots.find((s) => s.id === shotId);
+                      if (target && target.layout.kind === "stack") target.layout.spread = val;
+                    })
+                  }
                 />
               </Field>
             </>

@@ -95,6 +95,17 @@ export async function garbageCollectBlobs(): Promise<number> {
     }
   }
 
+  // Also protect brand kit logo assets
+  const brandKits = await db.getAll("brandKits");
+  for (const kit of brandKits) {
+    if (kit.logoLightAssetId) referencedAssetIds.add(kit.logoLightAssetId);
+    if (kit.logoDarkAssetId) referencedAssetIds.add(kit.logoDarkAssetId);
+    // Legacy field compatibility
+    if ((kit as unknown as { logoAssetId?: string }).logoAssetId) {
+      referencedAssetIds.add((kit as unknown as { logoAssetId?: string }).logoAssetId!);
+    }
+  }
+
   const allBlobKeys = await listBlobKeys();
   let removedCount = 0;
 

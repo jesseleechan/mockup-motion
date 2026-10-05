@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { EngineCanvas } from "../../engine/react/EngineCanvas";
+import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
@@ -57,12 +58,24 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
   const doc = useEditorStore((s) => s.doc);
   const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
   const addAssets = useEditorStore((s) => s.addAssets);
+  const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
 
   const stageZoom = useUIStore((s) => s.stageZoom);
+  const selection = useUIStore((s) => s.selection);
+  const selectedShotIndex = useMemo(() => {
+    if (selection.kind === "shot") {
+      const idx = doc.shots.findIndex((s) => s.id === selection.id);
+      return idx !== -1 ? idx : 0;
+    }
+    return 0;
+  }, [doc.shots, selection]);
   const provider = useMemo(() => createEditorAssetProvider(), []);
 
   const [isDragOver, setIsDragOver] = useState(false);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const engineRef = useRef<Engine | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const handleFiles = React.useCallback(
     async (files: File[]) => {
@@ -244,8 +257,67 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
             maxHeight: "100%",
           }}
         >
-          <div className="relative w-full h-full border border-[var(--color-line)] rounded-sm overflow-hidden shadow-2xl bg-black">
-            <EngineCanvas doc={doc} assets={provider} />
+          <div
+            ref={canvasContainerRef}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = "copy";
+
+                const canvas = canvasContainerRef.current?.querySelector("canvas");
+                if (canvas && engineRef.current) {
+                  const rect = canvas.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                  const hit = engineRef.current.pick(x, y);
+                  setHoveredNodeId(hit?.nodeId ?? null);
+                }
+              }
+            }}
+            onDragLeave={(e) => {
+              if (!canvasContainerRef.current?.contains(e.relatedTarget as Node)) {
+                setHoveredNodeId(null);
+              }
+            }}
+            onDrop={(e) => {
+              const assetId = e.dataTransfer.getData("application/x-mockup-asset-id");
+              if (assetId) {
+                e.preventDefault();
+                e.stopPropagation();
+                const canvas = canvasContainerRef.current?.querySelector("canvas");
+                if (canvas && engineRef.current) {
+                  const rect = canvas.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                  const hit = engineRef.current.pick(x, y);
+                  if (hit) {
+                    assignAssetToSlot(selectedShotIndex, hit.nodeId, assetId);
+                  }
+                }
+                setHoveredNodeId(null);
+              }
+            }}
+            className={`relative w-full h-full border rounded-sm overflow-hidden shadow-2xl bg-black transition-all ${
+              hoveredNodeId
+                ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/50"
+                : "border-[var(--color-line)]"
+            }`}
+          >
+            <EngineCanvas
+              doc={doc}
+              assets={provider}
+              onEngineReady={(engine) => {
+                engineRef.current = engine;
+              }}
+            />
+
+            {/* Hovered Device Drop Indicator */}
+            {hoveredNodeId && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5">
+                <span>Assign media to {hoveredNodeId}</span>
+              </div>
+            )}
 
             {/* Safe Margins Overlay */}
             {showSafeMargins && (

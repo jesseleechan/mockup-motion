@@ -68,6 +68,7 @@ export class Engine {
     this.canvas = canvas;
     this.opts = opts;
     this.renderer = renderer;
+    this.renderer.autoClear = false;
 
     const maxTex = opts.maxTextureSize ?? renderer.capabilities.maxTextureSize;
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
@@ -318,6 +319,7 @@ export class Engine {
     for (const node of frame.nodes) {
       const dev = this.getOrCreateDevice(node, frame.style);
       dev.object3d.visible = true;
+      dev.object3d.userData.nodeId = node.id;
 
       let managed = null;
       if (node.assetId) {
@@ -331,6 +333,7 @@ export class Engine {
     // 4. Render 3D scene into MSAA target
     const prevTarget = this.renderer.getRenderTarget();
     this.renderer.setRenderTarget(target);
+    this.renderer.clearDepth();
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(prevTarget);
 
@@ -475,8 +478,35 @@ export class Engine {
   /**
    * Hit test output pixel coordinate.
    */
-  pick(_x: number, _y: number): { nodeId: string; u: number; v: number } | null {
-    // In WP-03, hit-testing stub is provided; full raycaster hit-test is finalized in WP-12
+  pick(x: number, y: number): { nodeId: string; u: number; v: number } | null {
+    if (this.opts.width <= 0 || this.opts.height <= 0) return null;
+
+    const ndcX = (x / this.opts.width) * 2 - 1;
+    const ndcY = -((y / this.opts.height) * 2 - 1);
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera);
+
+    const candidates: THREE.Object3D[] = [];
+    for (const dev of this.deviceInstances.values()) {
+      if (dev.object3d.visible) {
+        candidates.push(dev.object3d);
+      }
+    }
+
+    const intersects = raycaster.intersectObjects(candidates, true);
+    for (const hit of intersects) {
+      let curr: THREE.Object3D | null = hit.object;
+      while (curr) {
+        if (curr.userData?.nodeId) {
+          const u = hit.uv ? hit.uv.x : 0.5;
+          const v = hit.uv ? hit.uv.y : 0.5;
+          return { nodeId: curr.userData.nodeId, u, v };
+        }
+        curr = curr.parent;
+      }
+    }
+
     return null;
   }
 

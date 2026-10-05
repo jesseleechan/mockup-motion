@@ -17,6 +17,11 @@ const bgVertexShader = /* glsl */ `
 
 // Helper GLSL functions for OKLab to linear sRGB
 const oklabGlsl = /* glsl */ `
+  float linear_to_srgb_f(float c) {
+    c = clamp(c, 0.0, 1.0);
+    return c > 0.0031308 ? (1.055 * pow(c, 1.0 / 2.4) - 0.055) : (c * 12.92);
+  }
+
   vec3 oklab_to_srgb(vec3 c) {
     float l_ = c.x + 0.3963377774 * c.y + 0.2158037573 * c.z;
     float m_ = c.x - 0.1055613458 * c.y - 0.0638541728 * c.z;
@@ -26,13 +31,17 @@ const oklabGlsl = /* glsl */ `
     float m = m_ * m_ * m_;
     float s = s_ * s_ * s_;
 
-    vec3 rgb = vec3(
+    vec3 lrgb = vec3(
       +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
       -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
       -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
     );
 
-    return clamp(rgb, 0.0, 1.0);
+    return vec3(
+      linear_to_srgb_f(lrgb.r),
+      linear_to_srgb_f(lrgb.g),
+      linear_to_srgb_f(lrgb.b)
+    );
   }
 `;
 

@@ -72,6 +72,7 @@ export interface CameraMove {
   intensity: number;       // 0..1, scales the preset's delta (quality-bar §2 limits apply at 1)
   easing: EasingId;
   float: number;           // 0..1 subtle ambient sway layered on top (quality-bar §2.4)
+  progressRange?: [number, number]; // [0..1] range of preset progress covered by this shot
 }
 
 export interface CameraPose {

@@ -80,13 +80,16 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // 6. Test Contextual Inspector filtering
     // Switch to Title Card
-    await page.getByRole("button", { name: "Title Card" }).click();
+    const layoutSelect = page.getByRole("combobox", { name: "Layout Type" });
+    await layoutSelect.click();
+    await page.getByRole("option", { name: "Title Card" }).click();
     // Device frame should NOT be visible for Title Card
     await expect(page.getByText("Device Frame")).not.toBeVisible();
     await expect(page.getByText("Camera Motion")).not.toBeVisible();
 
-    // Switch back to Device Mockup
-    await page.getByRole("button", { name: "Device Mockup" }).click();
+    // Switch back to Single Device
+    await layoutSelect.click();
+    await page.getByRole("option", { name: "Single Device" }).click();
     await expect(page.getByText("Device Frame")).toBeVisible();
     await expect(page.getByText("Camera Motion")).toBeVisible();
 

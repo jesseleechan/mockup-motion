@@ -70,3 +70,50 @@ export const ContextMenuSeparator = React.forwardRef<
   />
 ));
 ContextMenuSeparator.displayName = "ContextMenuSeparator";
+
+export const ContextMenuSub = ContextPrimitive.Sub;
+
+export const ContextMenuSubTrigger = React.forwardRef<
+  HTMLDivElement,
+  ContextPrimitive.ContextMenuSubTriggerProps & { icon?: React.ReactNode }
+>(({ className, children, icon, ...props }, ref) => (
+  <ContextPrimitive.SubTrigger
+    ref={ref}
+    className={clsx(
+      "relative flex items-center justify-between px-2.5 py-1.5 text-[12px] font-medium rounded-xs cursor-pointer outline-none select-none transition-colors",
+      "data-[highlighted]:bg-[var(--color-hover)] text-[var(--color-text)]",
+      "data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
+      className,
+    )}
+    {...props}
+  >
+    <div className="flex items-center gap-2">
+      {icon && <span className="shrink-0 text-[var(--color-text-2)]">{icon}</span>}
+      <span>{children}</span>
+    </div>
+    <span className="ml-auto text-[var(--color-text-3)] text-[10px]">▶</span>
+  </ContextPrimitive.SubTrigger>
+));
+ContextMenuSubTrigger.displayName = "ContextMenuSubTrigger";
+
+export const ContextMenuSubContent = React.forwardRef<
+  HTMLDivElement,
+  ContextPrimitive.ContextMenuSubContentProps
+>(({ className, children, ...props }, ref) => (
+  <ContextPrimitive.Portal>
+    <ContextPrimitive.SubContent
+      ref={ref}
+      className={clsx(
+        "z-50 min-w-[160px] p-1 rounded-md shadow-2xl outline-none select-none",
+        "bg-[var(--color-panel)] border border-[var(--color-line)] text-[var(--color-text)]",
+        "animate-in fade-in-0 zoom-in-95",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </ContextPrimitive.SubContent>
+  </ContextPrimitive.Portal>
+));
+ContextMenuSubContent.displayName = "ContextMenuSubContent";
+

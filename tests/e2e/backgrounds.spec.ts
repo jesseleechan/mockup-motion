@@ -69,9 +69,12 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
       doc.style.background = {
         kind: "gradient",
         stops: ["#1F2B45", "#C3A6A0"],
-        angle: 90, // Horizontal left to right
+        angle: 90,
       };
-      doc.shots[0].layout = { kind: "single", device: "card", assetId: "" };
+      doc.style.vignette = 0;
+      doc.shots[0].layout = { kind: "title" };
+      doc.shots[0].texts = [];
+      doc.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "linear" };
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
       await engine.setDocument(doc, window.__createLabAssetProvider!());
@@ -82,11 +85,11 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
 
       engine.renderAt(0);
 
-      // Sample gradient at midpoint along horizontal axis (x = canvas.width / 2, y = 50 near top)
+      // Sample gradient at midpoint (canvas center)
       const pixel = new Uint8Array(4);
       gl.readPixels(
         Math.round(canvas.width / 2),
-        50,
+        Math.round(canvas.height / 2),
         1,
         1,
         gl.RGBA,
