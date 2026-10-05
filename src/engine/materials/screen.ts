@@ -1,7 +1,12 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
 import { getCursorTexture, getRippleTexture, type CursorStyle } from "../cursor/CursorSprites";
-import { createTopLeftQuad, createTopLeftQuadSubrange } from "../geometry/quads";
+import {
+  createTopLeftQuad,
+  createTopLeftQuadSubrange,
+  releaseTopLeftQuad,
+  retainTopLeftQuad,
+} from "../geometry/quads";
 
 export interface ScreenCursorData {
   x: number;
@@ -88,8 +93,10 @@ export class ScreenCompositor {
   private lastCursorKey = "";
   private widthPx: number;
   private heightPx: number;
+  private disposed = false;
 
   constructor(opts: ScreenCompositorOptions) {
+    retainTopLeftQuad();
     this.widthPx = Math.max(1, Math.round(opts.viewportWidthPx));
     this.heightPx = Math.max(1, Math.round(opts.viewportHeightPx));
 
@@ -250,7 +257,6 @@ export class ScreenCompositor {
       mesh.scale.set(this.widthPx, stripH, 1);
       // In Three Orthographic camera top is heightPx, so y starts at heightPx - stripY - stripH
       mesh.position.set(0, this.heightPx - stripY - stripH, 0);
-
     }
 
     // Fill bottom if screenshot is shorter than viewport
@@ -356,6 +362,8 @@ export class ScreenCompositor {
   }
 
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     for (const mesh of this.stripMeshes) {
       (mesh.material as THREE.Material).dispose();
     }
@@ -373,5 +381,6 @@ export class ScreenCompositor {
     }
     this.renderTarget.dispose();
     this.material.dispose();
+    releaseTopLeftQuad();
   }
 }

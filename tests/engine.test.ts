@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createDoc } from "../src/doc/defaults";
 import { BackgroundRenderer } from "../src/engine/background/BackgroundRenderer";
 import { buildCardDevice } from "../src/engine/devices/DeviceBuilder";
@@ -131,6 +131,39 @@ describe("ScreenCompositor & Device (src/engine/materials/screen.ts)", () => {
     expect(comp.renderTarget.height).toBe(750);
 
     comp.dispose();
+  });
+
+  it("keeps shared quad alive until the last compositor disposes, then releases it once", async () => {
+    const { createTopLeftQuad } = await import("../src/engine/geometry/quads");
+    const first = new ScreenCompositor({
+      viewportWidthPx: 320,
+      viewportHeightPx: 240,
+      cornerRadius: 0.015,
+      meshWidth: 0.8,
+      meshHeight: 0.6,
+    });
+    const shared = createTopLeftQuad();
+    const dispose = vi.spyOn(shared, "dispose");
+    const second = new ScreenCompositor({
+      viewportWidthPx: 320,
+      viewportHeightPx: 240,
+      cornerRadius: 0.015,
+      meshWidth: 0.8,
+      meshHeight: 0.6,
+    });
+
+    first.dispose();
+    first.dispose();
+    expect(dispose).not.toHaveBeenCalled();
+    expect(createTopLeftQuad()).toBe(shared);
+
+    second.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    second.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    const fresh = createTopLeftQuad();
+    expect(fresh).not.toBe(shared);
+    fresh.dispose();
   });
 
   it("buildCardDevice creates device instance and updates transform & style", () => {
