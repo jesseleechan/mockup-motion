@@ -56,15 +56,25 @@ describe("Stage & Camera (src/engine/stage.ts)", () => {
   });
 });
 
-describe("F01 known texture orientation bug", () => {
-  it.fails("TextureManager textures use the top-left image convention", () => {
+describe("F01 image orientation", () => {
+  it("TextureManager textures use the top-left image convention", () => {
     const manager = new TextureManager();
     const createTexture = Reflect.get(manager, "createTexture") as (
       source: ImageBitmap,
     ) => THREE.Texture;
-    const texture = createTexture({} as ImageBitmap);
+    const texture = createTexture.call(manager, {} as ImageBitmap);
     expect(texture.flipY).toBe(false);
     texture.dispose();
+  });
+
+  it("shared top-left quad maps its top edge to v=0", async () => {
+    const { createTopLeftQuad } = await import("../src/engine/geometry/quads");
+    const geometry = createTopLeftQuad();
+    const positions = geometry.attributes.position;
+    const uvs = geometry.attributes.uv;
+    for (let i = 0; i < positions.count; i++) {
+      expect(uvs.getY(i)).toBe(positions.getY(i) > 0 ? 0 : 1);
+    }
   });
 });
 
