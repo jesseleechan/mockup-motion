@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
-import { PRESETS } from "../src/presets/presets";
+import { V1_PRESETS } from "./fixtures/v1-presets";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -179,7 +179,7 @@ describe("WP-01: Document Defaults and Validation", () => {
   });
 
   describe("v1 to v2 migration produces valid docs for all 8 presets", () => {
-    for (const preset of PRESETS) {
+    for (const preset of V1_PRESETS) {
       it(`migrates preset: ${preset.id} (${preset.name})`, () => {
         const v1Project: V1Project = {
           version: 1,
@@ -250,7 +250,7 @@ describe("WP-01: Document Defaults and Validation", () => {
         customized: true,
         aspectRatio: "16:9",
         composition: {
-          ...structuredClone(PRESETS[0].composition),
+          ...structuredClone(V1_PRESETS[0].composition),
           brand: {
             title: "Super Brand",
             subtitle: "Award Winning Design",

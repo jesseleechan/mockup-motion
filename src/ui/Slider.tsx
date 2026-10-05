@@ -43,6 +43,7 @@ export const Slider: React.FC<SliderProps> = ({
         <SliderPrimitive.Range className="absolute h-full bg-[var(--color-accent)] rounded-full" />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
+        aria-label={ariaLabel ?? "Slider"}
         className={clsx(
           "block w-3.5 h-3.5 bg-[var(--color-text)] rounded-full shadow-md border border-[var(--color-line-strong)]",
           "transition-transform hover:scale-110 active:scale-95",

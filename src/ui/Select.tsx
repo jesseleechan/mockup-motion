@@ -38,7 +38,7 @@ export function Select<T extends string = string>({
       disabled={disabled}
     >
       <SelectPrimitive.Trigger
-        aria-label={ariaLabel}
+        aria-label={ariaLabel ?? placeholder ?? "Select option"}
         className={clsx(
           "inline-flex items-center justify-between w-full font-medium select-none cursor-pointer",
           "bg-[var(--color-panel)] text-[var(--color-text)] border border-[var(--color-line)] shadow-xs rounded-sm transition-colors",

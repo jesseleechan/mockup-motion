@@ -3,8 +3,6 @@ import { sanitizeDoc } from "../doc/validate";
 import { migrateV1Project, type V1Project } from "../doc/migrate";
 import { getDB } from "./db";
 import { deleteBlob, listBlobKeys, putBlob } from "./blobs";
-import type { Project, UploadedImage } from "../types";
-import { decodeImage } from "../assets/images";
 
 // ==========================================
 // V2 Project Storage API
@@ -36,19 +34,11 @@ export async function loadProject(id: string): Promise<ProjectDoc | null> {
   return sanitized;
 }
 
-export async function saveProject(doc: ProjectDoc): Promise<void>;
-export async function saveProject(project: Project): Promise<void>;
-export async function saveProject(item: ProjectDoc | Project): Promise<void> {
-  if ("version" in item && item.version === 2) {
-    const db = await getDB();
-    const { doc } = sanitizeDoc(item);
-    await db.put("projects", doc);
-    await db.put("meta", doc.id, "lastProjectId");
-    return;
-  }
-
-  // Legacy v1 save fallback
-  return legacySaveProject(item as Project);
+export async function saveProject(doc: ProjectDoc): Promise<void> {
+  const db = await getDB();
+  const { doc: sanitized } = sanitizeDoc(doc);
+  await db.put("projects", sanitized);
+  await db.put("meta", sanitized.id, "lastProjectId");
 }
 
 export async function deleteProject(id: string): Promise<void> {
@@ -172,62 +162,4 @@ export async function checkAndMigrateV1(): Promise<ProjectDoc | null> {
     await db.put("meta", true, "migratedFromV1");
     return null;
   }
-}
-
-// ==========================================
-// Legacy V1 Project Storage Fallbacks
-// ==========================================
-
-interface StoredProject extends Omit<Project, "images"> {
-  images: Omit<UploadedImage, "imageElement">[];
-}
-
-let legacyDatabase: Promise<IDBDatabase> | undefined;
-
-function openLegacyDatabase() {
-  return (legacyDatabase ??= new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open("mockupmotion", 1);
-    request.onupgradeneeded = () => request.result.createObjectStore("projects");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => {
-      legacyDatabase = undefined;
-      reject(request.error);
-    };
-  }));
-}
-
-async function legacySaveProject(project: Project) {
-  const db = await openLegacyDatabase();
-  const stored: StoredProject = {
-    ...project,
-    images: project.images.map(({ imageElement: _element, url: _url, ...i }) => ({
-      ...i,
-      url: "",
-    })),
-  };
-  return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction("projects", "readwrite");
-    transaction.objectStore("projects").put(stored, "current");
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
-}
-
-export async function restoreProject(): Promise<Project | null> {
-  const db = await openLegacyDatabase();
-  const stored = await new Promise<StoredProject | undefined>((resolve, reject) => {
-    const request = db.transaction("projects").objectStore("projects").get("current");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  if (!stored || stored.version !== 1) return null;
-  const images = await Promise.all(
-    stored.images.map(async (i) => {
-      if (!i.blob) throw new Error("A saved screenshot could not be restored.");
-      const decoded = await decodeImage(i.blob, i.name, i.id);
-      return { ...i, ...decoded, category: i.category, crop: i.crop };
-    }),
-  );
-  return { ...stored, images };
 }

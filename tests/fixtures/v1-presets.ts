@@ -1,5 +1,14 @@
-import type { Composition, Preset, Project } from "../types";
-export function createComposition(): Composition {
+import type { V1Composition, V1Project } from "../../src/doc/migrate";
+
+export interface V1Preset {
+  id: string;
+  name: string;
+  description: string;
+  category: "desktop" | "mobile" | "mixed";
+  composition: V1Composition;
+}
+
+export function createV1Composition(): V1Composition {
   return {
     layout: "hero",
     scale: 78,
@@ -47,27 +56,29 @@ export function createComposition(): Composition {
     },
   };
 }
-function preset(
+
+function v1Preset(
   id: string,
   name: string,
   description: string,
-  category: Preset["category"],
-  change: (c: Composition) => void,
-): Preset {
-  const composition = createComposition();
+  category: V1Preset["category"],
+  change: (c: V1Composition) => void,
+): V1Preset {
+  const composition = createV1Composition();
   change(composition);
   return { id, name, description, category, composition };
 }
-export const PRESETS: Preset[] = [
-  preset("clean-hero", "Clean Hero", "A little room for your best work.", "desktop", () => {}),
-  preset("soft-studio", "Soft Studio", "Warm tones. A quiet floating canvas.", "desktop", (c) => {
+
+export const V1_PRESETS: V1Preset[] = [
+  v1Preset("clean-hero", "Clean Hero", "A little room for your best work.", "desktop", () => {}),
+  v1Preset("soft-studio", "Soft Studio", "Warm tones. A quiet floating canvas.", "desktop", (c) => {
     c.frame.type = "none";
     c.background.color = "#eadbd1";
     c.background.secondColor = "#f8eee6";
     c.motion.type = "drift";
     c.scale = 75;
   }),
-  preset("midnight-rows", "Midnight Rows", "Your portfolio, moving in rhythm.", "desktop", (c) => {
+  v1Preset("midnight-rows", "Midnight Rows", "Your portfolio, moving in rhythm.", "desktop", (c) => {
     c.layout = "rows";
     c.frame.type = "rounded";
     c.frame.appearance = "dark";
@@ -79,7 +90,7 @@ export const PRESETS: Preset[] = [
     c.scale = 85;
     c.spacing = 22;
   }),
-  preset("gallery-wall", "Gallery Wall", "A collection with space to breathe.", "desktop", (c) => {
+  v1Preset("gallery-wall", "Gallery Wall", "A collection with space to breathe.", "desktop", (c) => {
     c.layout = "grid";
     c.frame.type = "rounded";
     c.background.color = "#d6dde3";
@@ -88,7 +99,7 @@ export const PRESETS: Preset[] = [
     c.scale = 80;
     c.spacing = 22;
   }),
-  preset(
+  v1Preset(
     "angled-gallery",
     "Angled Gallery",
     "A fresh angle on the whole collection.",
@@ -104,7 +115,7 @@ export const PRESETS: Preset[] = [
       c.scale = 82;
     },
   ),
-  preset(
+  v1Preset(
     "phone-columns",
     "Phone Columns",
     "Mobile designs in gentle counterflow.",
@@ -120,7 +131,7 @@ export const PRESETS: Preset[] = [
       c.count = 2;
     },
   ),
-  preset("phone-spotlight", "Phone Spotlight", "One screen. All the attention.", "mobile", (c) => {
+  v1Preset("phone-spotlight", "Phone Spotlight", "One screen. All the attention.", "mobile", (c) => {
     c.frame.type = "phone";
     c.background.type = "spotlight";
     c.background.color = "#201b37";
@@ -129,7 +140,7 @@ export const PRESETS: Preset[] = [
     c.motion.type = "drift";
     c.scale = 82;
   }),
-  preset(
+  v1Preset(
     "responsive-pair",
     "Responsive Pair",
     "Desktop and mobile, side by side.",
@@ -143,31 +154,21 @@ export const PRESETS: Preset[] = [
     },
   ),
 ];
-export function createProject(): Project {
+
+export function createV1Project(): V1Project {
   return {
     version: 1,
     name: "Untitled project",
     presetId: "clean-hero",
     customized: false,
     aspectRatio: "16:9",
-    composition: createComposition(),
+    composition: createV1Composition(),
     images: [],
     exportSettings: {
       resolution: 1080,
       fps: 30,
       quality: "high",
       format: "mp4",
-    },
-  };
-}
-export function applyPreset(project: Project, p: Preset): Project {
-  return {
-    ...project,
-    presetId: p.id,
-    customized: false,
-    composition: {
-      ...structuredClone(p.composition),
-      assetIds: project.composition.assetIds,
     },
   };
 }

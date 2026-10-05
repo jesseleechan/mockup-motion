@@ -1,8 +1,8 @@
 import "@fontsource-variable/inter";
 import React, { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
+import { EditorShell } from "./editor/EditorShell";
+import "./ui/theme.css";
 
 const isLabUi = import.meta.env.DEV && window.location.pathname.startsWith("/lab/ui");
 const isLab = import.meta.env.DEV && window.location.pathname.startsWith("/lab");
@@ -22,5 +22,5 @@ if (isLabUi) {
     </Suspense>,
   );
 } else {
-  createRoot(document.getElementById("root")!).render(<App />);
+  createRoot(document.getElementById("root")!).render(<EditorShell />);
 }

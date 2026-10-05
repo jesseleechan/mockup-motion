@@ -13,7 +13,7 @@ import { putBlob, getBlob, listBlobKeys } from "../src/storage/blobs";
 import { getDB } from "../src/storage/db";
 import { createDoc } from "../src/doc/defaults";
 import type { V1Project } from "../src/doc/migrate";
-import { PRESETS } from "../src/presets/presets";
+import { V1_PRESETS } from "./fixtures/v1-presets";
 
 describe("WP-01: Storage with fake-indexeddb", () => {
   beforeEach(async () => {
@@ -109,7 +109,7 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       presetId: "clean-hero",
       customized: false,
       aspectRatio: "16:9",
-      composition: structuredClone(PRESETS[0].composition),
+      composition: structuredClone(V1_PRESETS[0].composition),
       images: [
         {
           id: "legacy-img-1",
