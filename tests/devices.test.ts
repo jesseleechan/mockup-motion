@@ -42,12 +42,12 @@ describe("Device frames proportions and geometry (quality-bar §3)", () => {
     expect(screenAspectFor("tablet")).toBeCloseTo(0.75, 4);
 
     // Card / Browser / Laptop short desktop screenshot (imgAspect >= 1.25): clamp(aspect, 1.25, 2.0)
-    expect(screenAspectFor("browser", { width: 1600, height: 1000 } as any)).toBeCloseTo(1.6, 2);
-    expect(screenAspectFor("browser", { width: 2500, height: 1000 } as any)).toBeCloseTo(2.0, 2);
-    expect(screenAspectFor("browser", { width: 1300, height: 1000 } as any)).toBeCloseTo(1.3, 2);
+    expect(screenAspectFor("browser", { width: 1600, height: 1000 })).toBeCloseTo(1.6, 2);
+    expect(screenAspectFor("browser", { width: 2500, height: 1000 })).toBeCloseTo(2.0, 2);
+    expect(screenAspectFor("browser", { width: 1300, height: 1000 })).toBeCloseTo(1.3, 2);
 
     // Tall screenshot (< 1.25): falls back to 1.6
-    expect(screenAspectFor("browser", { width: 1000, height: 3000 } as any)).toBeCloseTo(1.6, 2);
+    expect(screenAspectFor("browser", { width: 1000, height: 3000 })).toBeCloseTo(1.6, 2);
     expect(screenAspectFor("card", null)).toBe(1.6);
   });
 

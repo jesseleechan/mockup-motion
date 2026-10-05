@@ -28,32 +28,7 @@ export interface AssetProvider {
   getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
 }
 
-const blitVertexShader = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = vec4(position.xy, 0.0, 1.0);
-  }
-`;
-
-const blitFragmentShader = /* glsl */ `
-  varying vec2 vUv;
-  uniform sampler2D mapA;
-  uniform sampler2D mapB;
-  uniform float weightA;
-  uniform float weightB;
-  uniform bool isTransition;
-
-  void main() {
-    vec4 colA = texture2D(mapA, vUv);
-    if (!isTransition) {
-      gl_FragColor = colA;
-      return;
-    }
-    vec4 colB = texture2D(mapB, vUv);
-    gl_FragColor = colA * weightA + colB * weightB;
-  }
-`;
+import { FinalPass } from "./post/final";
 
 export class Engine {
   private renderer: THREE.WebGLRenderer;
@@ -67,10 +42,14 @@ export class Engine {
 
   private targetA: THREE.WebGLRenderTarget;
   private targetB: THREE.WebGLRenderTarget;
-  private blitScene: THREE.Scene;
-  private blitCamera: THREE.OrthographicCamera;
-  private blitMaterial: THREE.ShaderMaterial;
-  private blitMesh: THREE.Mesh;
+  private finalPass: FinalPass;
+
+  // Motion blur accumulation target and blend pass
+  private accumTarget: THREE.WebGLRenderTarget | null = null;
+  private accumScene: THREE.Scene;
+  private accumCamera: THREE.OrthographicCamera;
+  private accumMaterial: THREE.ShaderMaterial;
+  private accumMesh: THREE.Mesh;
 
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
@@ -118,25 +97,41 @@ export class Engine {
       colorSpace: THREE.SRGBColorSpace,
     });
 
-    // Blit pass
-    this.blitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.blitScene = new THREE.Scene();
-    this.blitMaterial = new THREE.ShaderMaterial({
-      vertexShader: blitVertexShader,
-      fragmentShader: blitFragmentShader,
+    // Final post-processing pass
+    this.finalPass = new FinalPass({
+      width: opts.width,
+      height: opts.height,
+      supersample: ss,
+    });
+
+    // Motion blur accumulation
+    this.accumCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.accumScene = new THREE.Scene();
+    this.accumMaterial = new THREE.ShaderMaterial({
+      vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+      `,
+      fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform sampler2D map;
+        uniform float uWeight;
+        void main() {
+          vec4 col = texture2D(map, vUv);
+          gl_FragColor = vec4(col.rgb * uWeight, col.a * uWeight);
+        }
+      `,
       uniforms: {
-        mapA: { value: this.targetA.texture },
-        mapB: { value: this.targetB.texture },
-        weightA: { value: 1.0 },
-        weightB: { value: 0.0 },
-        isTransition: { value: false },
+        map: { value: null },
+        uWeight: { value: 1.0 },
       },
+      blending: THREE.AdditiveBlending,
+      transparent: true,
       depthTest: false,
       depthWrite: false,
     });
-    const quad = new THREE.PlaneGeometry(2, 2);
-    this.blitMesh = new THREE.Mesh(quad, this.blitMaterial);
-    this.blitScene.add(this.blitMesh);
+    this.accumMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.accumMaterial);
+    this.accumScene.add(this.accumMesh);
 
     this.setupContextLossHandling();
   }
@@ -209,6 +204,10 @@ export class Engine {
 
     this.targetA.setSize(renderW, renderH);
     this.targetB.setSize(renderW, renderH);
+    if (this.accumTarget) {
+      this.accumTarget.setSize(renderW, renderH);
+    }
+    this.finalPass.resize(w, h, ss);
   }
 
   setSupersample(supersample: 1 | 1.5 | 2): void {
@@ -217,6 +216,10 @@ export class Engine {
     const renderH = Math.round(this.opts.height * supersample);
     this.targetA.setSize(renderW, renderH);
     this.targetB.setSize(renderW, renderH);
+    if (this.accumTarget) {
+      this.accumTarget.setSize(renderW, renderH);
+    }
+    this.finalPass.resize(this.opts.width, this.opts.height, supersample);
   }
 
   /**
@@ -344,20 +347,30 @@ export class Engine {
         stageAspect,
         frameState.backgroundPhase,
       );
-
-      this.blitMaterial.uniforms.mapA.value = this.targetA.texture;
-      this.blitMaterial.uniforms.mapB.value = this.targetB.texture;
-      this.blitMaterial.uniforms.weightA.value = layers[0].weight;
-      this.blitMaterial.uniforms.weightB.value = layers[1].weight;
-      this.blitMaterial.uniforms.isTransition.value = true;
-    } else {
-      this.blitMaterial.uniforms.mapA.value = this.targetA.texture;
-      this.blitMaterial.uniforms.isTransition.value = false;
     }
 
-    // Blit to output canvas
-    this.renderer.setRenderTarget(null);
-    this.renderer.render(this.blitScene, this.blitCamera);
+    // Run final post-processing pass (transition blend, 13-tap downsample, vignette, grain, dither)
+    this.finalPass.render(
+      this.renderer,
+      this.targetA,
+      this.targetB,
+      layers[0].frame.style,
+      t,
+      layers,
+      frameState.transition,
+      null,
+    );
+  }
+
+  private accumulateTarget(source: THREE.WebGLRenderTarget, weight: number): void {
+    if (!this.accumTarget) return;
+    this.accumMaterial.uniforms.map.value = source.texture;
+    this.accumMaterial.uniforms.uWeight.value = weight;
+
+    const prevTarget = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.accumTarget);
+    this.renderer.render(this.accumScene, this.accumCamera);
+    this.renderer.setRenderTarget(prevTarget);
   }
 
   /**
@@ -369,15 +382,58 @@ export class Engine {
       return;
     }
 
-    // Average samples across shutter interval [t - shutter/2, t + shutter/2]
+    if (!this.currentDoc) return;
+
+    const ss = this.opts.supersample ?? 1;
+    const renderW = Math.round(this.opts.width * ss);
+    const renderH = Math.round(this.opts.height * ss);
+
+    if (!this.accumTarget) {
+      this.accumTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
+        type: THREE.HalfFloatType,
+        colorSpace: THREE.SRGBColorSpace,
+      });
+    }
+
+    // Clear accumulation target to transparent
+    const prevTarget = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.accumTarget);
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.clear(true, true, true);
+    this.renderer.setRenderTarget(prevTarget);
+
     const halfShutter = shutter * 0.5;
     const dt = shutter / (samples - 1);
     const startT = Math.max(0, t - halfShutter);
 
-    // Simple deterministic accumulation pass
     for (let i = 0; i < samples; i++) {
-      this.renderAt(startT + i * dt);
+      const sampleT = startT + i * dt;
+      const frameState = evaluate(this.currentDoc, sampleT);
+      const stageAspect = this.opts.width / this.opts.height;
+      if (frameState.layers.length === 0) continue;
+
+      this.renderShotToTarget(
+        this.targetA,
+        frameState.layers[0].frame,
+        stageAspect,
+        frameState.backgroundPhase,
+      );
+
+      this.accumulateTarget(this.targetA, 1.0 / samples);
     }
+
+    // Final pass directly from accumulation target to canvas
+    const frameState = evaluate(this.currentDoc, t);
+    this.finalPass.render(
+      this.renderer,
+      this.accumTarget,
+      this.accumTarget,
+      frameState.layers[0]?.frame.style ?? this.currentDoc.style,
+      t,
+      [{ weight: 1.0 }],
+      undefined,
+      null,
+    );
   }
 
   /**
@@ -415,9 +471,13 @@ export class Engine {
 
     this.targetA.dispose();
     this.targetB.dispose();
+    if (this.accumTarget) {
+      this.accumTarget.dispose();
+    }
 
-    this.blitMesh.geometry.dispose();
-    this.blitMaterial.dispose();
+    this.accumMaterial.dispose();
+    this.accumMesh.geometry.dispose();
+    this.finalPass.dispose();
 
     this.renderer.dispose();
   }

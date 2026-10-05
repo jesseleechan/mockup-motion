@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
+import { DeviceShadowGroup } from "../shadows/DeviceShadow";
 import { createRoundedExtrudeGeometry } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
@@ -30,6 +31,11 @@ export function buildCardDevice(
 
   const group = new THREE.Group();
 
+  // Analytic two-layer soft shadows
+  const shadowGroup = new DeviceShadowGroup(meshW, meshH, cornerRadius);
+  shadowGroup.update(style);
+  group.add(shadowGroup.group);
+
   // Solid backing slab with beveled edge for solid appearance when tilted
   const bodyGeo = createRoundedExtrudeGeometry(meshW, meshH, cornerRadius, depth, 0.0003);
   const isDark = style.frameAppearance === "dark";
@@ -53,6 +59,7 @@ export function buildCardDevice(
     group.rotation.set(tf.rx, tf.ry, tf.rz);
     group.scale.set(tf.scale, tf.scale, 1.0);
 
+    shadowGroup.update(updatedStyle);
     compositor.material.opacity = updatedNode.opacity;
 
     const dark = updatedStyle.frameAppearance === "dark";
@@ -69,6 +76,7 @@ export function buildCardDevice(
   }
 
   function dispose(): void {
+    shadowGroup.dispose();
     bodyGeo.dispose();
     bodyMat.dispose();
     screenGeo.dispose();

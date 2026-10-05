@@ -6,3 +6,4 @@ export * from "./scroll";
 export * from "./text-anim";
 export * from "./layouts";
 export * from "./evaluate";
+export type { DeviceKind } from "../doc";

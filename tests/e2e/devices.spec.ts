@@ -86,7 +86,7 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
         float: 0,
       };
 
-      await engine.setDocument(doc, customProvider as any);
+      await engine.setDocument(doc, customProvider as import("../../src/engine/Engine").AssetProvider);
       engine.renderAt(0);
 
       return true;
@@ -111,7 +111,7 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
         float: 0,
       };
 
-      await engine.setDocument(doc, (window as any).__createLabAssetProvider());
+      await engine.setDocument(doc, window.__createLabAssetProvider!());
       engine.renderAt(1.5);
       return true;
     });

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
+import { DeviceShadowGroup } from "../shadows/DeviceShadow";
 import { createRoundedExtrudeGeometry, createRoundedRectShape } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
@@ -37,6 +38,11 @@ export function buildBrowserDevice(
   });
 
   const group = new THREE.Group();
+
+  // Analytic two-layer soft shadows
+  const shadowGroup = new DeviceShadowGroup(width, height, cornerRadius);
+  shadowGroup.update(style);
+  group.add(shadowGroup.group);
 
   // Solid body backing
   const bodyGeo = createRoundedExtrudeGeometry(width, height, cornerRadius, depth, 0.0004);
@@ -152,6 +158,7 @@ export function buildBrowserDevice(
     group.rotation.set(tf.rx, tf.ry, tf.rz);
     group.scale.set(tf.scale, tf.scale, 1.0);
 
+    shadowGroup.update(updatedStyle);
     compositor.material.opacity = updatedNode.opacity;
 
     const dark = updatedStyle.frameAppearance === "dark";
@@ -168,6 +175,7 @@ export function buildBrowserDevice(
   }
 
   function dispose(): void {
+    shadowGroup.dispose();
     bodyGeo.dispose();
     bodyMat.dispose();
     screenGeo.dispose();

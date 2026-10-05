@@ -33,7 +33,7 @@ const ENTRANCE_DURATION = 0.8;
  * - Tablet: 0.75 (4:3)
  * - Desktop browser, laptop, card: clamp(imageAspect, 1.25, 2.0) when image is short, else 1.6
  */
-export function screenAspectFor(device: DeviceKind, asset?: AssetRef | null): number {
+export function screenAspectFor(device: DeviceKind, asset?: { width?: number; height?: number } | null): number {
   if (device === "phone") {
     return 0.4615;
   }

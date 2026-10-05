@@ -5,7 +5,7 @@ export interface BuiltinPalette {
   id: string;
   name: string;
   background: Background;
-  frameAppearance: "light" | "dark";
+  frameAppearance: FrameAppearance;
   textColor: string;
   shadowTint: string;
 }

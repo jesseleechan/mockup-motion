@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { DeviceFinish, Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
+import { DeviceShadowGroup } from "../shadows/DeviceShadow";
 import {
   createBodyMaterial,
   createRoundedExtrudeGeometry,
@@ -39,6 +40,11 @@ export function buildLaptopDevice(
   });
 
   const group = new THREE.Group();
+
+  // Analytic two-layer soft shadows
+  const shadowGroup = new DeviceShadowGroup(lidW, lidH, lidRadius);
+  shadowGroup.update(style);
+  group.add(shadowGroup.group);
 
   // Lid chassis
   const lidGeo = createRoundedExtrudeGeometry(lidW, lidH, lidRadius, lidDepth, 0.0003);
@@ -94,6 +100,7 @@ export function buildLaptopDevice(
     group.rotation.set(tf.rx, tf.ry, tf.rz);
     group.scale.set(tf.scale, tf.scale, 1.0);
 
+    shadowGroup.update(updatedStyle);
     compositor.material.opacity = updatedNode.opacity;
 
     const dark = updatedStyle.frameAppearance === "dark";
@@ -112,6 +119,7 @@ export function buildLaptopDevice(
   }
 
   function dispose(): void {
+    shadowGroup.dispose();
     lidGeo.dispose();
     bodyMat.dispose();
     screenGeo.dispose();

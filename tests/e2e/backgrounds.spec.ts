@@ -20,11 +20,12 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
         drift: 0.05,
         seed: 42,
       };
+      doc.style.grain = 0;
       doc.shots[0].layout = { kind: "single", device: "card", assetId: "" };
       doc.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "linear" };
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
-      await engine.setDocument(doc, (window as any).__createLabAssetProvider());
+      await engine.setDocument(doc, window.__createLabAssetProvider!());
 
       const canvas = document.querySelector("canvas") as HTMLCanvasElement;
       const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
@@ -73,7 +74,7 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
       doc.shots[0].layout = { kind: "single", device: "card", assetId: "" };
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
-      await engine.setDocument(doc, (window as any).__createLabAssetProvider());
+      await engine.setDocument(doc, window.__createLabAssetProvider!());
 
       const canvas = document.querySelector("canvas") as HTMLCanvasElement;
       const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");

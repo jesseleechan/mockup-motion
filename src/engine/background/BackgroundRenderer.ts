@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { oklab } from "culori";
-import type { Background, Style } from "../../doc/types";
+import type { Background } from "../../doc/types";
 import type { ShotFrame } from "../../motion";
 import type { TextureManager } from "../textures/TextureManager";
 
