@@ -245,19 +245,29 @@ test("F03 known bug: responsive-pair WebM export contains both screen assets", a
   test.setTimeout(180_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
-  await page.addScriptTag({
-    type: "module",
-    content:
-      'import * as media from "/node_modules/mediabunny/dist/modules/src/index.js"; window.__mediabunnyTest = media;',
-  });
+  const mediabunnyUrl = await page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .find((name) => name.includes("/node_modules/.vite/deps/mediabunny.js")),
+  );
+  if (!mediabunnyUrl)
+    throw new Error("Mediabunny's already-loaded browser module URL was not found");
+  await page.evaluate(async (url) => {
+    window.__mediabunnyTest = await import(url);
+  }, mediabunnyUrl);
   const colors = await page.evaluate(async () => {
     const base = window.__fixtures?.["card-hero"];
     const images = window.__labTestImages;
     const createProvider = window.__createLabAssetProvider;
     const exportFn = window.__exportWithEngine;
     const media = window.__mediabunnyTest;
-    if (!base || !images || !createProvider || !exportFn || !media)
-      throw new Error("F03 export fixture hooks are unavailable");
+    if (!base || !images || !createProvider || !exportFn || !media) {
+      const missing = Object.entries({ base, images, createProvider, exportFn, media })
+        .filter(([, value]) => !value)
+        .map(([name]) => name);
+      throw new Error(`F03 export fixture hooks are unavailable: ${missing.join(", ")}`);
+    }
     const doc = structuredClone(base);
     const desktopId = "f03-export-desktop";
     const mobileId = "f03-export-mobile";
@@ -343,6 +353,7 @@ test("F03 known bug: responsive-pair WebM export contains both screen assets", a
 });
 
 test("F03 known bug: alternating documents releases old textures", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const counts = await page.evaluate(async () => {

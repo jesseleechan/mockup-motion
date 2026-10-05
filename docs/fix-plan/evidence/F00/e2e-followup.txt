@@ -1,0 +1,318 @@
+
+> mockup-motion@0.1.0 test:e2e
+> playwright test --project=chromium --reporter=list
+
+[WebServer] (node:42012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 80 tests using 1 worker
+
+(node:4716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   1 [chromium] › tests\e2e\assets.spec.ts:33:1 › F03 known bug: pair layouts preload both screen assets (3.0s)
+  x   2 [chromium] › tests\e2e\assets.spec.ts:93:1 › F03 known bug: every multi-asset layout requests each independent image (7.1s)
+  x   3 [chromium] › tests\e2e\assets.spec.ts:174:1 › F03 known bug: a slower earlier setDocument cannot replace the newer text raster (5.3s)
+  x   4 [chromium] › tests\e2e\assets.spec.ts:244:1 › F03 known bug: responsive-pair WebM export contains both screen assets (4.0s)
+  x   5 [chromium] › tests\e2e\assets.spec.ts:355:1 › F03 known bug: alternating documents releases old textures (22.3s)
+  x   6 [chromium] › tests\e2e\audio.spec.ts:65:3 › WP-17: Music track › imports audio, draws a 200-bucket waveform, and edits volume and fades (2.3s)
+(node:17004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  7 [chromium] › tests\e2e\audio.spec.ts:107:3 › WP-17: Music track › rejects non-audio and corrupt files without adding a lane (1.3s)
+  x   8 [chromium] › tests\e2e\audio.spec.ts:124:3 › WP-17: Music track › preview stays within 40 ms of the playhead after 5 seeks (17.7s)
+(node:46160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   9 [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › MP4 export has an audio track of the video length with audible fades (1.6m)
+(node:44212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  10 [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › WEBM export has an audio track of the video length with audible fades (1.6m)
+(node:22608) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  11 [chromium] › tests\e2e\audio.spec.ts:222:3 › WP-17: Music track › a project with no music exports without an audio track (1.5m)
+(node:12208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 12 [chromium] › tests\e2e\audio.spec.ts:247:3 › WP-17: Music track › web bundles and GIFs say music is left out (3.0s)
+  ok 13 [chromium] › tests\e2e\backgrounds.spec.ts:4:3 › WP-07 Backgrounds, Palettes & Atmosphere E2E › mesh loop seam: rendered backgroundPhase 0 vs 1 differs by at most 1 per channel (1.2s)
+  ok 14 [chromium] › tests\e2e\backgrounds.spec.ts:56:3 › WP-07 Backgrounds, Palettes & Atmosphere E2E › gradient quality: OKLab interpolation between #1F2B45 and #C3A6A0 has vibrant midpoint (958ms)
+  x  15 [chromium] › tests\e2e\color.spec.ts:16:3 › F02 colour pipeline known bug › solid sRGB midtone reads back exactly (5.1s)
+  x  16 [chromium] › tests\e2e\color.spec.ts:57:3 › F02 colour pipeline known bug › grain is zero-mean and stays within the specified range (2.5s)
+  x  17 [chromium] › tests\e2e\color.spec.ts:93:3 › F02 colour pipeline known bug › screen pixels preserve all source band colors (9.8s)
+  x  18 [chromium] › tests\e2e\color.spec.ts:149:3 › F02 colour pipeline known bug › CSS gradient angles run from left to right at 90 degrees (5.1s)
+  ok 19 [chromium] › tests\e2e\devices.spec.ts:5:3 › WP-06 Device Frames E2E & Visual Verification › renders all device frames in /lab without errors (3.6s)
+  ok 20 [chromium] › tests\e2e\devices.spec.ts:48:3 › WP-06 Device Frames E2E & Visual Verification › width-fit: test pattern screenshot shows full width without horizontal crop (2.6s)
+  ok 21 [chromium] › tests\e2e\devices.spec.ts:114:3 › WP-06 Device Frames E2E & Visual Verification › renders solid bodies at yaw 34° / pitch 28° (isoDrift) with no errors (884ms)
+  x  22 [chromium] › tests\e2e\editor.spec.ts:28:3 › WP-12 Editor Shell and Contextual Inspector › full flow: empty state -> demo content -> palette change -> camera change -> undo/redo -> 1080p export (45.0s)
+(node:28976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 23 [chromium] › tests\e2e\editor.spec.ts:120:3 › WP-12 Editor Shell and Contextual Inspector › v1 project in legacy DB opens migrated on boot with assets intact (1.2s)
+  ok 24 [chromium] › tests\e2e\editor.spec.ts:230:3 › WP-12 Editor Shell and Contextual Inspector › accessibility: Axe reports 0 serious or critical violations (1.9s)
+  ok 25 [chromium] › tests\e2e\editor.spec.ts:246:3 › WP-12 Editor Shell and Contextual Inspector › capture screenshots of the shell in dark and light themes (2.6s)
+  ok 26 [chromium] › tests\e2e\lab.spec.ts:18:3 › /lab page and Engine visual rendering › renders fixture still and asserts canvas is not blank (953ms)
+  ok 27 [chromium] › tests\e2e\lab.spec.ts:36:3 › /lab page and Engine visual rendering › renders fixtures across all 5 aspect ratios deterministically (3.8s)
+  ok 28 [chromium] › tests\e2e\lab.spec.ts:48:3 › /lab page and Engine visual rendering › scrubbing determinism: rendering at t=2.0 gives identical frame after scrubbing (1.3s)
+[WebServer] 5:18:09 PM [vite] (client) [console.warn] [Engine] WebGL context lost.
+  ok 29 [chromium] › tests\e2e\lab.spec.ts:74:3 › /lab page and Engine visual rendering › context loss simulation with WEBGL_lose_context recovers cleanly (1.3s)
+  ok 30 [chromium] › tests\e2e\lab.spec.ts:104:3 › /lab page and Engine visual rendering › exports 2s video and verifies dimensions and format (14.1s)
+  ok 31 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-overlap at 16:9 without errors (924ms)
+  ok 32 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-overlap at 9:16 without errors (1.0s)
+  ok 33 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-overlap at 4:3 without errors (991ms)
+  ok 34 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-side at 16:9 without errors (979ms)
+  ok 35 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-side at 9:16 without errors (996ms)
+  ok 36 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders pair-side at 4:3 without errors (982ms)
+  ok 37 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders trio at 16:9 without errors (1.0s)
+  ok 38 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders trio at 9:16 without errors (1.0s)
+  ok 39 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders trio at 4:3 without errors (975ms)
+  ok 40 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders stack at 16:9 without errors (995ms)
+  ok 41 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders stack at 9:16 without errors (1.7s)
+  ok 42 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders stack at 4:3 without errors (983ms)
+  ok 43 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders rows at 16:9 without errors (996ms)
+  ok 44 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders rows at 9:16 without errors (1.0s)
+  ok 45 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders rows at 4:3 without errors (1.0s)
+  ok 46 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders columns at 16:9 without errors (1.0s)
+  ok 47 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders columns at 9:16 without errors (1.0s)
+  ok 48 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders columns at 4:3 without errors (1.0s)
+  ok 49 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders wall at 16:9 without errors (1.4s)
+  ok 50 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders wall at 9:16 without errors (1.1s)
+  ok 51 [chromium] › tests\e2e\layouts.spec.ts:58:7 › WP-09 Layouts & Auto-framing E2E & Visual Verification › renders wall at 4:3 without errors (1.5s)
+  ok 52 [chromium] › tests\e2e\library.spec.ts:21:3 › WP-13 Media Library, Roles, Brand Kit, and Projects › Media Tab & Brand Kit flow: upload demo -> brand kit edit -> apply -> reload -> projects dialog (2.5s)
+  ok 53 [chromium] › tests\e2e\library.spec.ts:79:3 › WP-13 Media Library, Roles, Brand Kit, and Projects › accessibility: Axe check on Media and Brand tabs (1.8s)
+  x  54 [chromium] › tests\e2e\orientation.spec.ts:20:1 › F01 known bug: image top and bottom are reversed (2.7s)
+  x  55 [chromium] › tests\e2e\orientation.spec.ts:91:1 › F01 known bug: text glyphs use top-down bitmap coordinates (2.9s)
+  x  56 [chromium] › tests\e2e\orientation.spec.ts:136:1 › F01 known bug: tall screenshot scroll endpoints preserve top-down order (18.2s)
+  x  57 [chromium] › tests\e2e\polish.spec.ts:19:3 › WP-18 polish › first run opens the template gallery, then demo content (5.6s)
+(node:31380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 58 [chromium] › tests\e2e\polish.spec.ts:29:3 › WP-18 polish › rejects corrupt and oversized screenshots (3.9s)
+  ok 59 [chromium] › tests\e2e\polish.spec.ts:58:3 › WP-18 polish › storage quota surfaces a calm error and keeps the editor usable (1.7s)
+  ok 60 [chromium] › tests\e2e\polish.spec.ts:80:3 › WP-18 polish › projects can be duplicated and deleted (2.0s)
+[WebServer] 5:19:31 PM [vite] (client) [console.warn] [Engine] WebGL context lost.
+  ok 61 [chromium] › tests\e2e\polish.spec.ts:104:3 › WP-18 polish › WebGL context loss during playback recovers (4.8s)
+[WebServer] 5:19:36 PM [vite] (client) [console.warn] [Engine] WebGL context lost.
+  ok 62 [chromium] › tests\e2e\polish.spec.ts:125:3 › WP-18 polish › cancels an export and survives context loss while exporting (2.3s)
+  ok 63 [chromium] › tests\e2e\polish.spec.ts:148:3 › WP-18 polish › editor has no serious axe violations and respects reduced motion (1.8s)
+  ok 64 [chromium] › tests\e2e\shadows-post.spec.ts:4:3 › WP-08 Shadows, Post-Processing & Motion Blur E2E › motion blur: renderAccumulated with shutter = 0 is pixel-identical to renderAt (896ms)
+  ok 65 [chromium] › tests\e2e\shadows-post.spec.ts:39:3 › WP-08 Shadows, Post-Processing & Motion Blur E2E › motion blur: renderAccumulated with shutter = 0.5/30 and 8 samples succeeds (1.0s)
+  ok 66 [chromium] › tests\e2e\shadows-post.spec.ts:73:3 › WP-08 Shadows, Post-Processing & Motion Blur E2E › shadow presets: renders soft, medium, dramatic without errors (887ms)
+  x  67 [chromium] › tests\e2e\spike.spec.ts:18:3 › WP-03 Go/No-Go Spike Verification Gate › Spike 3: Export speed - 6s at 1080p30 finishes in <= 12s (30.0s)
+(node:12812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[Spike Gate] Memory cycle check: {
+  baselineGeometries: 7,
+  finalGeometries: 7,
+  baselineTextures: 4,
+  finalTextures: 4
+}
+  ok 68 [chromium] › tests\e2e\spike.spec.ts:59:3 › WP-03 Go/No-Go Spike Verification Gate › Spike 4: Memory - 20 setDocument cycles return memory to baseline (1.5s)
+  ok 69 [chromium] › tests\e2e\text.spec.ts:5:3 › WP-10 Text & Typography E2E & Visual Verification › renders text-title fixture in /lab and verifies text is visible on canvas (2.2s)
+  ok 70 [chromium] › tests\e2e\text.spec.ts:46:3 › WP-10 Text & Typography E2E & Visual Verification › all curated font pairs render without errors in the engine (861ms)
+  ok 71 [chromium] › tests\e2e\text.spec.ts:72:3 › WP-10 Text & Typography E2E & Visual Verification › text animation timings: renders frame strip at 0, 0.2, 0.4, 0.6, 1.0s without errors (914ms)
+  ok 72 [chromium] › tests\e2e\text.spec.ts:93:3 › WP-10 Text & Typography E2E & Visual Verification › exports 2s MP4 video with text layer via WebCodecs and verifies valid output (18.8s)
+  ok 73 [chromium] › tests\e2e\timeline.spec.ts:21:3 › WP-14 Storyboard Timeline & Transitions › build a 3-shot reel, change transition, verify duration schedule in export (3.0s)
+  ok 74 [chromium] › tests\e2e\timeline.spec.ts:80:3 › WP-14 Storyboard Timeline & Transitions › keyboard navigation & accessibility: Tab, Arrow keys, Enter on transition, Axe clean (2.4s)
+  ok 75 [chromium] › tests\e2e\timeline.spec.ts:120:3 › WP-14 Storyboard Timeline & Transitions › capture transition frame strips for fade, blur, push, zoom, wipe (8.2s)
+  ok 76 [chromium] › tests\e2e\ui.spec.ts:4:3 › /lab/ui Component Gallery & Keyboard Interaction › renders gallery in dark and light themes (817ms)
+  ok 77 [chromium] › tests\e2e\ui.spec.ts:22:3 › /lab/ui Component Gallery & Keyboard Interaction › interactive components keyboard navigation (Tab, Arrow keys, Enter, Esc) (1.5s)
+  ok 78 [chromium] › tests\e2e\wave5.spec.ts:19:3 › Wave 5: Templates & Gallery, Scroll & Cursor, Export v2 › WP-11: Template Gallery Modal opens, filters, applies template, and passes Axe scan (2.6s)
+  ok 79 [chromium] › tests\e2e\wave5.spec.ts:75:3 › Wave 5: Templates & Gallery, Scroll & Cursor, Export v2 › WP-15: Scroll Story and Cursor Overlay inspector controls toggle and configure (1.5s)
+  ok 80 [chromium] › tests\e2e\wave5.spec.ts:118:3 › Wave 5: Templates & Gallery, Scroll & Cursor, Export v2 › WP-16: Export v2 destination presets switch dimensions, formats, and passes Axe scan (3.1s)
+
+
+  1) [chromium] › tests\e2e\audio.spec.ts:65:3 › WP-17: Music track › imports audio, draws a 200-bucket waveform, and edits volume and fades
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('50%')
+    Expected: visible
+    Error: strict mode violation: getByText('50%') resolved to 2 elements:
+        1) <option value="0.5" class="bg-[var(--color-panel)]">50%</option> aka getByLabel('Stage zoom')
+        2) <span class="font-mono w-7 text-right">50%</span> aka getByTestId('timeline').getByText('%')
+
+    Call log:
+      - Expect "toBeVisible" getByText('50%') with timeout 5000ms
+      - waiting for getByText('50%')
+
+
+      88 |     const volume = page.getByRole("slider", { name: "Music volume" });
+      89 |     await volume.fill("0.5");
+    > 90 |     await expect(page.getByText("50%")).toBeVisible();
+         |                                         ^
+      91 |
+      92 |     // Dragging the clip changes the offset; undo restores it
+      93 |     const clip = page.getByTestId("audio-clip");
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\audio.spec.ts:90:41
+
+    Error Context: test-results\audio-WP-17-Music-track-im-fb9d5--and-edits-volume-and-fades-chromium\error-context.md
+
+  2) [chromium] › tests\e2e\audio.spec.ts:124:3 › WP-17: Music track › preview stays within 40 ms of the playhead after 5 seeks
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 0.04
+    Received:   0.2137
+
+      143 |       await expect.poll(() => page.evaluate(() => window.__mmAudio?.position() ?? null)).toBeNull();
+      144 |     }
+    > 145 |     for (const d of drifts) expect(d).toBeLessThan(0.04);
+          |                                       ^
+      146 |   });
+      147 |
+      148 |   for (const [format, label, extension] of [
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\audio.spec.ts:145:39
+
+    Error Context: test-results\audio-WP-17-Music-track-pr-e31d0--the-playhead-after-5-seeks-chromium\error-context.md
+
+  3) [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › MP4 export has an audio track of the video length with audible fades
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog').getByRole('link', { name: /Download/ })
+    Expected: visible
+    Timeout: 90000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog').getByRole('link', { name: /Download/ }) with timeout 90000ms
+      - waiting for getByRole('dialog').getByRole('link', { name: /Download/ })
+        - waiting for "http://localhost:3000/" navigation to finish...
+        - navigated to "http://localhost:3000/"
+
+
+      165 |
+      166 |       const download = dialog.getByRole("link", { name: /Download/ });
+    > 167 |       await expect(download).toBeVisible({ timeout: 90_000 });
+          |                              ^
+      168 |       await expect(download).toHaveAttribute("download", new RegExp(`\\.${extension}$`));
+      169 |       await expect(dialog.getByTestId("export-warnings")).toHaveCount(0);
+      170 |
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\audio.spec.ts:167:30
+
+    Error Context: test-results\audio-WP-17-Music-track-MP-f2b10-o-length-with-audible-fades-chromium\error-context.md
+
+  4) [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › WEBM export has an audio track of the video length with audible fades
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog').getByRole('link', { name: /Download/ })
+    Expected: visible
+    Timeout: 90000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog').getByRole('link', { name: /Download/ }) with timeout 90000ms
+      - waiting for getByRole('dialog').getByRole('link', { name: /Download/ })
+
+
+      165 |
+      166 |       const download = dialog.getByRole("link", { name: /Download/ });
+    > 167 |       await expect(download).toBeVisible({ timeout: 90_000 });
+          |                              ^
+      168 |       await expect(download).toHaveAttribute("download", new RegExp(`\\.${extension}$`));
+      169 |       await expect(dialog.getByTestId("export-warnings")).toHaveCount(0);
+      170 |
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\audio.spec.ts:167:30
+
+    Error Context: test-results\audio-WP-17-Music-track-WE-6d1f1-o-length-with-audible-fades-chromium\error-context.md
+
+  5) [chromium] › tests\e2e\audio.spec.ts:222:3 › WP-17: Music track › a project with no music exports without an audio track
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog').getByRole('link', { name: /Download/ })
+    Expected: visible
+    Timeout: 90000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog').getByRole('link', { name: /Download/ }) with timeout 90000ms
+      - waiting for getByRole('dialog').getByRole('link', { name: /Download/ })
+
+
+      226 |     await dialog.getByRole("button", { name: "Start export" }).click();
+      227 |     const download = dialog.getByRole("link", { name: /Download/ });
+    > 228 |     await expect(download).toBeVisible({ timeout: 90_000 });
+          |                            ^
+      229 |     const href = (await download.getAttribute("href"))!;
+      230 |     const hasAudio = await page.evaluate(async (url) => {
+      231 |       const blob = await (await fetch(url)).blob();
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\audio.spec.ts:228:28
+
+    Error Context: test-results\audio-WP-17-Music-track-a--29fc6-orts-without-an-audio-track-chromium\error-context.md
+
+  6) [chromium] › tests\e2e\editor.spec.ts:28:3 › WP-12 Editor Shell and Contextual Inspector › full flow: empty state -> demo content -> palette change -> camera change -> undo/redo -> 1080p export
+
+    Test timeout of 45000ms exceeded.
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Export complete')
+    Expected: visible
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Export complete') with timeout 60000ms
+      - waiting for getByText('Export complete')
+      - Test timeout of 45000ms exceeded.
+
+
+      110 |
+      111 |     // Wait for export to finish
+    > 112 |     await expect(page.getByText("Export complete")).toBeVisible({ timeout: 60000 });
+          |                                                     ^
+      113 |     const downloadBtn = page.getByRole("button", { name: /Download/i });
+      114 |     await expect(downloadBtn).toBeVisible();
+      115 |
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\editor.spec.ts:112:53
+
+    Error Context: test-results\editor-WP-12-Editor-Shell--16182----undo-redo---1080p-export-chromium\error-context.md
+
+  7) [chromium] › tests\e2e\polish.spec.ts:19:3 › WP-18 polish › first run opens the template gallery, then demo content
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog') with timeout 5000ms
+      - waiting for getByRole('dialog')
+
+
+      21 |     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
+      22 |     await page.getByRole("button", { name: "Start with a template" }).click();
+    > 23 |     await expect(page.getByRole("dialog")).toBeVisible();
+         |                                            ^
+      24 |     await page.keyboard.press("Escape");
+      25 |     await page.getByRole("button", { name: "Try with demo content" }).click();
+      26 |     await expect(page.locator("canvas").first()).toBeVisible();
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\polish.spec.ts:23:44
+
+    Error Context: test-results\polish-WP-18-polish-first--83657-e-gallery-then-demo-content-chromium\error-context.md
+
+  8) [chromium] › tests\e2e\spike.spec.ts:18:3 › WP-03 Go/No-Go Spike Verification Gate › Spike 3: Export speed - 6s at 1080p30 finishes in <= 12s
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 30000ms exceeded.
+
+      21 |     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
+      22 |
+    > 23 |     const exportDurationSec = await page.evaluate(async () => {
+         |                                          ^
+      24 |       const exportFn = window.__exportWithEngine;
+      25 |       const createProvider = window.__createLabAssetProvider;
+      26 |       const fixtures = window.__fixtures;
+        at C:\Users\trevo\Developer\motion-mockup\tests\e2e\spike.spec.ts:23:42
+
+    Error Context: test-results\spike-WP-03-Go-No-Go-Spike-7a8de--at-1080p30-finishes-in-12s-chromium\error-context.md
+
+  8 failed
+    [chromium] › tests\e2e\audio.spec.ts:65:3 › WP-17: Music track › imports audio, draws a 200-bucket waveform, and edits volume and fades
+    [chromium] › tests\e2e\audio.spec.ts:124:3 › WP-17: Music track › preview stays within 40 ms of the playhead after 5 seeks
+    [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › MP4 export has an audio track of the video length with audible fades
+    [chromium] › tests\e2e\audio.spec.ts:152:5 › WP-17: Music track › WEBM export has an audio track of the video length with audible fades
+    [chromium] › tests\e2e\audio.spec.ts:222:3 › WP-17: Music track › a project with no music exports without an audio track
+    [chromium] › tests\e2e\editor.spec.ts:28:3 › WP-12 Editor Shell and Contextual Inspector › full flow: empty state -> demo content -> palette change -> camera change -> undo/redo -> 1080p export
+    [chromium] › tests\e2e\polish.spec.ts:19:3 › WP-18 polish › first run opens the template gallery, then demo content
+    [chromium] › tests\e2e\spike.spec.ts:18:3 › WP-03 Go/No-Go Spike Verification Gate › Spike 3: Export speed - 6s at 1080p30 finishes in <= 12s
+  72 passed (10.2m)
