@@ -5,9 +5,9 @@ Implementation checkpoint: explicit final sRGB transfer; linear gradient/mesh ou
 ## Pixel verification
 
 - The inherited annotated negative suite reproduced four accepted expected failures (`before-tests.txt`). Its line reporter labels accepted expected failures as passes; the strict tests below remove those annotations.
-- Expanded strict suite: 17/17 passed (`colour-glyph-tests.txt`), including three solids ±1, independent constant gradient/mesh ±1, ordered screenshot band centres ±2 at camera distance 0.7, both CSS directions, all RGB grain channels plus determinism, linear fade, 2/4/8-sample accumulation identity, synthetic white/coloured alpha plateaus, real glyph edges, partial opacity, blur, and 8-digit hex fill alpha. An additional short-phone bottom-fill guard passed in the subsequent focused run; that run's scroll regression is still in progress at this checkpoint.
+- Expanded strict suite: 17/17 passed (`colour-glyph-tests.txt`), including three solids ±1, independent constant gradient/mesh ±1, ordered screenshot band centres ±2 at camera distance 0.7, both CSS directions, all RGB grain channels plus determinism, linear fade, 2/4/8-sample accumulation identity, synthetic white/coloured alpha plateaus, real glyph edges, partial opacity, blur, and 8-digit hex fill alpha. Restored focused suite: 28/28 passed (`restored-focused-tests.txt`): 18 F02 cases including short-phone bottom-fill, plus all 10 F01 regressions. After extracting the glyph oracle into a helper without changing assertions, all 4 glyph/fill cases passed again (`oracle-refactor-tests.txt`).
 - Migration/storage suite: 31/31 passed (`migration-tests.txt`). Compatibility covers document style and shot overrides, one-time normalization/idempotency, historical v1 CSS angles, raw legacy user-template load/list/fill/save/rename, and durable markers.
-- First F01 regression run: 9 passed, one 60-frame scroll test timed out at the inherited 45-second limit while sharing SwiftShader (`focused-tests.txt`). No pixel/geometry assertion failed. The restored run uses a run-level 120-second timeout and preserves every assertion.
+- First F01 regression run: 9 passed, one 60-frame scroll test timed out at the inherited 45-second limit while sharing SwiftShader (`focused-tests.txt`). No pixel/geometry assertion failed. The restored run passed all 10 F01 cases using a run-level 120-second timeout and preserving every assertion.
 
 ## Fail-without-fix evidence
 
@@ -23,6 +23,7 @@ Each mutation was restored in `finally`; logs contain actual assertion failures,
 | `mutation-glyph-alpha.txt`, `mutation-generic-alpha.txt` | Independent coverage oracles reject double alpha and decoding encoded-premultiplied RGB. |
 | `mutation-accumulation.txt` | Static accumulated colour rejects extra SrcAlpha weighting. |
 | `mutation-canvas-colour.txt` | Alpha hex colour rejects unnormalized THREE.Color input. |
+| `mutation-bottom-fill.txt` | Removing explicit SRGBColorSpace rejects `(124,170,231)` versus the required `(51,102,204)` ±2. |
 | `mutation-angle-normalization.txt`, `mutation-v1-marker.txt` | Legacy direction/idempotency assertions fail without conversion or the v1 discriminator. |
 | `mutation-template-load.txt`, `mutation-template-list.txt`, `mutation-template-fill.txt`, `mutation-template-save.txt`, `mutation-template-rename.txt` | Each user-template persistence boundary is independently disabled and rejected by its assertion. |
 
