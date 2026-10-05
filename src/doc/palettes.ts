@@ -61,7 +61,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#F1EDE6", "#E3DCD0"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#1C1917",
@@ -74,7 +75,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#EEF1F4", "#D9DFE6"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#0F172A",
@@ -87,7 +89,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#141417", "#2A2A30"],
-      angle: 145,
+      angle: 305,
+      angleConvention: "css",
     },
     frameAppearance: "dark",
     textColor: "#F4F4F5",
@@ -100,7 +103,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#0D1424", "#1F2B45"],
-      angle: 150,
+      angle: 300,
+      angleConvention: "css",
     },
     frameAppearance: "dark",
     textColor: "#F8FAFC",
@@ -113,7 +117,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#E4E9E1", "#C9D3C4"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#1B221B",
@@ -126,7 +131,8 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     background: {
       kind: "gradient",
       stops: ["#EBDDD3", "#D2B8A6"],
-      angle: 135,
+      angle: 315,
+      angleConvention: "css",
     },
     frameAppearance: "light",
     textColor: "#261914",

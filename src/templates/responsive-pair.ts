@@ -35,7 +35,8 @@ export const responsivePairTemplate: Template = {
       background: {
         kind: "gradient",
         stops: ["#E0E7FF", "#F1F5F9"],
-        angle: 135,
+        angle: 315,
+        angleConvention: "css",
       },
       shadow: "soft",
       browserChrome: "standard",

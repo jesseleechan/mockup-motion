@@ -1,4 +1,5 @@
 import { clampAudioTrack } from "../audio/mix";
+import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
 import type {
   Aspect,
@@ -285,14 +286,15 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
     case "solid":
       return { kind: "solid", color: typeof b.color === "string" ? b.color : "#F1EDE6" };
     case "gradient":
-      return {
+      return normalizeGradientAngle({
         kind: "gradient",
         stops:
           Array.isArray(b.stops) && b.stops.length >= 2
             ? b.stops.slice(0, 3).map((s) => (typeof s === "string" ? s : "#F1EDE6"))
             : ["#F1EDE6", "#E3DCD0"],
         angle: typeof b.angle === "number" ? ((b.angle % 360) + 360) % 360 : 135,
-      };
+        ...(b.angleConvention === "css" ? { angleConvention: "css" as const } : {}),
+      });
     case "mesh":
       return {
         kind: "mesh",
@@ -411,6 +413,18 @@ function sanitizeShot(
         : [0, 1],
       hold: clamp(typeof sc.hold === "number" ? sc.hold : 0.8, 0, 10),
       easing: includesValue(VALID_EASINGS, sc.easing) ? sc.easing : "smooth",
+    };
+  }
+
+  if (s.styleOverrides && typeof s.styleOverrides === "object") {
+    // Preserve partial overrides; normalize their background using the same
+    // persistence boundary as document style. Other fields keep existing semantics.
+    const overrides = s.styleOverrides as Partial<Style>;
+    shot.styleOverrides = {
+      ...overrides,
+      ...(overrides.background
+        ? { background: sanitizeBackground(overrides.background, assetIds, warnings) }
+        : {}),
     };
   }
 

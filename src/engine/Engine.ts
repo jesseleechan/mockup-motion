@@ -12,6 +12,7 @@ export interface EngineOptions {
   supersample?: 1 | 1.5 | 2; // internal render scale, downsampled in the final pass
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
+  cameraDistanceOverride?: number; // isolated lab/test fixture; not serialized
 }
 
 export interface TextRaster {
@@ -19,6 +20,7 @@ export interface TextRaster {
   words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
+  color?: string;
 }
 
 export interface AssetProvider {
@@ -132,7 +134,10 @@ export class Engine {
         map: { value: null },
         uWeight: { value: 1.0 },
       },
-      blending: THREE.AdditiveBlending,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneFactor,
       transparent: true,
       depthTest: false,
       depthWrite: false,
@@ -308,7 +313,14 @@ export class Engine {
     );
 
     // 2. Position camera
-    applyCameraPose(this.camera, frame.camera, stageAspect);
+    applyCameraPose(
+      this.camera,
+      {
+        ...frame.camera,
+        distance: this.opts.cameraDistanceOverride ?? frame.camera.distance,
+      },
+      stageAspect,
+    );
 
     // 3. Update / compose devices
     const activeNodeIds = new Set(frame.nodes.map((n) => n.id));
@@ -418,9 +430,12 @@ export class Engine {
     this.accumMaterial.uniforms.uWeight.value = weight;
 
     const prevTarget = this.renderer.getRenderTarget();
+    const prevAutoClear = this.renderer.autoClear;
+    this.renderer.autoClear = false;
     this.renderer.setRenderTarget(this.accumTarget);
     this.renderer.render(this.accumScene, this.accumCamera);
     this.renderer.setRenderTarget(prevTarget);
+    this.renderer.autoClear = prevAutoClear;
   }
 
   /**
@@ -441,16 +456,19 @@ export class Engine {
     if (!this.accumTarget) {
       this.accumTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
         type: THREE.HalfFloatType,
-        colorSpace: THREE.SRGBColorSpace,
+        colorSpace: THREE.LinearSRGBColorSpace,
       });
     }
 
     // Clear accumulation target to transparent
     const prevTarget = this.renderer.getRenderTarget();
+    const prevClearColor = this.renderer.getClearColor(new THREE.Color()).clone();
+    const prevClearAlpha = this.renderer.getClearAlpha();
     this.renderer.setRenderTarget(this.accumTarget);
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.clear(true, true, true);
     this.renderer.setRenderTarget(prevTarget);
+    this.renderer.setClearColor(prevClearColor, prevClearAlpha);
 
     const halfShutter = shutter * 0.5;
     const dt = shutter / (samples - 1);

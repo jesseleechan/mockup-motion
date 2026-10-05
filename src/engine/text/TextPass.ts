@@ -23,6 +23,8 @@ const textFragmentShader = /* glsl */ `
   uniform float uBlur;
   uniform float uClip;
   uniform vec2 uTexelSize;
+  uniform vec3 uColor;
+  uniform bool uCoverageOnly;
 
   varying vec2 vUv;
   varying vec2 vClipUv;
@@ -57,7 +59,10 @@ const textFragmentShader = /* glsl */ `
     }
 
     float alpha = color.a * uOpacity;
-    gl_FragColor = vec4(color.rgb * alpha, alpha);
+    // Coverage-only glyphs avoid decoding encoded premultiplied RGB, and retain
+    // exact colour even at tiny alpha. Generic rasters are preconverted before filtering.
+    vec3 rgb = uCoverageOnly ? uColor * alpha : color.rgb * uOpacity;
+    gl_FragColor = vec4(rgb, alpha);
   }
 `;
 
@@ -84,19 +89,47 @@ export class TextPass {
    * Sets or updates pre-rasterized text bitmap texture.
    */
   setTextRaster(layerId: string, raster: TextRaster): void {
-    let tex = this.textures.get(layerId);
-    if (!tex) {
+    this.textures.get(layerId)?.dispose();
+    let tex: THREE.Texture;
+    if (raster.color) {
       tex = new THREE.Texture(raster.bitmap);
-      tex.flipY = false;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      tex.generateMipmaps = false;
-      this.textures.set(layerId, tex);
+      // Alpha has no colour transfer; the shader ignores encoded RGB entirely.
+      tex.colorSpace = THREE.NoColorSpace;
     } else {
-      tex.image = raster.bitmap;
+      // Providers may supply coloured rasters. Canvas readback unpremultiplies
+      // encoded pixels; convert and premultiply each texel in linear space BEFORE
+      // bilinear/blur filtering. This path also supports synthetic-provider tests.
+      const canvas = new OffscreenCanvas(raster.width, raster.height);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Text raster conversion requires a 2D context");
+      context.drawImage(raster.bitmap, 0, 0);
+      const pixels = context.getImageData(0, 0, raster.width, raster.height).data;
+      const linear = new Uint16Array(pixels.length);
+      const decode = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      for (let i = 0; i < pixels.length; i += 4) {
+        const alpha = pixels[i + 3] / 255;
+        for (let channel = 0; channel < 3; channel++) {
+          linear[i + channel] = THREE.DataUtils.toHalfFloat(
+            decode(pixels[i + channel] / 255) * alpha,
+          );
+        }
+        linear[i + 3] = THREE.DataUtils.toHalfFloat(alpha);
+      }
+      tex = new THREE.DataTexture(
+        linear,
+        raster.width,
+        raster.height,
+        THREE.RGBAFormat,
+        THREE.HalfFloatType,
+      );
+      tex.colorSpace = THREE.LinearSRGBColorSpace;
     }
+    tex.flipY = false;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
     tex.needsUpdate = true;
+    this.textures.set(layerId, tex);
   }
 
   private getOrCreateMesh(index: number): WordMeshItem {
@@ -125,6 +158,8 @@ export class TextPass {
         uBlur: { value: 0.0 },
         uClip: { value: 0.0 },
         uTexelSize: { value: new THREE.Vector2(1, 1) },
+        uColor: { value: new THREE.Color() },
+        uCoverageOnly: { value: false },
       },
       side: THREE.DoubleSide,
       transparent: true,
@@ -183,8 +218,8 @@ export class TextPass {
     // For vertical formats (9:16, 4:5): keep inside central 80% of height (10% top/bottom).
     const margin = Math.round(0.07 * Math.min(renderW, renderH));
     const isVertical = aspect === "9:16" || aspect === "4:5";
-    const minY = isVertical ? Math.round(renderH * 0.10) : margin;
-    const maxY = isVertical ? Math.round(renderH * 0.90) : renderH - margin;
+    const minY = isVertical ? Math.round(renderH * 0.1) : margin;
+    const maxY = isVertical ? Math.round(renderH * 0.9) : renderH - margin;
     const minX = margin;
     const maxX = renderW - margin;
 
@@ -277,6 +312,8 @@ export class TextPass {
         // Set uniforms
         const uniforms = item.material.uniforms;
         uniforms.uTexture.value = tex;
+        uniforms.uCoverageOnly.value = Boolean(raster.color);
+        if (raster.color) uniforms.uColor.value.set(raster.color);
         uniforms.uOpacity.value = wordFrame.opacity * textFrame.opacity;
         uniforms.uBlur.value = wordFrame.blur ?? 0.0;
         uniforms.uClip.value = wordFrame.clip ?? 0.0;

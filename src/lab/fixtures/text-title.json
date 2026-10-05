@@ -11,7 +11,8 @@
     "background": {
       "kind": "gradient",
       "stops": ["#141417", "#2A2A30"],
-      "angle": 135
+      "angle": 315,
+      "angleConvention": "css"
     },
     "frameAppearance": "dark",
     "deviceFinish": "graphite",

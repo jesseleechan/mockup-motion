@@ -65,7 +65,7 @@ export interface FontRef {
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number } // 2-3 stops, OKLCH-interpolated
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // 2-3 stops, OKLCH-interpolated
   | { kind: "mesh"; colors: string[]; drift: number; seed: number } // 3-5 colours, drift 0..1
   | { kind: "ambient"; assetId: string; blur: number; dim: number } // blurred screenshot, 0..1
   | { kind: "image"; assetId: string; dim: number };
@@ -249,6 +249,8 @@ export interface ProjectDoc {
 }
 ```
 
+Gradient angles use CSS direction in normalized frame coordinates: 0° runs bottom to top, 90° left to right, 180° top to bottom. New gradients carry `angleConvention: "css"`; unmarked persisted v2 gradients retain their legacy direction through a one-time angle migration at load.
+
 ## 3. Stage, units and camera
 
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
@@ -340,6 +342,7 @@ export interface EngineOptions {
   supersample?: 1 | 1.5 | 2; // internal render scale, downsampled in the final pass
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
+  cameraDistanceOverride?: number; // isolated fixture override, not serialized
 }
 
 export interface AssetProvider {
@@ -353,6 +356,7 @@ export interface TextRaster {
   words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
+  color?: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
 }
 
 export class Engine {
@@ -370,6 +374,12 @@ export class Engine {
 ```
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`), and the final pass handles transition blend, grain, vignette, dither, and downsample to the canvas.
+
+Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation uses a linear half-float target before this final pass.
+
+`TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+
+`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
 
 ## 8. Templates (`src/templates/`)
 

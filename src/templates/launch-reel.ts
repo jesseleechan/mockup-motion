@@ -6,7 +6,8 @@ import { buildTemplatePreviewDoc } from "./demo-preview";
 export const launchReelTemplate: Template = {
   id: "launch-reel",
   name: "Launch Reel",
-  description: "Cinematic multi-shot launch video: animated title reveal, desktop hero, responsive pair, and branded end card.",
+  description:
+    "Cinematic multi-shot launch video: animated title reveal, desktop hero, responsive pair, and branded end card.",
   category: "reel",
   slots: [
     {
@@ -44,7 +45,8 @@ export const launchReelTemplate: Template = {
       background: {
         kind: "gradient",
         stops: ["#0B0C10", "#1F2833"],
-        angle: 145,
+        angle: 305,
+        angleConvention: "css",
       },
       textColor: "#66FCF1",
       accent: "#45A29E",

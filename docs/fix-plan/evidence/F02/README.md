@@ -1,0 +1,36 @@
+# F02 colour pipeline evidence
+
+Gate results, colour-test output and mutation runs are in the F02 pull request description.
+
+## Inspected stills
+
+All full-frame PNGs are 1280×720, generated from `/lab?still=1&fixture=...&w=1280`. Evidence capture overrides use actual bitmaps and decoded dimensions; production lab assignment remains F04 scope.
+
+- `tilted-showcase.png`: inspected upright screenshot content, visible Graphite separation and device edges, restrained grain/shadow, and preserved composition.
+- `phone-spotlight.png`: inspected upright real 780×1688 mobile content, visible dark phone rim/background, and no newly introduced horizontal crop.
+- `quiet-hero.png`: inspected upright desktop content and the template's retained warm `#F5F3EF` background.
+- `quiet-hero-bone.png`: inspected the explicitly requested Bone `#F1EDE6` variant without changing the built-in template's art direction.
+- `screenshot-crop-comparison.png` (1280×440): inspected the same real Aurelia crop side by side; wood, mountain and sky mid-tones visually match. The render is softer from existing texture/mipmap resampling; this is not a whole-image exactness claim. Strict synthetic band-centre tests supply numeric ±2 evidence.
+- `transparent-glyph-edges.png`: inspected upright white text on Graphite with clean antialiased edges; independent edge/blur oracles supply quantitative alpha evidence.
+- `before-tilted-showcase.png`: inspected the missing-transfer fault reenacted after initial reproduction, retaining F01 orientation and the same real asset; background and screenshot mid-tones darken markedly.
+
+## Shader audit
+
+Nine distinct custom programs across ten constructor sites; no RawShaderMaterial/onBeforeCompile shaders were found.
+
+| Shader/site                            | Inputs, output and alpha result                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Background solid                       | THREE.Color supplies linear RGB; opaque linear output.                                                                                                                                                                                                                                                                                                                       |
+| Background gradient                    | OKLab converts to linear sRGB primaries; final pass performs the sole transfer.                                                                                                                                                                                                                                                                                              |
+| Background mesh                        | Same linear conversion as gradient; constant-mesh numeric guard passes.                                                                                                                                                                                                                                                                                                      |
+| Background image/ambient               | sRGB texture decoding supplies linear RGB; dim multiplies linear values; opaque output. F01 top-down sampling retained.                                                                                                                                                                                                                                                      |
+| Screen rounded material                | sRGB byte target samples linear; border endpoints are linear 0/1; straight-alpha coverage with normal blending. Bottom-row encoded RGB now enters THREE.Color with explicit SRGBColorSpace.                                                                                                                                                                                  |
+| Text                                   | Bitmap creation explicitly premultiplies. Production glyph RGB is canonical opaque sRGB metadata converted by THREE.Color; shader samples alpha coverage and outputs linear premultiplied RGB. Generic rasters convert each unpremultiplied Canvas texel to linear premultiplied half-float before filtering/blur. One/OneMinusSrcAlpha blending applies alpha exactly once. |
+| Shadow contact and ambient (two sites) | Existing shadowTintFor background tint passes through THREE.Color; linear RGB with straight alpha/normal blending; retained.                                                                                                                                                                                                                                                 |
+| Accumulation                           | Samples linear shot targets, multiplies by sample weight once; custom One/One additive blending into linear RGBA16F before final pass. Auto-clear and clear-colour state are restored.                                                                                                                                                                                       |
+| Final                                  | Linear transition/downsample and vignette; exact piecewise transfer; zero-mean monochrome grain; ±0.5-LSB triangular dither; clamp. No colorspace_fragment include.                                                                                                                                                                                                          |
+| Cursor and ripple (built-in materials) | CanvasTexture sRGB inputs and THREE.Color material tint; built-in renderer performs target colour handling and normal straight-alpha blending. F01 orientation/hotspot preserved; intentional cursor outline/shadow retained.                                                                                                                                                |
+
+## Scope and remaining verification
+
+Byte sRGB targets are retained for dark-colour precision; shader writes, blending and sampled values are linear. Camera distance 0.7 is a development-only lab fixture override, never serialized. CSS angle migration preserves normalized-frame direction, not full aspect-dependent CSS gradient length. Accumulation still excludes incoming transition layers (F09). Screen material does not yet consume device material.opacity. Production lab ordinary asset IDs still map to Aurelia (F04), and existing crop resampling softness is retained.
