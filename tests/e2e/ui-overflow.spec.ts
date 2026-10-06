@@ -54,12 +54,16 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();
+  // Setup, not the check under test: decoding the demo screenshots took over 5 s on the
+  // GitHub runner (F08 PR run), while it takes about 1 s locally.
   await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
-        return store?.getState().doc.assets.length ?? 0;
-      }),
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
+          return store?.getState().doc.assets.length ?? 0;
+        }),
+      { timeout: 20000 },
     )
     .toBeGreaterThan(0);
 }
