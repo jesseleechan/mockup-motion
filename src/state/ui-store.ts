@@ -14,6 +14,8 @@ export interface UIState {
     timeline: boolean;
   };
   theme: "dark" | "light";
+  /** The template gallery is rendered once, in EditorShell; anything may open it (F06). */
+  templateGalleryOpen: boolean;
 
   // Actions
   setSelection: (selection: UISelection) => void;
@@ -22,6 +24,8 @@ export interface UIState {
   setStageZoom: (zoom: number) => void;
   togglePanel: (panel: "library" | "inspector" | "timeline") => void;
   setTheme: (theme: "dark" | "light") => void;
+  openTemplateGallery: () => void;
+  closeTemplateGallery: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -35,6 +39,7 @@ export const useUIStore = create<UIState>((set) => ({
     timeline: true,
   },
   theme: "dark",
+  templateGalleryOpen: false,
 
   setSelection: (selection) => set({ selection }),
   setPlayhead: (playhead) => set({ playhead }),
@@ -48,4 +53,6 @@ export const useUIStore = create<UIState>((set) => ({
       },
     })),
   setTheme: (theme) => set({ theme }),
+  openTemplateGallery: () => set({ templateGalleryOpen: true }),
+  closeTemplateGallery: () => set({ templateGalleryOpen: false }),
 }));

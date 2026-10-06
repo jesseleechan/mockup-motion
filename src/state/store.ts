@@ -18,6 +18,12 @@ import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+export interface TemplateResult {
+  style: Style;
+  shots: Shot[];
+  loop: boolean;
+}
+
 export interface EditorStoreState {
   doc: ProjectDoc;
   past: ProjectDoc[];
@@ -36,11 +42,18 @@ export interface EditorStoreState {
   redo: () => void;
   loadDoc: (doc: ProjectDoc) => void;
   newDoc: () => void;
-  applyTemplateResult: (
-    result: { style: Style; shots: Shot[]; loop: boolean },
-    templateId?: string,
-  ) => void;
+  applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
   addAssets: (refs: AssetRef[], blobs?: Record<string, Blob>) => Promise<void>;
+  /**
+   * Adds assets and applies a template in one undo step. `build` receives the document with
+   * the new assets already in it, so the template's slots can fill from them.
+   */
+  addAssetsAndApplyTemplate: (
+    refs: AssetRef[],
+    templateId: string,
+    build: (doc: ProjectDoc) => TemplateResult,
+    blobs?: Record<string, Blob>,
+  ) => Promise<TemplateResult>;
   replaceAsset: (id: string, ref: AssetRef, blob?: Blob) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
   setAssetRole: (id: string, role: AssetRole) => void;
@@ -220,6 +233,31 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         },
         { label: "Add assets" },
       );
+    },
+
+    addAssetsAndApplyTemplate: async (refs, templateId, build, blobs) => {
+      if (blobs) {
+        for (const [id, blob] of Object.entries(blobs)) {
+          await putBlob(id, blob);
+        }
+      }
+      const current = get().doc;
+      const assets = [...current.assets];
+      for (const ref of refs) {
+        if (!assets.some((a) => a.id === ref.id)) assets.push(ref);
+      }
+      const result = build({ ...current, assets });
+      get().apply(
+        (draft) => {
+          draft.assets = assets;
+          draft.style = result.style;
+          draft.shots = result.shots;
+          draft.loop = result.loop;
+          draft.templateId = templateId;
+        },
+        { label: "Fill template" },
+      );
+      return result;
     },
 
     replaceAsset: async (id: string, ref: AssetRef, blob?: Blob) => {

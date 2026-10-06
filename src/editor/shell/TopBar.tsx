@@ -21,6 +21,7 @@ import {
   FilePlus,
   FolderOpen,
   HelpCircle,
+  LayoutTemplate,
   Moon,
   Redo2,
   Sun,
@@ -54,6 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
+  const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(doc.name);
@@ -125,6 +127,12 @@ export const TopBar: React.FC<TopBarProps> = ({
             </DropdownMenuItem>
             <DropdownMenuItem icon={<Icon icon={FolderOpen} size={14} />} onClick={onOpenProjects}>
               Projects
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              icon={<Icon icon={LayoutTemplate} size={14} />}
+              onClick={openTemplateGallery}
+            >
+              Templates
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -3,7 +3,7 @@ import { createDoc } from "../doc/defaults";
 import { demoAssetId, demoAssetRef } from "../lab/demo-assets";
 import type { DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
-import { fillSlots } from "./slots";
+import { fillSlots, missingRequiredSlots } from "./slots";
 
 const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
@@ -62,6 +62,20 @@ const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
 export function demoAssetsForTemplate(templateId: string): AssetRef[] {
   const ids = DEMO_IDS_BY_TEMPLATE[templateId] ?? DEFAULT_DEMO_IDS;
   return ids.map(demoAssetRef);
+}
+
+/**
+ * Demo assets that fill the template's missing required slots, leaving the user's own
+ * screenshots in the slots they already fill. Empty when nothing is missing.
+ */
+export function demoAssetsToFill(template: Template, assets: AssetRef[]): AssetRef[] {
+  const missingRoles = new Set(missingRequiredSlots(template, assets).map((slot) => slot.role));
+  return demoAssetsForTemplate(template.id).filter(
+    (demo) =>
+      demo.role !== undefined &&
+      missingRoles.has(demo.role) &&
+      !assets.some((a) => a.id === demo.id),
+  );
 }
 
 export function buildTemplatePreviewDoc(template: Template): ProjectDoc {
