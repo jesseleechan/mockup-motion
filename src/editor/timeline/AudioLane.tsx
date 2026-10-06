@@ -214,7 +214,9 @@ export const MusicControls: React.FC<MusicControlsProps> = ({ onRemove }) => {
           onChange={(e) => updateMusic({ volume: Number(e.target.value) })}
           className="w-20 accent-[var(--color-accent)]"
         />
-        <span className="font-mono w-7 text-right">{Math.round(audio.volume * 100)}%</span>
+        <span data-testid="music-volume-value" className="font-mono w-7 text-right">
+          {Math.round(audio.volume * 100)}%
+        </span>
       </label>
       <Tooltip content="Remove music">
         <button

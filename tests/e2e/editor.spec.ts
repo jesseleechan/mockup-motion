@@ -113,7 +113,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // Wait for export to finish
     await expect(page.getByText("Export complete")).toBeVisible({ timeout: 600_000 });
-    const downloadBtn = page.getByRole("button", { name: /Download/i });
+    const downloadBtn = page.getByRole("link", { name: /Download/i });
     await expect(downloadBtn).toBeVisible();
 
     // Verify 0 console errors throughout the entire flow

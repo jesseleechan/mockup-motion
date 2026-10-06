@@ -5,8 +5,12 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { getBlob } from "../../storage/blobs";
 
-/** Gap (seconds) between the audio clock and the playhead that triggers a re-sync while playing. */
-const RESYNC_THRESHOLD_SEC = 0.1;
+/** How often (seconds of audio clock) the music is compared with the playhead while playing. */
+const SYNC_CHECK_SEC = 0.25;
+/** Largest gap (seconds) between the music and the playhead before the music is re-anchored. */
+const MAX_DRIFT_SEC = 0.03;
+/** A gap this large is a seek or a loop wrap, not drift, so it re-anchors without waiting. */
+const JUMP_SEC = 0.25;
 
 declare global {
   interface Window {
@@ -14,6 +18,7 @@ declare global {
     __mmAudio?: {
       position: () => number | null;
       playhead: () => number;
+      /** Music minus playhead at the latest frame, or null when stopped. */
       drift: () => number | null;
       loaded: () => boolean;
     };
@@ -21,8 +26,13 @@ declare global {
 }
 
 /**
- * Plays the project's music track in sync with the playhead. Audio only
- * sounds while `playing` is true, so scrubbing and stepping are silent.
+ * Plays the project's music track in sync with the playhead. The playback
+ * loop publishes the playhead once per frame, before rendering it; the music
+ * starts on the first frame after Play (so a slow first frame cannot leave it
+ * running ahead of a still picture), and every later frame is compared with
+ * the audio clock: seeks and loop wraps re-anchor at once, and drift over
+ * MAX_DRIFT_SEC re-anchors at the next SYNC_CHECK_SEC check. Audio only
+ * sounds while `playing` is true; scrubbing pauses playback, so it is silent.
  */
 export function useAudioPreview(): void {
   const doc = useEditorStore((s) => s.doc);
@@ -32,68 +42,84 @@ export function useAudioPreview(): void {
   const total = useMemo(() => schedule(doc).total, [doc]);
 
   const previewRef = useRef<AudioPreview | null>(null);
-  const loadedIdRef = useRef<string | null>(null);
+  // Audio clock time of the next drift check.
+  const nextCheckRef = useRef(0);
+  // Music minus playhead at the latest frame, after any re-anchor.
+  const driftRef = useRef<number | null>(null);
 
   // Create the preview once, on mount (before the effects below run).
   useEffect(() => {
     previewRef.current ??= new AudioPreview();
   }, []);
 
-  // Load / unload the decoded buffer when the track's asset changes.
+  // Load / unload the decoded buffer when the track's asset changes. If playback is
+  // running, the next frame starts the music.
   useEffect(() => {
     const preview = previewRef.current;
     if (!preview) return;
     if (!assetId) {
       preview.clear();
-      loadedIdRef.current = null;
       return;
     }
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const blob = await getBlob(assetId);
       if (!blob || cancelled) return;
-      try {
-        await preview.load(blob);
-        if (cancelled) return;
-        loadedIdRef.current = assetId;
-        if (useUIStore.getState().playing && track) {
-          preview.start(track, total, useUIStore.getState().playhead);
-        }
-      } catch {
-        loadedIdRef.current = null;
-      }
-    })();
+      await preview.load(blob);
+    })().catch((error: unknown) => {
+      console.error("The music preview could not be loaded:", error);
+    });
     return () => {
       cancelled = true;
     };
-    // `track` and `total` are re-applied by the sync effect below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId]);
 
-  // Start / stop / restart on play state or any envelope-affecting edit.
+  // Stop on pause or when the track is removed; restart on an envelope-affecting edit.
   useEffect(() => {
     const preview = previewRef.current;
     if (!preview) return;
+    const position = preview.position();
     if (playing && track && preview.loaded) {
-      preview.start(track, total, useUIStore.getState().playhead);
+      // Not started yet: the playback loop's next frame starts it.
+      if (position === null) return;
+      // An edit while playing continues from the audio clock; the store playhead lags
+      // the rendered frame by up to one store write.
+      preview.start(track, total, position);
     } else {
       preview.stop();
+      driftRef.current = null;
     }
   }, [playing, track, total]);
 
-  // Re-sync after seeks and loop wraps while playing.
+  // Start on the first frame, then re-anchor on seeks, loop wraps and drift.
   useEffect(() => {
-    const unsubscribe = useUIStore.subscribe((state, prev) => {
+    return useUIStore.subscribe((state, prev) => {
       const preview = previewRef.current;
-      if (!preview || !state.playing || !prev.playing || state.playhead === prev.playhead) return;
+      // `prev.playing` skips the Play notification itself; frames come after it.
+      if (!preview?.loaded || !state.playing || !prev.playing) return;
       const current = useEditorStore.getState().doc;
-      if (!current.audio || !preview.loaded) return;
-      const pos = preview.position();
-      if (pos === null || Math.abs(pos - state.playhead) > RESYNC_THRESHOLD_SEC) {
-        preview.start(current.audio, schedule(current).total, state.playhead);
+      if (!current.audio) return;
+      const currentTotal = schedule(current).total;
+
+      const position = preview.position();
+      if (position === null) {
+        preview.start(current.audio, currentTotal, state.playhead);
+        nextCheckRef.current = preview.clock + SYNC_CHECK_SEC;
+        driftRef.current = 0;
+        return;
       }
+      if (state.playhead === prev.playhead) return;
+
+      const gap = Math.abs(position - state.playhead);
+      const due = preview.clock >= nextCheckRef.current;
+      if (gap > JUMP_SEC || (due && gap > MAX_DRIFT_SEC)) {
+        preview.start(current.audio, currentTotal, state.playhead);
+      }
+      if (due || gap > JUMP_SEC) nextCheckRef.current = preview.clock + SYNC_CHECK_SEC;
+
+      const after = preview.position();
+      driftRef.current = after === null ? null : after - state.playhead;
     });
-    return unsubscribe;
   }, []);
 
   // Test hook
@@ -102,10 +128,7 @@ export function useAudioPreview(): void {
     window.__mmAudio = {
       position: () => previewRef.current?.position() ?? null,
       playhead: () => useUIStore.getState().playhead,
-      drift: () => {
-        const pos = previewRef.current?.position();
-        return pos == null ? null : pos - useUIStore.getState().playhead;
-      },
+      drift: () => (previewRef.current?.position() == null ? null : driftRef.current),
       loaded: () => previewRef.current?.loaded ?? false,
     };
     return () => {

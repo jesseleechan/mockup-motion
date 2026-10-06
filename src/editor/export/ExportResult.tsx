@@ -173,7 +173,6 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
         <a
           href={url}
           download={filename}
-          role="button"
           className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity gap-2"
         >
           <Download size={14} />

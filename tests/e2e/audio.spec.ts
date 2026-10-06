@@ -1,4 +1,21 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
+
+interface EditorWindow {
+  __editorStore?: {
+    getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
+  };
+  __uiStore?: {
+    getState: () => {
+      playhead: number;
+      playing: boolean;
+      setPlayhead: (time: number) => void;
+      setPlaying: (playing: boolean) => void;
+    };
+  };
+  /** Every AudioContext the page created (init script below). */
+  __audioContexts?: AudioContext[];
+}
 
 /** 16-bit stereo PCM WAV of a constant-amplitude 440 Hz tone. */
 function makeWav(seconds: number, sampleRate = 44100, amp = 0.8): Buffer {
@@ -39,6 +56,53 @@ async function openEditorWithDemo(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Try with demo content" }).click();
   await expect(page.locator("canvas").first()).toBeVisible();
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            (window as unknown as EditorWindow).__editorStore?.getState().doc.assets.length ?? 0,
+        ),
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
+}
+
+/** One shot of `seconds`, no transition, so exports and loop wraps stay short. */
+async function useShortDoc(page: Page, seconds: number, loop: boolean) {
+  await page.evaluate(
+    ({ seconds, loop }) => {
+      const store = (window as unknown as EditorWindow).__editorStore;
+      if (!store) throw new Error("__editorStore is unavailable");
+      store.getState().apply((draft) => {
+        draft.shots = draft.shots.slice(0, 1);
+        draft.shots[0].duration = seconds;
+        draft.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "linear" };
+        draft.loop = loop;
+      });
+    },
+    { seconds, loop },
+  );
+}
+
+/** The app's own encoder probes for H.264 + AAC at the project's export settings. */
+async function canExportMp4WithAudio(page: Page): Promise<boolean> {
+  return page.evaluate(async () => {
+    const store = (window as unknown as EditorWindow).__editorStore;
+    if (!store) throw new Error("__editorStore is unavailable");
+    const settings: ExportSettings = store.getState().doc.export;
+    // @ts-expect-error dev-server module path resolved by the browser
+    const { probeVideoEncoders } = await import(/* @vite-ignore */ "/src/export/probe.ts");
+    // @ts-expect-error dev-server module path resolved by the browser
+    const { canEncodeExportAudio } = await import(/* @vite-ignore */ "/src/export/audio-mux.ts");
+    const video = await probeVideoEncoders({
+      width: Math.round((settings.resolution * 16) / 9),
+      height: settings.resolution,
+      fps: settings.fps,
+      quality: settings.quality,
+    });
+    return video.avc && (await canEncodeExportAudio("aac"));
+  });
 }
 
 async function addMusic(page: Page, seconds = 12) {
@@ -87,7 +151,7 @@ test.describe("WP-17: Music track", () => {
 
     const volume = page.getByRole("slider", { name: "Music volume" });
     await volume.fill("0.5");
-    await expect(page.getByText("50%")).toBeVisible();
+    await expect(page.getByTestId("music-volume-value")).toHaveText("50%");
 
     // Dragging the clip changes the offset; undo restores it
     const clip = page.getByTestId("audio-clip");
@@ -145,6 +209,71 @@ test.describe("WP-17: Music track", () => {
     for (const d of drifts) expect(d).toBeLessThan(0.04);
   });
 
+  test("preview re-anchors after a loop wrap and an audio clock stall, and is silent while scrubbing", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const Native = window.AudioContext;
+      const created: AudioContext[] = [];
+      (window as unknown as EditorWindow).__audioContexts = created;
+      window.AudioContext = class extends Native {
+        constructor(options?: AudioContextOptions) {
+          super(options);
+          created.push(this);
+        }
+      };
+    });
+    await openEditorWithDemo(page);
+    await addMusic(page);
+    await expect.poll(() => page.evaluate(() => window.__mmAudio?.loaded())).toBe(true);
+    await useShortDoc(page, 2, true);
+    expect(
+      await page.evaluate(() => (window as unknown as EditorWindow).__audioContexts?.length),
+    ).toBe(1);
+
+    // Loop wrap: play from 0.2 s before the end of the 2 s loop, then measure after the wrap.
+    await page.evaluate(() => {
+      const ui = (window as unknown as EditorWindow).__uiStore!.getState();
+      ui.setPlayhead(1.8);
+      ui.setPlaying(true);
+    });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const t = window.__mmAudio?.playhead() ?? -1;
+            return t > 0.4 && t < 1.5;
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+    const afterWrap = await page.evaluate(() => window.__mmAudio?.drift() ?? null);
+    expect(afterWrap, "audio should be sounding after the loop wrap").not.toBeNull();
+    expect(Math.abs(afterWrap as number), "drift after the loop wrap").toBeLessThan(0.04);
+
+    // Audio clock stall (an audio device hiccup): the playhead keeps moving for 200 ms
+    // while the audio clock stands still.
+    await page.evaluate(async () => {
+      const ctx = (window as unknown as EditorWindow).__audioContexts![0];
+      await ctx.suspend();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await ctx.resume();
+    });
+    await page.waitForTimeout(600);
+    const afterStall = await page.evaluate(() => window.__mmAudio?.drift() ?? null);
+    expect(afterStall, "audio should be sounding after the stall").not.toBeNull();
+    expect(Math.abs(afterStall as number), "drift after the audio clock stall").toBeLessThan(0.04);
+
+    // Scrubbing the ruler during playback is silent.
+    const ruler = page.getByRole("slider", { name: "Timeline scrubber" });
+    const rulerBox = (await ruler.boundingBox())!;
+    await page.mouse.move(rulerBox.x + rulerBox.width * 0.2, rulerBox.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(rulerBox.x + rulerBox.width * 0.5, rulerBox.y + 8, { steps: 5 });
+    await expect.poll(() => page.evaluate(() => window.__mmAudio?.position() ?? null)).toBeNull();
+    await page.mouse.up();
+  });
+
   for (const [format, label, extension] of [
     ["mp4", /MP4/, "mp4"],
     ["webm", /WebM/, "webm"],
@@ -152,8 +281,14 @@ test.describe("WP-17: Music track", () => {
     test(`${format.toUpperCase()} export has an audio track of the video length with audible fades`, async ({
       page,
     }) => {
+      // A 2 s export: about 30 s locally, and the GitHub runner is about 5x slower.
+      test.setTimeout(300_000);
       await openEditorWithDemo(page);
+      if (format === "mp4" && !(await canExportMp4WithAudio(page))) {
+        test.skip(true, "H.264 encoder unavailable in this Chromium build");
+      }
       await addMusic(page, 20);
+      await useShortDoc(page, 2, false);
       // Make the fade-in a full second so the first 100 ms is clearly near-silent
       const fadeIn = page.getByRole("slider", { name: "Fade in" });
       await fadeIn.focus();
@@ -164,7 +299,7 @@ test.describe("WP-17: Music track", () => {
       await dialog.getByRole("button", { name: "Start export" }).click();
 
       const download = dialog.getByRole("link", { name: /Download/ });
-      await expect(download).toBeVisible({ timeout: 90_000 });
+      await expect(download).toBeVisible({ timeout: 240_000 });
       await expect(download).toHaveAttribute("download", new RegExp(`\\.${extension}$`));
       await expect(dialog.getByTestId("export-warnings")).toHaveCount(0);
 
@@ -220,12 +355,15 @@ test.describe("WP-17: Music track", () => {
   }
 
   test("a project with no music exports without an audio track", async ({ page }) => {
+    // A 2 s export: about 30 s locally, and the GitHub runner is about 5x slower.
+    test.setTimeout(300_000);
     await openEditorWithDemo(page);
+    await useShortDoc(page, 2, false);
     const dialog = await exportAs(page, /MP4/);
     await expect(dialog.getByTestId("music-note")).toHaveCount(0);
     await dialog.getByRole("button", { name: "Start export" }).click();
     const download = dialog.getByRole("link", { name: /Download/ });
-    await expect(download).toBeVisible({ timeout: 90_000 });
+    await expect(download).toBeVisible({ timeout: 240_000 });
     const href = (await download.getAttribute("href"))!;
     const hasAudio = await page.evaluate(async (url) => {
       const blob = await (await fetch(url)).blob();

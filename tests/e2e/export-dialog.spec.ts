@@ -221,7 +221,7 @@ test.describe("F09 export dialog", () => {
 
     await dialog.getByRole("button", { name: "Start export" }).click();
     await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 180_000 });
-    const download = dialog.getByRole("button", { name: /Download/ });
+    const download = dialog.getByRole("link", { name: /Download/ });
     await expect(download).toHaveAttribute("download", /\.webm$/);
     await expect(download).toHaveText("Download WebM");
     await expect(dialog.getByTestId("export-verification")).toContainText("Verified WebM");

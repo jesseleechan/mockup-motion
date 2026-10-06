@@ -205,6 +205,12 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
         }
       }
       playheadRef.current = t;
+      // Publish before rendering: store subscribers (the music preview's sync check) then
+      // see this frame's time at this frame's timestamp, not after a slow render.
+      if (!ended && now - lastWriteNow >= STORE_WRITE_INTERVAL_MS) {
+        lastWriteNow = now;
+        writePlayhead(t);
+      }
       engine.renderAt(t);
 
       if (frameMs > SLOW_FRAME_MS) {
@@ -221,10 +227,6 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
         writePlayhead(t);
         useUIStore.getState().setPlaying(false);
         return;
-      }
-      if (now - lastWriteNow >= STORE_WRITE_INTERVAL_MS) {
-        lastWriteNow = now;
-        writePlayhead(t);
       }
       rafId = requestAnimationFrame(tick);
     };
