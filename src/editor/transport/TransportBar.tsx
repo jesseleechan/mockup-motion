@@ -3,6 +3,7 @@ import { IconButton, Icon, Tooltip } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { schedule } from "../../motion";
+import { STAGE_ZOOMS } from "../stage/fit";
 import {
   Play,
   Pause,
@@ -76,6 +77,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           type="button"
           onClick={handleTogglePlay}
           aria-label={playing ? "Pause" : "Play"}
+          data-testid="transport-play"
           className="w-7 h-7 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center hover:opacity-90 transition-opacity focus:outline-none"
         >
           <Icon icon={playing ? Pause : Play} size={13} className={playing ? "" : "ml-0.5"} />
@@ -92,9 +94,11 @@ export const TransportBar: React.FC<TransportBarProps> = ({
         </Tooltip>
 
         <div className="ml-2 font-mono text-[11px] text-[var(--color-text)]">
-          <span>{formatTime(playhead)}</span>
+          <span data-testid="transport-current">{formatTime(playhead)}</span>
           <span className="text-[var(--color-text-3)] mx-1">/</span>
-          <span className="text-[var(--color-text-2)]">{formatTime(total)}</span>
+          <span data-testid="transport-total" className="text-[var(--color-text-2)]">
+            {formatTime(total)}
+          </span>
         </div>
       </div>
 
@@ -141,9 +145,11 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             onChange={(e) => setStageZoom(Number(e.target.value))}
             className="bg-transparent text-[var(--color-text)] font-medium text-xs focus:outline-none cursor-pointer"
           >
-            <option value={1} className="bg-[var(--color-panel)]">Fit</option>
-            <option value={0.5} className="bg-[var(--color-panel)]">50%</option>
-            <option value={1.01} className="bg-[var(--color-panel)]">100%</option>
+            {STAGE_ZOOMS.map((zoom) => (
+              <option key={zoom.value} value={zoom.value} className="bg-[var(--color-panel)]">
+                {zoom.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

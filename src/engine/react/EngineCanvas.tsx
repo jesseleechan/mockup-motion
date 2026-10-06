@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ProjectDoc } from "../../doc/types";
 import { schedule } from "../../motion";
 import { useUIStore } from "../../state/ui-store";
@@ -23,6 +23,30 @@ export interface EngineCanvasProps {
   cameraDistanceOverride?: number;
 }
 
+const DEFAULT_SUPERSAMPLE = 1.5;
+// A 3× display would otherwise allocate 9× the pixels before the 1.5× supersample.
+const MAX_PIXEL_RATIO = 2;
+// The canvas renders every frame; the store (transport, timeline) only needs ~30 Hz.
+const STORE_WRITE_INTERVAL_MS = 33;
+// Adaptive quality: after this many frames slower than SLOW_FRAME_MS, drop supersample to 1.
+const SLOW_FRAME_MS = 20;
+const SLOW_FRAME_LIMIT = 30;
+
+function resolvePixelRatio(override: number | undefined): number {
+  if (override !== undefined) return override;
+  const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  return Math.min(dpr, MAX_PIXEL_RATIO);
+}
+
+function devicePixels(cssPx: number, pixelRatio: number): number {
+  return Math.max(1, Math.round(cssPx * pixelRatio));
+}
+
+/**
+ * Thin preview wrapper around Engine. The document effect depends on the
+ * document and assets only; playback and scrubbing call renderAt directly and
+ * never call setDocument.
+ */
 export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   doc,
   assets,
@@ -37,146 +61,190 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<Engine | null>(null);
-
-  const playhead = useUIStore((s) => s.playhead);
+  const [engine, setEngine] = useState<Engine | null>(null);
   const playing = useUIStore((s) => s.playing);
-  const setPlayhead = useUIStore((s) => s.setPlayhead);
 
-  // Initialize engine
+  // Latest values for callbacks that run outside React's render cycle.
+  const docRef = useRef(doc);
+  const timeRef = useRef(time);
+  const onEngineReadyRef = useRef(onEngineReady);
+  const supersampleRef = useRef(supersample ?? DEFAULT_SUPERSAMPLE);
+  const playheadRef = useRef(time ?? useUIStore.getState().playhead);
+  const lastWrittenRef = useRef<number | null>(null);
+  const readyReportedRef = useRef(false);
+
+  useLayoutEffect(() => {
+    docRef.current = doc;
+    onEngineReadyRef.current = onEngineReady;
+    supersampleRef.current = supersample ?? DEFAULT_SUPERSAMPLE;
+  });
+
+  // Init: create the engine once, at the container's measured size.
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     let disposed = false;
-    let localEngine: Engine | null = null;
+    let created: Engine | null = null;
+    const ratio = resolvePixelRatio(pixelRatio);
 
-    async function init() {
-      if (!canvas) return;
-      const dpr = pixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
-      const width = Math.max(100, Math.round((canvas.clientWidth || 800) * dpr));
-      const height = Math.max(100, Math.round((canvas.clientHeight || 450) * dpr));
-
-      localEngine = await Engine.create(canvas, {
-        width,
-        height,
-        supersample: supersample ?? 1.5,
-        cameraDistanceOverride,
-      });
-
+    void Engine.create(canvas, {
+      width: devicePixels(container.clientWidth || 800, ratio),
+      height: devicePixels(container.clientHeight || 450, ratio),
+      supersample: supersampleRef.current,
+      cameraDistanceOverride,
+    }).then((next) => {
       if (disposed) {
-        localEngine.dispose();
+        next.dispose();
         return;
       }
-
-      await localEngine.setDocument(doc, assets);
-      const currentTime = time ?? playhead;
-      localEngine.renderAt(currentTime);
-
-      engineRef.current = localEngine;
-      onEngineReady?.(localEngine);
-    }
-
-    init();
+      created = next;
+      setEngine(next);
+    });
 
     return () => {
       disposed = true;
-      if (localEngine) {
-        localEngine.dispose();
-      }
-      engineRef.current = null;
+      created?.dispose();
+      setEngine(null);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ResizeObserver
+  // Resize: follow the container; never depends on the playhead.
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!engine || !container) return;
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      const dpr = pixelRatio ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
-      const width = Math.max(10, Math.round(entry.contentRect.width * dpr));
-      const height = Math.max(10, Math.round(entry.contentRect.height * dpr));
-
-      if (engineRef.current) {
-        engineRef.current.resize(width, height);
-        const currentTime = time ?? playhead;
-        engineRef.current.renderAt(currentTime);
-      }
+      const { width, height } = entry.contentRect;
+      // A hidden container (display: none) reports 0×0; keep the last real size.
+      if (width === 0 || height === 0) return;
+      const ratio = resolvePixelRatio(pixelRatio);
+      engine.resize(devicePixels(width, ratio), devicePixels(height, ratio));
+      engine.renderAt(playheadRef.current);
     });
-
     observer.observe(container);
     return () => observer.disconnect();
-  }, [pixelRatio, playhead, time]);
+  }, [engine, pixelRatio]);
 
-  // Update doc & assets
+  // Document: [doc, assets] only. Engine.setDocument's generation guard drops superseded loads.
   useEffect(() => {
-    if (engineRef.current) {
-      engineRef.current.setDocument(doc, assets).then(() => {
-        const currentTime = time ?? playhead;
-        engineRef.current?.renderAt(currentTime);
-      });
-    }
-  }, [doc, assets, playhead, time]);
-
-  // Playhead & animation loop
-  useEffect(() => {
-    const engine = engineRef.current;
     if (!engine) return;
+    let cancelled = false;
+    void engine.setDocument(doc, assets).then(() => {
+      if (cancelled) return;
+      engine.renderAt(playheadRef.current);
+      if (!readyReportedRef.current) {
+        readyReportedRef.current = true;
+        onEngineReadyRef.current?.(engine);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [engine, doc, assets]);
 
-    if (!playing) {
-      // Paused: restore full quality and render at current time
-      engine.setSupersample(1.5);
-      const currentTime = time ?? playhead;
-      engine.renderAt(currentTime);
-      return;
-    }
+  // Controlled time (lab stills and the lab scrubber).
+  useEffect(() => {
+    timeRef.current = time;
+    if (time === undefined) return;
+    playheadRef.current = time;
+    engine?.renderAt(time);
+  }, [engine, time]);
 
-    let rafId: number;
-    let lastTime = performance.now();
-    let slowFramesCount = 0;
-    let isDegraded = false;
+  // Paused rendering: follow store playhead changes outside React's render cycle.
+  useEffect(() => {
+    if (!engine) return;
+    return useUIStore.subscribe((state, prev) => {
+      if (state.playhead === prev.playhead) return;
+      if (state.playing) {
+        // A seek from the timeline during playback moves the playback clock.
+        if (state.playhead !== lastWrittenRef.current) playheadRef.current = state.playhead;
+        return;
+      }
+      if (timeRef.current !== undefined) return;
+      playheadRef.current = state.playhead;
+      engine.renderAt(state.playhead);
+    });
+  }, [engine]);
 
-    const { total } = schedule(doc);
+  // Playback: one requestAnimationFrame loop per play, keyed on `playing`.
+  useEffect(() => {
+    if (!engine || !playing) return;
 
-    function loop(now: number) {
-      const deltaSec = (now - lastTime) / 1000;
-      const frameDurationMs = now - lastTime;
-      lastTime = now;
+    const writePlayhead = (value: number) => {
+      lastWrittenRef.current = value;
+      useUIStore.getState().setPlayhead(value);
+    };
 
-      // Adaptive quality: drop supersample if average frame time > 20ms for 30 frames
-      if (frameDurationMs > 20) {
-        slowFramesCount++;
-        if (slowFramesCount >= 30 && !isDegraded) {
-          isDegraded = true;
-          engine?.setSupersample(1);
+    // Play at the end of a non-looping document starts over.
+    if (playheadRef.current >= schedule(docRef.current).total) playheadRef.current = 0;
+
+    let rafId = 0;
+    let lastNow: number | null = null;
+    let lastWriteNow = -Infinity;
+    let slowFrames = 0;
+    let degraded = false;
+
+    const tick = (now: number) => {
+      const frameMs = lastNow === null ? 0 : now - lastNow;
+      lastNow = now;
+
+      const currentDoc = docRef.current;
+      const { total } = schedule(currentDoc);
+      let t = playheadRef.current + frameMs / 1000;
+      let ended = false;
+      if (t >= total) {
+        if (currentDoc.loop && total > 0) {
+          t %= total;
+        } else {
+          t = total;
+          ended = true;
+        }
+      }
+      playheadRef.current = t;
+      engine.renderAt(t);
+
+      if (frameMs > SLOW_FRAME_MS) {
+        slowFrames++;
+        if (slowFrames >= SLOW_FRAME_LIMIT && !degraded) {
+          degraded = true;
+          engine.setSupersample(1);
         }
       } else {
-        slowFramesCount = Math.max(0, slowFramesCount - 1);
+        slowFrames = Math.max(0, slowFrames - 1);
       }
 
-      // Advance playhead
-      const nextTime = total > 0 ? (playhead + deltaSec) % total : 0;
-      setPlayhead(nextTime);
-      engine?.renderAt(nextTime);
+      if (ended) {
+        writePlayhead(t);
+        useUIStore.getState().setPlaying(false);
+        return;
+      }
+      if (now - lastWriteNow >= STORE_WRITE_INTERVAL_MS) {
+        lastWriteNow = now;
+        writePlayhead(t);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
 
-      rafId = requestAnimationFrame(loop);
-    }
-
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [playing, doc, playhead, time, setPlayhead]);
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (degraded) engine.setSupersample(supersampleRef.current);
+      writePlayhead(playheadRef.current);
+      engine.renderAt(playheadRef.current);
+    };
+  }, [engine, playing]);
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!onCanvasClick || !canvasRef.current || !engineRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    const x = (e.clientX - rect.left) * dpr;
-    const y = (e.clientY - rect.top) * dpr;
-    const pickResult = engineRef.current.pick(x, y);
-    onCanvasClick(e, pickResult);
+    const canvas = canvasRef.current;
+    if (!onCanvasClick || !canvas || !engine) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    onCanvasClick(e, engine.pick(x, y));
   };
 
   return (

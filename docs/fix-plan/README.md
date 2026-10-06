@@ -89,7 +89,7 @@ The previous run failed mainly because work was marked done without being looked
 | [F02](tasks/F02-color-pipeline.md) | Colour pipeline: linear working space, sRGB output, exact colours | M | F00 | Done |
 | [F03](tasks/F03-asset-loading-and-engine-diffing.md) | Load assets for every layout, engine diffing, texture cache | M | F01 | Done |
 | [F04](tasks/F04-lab-real-assets.md) | `/lab` and template previews use real demo assets | S | F03 | Done |
-| [F05](tasks/F05-stage-and-playback.md) | Stage sizing and preview playback loop | M | F03 | Not started |
+| [F05](tasks/F05-stage-and-playback.md) | Stage sizing and preview playback loop | M | F03 | Done |
 | [F06](tasks/F06-first-run-and-templates.md) | First run and template flow | S | F05 | Not started |
 | [F07](tasks/F07-previews-and-thumbnails.md) | Real template previews, shot and project thumbnails | M | F04, F06 | Not started |
 | [F08](tasks/F08-ui-polish.md) | Inspector and editor UI polish | M | F06 | Not started |
