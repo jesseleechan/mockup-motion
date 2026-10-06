@@ -140,7 +140,8 @@ async function expectCleanLayout(page: Page, context: string, minFields: number)
 
 test.describe("F09 export dialog", () => {
   test("layout guard at 1280×800: settings, progress and result views", async ({ page }) => {
-    test.setTimeout(150_000);
+    // Timeouts allow for the GitHub runner, about 5x slower than a local SwiftShader run.
+    test.setTimeout(420_000);
     await page.setViewportSize({ width: 1280, height: 800 });
     await openEditorWithDemo(page);
     await useOneSecondDoc(page);
@@ -174,15 +175,15 @@ test.describe("F09 export dialog", () => {
     await choose(page, dialog, "Format", /WebM/);
     await choose(page, dialog, "Resolution", /720p/);
     await dialog.getByRole("button", { name: "Start export" }).click();
-    await expect(dialog.getByText(/Rendering frame \d+ of 30/)).toBeVisible({ timeout: 30_000 });
+    await expect(dialog.getByText(/Rendering frame \d+ of 30/)).toBeVisible({ timeout: 120_000 });
     await expectCleanLayout(page, "Progress", 0);
-    await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 90_000 });
+    await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 180_000 });
     await expect(dialog.getByTestId("export-verification")).toContainText("Verified WebM");
     await expectCleanLayout(page, "Result", 0);
   });
 
   test("the summary shows the probed container, and the file matches it", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(300_000);
     // This browser "lacks" H.264, and the probe waits until the test releases it.
     await page.addInitScript(() => {
       const original = VideoEncoder.isConfigSupported.bind(VideoEncoder);
@@ -219,7 +220,7 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByRole("status")).toContainText("this exports WebM (VP9)");
 
     await dialog.getByRole("button", { name: "Start export" }).click();
-    await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 90_000 });
+    await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 180_000 });
     const download = dialog.getByRole("button", { name: /Download/ });
     await expect(download).toHaveAttribute("download", /\.webm$/);
     await expect(download).toHaveText("Download WebM");
@@ -228,12 +229,12 @@ test.describe("F09 export dialog", () => {
   });
 
   test("cancel stops the worker and returns to the settings", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(300_000);
     await openEditorWithDemo(page);
     const dialog = await openExportDialog(page);
     await choose(page, dialog, "Format", /WebM/);
     await dialog.getByRole("button", { name: "Start export" }).click();
-    await expect(dialog.getByText(/Rendering frame \d+ of \d+/)).toBeVisible({ timeout: 60_000 });
+    await expect(dialog.getByText(/Rendering frame \d+ of \d+/)).toBeVisible({ timeout: 120_000 });
     const workers = () =>
       page.evaluate(() => (window as unknown as EditorWindow).__liveExportWorkers?.() ?? -1);
     expect(await workers(), "one export worker while rendering").toBe(1);

@@ -93,6 +93,8 @@ test.describe("WP-10 Text & Typography E2E & Visual Verification", () => {
   test("exports 2s MP4 video with text layer via WebCodecs and verifies valid output", async ({
     page,
   }) => {
+    // About 17 s locally; the GitHub runner is about 5x slower.
+    test.setTimeout(180_000);
     await page.goto("/lab?fixture=text-title&t=0&aspect=16:9");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
 

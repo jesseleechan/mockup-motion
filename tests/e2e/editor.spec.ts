@@ -28,8 +28,9 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test("full flow: empty state -> demo content -> palette change -> camera change -> undo/redo -> 1080p export", async ({
     page,
   }) => {
-    // The 6 s 1080p WebM export renders about 2 frames/s under SwiftShader (F09).
-    test.setTimeout(240_000);
+    // The 6 s 1080p WebM export takes about 90 s under local SwiftShader and about 5x
+    // longer on the GitHub runner (F09).
+    test.setTimeout(720_000);
     const consoleErrors: string[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") {
@@ -111,7 +112,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await startExportBtn.click();
 
     // Wait for export to finish
-    await expect(page.getByText("Export complete")).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByText("Export complete")).toBeVisible({ timeout: 600_000 });
     const downloadBtn = page.getByRole("button", { name: /Download/i });
     await expect(downloadBtn).toBeVisible();
 

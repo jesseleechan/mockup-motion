@@ -76,7 +76,8 @@ async function openLab(page: Page) {
 
 test.describe("F09 export correctness", () => {
   test("motion blur keeps a fade transition in the exported video", async ({ page }) => {
-    test.setTimeout(120_000);
+    // Timeouts allow for the GitHub runner, about 5x slower than a local SwiftShader run.
+    test.setTimeout(300_000);
     await openLab(page);
     const result = await page.evaluate(async () => {
       const w = window as unknown as LabWindow;
@@ -84,7 +85,7 @@ test.describe("F09 export correctness", () => {
       const doc = structuredClone(w.__fixtures?.["device-card-frontal"]);
       if (!media || !doc || !w.__exportWithEngine || !w.__createLabAssetProvider)
         throw new Error("Lab export hooks are unavailable");
-      // Two static title shots, black then white, with a 0.6 s linear fade: 1.4 s to 2.0 s.
+      // Two static 1 s title shots, black then white, with a 0.6 s linear fade: 0.4 s to 1.0 s.
       doc.loop = false;
       doc.style.background = { kind: "solid", color: "#000000" };
       doc.style.grain = 0;
@@ -92,7 +93,7 @@ test.describe("F09 export correctness", () => {
       const shot = doc.shots[0];
       shot.layout = { kind: "title" };
       shot.texts = [];
-      shot.duration = 2;
+      shot.duration = 1;
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
       doc.shots = [
         shot,
@@ -121,8 +122,8 @@ test.describe("F09 export correctness", () => {
         if (!track) throw new Error("Export has no video track");
         const sink = new media.CanvasSink(track);
         const lumas: number[][] = [];
-        // Just after the transition start, midpoint and end frames (42, 51 and 60 at 30 fps)
-        for (const t of [1.405, 1.705, 2.005]) {
+        // Just after the transition start, midpoint and end frames (12, 21 and 30 at 30 fps)
+        for (const t of [0.405, 0.705, 1.005]) {
           const decoded = await sink.getCanvas(t);
           if (!decoded) throw new Error(`No decoded frame at ${t}s`);
           const ctx = decoded.canvas.getContext("2d") as CanvasRenderingContext2D | null;
@@ -156,7 +157,7 @@ test.describe("F09 export correctness", () => {
   });
 
   test("a responsive-pair export is upright and fills the phone screen", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(300_000);
     await openLab(page);
     const frame = await page.evaluate(async () => {
       const w = window as unknown as LabWindow;
@@ -395,7 +396,10 @@ const ONE_FRAME = 1 / 30;
 test.describe("F09 destination presets export at their size and length", () => {
   for (const preset of PRESETS) {
     test(`${preset.card}: ${preset.width}×${preset.height}`, async ({ page }) => {
-      test.setTimeout(preset.width >= 3840 ? 300_000 : 150_000);
+      // Timeouts allow for the GitHub runner, about 5x slower than a local SwiftShader run;
+      // a bundle renders two videos.
+      const exportTimeout = preset.width >= 3840 ? 540_000 : preset.bundle ? 300_000 : 200_000;
+      test.setTimeout(exportTimeout + 120_000);
       await openEditorWithDemo(page);
       await useOneSecondDoc(page);
       const dialog = await openExportDialog(page);
@@ -408,7 +412,7 @@ test.describe("F09 destination presets export at their size and length", () => {
 
       await dialog.getByRole("button", { name: "Start export" }).click();
       await expect(dialog.getByText("Export complete")).toBeVisible({
-        timeout: preset.width >= 3840 ? 280_000 : 130_000,
+        timeout: exportTimeout,
       });
       const download = dialog.getByRole("button", { name: /Download/ });
       const filename = (await download.getAttribute("download")) ?? "";
