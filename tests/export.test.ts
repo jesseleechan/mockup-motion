@@ -155,6 +155,28 @@ describe("WP-16: Export v2, Destinations, Web-Embed Bundle, and GIF", () => {
       expect(fileNames).toContain("embed.html");
       expect(fileNames.length).toBe(4);
     });
+
+    it("createWebEmbedBundle leaves out the MP4 when the browser could not encode one (F09)", async () => {
+      const webmBlob = new Blob([new Uint8Array([5, 6, 7, 8])], { type: "video/webm" });
+      const posterBlob = new Blob([new Uint8Array([9, 10, 11, 12])], { type: "image/webp" });
+
+      const { zipBlob, embedSnippet } = await createWebEmbedBundle({
+        projectName: "Product Launch",
+        width: 1920,
+        height: 1080,
+        webmBlob,
+        posterBlob,
+      });
+
+      const unzipped = unzipSync(new Uint8Array(await zipBlob.arrayBuffer()));
+      expect(Object.keys(unzipped).sort()).toEqual([
+        "embed.html",
+        "product-launch-poster.webp",
+        "product-launch.webm",
+      ]);
+      expect(embedSnippet).toContain('<source src="product-launch.webm"');
+      expect(embedSnippet).not.toContain(".mp4");
+    });
   });
 
   describe("GIF Export (src/export/gif.ts)", () => {

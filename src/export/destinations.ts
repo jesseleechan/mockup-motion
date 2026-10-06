@@ -8,7 +8,13 @@
  * - Presentation 4K: 16:9 UHD (3840x2160), 30 fps, high bitrate master MP4.
  */
 
-import type { Aspect, DestinationId, ExportFormat, ExportQuality, ExportSettings } from "../doc/types";
+import type {
+  Aspect,
+  DestinationId,
+  ExportFormat,
+  ExportQuality,
+  ExportSettings,
+} from "../doc/types";
 
 export interface DestinationPreset {
   id: DestinationId;
@@ -200,17 +206,45 @@ export function keyframeIntervalFor(quality: ExportQuality): number {
 }
 
 /**
- * Estimates final file size in bytes for a video export.
+ * Motion blur (quality-bar §5, WP-08): 8 sub-frame samples over a 180° shutter, i.e. half
+ * a frame interval centred on the frame time.
+ */
+export const MOTION_BLUR_SAMPLES = 8;
+
+export function motionBlurShutter(fps: number): number {
+  return 0.5 / Math.max(1, fps);
+}
+
+/** GIF output: short side capped at 960 px (WP-16 §7), 10–20 fps. */
+export function gifOutput(
+  aspect: Aspect,
+  resolution: number,
+  fps: number,
+): { width: number; height: number; fps: number } {
+  return {
+    ...outputDimensions(aspect, Math.min(960, resolution)),
+    fps: Math.min(20, Math.max(10, fps || 15)),
+  };
+}
+
+/** Which videos a web bundle holds; each needs its encoder in this browser. */
+export interface BundleParts {
+  mp4: boolean;
+  webm: boolean;
+}
+
+/**
+ * Estimates final file size in bytes for an export, from the bitrate the encoder is given.
  */
 export function estimateFileSize(
   settings: ExportSettings,
   aspect: Aspect,
   durationSeconds: number,
+  bundleParts: BundleParts = { mp4: true, webm: true },
 ): number {
   if (settings.format === "gif") {
-    const { width, height } = outputDimensions(aspect, Math.min(960, settings.resolution));
-    const gifFps = Math.min(20, settings.fps);
-    const totalFrames = Math.max(1, Math.round(durationSeconds * gifFps));
+    const { width, height, fps } = gifOutput(aspect, settings.resolution, settings.fps);
+    const totalFrames = Math.max(1, Math.round(durationSeconds * fps));
     // GIFs with global palette and dither average ~0.25 bytes per pixel per frame
     return Math.round(width * height * totalFrames * 0.25);
   }
@@ -222,21 +256,18 @@ export function estimateFileSize(
   }
 
   const { width, height } = outputDimensions(aspect, settings.resolution);
-  const codec = settings.format === "webm" ? "vp9" : "avc";
-  const bitrate = calculateBitrate(settings.quality, codec, width, height, settings.fps);
-
   // Bitrate is in bits/s -> divide by 8 for bytes
-  let sizeBytes = (bitrate * durationSeconds) / 8;
+  const videoBytes = (codec: "avc" | "vp9") =>
+    (calculateBitrate(settings.quality, codec, width, height, settings.fps) * durationSeconds) / 8;
 
-  // Bundle contains MP4 + WebM + poster (~400KB)
+  // Bundle holds the MP4 and/or WebM, both at the chosen quality, plus a poster (~400 KB)
   if (settings.format === "bundle") {
-    const webmBitrate = calculateBitrate("web", "vp9", width, height, settings.fps);
-    const mp4Size = sizeBytes;
-    const webmSize = (webmBitrate * durationSeconds) / 8;
-    sizeBytes = mp4Size + webmSize + 400_000;
+    const mp4 = bundleParts.mp4 ? videoBytes("avc") : 0;
+    const webm = bundleParts.webm ? videoBytes("vp9") : 0;
+    return Math.round(mp4 + webm + 400_000);
   }
 
-  return Math.round(sizeBytes);
+  return Math.round(videoBytes(settings.format === "webm" ? "vp9" : "avc"));
 }
 
 /**

@@ -4,8 +4,10 @@ export interface WebEmbedBundleOptions {
   projectName: string;
   width: number;
   height: number;
-  mp4Blob: Blob;
-  webmBlob: Blob;
+  /** Omitted when this browser can't encode H.264. */
+  mp4Blob?: Blob;
+  /** Omitted when this browser can't encode VP9. */
+  webmBlob?: Blob;
   posterBlob: Blob;
   webmCodec?: "av1" | "vp9";
 }
@@ -26,14 +28,20 @@ export function generateEmbedHtml(
   width: number,
   height: number,
   webmCodec: "av1" | "vp9" = "vp9",
+  sources: { mp4: boolean; webm: boolean } = { mp4: true, webm: true },
 ): string {
-  const codecString =
-    webmCodec === "av1" ? "av01.0.08M.08" : "vp09.00.41.08";
+  const codecString = webmCodec === "av1" ? "av01.0.08M.08" : "vp09.00.41.08";
+
+  const sourceTags = [
+    sources.webm &&
+      `  <source src="${baseName}.webm" type='video/webm; codecs="${codecString}"'>\n`,
+    sources.mp4 && `  <source src="${baseName}.mp4" type='video/mp4'>\n`,
+  ]
+    .filter(Boolean)
+    .join("");
 
   return `<video autoplay muted loop playsinline preload="metadata" poster="${baseName}-poster.webp" width="${width}" height="${height}">
-  <source src="${baseName}.webm" type='video/webm; codecs="${codecString}"'>
-  <source src="${baseName}.mp4" type='video/mp4'>
-</video>
+${sourceTags}</video>
 <!-- Pause video if user prefers reduced motion (quality-bar & accessibility) -->
 <script>
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -58,9 +66,11 @@ export async function createWebEmbedBundle(
 ): Promise<{ zipBlob: Blob; embedSnippet: string }> {
   const baseName = sanitizeFileName(options.projectName);
 
+  const { mp4Blob, webmBlob } = options;
+  if (!mp4Blob && !webmBlob) throw new Error("A web bundle needs an MP4 or a WebM video.");
   const [mp4Buffer, webmBuffer, posterBuffer] = await Promise.all([
-    options.mp4Blob.arrayBuffer(),
-    options.webmBlob.arrayBuffer(),
+    mp4Blob?.arrayBuffer(),
+    webmBlob?.arrayBuffer(),
     options.posterBlob.arrayBuffer(),
   ]);
 
@@ -69,11 +79,12 @@ export async function createWebEmbedBundle(
     options.width,
     options.height,
     options.webmCodec ?? "vp9",
+    { mp4: Boolean(mp4Buffer), webm: Boolean(webmBuffer) },
   );
 
   const zipFiles: Record<string, Uint8Array> = {
-    [`${baseName}.mp4`]: new Uint8Array(mp4Buffer),
-    [`${baseName}.webm`]: new Uint8Array(webmBuffer),
+    ...(mp4Buffer ? { [`${baseName}.mp4`]: new Uint8Array(mp4Buffer) } : {}),
+    ...(webmBuffer ? { [`${baseName}.webm`]: new Uint8Array(webmBuffer) } : {}),
     [`${baseName}-poster.webp`]: new Uint8Array(posterBuffer),
     "embed.html": strToU8(embedSnippet),
   };

@@ -3,7 +3,13 @@ import type { Engine } from "../../src/engine/Engine";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { exportWithEngine } from "../../src/export/engine-export";
 import type { createLabAssetProvider } from "../../src/lab/asset-provider";
-import { avgRegion, expectRgbNear, inkBounds, type PixelBuffer } from "../helpers/pixels";
+import {
+  avgRegion,
+  expectRgbNear,
+  inkBounds,
+  quadrantCentroids,
+  type PixelBuffer,
+} from "../helpers/pixels";
 
 declare global {
   interface Window {
@@ -78,39 +84,6 @@ async function prepareQuadrants(
     engine.renderAt(10);
     return { start, end: { width: 1280, height: 720, data: engine.readPixels() } };
   }, device);
-}
-
-function quadrantCentroids(pixels: PixelBuffer) {
-  const points = {
-    red: { x: 0, y: 0, count: 0 },
-    green: { x: 0, y: 0, count: 0 },
-    blue: { x: 0, y: 0, count: 0 },
-    yellow: { x: 0, y: 0, count: 0 },
-  };
-  for (let y = 0; y < pixels.height; y++) {
-    for (let x = 0; x < pixels.width; x++) {
-      const i = (y * pixels.width + x) * 4;
-      const r = pixels.data[i];
-      const g = pixels.data[i + 1];
-      const b = pixels.data[i + 2];
-      const point = r > 140 && g < 100 && b < 100 ? points.red
-        : g > 140 && r < 100 && b < 100 ? points.green
-          : b > 140 && r < 100 && g < 100 ? points.blue
-            : r > 140 && g > 140 && b < 100 ? points.yellow : null;
-      if (point) {
-        point.x += x;
-        point.y += y;
-        point.count++;
-      }
-    }
-  }
-  for (const point of Object.values(points)) {
-    if (point.count > 0) {
-      point.x /= point.count;
-      point.y /= point.count;
-    }
-  }
-  return points;
 }
 
 for (const device of ["card", "browser", "phone", "tablet", "laptop"] as const) {

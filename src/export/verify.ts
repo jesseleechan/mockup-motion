@@ -41,12 +41,24 @@ export async function verifyExportBlob(
     };
   }
 
-  // Handle GIF or image types (mediabunny Input expects container video formats)
+  // GIF and still images: Mediabunny reads video containers only, so decode the image and
+  // check its size (Node has no image decoder; there the check is skipped).
   if (blob.type === "image/gif" || blob.type === "image/png" || blob.type === "image/webp") {
-    return {
-      valid: true,
-      warnings: [],
-    };
+    if (typeof createImageBitmap !== "function") return { valid: true, warnings: [] };
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(blob);
+    } catch (error) {
+      return { valid: false, warnings: [`Could not decode the exported image: ${String(error)}`] };
+    }
+    const actual = { width: bitmap.width, height: bitmap.height, duration: 0 };
+    bitmap.close();
+    if (actual.width !== expected.width || actual.height !== expected.height) {
+      warnings.push(
+        `Dimension mismatch: expected ${expected.width}×${expected.height}, got ${actual.width}×${actual.height}.`,
+      );
+    }
+    return { valid: warnings.length === 0, actual, warnings };
   }
 
   const source = new BlobSource(blob);

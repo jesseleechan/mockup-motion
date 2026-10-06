@@ -84,3 +84,43 @@ export function inkBounds(
   }
   return maxX < minX ? null : { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
 }
+
+/** Centroids and counts of the pure red, green, blue and yellow quadrant fixture colours (F01). */
+export function quadrantCentroids(pixels: PixelBuffer) {
+  const points = {
+    red: { x: 0, y: 0, count: 0 },
+    green: { x: 0, y: 0, count: 0 },
+    blue: { x: 0, y: 0, count: 0 },
+    yellow: { x: 0, y: 0, count: 0 },
+  };
+  for (let y = 0; y < pixels.height; y++) {
+    for (let x = 0; x < pixels.width; x++) {
+      const i = (y * pixels.width + x) * 4;
+      const r = pixels.data[i];
+      const g = pixels.data[i + 1];
+      const b = pixels.data[i + 2];
+      const point =
+        r > 140 && g < 100 && b < 100
+          ? points.red
+          : g > 140 && r < 100 && b < 100
+            ? points.green
+            : b > 140 && r < 100 && g < 100
+              ? points.blue
+              : r > 140 && g > 140 && b < 100
+                ? points.yellow
+                : null;
+      if (point) {
+        point.x += x;
+        point.y += y;
+        point.count++;
+      }
+    }
+  }
+  for (const point of Object.values(points)) {
+    if (point.count > 0) {
+      point.x /= point.count;
+      point.y /= point.count;
+    }
+  }
+  return points;
+}

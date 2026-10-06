@@ -1,0 +1,23 @@
+{
+  "filename": "untitled-presentation-16x9.mp4",
+  "expected": {
+    "width": 1280,
+    "height": 720,
+    "duration": 2,
+    "fps": 30,
+    "codec": "avc",
+    "audio": false
+  },
+  "size": 753347,
+  "mime": "video/mp4",
+  "verify": {
+    "valid": true,
+    "actual": {
+      "width": 1280,
+      "height": 720,
+      "duration": 2,
+      "codec": "avc"
+    },
+    "warnings": []
+  }
+}

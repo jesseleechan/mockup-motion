@@ -364,6 +364,8 @@ export class Engine {
   /** Diff against the previous doc; rebuild only what changed; resolves when textures are ready. */
   setDocument(doc: ProjectDoc, assets: AssetProvider): Promise<void>;
   renderAt(t: number): void; // synchronous; deterministic
+  /** Active layers and transition blend into a linear target; no vignette, encoding or grain. */
+  renderComposite(t: number, target: THREE.WebGLRenderTarget): FrameState | null;
   renderAccumulated(t: number, shutter: number, samples: number): void; // motion blur (export)
   resize(width: number, height: number): void;
   /** Hit-test output-pixel coordinates; returns the LayoutNode id and screen UV (0..1), or null. */
@@ -384,9 +386,9 @@ export class Engine {
 
 `setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
 
-Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`), and the final pass handles transition blend, grain, vignette, dither, and downsample to the canvas.
+Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
-Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation uses a linear half-float target before this final pass.
+Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation averages `renderComposite` results (transitions included) in a linear half-float target, then runs the final pass once. Exports use 8 samples over a 180° shutter (`0.5 / fps`).
 
 `TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 

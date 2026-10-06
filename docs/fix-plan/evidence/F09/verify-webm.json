@@ -1,0 +1,23 @@
+{
+  "filename": "untitled-presentation-16x9.webm",
+  "expected": {
+    "width": 1280,
+    "height": 720,
+    "duration": 2,
+    "fps": 30,
+    "codec": "vp9",
+    "audio": false
+  },
+  "size": 305887,
+  "mime": "video/webm",
+  "verify": {
+    "valid": true,
+    "actual": {
+      "width": 1280,
+      "height": 720,
+      "duration": 2,
+      "codec": "vp9"
+    },
+    "warnings": []
+  }
+}

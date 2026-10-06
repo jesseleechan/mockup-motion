@@ -1,9 +1,11 @@
 import * as THREE from "three";
-import type { Style, Transition } from "../../doc/types";
+import type { Style } from "../../doc/types";
 
 // Render targets hold linear-light sRGB-primaries values (sRGB byte targets
 // encode on write and decode on sampling). Only this final pass explicitly
 // converts to sRGB; grain and dither follow that conversion. No colorspace include.
+// Its input is one linear composite (CompositePass output or the motion-blur
+// accumulation), so every frame is finished exactly once.
 
 const finalVertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -15,14 +17,7 @@ const finalVertexShader = /* glsl */ `
 
 const finalFragmentShader = /* glsl */ `
   varying vec2 vUv;
-  uniform sampler2D mapA;
-  uniform sampler2D mapB;
-  uniform float weightA;
-  uniform float weightB;
-  uniform bool isTransition;
-  uniform int transitionKind; // 0 = cut, 1 = fade, 2 = blur, 3 = push, 4 = zoom, 5 = wipe
-  uniform float uTransitionProgress; // 0..1
-  uniform int uTransitionDirection; // 0 = left, 1 = right, 2 = up, 3 = down
+  uniform sampler2D map;
 
   uniform float uSupersample;
   uniform vec2 uTexelSize;
@@ -72,105 +67,8 @@ const finalFragmentShader = /* glsl */ `
     }
   }
 
-  // Multi-tap blur for the blur transition
-  vec4 sampleBlur(sampler2D tex, vec2 uv, float radius) {
-    if (radius <= 0.0001) return sampleDownsampled(tex, uv, uTexelSize);
-    vec4 sum = vec4(0.0);
-    float total = 0.0;
-    for (float x = -2.0; x <= 2.0; x += 1.0) {
-      for (float y = -2.0; y <= 2.0; y += 1.0) {
-        float w = exp(-(x * x + y * y) / 2.0);
-        vec2 offset = vec2(x, y) * radius * vec2(1.0 / uAspect, 1.0);
-        sum += sampleDownsampled(tex, clamp(uv + offset, 0.0, 1.0), uTexelSize) * w;
-        total += w;
-      }
-    }
-    return sum / total;
-  }
-
   void main() {
-    vec4 baseColor = sampleDownsampled(mapA, vUv, uTexelSize);
-
-    if (isTransition) {
-      float p = clamp(uTransitionProgress, 0.0, 1.0);
-
-      if (transitionKind == 1) {
-        // Fade
-        vec4 colA = sampleDownsampled(mapA, vUv, uTexelSize);
-        vec4 colB = sampleDownsampled(mapB, vUv, uTexelSize);
-        baseColor = mix(colA, colB, p);
-      } else if (transitionKind == 2) {
-        // Blur (peaks at 1.2% frame height at p = 0.5)
-        float blurR = (1.0 - 2.0 * abs(p - 0.5)) * 0.012;
-        vec4 bA = sampleBlur(mapA, vUv, blurR);
-        vec4 bB = sampleBlur(mapB, vUv, blurR);
-        baseColor = mix(bA, bB, p);
-      } else if (transitionKind == 3) {
-        // Push: outgoing slides out, incoming slides in without gap
-        vec2 dir = vec2(-1.0, 0.0); // left default
-        bool inIncoming = false;
-        vec2 uvA = vUv;
-        vec2 uvB = vUv;
-
-        if (uTransitionDirection == 1) { // right
-          dir = vec2(1.0, 0.0);
-          inIncoming = vUv.x <= p;
-          uvA = vUv - vec2(p, 0.0);
-          uvB = vUv + vec2(1.0 - p, 0.0);
-        } else if (uTransitionDirection == 2) { // up
-          dir = vec2(0.0, 1.0);
-          inIncoming = vUv.y >= 1.0 - p;
-          uvA = vUv - vec2(0.0, p);
-          uvB = vUv - vec2(0.0, p - 1.0);
-        } else if (uTransitionDirection == 3) { // down
-          dir = vec2(0.0, -1.0);
-          inIncoming = vUv.y <= p;
-          uvA = vUv + vec2(0.0, p);
-          uvB = vUv + vec2(0.0, p - 1.0);
-        } else { // left
-          inIncoming = vUv.x >= 1.0 - p;
-          uvA = vUv + vec2(p, 0.0);
-          uvB = vUv - vec2(1.0 - p, 0.0);
-        }
-
-        if (inIncoming) {
-          baseColor = sampleDownsampled(mapB, clamp(uvB, 0.0, 1.0), uTexelSize);
-        } else {
-          baseColor = sampleDownsampled(mapA, clamp(uvA, 0.0, 1.0), uTexelSize);
-        }
-      } else if (transitionKind == 4) {
-        // Zoom: incoming 1.06 -> 1, outgoing 1 -> 0.96 with fade
-        float scaleA = mix(1.0, 0.96, p);
-        float scaleB = mix(1.06, 1.0, p);
-        vec2 uvA = (vUv - 0.5) / scaleA + 0.5;
-        vec2 uvB = (vUv - 0.5) / scaleB + 0.5;
-        vec4 zA = sampleDownsampled(mapA, clamp(uvA, 0.0, 1.0), uTexelSize);
-        vec4 zB = sampleDownsampled(mapB, clamp(uvB, 0.0, 1.0), uTexelSize);
-        baseColor = mix(zA, zB, p);
-      } else if (transitionKind == 5) {
-        // Wipe: soft diagonal mask, 6% feather
-        float feather = 0.06;
-        float d = (vUv.x + (1.0 - vUv.y)) * 0.5; // diagonal
-        if (uTransitionDirection == 0) d = vUv.x;
-        else if (uTransitionDirection == 1) d = 1.0 - vUv.x;
-        else if (uTransitionDirection == 2) d = 1.0 - vUv.y;
-        else if (uTransitionDirection == 3) d = vUv.y;
-
-        float edge = p * (1.0 + feather * 2.0) - feather;
-        float factor = smoothstep(edge - feather, edge + feather, d);
-
-        vec4 colA = sampleDownsampled(mapA, vUv, uTexelSize);
-        vec4 colB = sampleDownsampled(mapB, vUv, uTexelSize);
-        baseColor = mix(colB, colA, factor);
-      } else {
-        // Cut or simple blend
-        vec4 colA = sampleDownsampled(mapA, vUv, uTexelSize);
-        vec4 colB = sampleDownsampled(mapB, vUv, uTexelSize);
-        baseColor = colA * weightA + colB * weightB;
-      }
-    }
-
-    vec3 color = baseColor.rgb;
+    vec3 color = sampleDownsampled(map, vUv, uTexelSize).rgb;
 
     // 2. Elliptical vignette (aspect-correct, Style.vignette 0-12%, default 6%)
     if (uVignette > 0.0) {
@@ -210,8 +108,8 @@ export interface FinalPassOptions {
 }
 
 /**
- * Final post-processing pass: transition blend (cut, fade, blur, push, zoom, wipe) ->
- * 13-tap downsample -> aspect-correct vignette -> monochrome grain -> triangular dither.
+ * Final post-processing pass: 13-tap downsample -> aspect-correct vignette -> sRGB ->
+ * monochrome grain -> triangular dither. Transitions are blended earlier (CompositePass).
  */
 export class FinalPass {
   private camera: THREE.OrthographicCamera;
@@ -219,15 +117,7 @@ export class FinalPass {
   private material: THREE.ShaderMaterial;
   private mesh: THREE.Mesh;
 
-  private width: number;
-  private height: number;
-  private supersample: number;
-
   constructor(opts: FinalPassOptions) {
-    this.width = opts.width;
-    this.height = opts.height;
-    this.supersample = opts.supersample;
-
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.scene = new THREE.Scene();
 
@@ -239,14 +129,7 @@ export class FinalPass {
       vertexShader: finalVertexShader,
       fragmentShader: finalFragmentShader,
       uniforms: {
-        mapA: { value: null },
-        mapB: { value: null },
-        weightA: { value: 1.0 },
-        weightB: { value: 0.0 },
-        isTransition: { value: false },
-        transitionKind: { value: 0 },
-        uTransitionProgress: { value: 0.0 },
-        uTransitionDirection: { value: 0 },
+        map: { value: null },
         uSupersample: { value: ss },
         uTexelSize: { value: new THREE.Vector2(1 / internalW, 1 / internalH) },
         uAspect: { value: opts.width / opts.height },
@@ -264,10 +147,6 @@ export class FinalPass {
   }
 
   resize(width: number, height: number, supersample: number): void {
-    this.width = width;
-    this.height = height;
-    this.supersample = supersample;
-
     const internalW = Math.round(width * supersample);
     const internalH = Math.round(height * supersample);
 
@@ -276,74 +155,15 @@ export class FinalPass {
     this.material.uniforms.uAspect.value = width / height;
   }
 
+  /** Finishes the linear composite in `source` into `outputTarget` (null: the canvas). */
   render(
     renderer: THREE.WebGLRenderer,
-    targetA: THREE.WebGLRenderTarget,
-    targetB: THREE.WebGLRenderTarget,
+    source: THREE.WebGLRenderTarget,
     style: Style,
     t: number,
-    layers: { weight: number }[],
-    transition?: {
-      kind: Transition["kind"];
-      progress: number;
-      direction?: Transition["direction"];
-    },
     outputTarget: THREE.WebGLRenderTarget | null = null,
   ): void {
-    const isTransition = layers.length > 1 && layers[1].weight > 0;
-
-    this.material.uniforms.mapA.value = targetA.texture;
-    this.material.uniforms.mapB.value = targetB.texture;
-    this.material.uniforms.weightA.value = layers[0]?.weight ?? 1.0;
-    this.material.uniforms.weightB.value = layers[1]?.weight ?? 0.0;
-    this.material.uniforms.isTransition.value = isTransition;
-
-    let kindCode = 0;
-    if (transition) {
-      switch (transition.kind) {
-        case "fade":
-          kindCode = 1;
-          break;
-        case "blur":
-          kindCode = 2;
-          break;
-        case "push":
-          kindCode = 3;
-          break;
-        case "zoom":
-          kindCode = 4;
-          break;
-        case "wipe":
-          kindCode = 5;
-          break;
-        case "cut":
-        default:
-          kindCode = 0;
-          break;
-      }
-    }
-    this.material.uniforms.transitionKind.value = kindCode;
-    this.material.uniforms.uTransitionProgress.value = transition?.progress ?? 0;
-
-    let dirCode = 0;
-    if (transition?.direction) {
-      switch (transition.direction) {
-        case "right":
-          dirCode = 1;
-          break;
-        case "up":
-          dirCode = 2;
-          break;
-        case "down":
-          dirCode = 3;
-          break;
-        case "left":
-        default:
-          dirCode = 0;
-          break;
-      }
-    }
-    this.material.uniforms.uTransitionDirection.value = dirCode;
+    this.material.uniforms.map.value = source.texture;
 
     // Quality-bar values
     this.material.uniforms.uVignette.value = style.vignette ?? 0.06;

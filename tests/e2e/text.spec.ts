@@ -93,8 +93,21 @@ test.describe("WP-10 Text & Typography E2E & Visual Verification", () => {
   test("exports 2s MP4 video with text layer via WebCodecs and verifies valid output", async ({
     page,
   }) => {
+    // About 17 s locally; the GitHub runner is about 5x slower.
+    test.setTimeout(180_000);
     await page.goto("/lab?fixture=text-title&t=0&aspect=16:9");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
+
+    // Playwright's bundled Chromium has no H.264 encoder; only there may this test skip.
+    const canEncodeAvc = await page.evaluate(async () => {
+      const entry = performance
+        .getEntriesByType("resource")
+        .find((resource) => new URL(resource.name).pathname.endsWith("/deps/mediabunny.js"));
+      if (!entry) throw new Error("The app's optimized Mediabunny module was not loaded");
+      const media = await import(/* @vite-ignore */ entry.name);
+      return media.canEncodeVideo("avc", { width: 1280, height: 720 }) as Promise<boolean>;
+    });
+    if (!canEncodeAvc) test.skip(true, "H.264 encoder unavailable in this Chromium build");
 
     const exportResult = await page.evaluate(async () => {
       const exportFn = window.__exportWithEngine;
@@ -120,10 +133,16 @@ test.describe("WP-10 Text & Typography E2E & Visual Verification", () => {
       return {
         mime: result.mime,
         byteLength: result.blob.size,
+        verification: result.verification,
       };
     });
 
     expect(exportResult.mime).toContain("mp4");
     expect(exportResult.byteLength).toBeGreaterThan(10000);
+    const [mp4] = exportResult.verification;
+    expect(mp4.label).toBe("MP4");
+    expect(mp4.result.warnings).toEqual([]);
+    expect(mp4.result.actual?.codec).toMatch(/^avc/);
+    expect([mp4.result.actual?.width, mp4.result.actual?.height]).toEqual([1280, 720]);
   });
 });
