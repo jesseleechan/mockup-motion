@@ -89,7 +89,8 @@ export class ScreenCompositor {
   private statusBarMesh: THREE.Mesh | null = null;
 
   private lastScroll = -1;
-  private lastAssetId = "";
+  // Identity, not asset id: a wider reload of the same asset must recompose.
+  private lastManaged: ManagedTexture | null | undefined = undefined;
   private lastCursorKey = "";
   private widthPx: number;
   private heightPx: number;
@@ -177,6 +178,12 @@ export class ScreenCompositor {
     this.material.uniforms.uSize.value.set(meshW, meshH);
   }
 
+  /** Resizes the screen target for a new output scale (px per stage unit), keeping the mesh size. */
+  setPixelsPerUnit(pixelsPerUnit: number): void {
+    const size = this.material.uniforms.uSize.value as THREE.Vector2;
+    this.resize(size.x * pixelsPerUnit, size.y * pixelsPerUnit, size.x, size.y);
+  }
+
   setCornerRadius(radius: number): void {
     this.material.uniforms.uRadius.value = radius;
   }
@@ -188,7 +195,6 @@ export class ScreenCompositor {
     cursor?: ScreenCursorData,
     options?: { hasStatusBar?: boolean; isPhone?: boolean },
   ): void {
-    const assetId = managed?.assetId ?? "";
     const cursorKey = cursor
       ? `${cursor.x.toFixed(3)},${cursor.y.toFixed(3)},${(cursor.scale ?? 1).toFixed(2)},${(cursor.rippleOpacity ?? 0).toFixed(2)},${cursor.style}`
       : "none";
@@ -196,14 +202,14 @@ export class ScreenCompositor {
     // Only skip render if scroll, texture, and cursor have not changed
     if (
       this.lastScroll === scroll &&
-      this.lastAssetId === assetId &&
+      this.lastManaged === managed &&
       this.lastCursorKey === cursorKey
     ) {
       return;
     }
 
     this.lastScroll = scroll;
-    this.lastAssetId = assetId;
+    this.lastManaged = managed;
     this.lastCursorKey = cursorKey;
 
     if (!managed || managed.strips.length === 0) {

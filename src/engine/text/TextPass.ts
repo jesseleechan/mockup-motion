@@ -76,6 +76,7 @@ export class TextPass {
   private scene: THREE.Scene;
   private camera: THREE.OrthographicCamera;
   private textures = new Map<string, THREE.Texture>();
+  private sources = new Map<string, TextRaster>();
   private meshPool: WordMeshItem[] = [];
 
   constructor() {
@@ -89,7 +90,9 @@ export class TextPass {
    * Sets or updates pre-rasterized text bitmap texture.
    */
   setTextRaster(layerId: string, raster: TextRaster): void {
+    if (this.sources.get(layerId) === raster && this.textures.has(layerId)) return;
     this.textures.get(layerId)?.dispose();
+    this.sources.set(layerId, raster);
     let tex: THREE.Texture;
     if (raster.color) {
       tex = new THREE.Texture(raster.bitmap);
@@ -130,6 +133,17 @@ export class TextPass {
     tex.generateMipmaps = false;
     tex.needsUpdate = true;
     this.textures.set(layerId, tex);
+  }
+
+  /** Disposes textures for text layers that are not in `layerIds`. */
+  retainOnly(layerIds: Iterable<string>): void {
+    const keep = new Set(layerIds);
+    for (const [layerId, texture] of this.textures) {
+      if (keep.has(layerId)) continue;
+      texture.dispose();
+      this.textures.delete(layerId);
+      this.sources.delete(layerId);
+    }
   }
 
   private getOrCreateMesh(index: number): WordMeshItem {
@@ -232,11 +246,8 @@ export class TextPass {
       const raster = rasters.get(layer.id);
       if (!raster) continue;
 
-      let tex = this.textures.get(layer.id);
-      if (!tex) {
-        this.setTextRaster(layer.id, raster);
-        tex = this.textures.get(layer.id)!;
-      }
+      this.setTextRaster(layer.id, raster);
+      const tex = this.textures.get(layer.id)!;
 
       // Calculate block position based on layer.anchor
       let blockX = minX;
@@ -339,6 +350,7 @@ export class TextPass {
       tex.dispose();
     }
     this.textures.clear();
+    this.sources.clear();
 
     for (const item of this.meshPool) {
       item.geometry.dispose();

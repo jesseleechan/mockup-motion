@@ -79,36 +79,114 @@ describe("F01 image orientation", () => {
 });
 
 describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
-  it("caches textures and splits tall images into vertical strips", async () => {
-    const tm = new TextureManager(2048, 4);
-
-    // Mock provider returning a 1000 x 5000 image
-    const mockProvider: AssetProvider = {
-      getImage: async () => {
-        // Return a mock object satisfying ImageBitmap shape
-        return {
-          width: 1000,
-          height: 5000,
-          close: () => {},
-        } as unknown as ImageBitmap;
+  // Node has no createImageBitmap; record each slice so ownership can be checked.
+  function mockBitmap(width: number, height: number) {
+    return { width, height, close: vi.fn() } as unknown as ImageBitmap & {
+      close: ReturnType<typeof vi.fn>;
+    };
+  }
+  function provider(sizes: Record<string, [number, number]>) {
+    const calls: { id: string; maxWidth: number }[] = [];
+    const bitmaps: ReturnType<typeof mockBitmap>[] = [];
+    const assets: AssetProvider = {
+      getImage: async (id, maxWidth) => {
+        calls.push({ id, maxWidth });
+        const [w, h] = sizes[id];
+        const scale = Math.min(1, maxWidth / w);
+        const bitmap = mockBitmap(Math.round(w * scale), Math.round(h * scale));
+        bitmaps.push(bitmap);
+        return bitmap;
       },
       getText: async () => {
         throw new Error("Not implemented");
       },
     };
+    return { assets, calls, bitmaps };
+  }
+  function stubSlicing() {
+    const slices: { args: number[]; bitmap: ReturnType<typeof mockBitmap> }[] = [];
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(async (_source: ImageBitmap, x: number, y: number, w: number, h: number) => {
+        const bitmap = mockBitmap(w, h);
+        slices.push({ args: [x, y, w, h], bitmap });
+        return bitmap;
+      }),
+    );
+    return slices;
+  }
 
-    const managed = await tm.getTexture("tall-asset-1", 1000, mockProvider);
+  it("caches textures and splits tall images into vertical strips", async () => {
+    const slices = stubSlicing();
+    const tm = new TextureManager(2048, 4);
+    const { assets } = provider({ "tall-asset-1": [1000, 5000] });
+
+    const managed = await tm.getTexture("tall-asset-1", 1000, assets);
     expect(managed).toBeDefined();
     expect(managed?.strips.length).toBe(3); // 5000 / 2048 = 3 strips (2048, 2048, 904)
     expect(managed?.strips[0].height).toBe(2048);
     expect(managed?.strips[1].height).toBe(2048);
     expect(managed?.strips[2].height).toBe(904);
+    expect(slices.map((slice) => slice.args)).toEqual([
+      [0, 0, 1000, 2048],
+      [0, 2048, 1000, 2048],
+      [0, 4096, 1000, 904],
+    ]);
+    expect(managed?.strips.map((strip) => strip.texture.image)).toEqual(
+      slices.map((slice) => slice.bitmap),
+    );
 
     // Second call retrieves from cache
-    const cached = await tm.getTexture("tall-asset-1", 1000, mockProvider);
+    const cached = await tm.getTexture("tall-asset-1", 1000, assets);
     expect(cached).toBe(managed);
 
     tm.dispose();
+    vi.unstubAllGlobals();
+  });
+
+  it("reuses a wider entry, replaces a narrower one, and dedupes concurrent loads", async () => {
+    const tm = new TextureManager(4096, 1);
+    const { assets, calls } = provider({ a: [3000, 2000] });
+
+    const [first, second] = await Promise.all([
+      tm.getTexture("a", 1024, assets),
+      tm.getTexture("a", 1024, assets),
+    ]);
+    expect(first).toBe(second);
+    expect(calls).toEqual([{ id: "a", maxWidth: 1024 }]);
+
+    expect(await tm.getTexture("a", 768, assets)).toBe(first);
+    expect(calls.length).toBe(1);
+
+    const wider = await tm.getTexture("a", 2048, assets);
+    expect(wider?.width).toBe(2048);
+    expect(tm.getLoadedTexture("a")).toBe(wider);
+    tm.dispose();
+  });
+
+  it("retainOnly disposes released assets and closes only the strips it sliced", async () => {
+    const slices = stubSlicing();
+    const tm = new TextureManager(2048, 1);
+    const { assets, bitmaps } = provider({ short: [1000, 800], tall: [1000, 5000] });
+    const short = await tm.getTexture("short", 1000, assets);
+    const tall = await tm.getTexture("tall", 1000, assets);
+    const disposed: string[] = [];
+    short?.strips[0].texture.addEventListener("dispose", () => disposed.push("short"));
+    tall?.strips.forEach((strip) =>
+      strip.texture.addEventListener("dispose", () => disposed.push("tall")),
+    );
+
+    tm.retainOnly(["short"]);
+    expect(disposed).toEqual(["tall", "tall", "tall"]);
+    expect(tm.getLoadedTexture("tall")).toBeNull();
+    expect(tm.getLoadedTexture("short")).toBe(short);
+    expect(slices.every((slice) => slice.bitmap.close.mock.calls.length === 1)).toBe(true);
+    // Provider bitmaps belong to the provider and stay open.
+    expect(bitmaps.every((bitmap) => bitmap.close.mock.calls.length === 0)).toBe(true);
+
+    tm.dispose();
+    expect(disposed).toEqual(["tall", "tall", "tall", "short"]);
+    vi.unstubAllGlobals();
   });
 });
 

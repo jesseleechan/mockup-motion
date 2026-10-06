@@ -33,6 +33,7 @@ declare global {
     __fixtures?: Record<string, ProjectDoc>;
     __labTestImages?: LabTestImages;
     __labSetDoc?: (doc: ProjectDoc, images?: Record<string, ImageBitmap>) => Promise<void>;
+    __labSchedule?: typeof schedule;
   }
 }
 
@@ -131,6 +132,7 @@ export const LabPage: React.FC = () => {
       window.__fixtures = FIXTURES;
       window.__labReady = false;
       if (import.meta.env.DEV) {
+        window.__labSchedule = schedule;
         window.__labSetDoc = async (nextDoc, images = {}, providerOverride?: AssetProvider) => {
           const testProvider: AssetProvider = providerOverride ?? {
             async getImage(assetId: string, maxWidth: number) {

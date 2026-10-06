@@ -18,8 +18,21 @@ export interface ManagedTexture {
   bottomRowColor?: [number, number, number, number]; // RGBA 0..1
 }
 
+interface CacheEntry {
+  managed: ManagedTexture;
+  /** The width this entry was decoded for; the bitmap may be narrower (small source). */
+  requestedWidth: number;
+  /** Strip bitmaps sliced here. Provider bitmaps are never closed by this class. */
+  ownedBitmaps: ImageBitmap[];
+}
+
+/**
+ * GPU textures for image assets: one entry per asset, at the largest width any
+ * document has asked for since the asset was last released by `retainOnly`.
+ */
 export class TextureManager {
-  private cache = new Map<string, ManagedTexture>();
+  private cache = new Map<string, CacheEntry>();
+  private pending = new Map<string, Promise<ManagedTexture | null>>();
   private maxTextureSize: number;
   private maxAnisotropy: number;
 
@@ -36,17 +49,16 @@ export class TextureManager {
     this.maxTextureSize = size;
   }
 
+  /** The largest loaded texture for an asset, or null when none is loaded. */
   getLoadedTexture(assetId: string): ManagedTexture | null {
-    for (const managed of this.cache.values()) {
-      if (managed.assetId === assetId) return managed;
-    }
-    return null;
+    return this.cache.get(assetId)?.managed ?? null;
   }
 
   /**
    * Loads an asset through the provider, downscaled to the needed width,
    * tiled into vertical strips if taller than maxTextureSize, and configured
-   * with SRGBColorSpace, mipmaps, and maximum anisotropy.
+   * with SRGBColorSpace, mipmaps, and maximum anisotropy. Reuses a loaded entry
+   * that is at least as wide; a wider request replaces it.
    */
   async getTexture(
     assetId: string,
@@ -55,66 +67,86 @@ export class TextureManager {
   ): Promise<ManagedTexture | null> {
     if (!assetId) return null;
 
-    // Cache key incorporates requested target width to avoid redundant decodes
-    const cacheKey = `${assetId}:${targetWidthPx}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
+    const cached = this.cache.get(assetId);
+    if (cached && cached.requestedWidth >= targetWidthPx) return cached.managed;
 
+    const pendingKey = `${assetId}:${targetWidthPx}`;
+    const inFlight = this.pending.get(pendingKey);
+    if (inFlight) return inFlight;
+
+    const load = this.load(assetId, targetWidthPx, provider).finally(() => {
+      this.pending.delete(pendingKey);
+    });
+    this.pending.set(pendingKey, load);
+    return load;
+  }
+
+  private async load(
+    assetId: string,
+    targetWidthPx: number,
+    provider: AssetProvider,
+  ): Promise<ManagedTexture | null> {
+    let bitmap: ImageBitmap;
     try {
-      const bitmap = await provider.getImage(assetId, targetWidthPx);
-      const width = bitmap.width;
-      const height = bitmap.height;
-
-      const stripMaxHeight = Math.min(this.maxTextureSize, 4096);
-      const strips: TextureStrip[] = [];
-
-      if (height <= stripMaxHeight) {
-        const texture = this.createTexture(bitmap);
-        strips.push({ texture, yOffset: 0, height });
-      } else {
-        // Tile tall images into vertical strips
-        const stripCount = Math.ceil(height / stripMaxHeight);
-        for (let i = 0; i < stripCount; i++) {
-          const yOffset = i * stripMaxHeight;
-          const currentStripHeight = Math.min(stripMaxHeight, height - yOffset);
-
-          let stripBitmap: ImageBitmap;
-          if (typeof createImageBitmap !== "undefined") {
-            stripBitmap = await createImageBitmap(bitmap, 0, yOffset, width, currentStripHeight);
-          } else {
-            // Fallback for environments without createImageBitmap slice
-            stripBitmap = bitmap;
-          }
-
-          const texture = this.createTexture(stripBitmap);
-          strips.push({ texture, yOffset, height: currentStripHeight });
-        }
-      }
-
-      // Sample bottom-row color if canvas is available
-      let bottomRowColor: [number, number, number, number] | undefined;
-      try {
-        bottomRowColor = this.extractBottomRowColor(bitmap);
-      } catch {
-        // Fallback if readback fails
-      }
-
-      const managed: ManagedTexture = {
-        assetId,
-        width,
-        height,
-        strips,
-        bottomRowColor,
-      };
-
-      this.cache.set(cacheKey, managed);
-      return managed;
+      bitmap = await provider.getImage(assetId, targetWidthPx);
     } catch (err) {
+      // A missing asset renders the empty screen; debugInfo() reports it unloaded.
       console.warn(`[TextureManager] Failed to load asset ${assetId}:`, err);
       return null;
     }
+
+    const width = bitmap.width;
+    const height = bitmap.height;
+    const stripMaxHeight = Math.min(this.maxTextureSize, 4096);
+    const strips: TextureStrip[] = [];
+    const ownedBitmaps: ImageBitmap[] = [];
+
+    if (height <= stripMaxHeight) {
+      strips.push({ texture: this.createTexture(bitmap), yOffset: 0, height });
+    } else {
+      // Tile tall images into vertical strips
+      const stripCount = Math.ceil(height / stripMaxHeight);
+      for (let i = 0; i < stripCount; i++) {
+        const yOffset = i * stripMaxHeight;
+        const stripHeight = Math.min(stripMaxHeight, height - yOffset);
+        const stripBitmap = await createImageBitmap(bitmap, 0, yOffset, width, stripHeight);
+        ownedBitmaps.push(stripBitmap);
+        strips.push({ texture: this.createTexture(stripBitmap), yOffset, height: stripHeight });
+      }
+    }
+
+    const managed: ManagedTexture = {
+      assetId,
+      width,
+      height,
+      strips,
+      bottomRowColor: this.extractBottomRowColor(bitmap),
+    };
+
+    // A wider load may have finished first; keep whichever is wider.
+    const existing = this.cache.get(assetId);
+    if (existing && existing.requestedWidth >= targetWidthPx) {
+      this.release({ managed, requestedWidth: targetWidthPx, ownedBitmaps });
+      return existing.managed;
+    }
+    if (existing) this.release(existing);
+    this.cache.set(assetId, { managed, requestedWidth: targetWidthPx, ownedBitmaps });
+    return managed;
+  }
+
+  /** Disposes textures for every asset not in `assetIds`. */
+  retainOnly(assetIds: Iterable<string>): void {
+    const keep = new Set(assetIds);
+    for (const [assetId, entry] of this.cache) {
+      if (keep.has(assetId)) continue;
+      this.release(entry);
+      this.cache.delete(assetId);
+    }
+  }
+
+  private release(entry: CacheEntry): void {
+    for (const strip of entry.managed.strips) strip.texture.dispose();
+    for (const bitmap of entry.ownedBitmaps) bitmap.close();
   }
 
   private createTexture(imageSource: ImageBitmap | HTMLCanvasElement): THREE.Texture {
@@ -170,11 +202,7 @@ export class TextureManager {
   }
 
   dispose(): void {
-    for (const managed of this.cache.values()) {
-      for (const strip of managed.strips) {
-        strip.texture.dispose();
-      }
-    }
+    for (const entry of this.cache.values()) this.release(entry);
     this.cache.clear();
   }
 }
