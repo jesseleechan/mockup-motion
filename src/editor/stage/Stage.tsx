@@ -3,18 +3,14 @@ import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
-import {
-  BUILTIN_TEMPLATES,
-  buildTemplate,
-  demoAssetsForTemplate,
-  getTemplateById,
-} from "../../templates";
+import { unfilledSlots, useTemplateActions } from "../template-actions";
 import type { AssetRef } from "../../doc/types";
 import { aspectRatioValue, schedule } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 import { validateAndDecodeAsset } from "../../assets/decode";
 import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
+import { FillTemplateOverlay } from "./FillTemplateOverlay";
 
 const EngineCanvas = lazy(() =>
   import("../../engine/react/EngineCanvas").then((m) => ({ default: m.EngineCanvas })),
@@ -29,15 +25,14 @@ declare global {
 
 interface StageProps {
   showSafeMargins: boolean;
-  onOpenTemplates?: () => void;
 }
 
-export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }) => {
+export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
-  const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
-  const addAssets = useEditorStore((s) => s.addAssets);
   const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
+  const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
+  const { addScreenshots, fillWithDemoContent } = useTemplateActions();
 
   const stageZoom = useUIStore((s) => s.stageZoom);
   const selection = useUIStore((s) => s.selection);
@@ -93,32 +88,10 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
         }
       }
 
-      if (newRefs.length > 0) {
-        await addAssets(newRefs, blobs);
-
-        // If document currently has no shots, apply default template with new assets
-        if (doc.shots.length === 0) {
-          const template = BUILTIN_TEMPLATES[0];
-          const res = buildTemplate(template, {
-            aspect: doc.aspect,
-            assets: [...doc.assets, ...newRefs],
-            name: doc.name,
-            style: doc.style,
-          });
-          applyTemplateResult(res, template.id);
-        }
-      }
+      // Fills the template when it is waiting for screenshots (F06).
+      if (newRefs.length > 0) await addScreenshots(newRefs, blobs);
     },
-    [
-      addAssets,
-      applyTemplateResult,
-      doc.aspect,
-      doc.assets,
-      doc.name,
-      doc.shots.length,
-      doc.style,
-      toast,
-    ],
+    [addScreenshots, toast],
   );
 
   // Global drag-and-drop listener
@@ -155,20 +128,6 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
       window.removeEventListener("drop", onDrop);
     };
   }, [handleFiles]);
-
-  const handleTryDemoContent = async () => {
-    const template =
-      (doc.templateId ? getTemplateById(doc.templateId) : undefined) ?? BUILTIN_TEMPLATES[0];
-    const demoAssets = demoAssetsForTemplate(template.id);
-    await addAssets(demoAssets);
-    const res = buildTemplate(template, {
-      aspect: doc.aspect,
-      assets: demoAssets,
-      name: doc.name,
-      style: doc.style,
-    });
-    applyTemplateResult(res, template.id);
-  };
 
   const handleCanvasClick = (
     e: React.MouseEvent<HTMLCanvasElement>,
@@ -215,6 +174,9 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
   };
 
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
+  const showEmptyState = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
+  // A template is applied but some required slot has no screenshot yet (F06).
+  const showFillOverlay = !showEmptyState && unfilledSlots(doc).length > 0;
   const preview = stageSize
     ? fitPreview(stageSize.width, stageSize.height, aspectRatioValue(doc.aspect), stageZoom)
     : null;
@@ -241,7 +203,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
       />
 
       {/* Empty State Card if no assets or shots */}
-      {doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId) ? (
+      {showEmptyState ? (
         <div className="z-10 max-w-md w-full bg-[var(--color-panel)] border border-[var(--color-line)] p-8 rounded-xl shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="w-12 h-12 mx-auto rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center shadow-xs">
             <Icon icon={Film} size={26} />
@@ -260,7 +222,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
             <Button
               variant="primary"
               className="w-full justify-center"
-              onClick={onOpenTemplates}
+              onClick={openTemplateGallery}
               icon={<Icon icon={LayoutTemplate} size={15} />}
             >
               Start with a template
@@ -278,7 +240,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
             <Button
               variant="ghost"
               className="w-full justify-center text-[var(--color-accent)]"
-              onClick={handleTryDemoContent}
+              onClick={fillWithDemoContent}
               icon={<Icon icon={Sparkles} size={15} />}
             >
               Try with demo content
@@ -378,6 +340,13 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
           </div>
         </div>
       ) : null}
+
+      {showFillOverlay && (
+        <FillTemplateOverlay
+          onChooseScreenshots={() => fileInputRef.current?.click()}
+          onUseDemoContent={fillWithDemoContent}
+        />
+      )}
 
       {/* Global Drag-and-drop Overlay */}
       {isDragOver && (

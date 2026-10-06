@@ -1,32 +1,20 @@
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  Button,
-  Icon,
-} from "../../ui";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, Button, Icon } from "../../ui";
 import { useEditorStore } from "../../state/store";
-import {
-  BUILTIN_TEMPLATES,
-  applyTemplate,
-  validateTemplateRequirements,
-  type Template,
-} from "../../templates";
+import { useUIStore } from "../../state/ui-store";
+import { BUILTIN_TEMPLATES, validateTemplateRequirements, type Template } from "../../templates";
+import { useTemplateActions } from "../template-actions";
 import { Check, Film, Layers, Monitor, Play, Search, Smartphone, Sparkles, X } from "lucide-react";
 
-interface TemplateGalleryModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
-  open,
-  onOpenChange,
-}) => {
+/** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
+export const TemplateGalleryModal: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
-  const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
+  const open = useUIStore((s) => s.templateGalleryOpen);
+  const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
+  const { applyTemplateById } = useTemplateActions();
+  const onOpenChange = (next: boolean) => {
+    if (!next) closeTemplateGallery();
+  };
 
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,6 +22,13 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     doc.templateId || BUILTIN_TEMPLATES[0].id,
   );
   const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
+
+  // The modal stays mounted between openings, so each opening starts on the current template.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSelectedTemplateId(doc.templateId || BUILTIN_TEMPLATES[0].id);
+  }
 
   const categories = [
     { id: "all", label: "All", icon: Sparkles },
@@ -45,8 +40,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
   ];
 
   const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {
-    const matchesCategory =
-      activeCategory === "all" || t.category === activeCategory;
+    const matchesCategory = activeCategory === "all" || t.category === activeCategory;
     const matchesQuery =
       searchQuery.trim() === "" ||
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,20 +48,15 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     return matchesCategory && matchesQuery;
   });
 
-  const selectedTemplate = BUILTIN_TEMPLATES.find(
-    (t) => t.id === selectedTemplateId,
-  );
+  const selectedTemplate = BUILTIN_TEMPLATES.find((t) => t.id === selectedTemplateId);
   const selectedValidation = selectedTemplate
     ? validateTemplateRequirements(selectedTemplate, doc.assets)
     : { valid: true };
 
+  // Applying never waits for screenshots: the stage asks for any the template is missing.
   const handleApply = (template: Template) => {
-    const validation = validateTemplateRequirements(template, doc.assets);
-    if (!validation.valid) return;
-
-    const res = applyTemplate(template, doc);
-    applyTemplateResult(res, template.id);
-    onOpenChange(false);
+    applyTemplateById(template.id);
+    closeTemplateGallery();
   };
 
   return (
@@ -141,7 +130,9 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
             <div className="h-64 flex flex-col items-center justify-center text-center">
               <Film size={32} className="text-[var(--color-text-3)] mb-2 opacity-50" />
               <p className="text-sm font-medium text-[var(--color-text-2)]">No templates found</p>
-              <p className="text-xs text-[var(--color-text-3)] mt-1">Try another category or search query</p>
+              <p className="text-xs text-[var(--color-text-3)] mt-1">
+                Try another category or search query
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -190,7 +181,11 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
 
                       {/* Fallback Graphic if no video exists yet */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[var(--color-panel)] to-[var(--color-raised)] -z-10">
-                        <Icon icon={Film} size={28} className="text-[var(--color-text-3)] mb-1 opacity-60" />
+                        <Icon
+                          icon={Film}
+                          size={28}
+                          className="text-[var(--color-text-3)] mb-1 opacity-60"
+                        />
                         <span className="text-[11px] font-mono text-[var(--color-text-3)]">
                           {template.id}
                         </span>
@@ -273,12 +268,12 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
             </Button>
             <Button
               variant="primary"
-              disabled={!selectedTemplate || !selectedValidation.valid}
+              disabled={!selectedTemplate}
               onClick={() => selectedTemplate && handleApply(selectedTemplate)}
               className="gap-1.5"
             >
               <Sparkles size={14} />
-              Apply Template
+              Apply template
             </Button>
           </div>
         </div>

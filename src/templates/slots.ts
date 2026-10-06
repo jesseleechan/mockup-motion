@@ -1,5 +1,5 @@
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
-import type { Template } from "./types";
+import type { SlotSpec, Template } from "./types";
 
 /**
  * Validates if the available assets satisfy the template requirements.
@@ -19,9 +19,7 @@ export function validateTemplateRequirements(
 
   if (isMultiAsset) {
     const requiredRole: AssetRole = template.id === "phone-parade" ? "mobile" : "desktop";
-    const distinctRoleAssets = assets.filter(
-      (a) => a.kind === "image" && a.role === requiredRole,
-    );
+    const distinctRoleAssets = assets.filter((a) => a.kind === "image" && a.role === requiredRole);
 
     if (distinctRoleAssets.length < 3) {
       return {
@@ -37,9 +35,7 @@ export function validateTemplateRequirements(
   // 2. Check required slots
   const requiredSlots = template.slots.filter((s) => s.required);
   for (const slot of requiredSlots) {
-    const hasRoleMatch = assets.some(
-      (a) => a.kind === "image" && a.role === slot.role,
-    );
+    const hasRoleMatch = assets.some((a) => a.kind === "image" && a.role === slot.role);
     if (!hasRoleMatch) {
       return {
         valid: false,
@@ -90,15 +86,11 @@ export function fillSlots(
   for (const slot of t.slots) {
     if (result[slot.key]) continue; // Already preserved
 
-    const roleCandidates = assets.filter(
-      (a) => a.kind === "image" && a.role === slot.role,
-    );
+    const roleCandidates = assets.filter((a) => a.kind === "image" && a.role === slot.role);
 
     // 1. Try unused candidate matching prefer === "tall"
     if (slot.prefer === "tall") {
-      const tallUnused = roleCandidates.find(
-        (a) => !used.has(a.id) && a.meta?.tall,
-      );
+      const tallUnused = roleCandidates.find((a) => !used.has(a.id) && a.meta?.tall);
       if (tallUnused) {
         result[slot.key] = tallUnused;
         used.add(tallUnused.id);
@@ -125,6 +117,12 @@ export function fillSlots(
   }
 
   return result;
+}
+
+/** Required slots that fillSlots cannot fill from these assets. */
+export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
+  const filled = fillSlots(t, assets);
+  return t.slots.filter((slot) => slot.required && !filled[slot.key]);
 }
 
 /**

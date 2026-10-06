@@ -7,6 +7,7 @@ import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
 import { ShortcutsModal } from "./dialogs/ShortcutsModal";
 import { ProjectsModal } from "./dialogs/ProjectsModal";
+import { TemplateGalleryModal } from "./dialogs/TemplateGalleryModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
 import { checkAndMigrateV1 } from "../storage/projects";
@@ -96,6 +97,16 @@ export const EditorShell: React.FC = () => {
       window.removeEventListener("resize", checkMobile);
     };
   }, [loadDoc, setTheme]);
+
+  // Filling a template and undoing it replace the shots, so a selected shot can vanish.
+  // Move the selection to the first shot instead of leaving the inspector empty (F06).
+  useEffect(() => {
+    if (selection.kind === "video") return;
+    const shotId = selection.kind === "shot" ? selection.id : selection.shotId;
+    if (doc.shots.some((s) => s.id === shotId)) return;
+    const first = doc.shots[0];
+    setSelection(first ? { kind: "shot", id: first.id } : { kind: "video" });
+  }, [doc.shots, selection, setSelection]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -280,12 +291,7 @@ export const EditorShell: React.FC = () => {
 
             {/* Center Stage & Transport */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
-              <Stage
-                showSafeMargins={showSafeMargins}
-                onOpenTemplates={() => {
-                  if (!panels.library) togglePanel("library");
-                }}
-              />
+              <Stage showSafeMargins={showSafeMargins} />
               <TransportBar
                 showSafeMargins={showSafeMargins}
                 onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
@@ -305,6 +311,7 @@ export const EditorShell: React.FC = () => {
               <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
             </Suspense>
           )}
+          <TemplateGalleryModal />
           <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
           <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
         </div>

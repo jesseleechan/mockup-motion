@@ -12,6 +12,7 @@ import { getBlob } from "../../storage/blobs";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
 import { validateAndDecodeAsset } from "../../assets/decode";
+import { useTemplateActions } from "../template-actions";
 import { Copy, ImageIcon, Plus, RefreshCw, Tag, Trash2, UploadCloud } from "lucide-react";
 
 interface MediaTabProps {
@@ -24,7 +25,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     () => ({ ...fullDoc, assets: fullDoc.assets.filter((a) => a.kind === "image") }),
     [fullDoc],
   );
-  const addAssets = useEditorStore((s) => s.addAssets);
+  const { addScreenshots } = useTemplateActions();
   const replaceAsset = useEditorStore((s) => s.replaceAsset);
   const removeAsset = useEditorStore((s) => s.removeAsset);
   const setAssetRole = useEditorStore((s) => s.setAssetRole);
@@ -151,7 +152,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     }
 
     for (const message of errors) toast(message);
-    if (newRefs.length > 0) await addAssets(newRefs, blobs);
+    // Fills the template when it is waiting for screenshots (F06).
+    if (newRefs.length > 0) await addScreenshots(newRefs, blobs);
   };
 
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
