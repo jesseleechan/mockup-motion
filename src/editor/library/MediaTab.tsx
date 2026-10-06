@@ -312,7 +312,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
                         {/* Used in Shot Dot */}
                         {isUsed && (
                           <div
-                            title={`Used in Shot ${usage.join(", ")}`}
+                            title={`Used in shot ${usage.join(", ")}`}
                             className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[9px] text-[var(--color-text-2)]"
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
@@ -323,7 +323,11 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
 
                       {/* Info */}
                       <div className="p-1.5 flex flex-col min-w-0">
-                        <span className="text-[11px] font-semibold text-[var(--color-text)] truncate">
+                        <span
+                          data-truncate
+                          title={asset.name}
+                          className="text-[11px] font-semibold text-[var(--color-text)] truncate"
+                        >
                           {asset.name}
                         </span>
                         <span className="text-[9px] text-[var(--color-text-3)] font-mono truncate mt-0.5">
@@ -373,7 +377,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
                         if (isUsed) {
                           if (
                             confirm(
-                              `This media is used in Shot ${usage.join(
+                              `This media is used in shot ${usage.join(
                                 ", ",
                               )}. Removing it will clear its references. Continue?`,
                             )

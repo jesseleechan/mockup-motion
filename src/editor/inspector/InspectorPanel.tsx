@@ -5,7 +5,7 @@ import { VideoInspector } from "./VideoInspector";
 import { ShotInspector } from "./ShotInspector";
 import { TextInspector } from "./TextInspector";
 import { Icon, Tooltip } from "../../ui";
-import { PanelRightClose } from "lucide-react";
+import { ChevronRight, PanelRightClose } from "lucide-react";
 
 export const InspectorPanel: React.FC = () => {
   const selection = useUIStore((s) => s.selection);
@@ -14,27 +14,33 @@ export const InspectorPanel: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
 
   // Derive header title
-  let title = "Video Settings";
+  let title = "Video";
   if (selection.kind === "shot") {
     const idx = doc.shots.findIndex((s) => s.id === selection.id);
-    title = idx !== -1 ? `Shot ${idx + 1}` : "Shot Settings";
+    title = idx !== -1 ? `Shot ${idx + 1}` : "Shot";
   } else if (selection.kind === "text") {
-    title = "Text Layer";
+    title = "Text";
   }
 
   return (
-    <aside className="w-[304px] bg-[var(--color-panel)] border-l border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden">
+    <aside
+      data-panel="inspector"
+      className="w-[304px] bg-[var(--color-panel)] border-l border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden"
+    >
       {/* Header */}
       <div className="h-10 px-3 border-b border-[var(--color-line)] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 min-w-0">
           {selection.kind !== "video" && (
-            <button
-              type="button"
-              onClick={() => setSelection({ kind: "video" })}
-              className="text-[11px] font-medium text-[var(--color-text-3)] hover:text-[var(--color-accent)] transition-colors"
-            >
-              Video &gt;
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setSelection({ kind: "video" })}
+                className="text-[11px] font-medium text-[var(--color-text-3)] hover:text-[var(--color-accent)] transition-colors"
+              >
+                Video
+              </button>
+              <Icon icon={ChevronRight} size={12} className="text-[var(--color-text-3)] shrink-0" />
+            </>
           )}
           <span className="text-xs font-semibold text-[var(--color-text)] truncate">{title}</span>
         </div>

@@ -24,7 +24,11 @@ const SHORTCUTS = [
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ open, onOpenChange }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="Keyboard Shortcuts" description="Work faster with keyboard navigation and transport shortcuts." className="max-w-md">
+      <DialogContent
+        title="Keyboard shortcuts"
+        description="Work faster with keyboard navigation and transport shortcuts."
+        className="max-w-md"
+      >
         <div className="space-y-2 mt-2 max-h-[60vh] overflow-y-auto pr-1">
           {SHORTCUTS.map((s, idx) => (
             <div

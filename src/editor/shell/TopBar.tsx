@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   Icon,
+  SegmentedControl,
   Tooltip,
 } from "../../ui";
 import { useEditorStore } from "../../state/store";
@@ -213,25 +214,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           </Tooltip>
         </div>
 
-        {/* Aspect Chips */}
-        <div className="hidden md:flex items-center bg-[var(--color-raised)] p-0.5 rounded-lg border border-[var(--color-line)]">
-          {ASPECTS.map((asp) => {
-            const isActive = doc.aspect === asp;
-            return (
-              <button
-                key={asp}
-                type="button"
-                onClick={() => handleAspectChange(asp)}
-                className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all ${
-                  isActive
-                    ? "bg-[var(--color-panel)] text-[var(--color-text)] shadow-xs"
-                    : "text-[var(--color-text-2)] hover:text-[var(--color-text)]"
-                }`}
-              >
-                {asp}
-              </button>
-            );
-          })}
+        {/* The only aspect control in the editor (F08). */}
+        <div className="hidden md:flex">
+          <SegmentedControl
+            aria-label="Aspect ratio"
+            size="sm"
+            value={doc.aspect}
+            onChange={handleAspectChange}
+            options={ASPECTS.map((aspect) => ({ value: aspect, label: aspect }))}
+          />
         </div>
       </div>
 

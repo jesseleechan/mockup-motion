@@ -44,11 +44,11 @@ export const AddShotMenu: React.FC<AddShotMenuProps> = ({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Add shot menu"
+          aria-label="Add shot"
           className="h-full min-w-[70px] border border-dashed border-[var(--color-line)] hover:border-[var(--color-accent)] rounded-lg flex flex-col items-center justify-center gap-1 text-[var(--color-text-3)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]/10 transition-all focus:outline-none shrink-0"
         >
           <Icon icon={Plus} size={15} />
-          <span className="text-[10px] font-medium">Add Shot</span>
+          <span className="text-[10px] font-medium">Add shot</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={6} className="w-[180px]">
@@ -65,7 +65,7 @@ export const AddShotMenu: React.FC<AddShotMenuProps> = ({
         {/* From template options */}
         <DropdownMenuSub>
           <div className="px-2 py-1 text-[10px] font-semibold text-[var(--color-text-3)] uppercase tracking-wider">
-            From Template
+            From template
           </div>
           {BUILTIN_TEMPLATES.map((tmpl) => (
             <DropdownMenuItem

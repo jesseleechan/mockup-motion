@@ -247,7 +247,7 @@ test.describe("WP-17: Music track", () => {
   test("web bundles and GIFs say music is left out", async ({ page }) => {
     await openEditorWithDemo(page);
     await addMusic(page);
-    const dialog = await exportAs(page, /Web Bundle/);
+    const dialog = await exportAs(page, /Web bundle/);
     await expect(dialog.getByTestId("music-note")).toContainText(/silent/);
     await dialog.getByRole("combobox").first().click();
     await page.getByRole("option", { name: /Animated GIF/ }).click();

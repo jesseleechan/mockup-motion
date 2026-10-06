@@ -22,7 +22,7 @@ const BUILTIN_FONTS = [
 
 const DEFAULT_KIT: BrandKit = {
   id: "default-kit",
-  name: "Studio Default",
+  name: "Studio default",
   colors: ["#FFFFFF", "#6366F1", "#1E1E24", "#F4F4F5", "#3B82F6", "#10B981"],
   fontDisplay: "Inter",
   fontBody: "Inter",
@@ -88,7 +88,7 @@ export const BrandTab: React.FC = () => {
   const handleCreateNewKit = async () => {
     const newKit: BrandKit = {
       id: crypto.randomUUID(),
-      name: `Brand Kit ${kits.length + 1}`,
+      name: `Brand kit ${kits.length + 1}`,
       colors: ["#FFFFFF", "#6366F1", "#141417"],
       fontDisplay: "Inter",
       fontBody: "Inter",
@@ -137,7 +137,7 @@ export const BrandTab: React.FC = () => {
 
         <button
           type="button"
-          title="New Brand Kit"
+          title="New brand kit"
           onClick={handleCreateNewKit}
           className="p-2 rounded bg-[var(--color-raised)] hover:bg-[var(--color-hover)] text-[var(--color-text)] border border-[var(--color-line)] transition-colors cursor-pointer"
         >
@@ -147,7 +147,7 @@ export const BrandTab: React.FC = () => {
         {kits.length > 1 && (
           <button
             type="button"
-            title="Delete Brand Kit"
+            title="Delete brand kit"
             onClick={handleDeleteKit}
             className="p-2 rounded bg-[var(--color-raised)] hover:bg-[var(--color-danger)]/15 hover:text-[var(--color-danger)] text-[var(--color-text-3)] border border-[var(--color-line)] transition-colors cursor-pointer"
           >
@@ -158,7 +158,7 @@ export const BrandTab: React.FC = () => {
 
       {/* Kit Details */}
       <div className="space-y-3">
-        <Field label="Brand Name" htmlFor="kit-name">
+        <Field label="Name" htmlFor="kit-name">
           <input
             id="kit-name"
             type="text"
@@ -171,7 +171,7 @@ export const BrandTab: React.FC = () => {
         {/* Colors (up to 6) */}
         <div className="space-y-1.5">
           <label className="text-[11px] font-medium text-[var(--color-text-2)]">
-            Palette Colors ({activeKit.colors.length}/6)
+            Colors ({activeKit.colors.length}/6)
           </label>
           <div className="flex items-center gap-2 flex-wrap">
             {activeKit.colors.map((color, idx) => (
@@ -201,7 +201,7 @@ export const BrandTab: React.FC = () => {
 
         {/* Typography */}
         <div className="space-y-2">
-          <Field label="Display Font">
+          <Field label="Display font">
             <select
               value={activeKit.fontDisplay || "Inter"}
               onChange={(e) => handleUpdateKit({ fontDisplay: e.target.value })}
@@ -215,7 +215,7 @@ export const BrandTab: React.FC = () => {
             </select>
           </Field>
 
-          <Field label="Body Font">
+          <Field label="Body font">
             <select
               value={activeKit.fontBody || "Inter"}
               onChange={(e) => handleUpdateKit({ fontBody: e.target.value })}
@@ -244,7 +244,7 @@ export const BrandTab: React.FC = () => {
 
         {/* Logo Assets */}
         <div className="space-y-2">
-          <Field label="Light Logo">
+          <Field label="Light logo">
             <select
               value={activeKit.logoLightAssetId || ""}
               onChange={(e) => handleUpdateKit({ logoLightAssetId: e.target.value || undefined })}
@@ -259,7 +259,7 @@ export const BrandTab: React.FC = () => {
             </select>
           </Field>
 
-          <Field label="Dark Logo">
+          <Field label="Dark logo">
             <select
               value={activeKit.logoDarkAssetId || ""}
               onChange={(e) => handleUpdateKit({ logoDarkAssetId: e.target.value || undefined })}
@@ -277,7 +277,9 @@ export const BrandTab: React.FC = () => {
 
         {/* Default Kit Switch */}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-[11px] text-[var(--color-text-2)]">Default brand for new projects</span>
+          <span className="text-[11px] text-[var(--color-text-2)]">
+            Default brand for new projects
+          </span>
           <Switch
             checked={activeKit.isDefault ?? false}
             onCheckedChange={(checked) => {

@@ -3,16 +3,9 @@ import { useEditorStore } from "../../state/store";
 import { BUILTIN_PALETTES } from "../../doc/palettes";
 import { CURATED_FONT_PAIRS } from "../../assets/fonts";
 import { schedule } from "../../motion";
-import {
-  ColorField,
-  Field,
-  Section,
-  SegmentedControl,
-  Select,
-  Slider,
-  Switch,
-} from "../../ui";
-import type { Aspect, DeviceFinish, ShadowPreset } from "../../doc/types";
+import { ColorField, Field, Section, Select, Slider, Switch } from "../../ui";
+import type { BrowserChrome, DeviceFinish, ShadowPreset } from "../../doc/types";
+import { BROWSER_CHROME_LABELS, DEVICE_FINISH_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -21,6 +14,11 @@ function formatTime(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${tenths}`;
 }
 
+const SHADOW_ORDER: ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
+const CHROME_ORDER: BrowserChrome[] = ["standard", "minimal", "none"];
+const FINISH_ORDER: DeviceFinish[] = ["silver", "graphite", "black", "sand"];
+
+// The aspect ratio lives in the top bar only (F08).
 export const VideoInspector: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
@@ -82,92 +80,71 @@ export const VideoInspector: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Composition */}
       <Section title="Composition">
         <div className="space-y-3">
-          <Field label="Aspect Ratio">
-            <SegmentedControl
-              value={doc.aspect}
-              onChange={(val) =>
-                apply(
-                  (draft) => {
-                    draft.aspect = val as Aspect;
-                  },
-                  { label: `Change aspect to ${val}` },
-                )
-              }
-              options={[
-                { value: "16:9", label: "16:9" },
-                { value: "9:16", label: "9:16" },
-                { value: "1:1", label: "1:1" },
-                { value: "4:5", label: "4:5" },
-                { value: "4:3", label: "4:3" },
-              ]}
-            />
+          <Field label="Duration">
+            <span className="block text-right text-xs font-mono text-[var(--color-text)]">
+              {formatTime(total)}
+            </span>
           </Field>
 
-          <div className="flex items-center justify-between text-xs py-1">
-            <span className="text-[var(--color-text-2)]">Total Duration</span>
-            <span className="font-mono text-[var(--color-text)]">{formatTime(total)}</span>
-          </div>
-
-          <div className="flex items-center justify-between text-xs py-1">
-            <span className="text-[var(--color-text-2)]">Loop Playback</span>
-            <Switch
-              aria-label="Loop playback"
-              checked={doc.loop}
-              onCheckedChange={(val) =>
-                apply(
-                  (draft) => {
-                    draft.loop = val;
-                  },
-                  { label: "Toggle loop" },
-                )
-              }
-            />
-          </div>
+          <Field label="Loop">
+            <div className="flex justify-end">
+              <Switch
+                aria-label="Loop playback"
+                checked={doc.loop}
+                onCheckedChange={(val) =>
+                  apply(
+                    (draft) => {
+                      draft.loop = val;
+                    },
+                    { label: "Toggle loop" },
+                  )
+                }
+              />
+            </div>
+          </Field>
         </div>
       </Section>
 
-      {/* Palettes & Style */}
-      <Section title="Background & Palette">
+      <Section title="Background">
         <div className="space-y-3">
-          <label className="text-[11px] font-medium text-[var(--color-text-2)] block">
-            Curated Palettes
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {BUILTIN_PALETTES.map((p) => {
-              const isActive = currentPalette?.id === p.id;
-              let bgStyle = "";
-              if (p.background.kind === "solid") {
-                bgStyle = p.background.color;
-              } else if (p.background.kind === "gradient") {
-                bgStyle = `linear-gradient(${p.background.angle}deg, ${p.background.stops.join(", ")})`;
-              } else if (p.background.kind === "mesh") {
-                bgStyle = `radial-gradient(circle at 50% 50%, ${p.background.colors[0]}, ${p.background.colors[1]})`;
-              }
+          <Field label="Palette" stacked>
+            <div className="grid grid-cols-4 gap-2">
+              {BUILTIN_PALETTES.map((p) => {
+                const isActive = currentPalette?.id === p.id;
+                let bgStyle = "";
+                if (p.background.kind === "solid") {
+                  bgStyle = p.background.color;
+                } else if (p.background.kind === "gradient") {
+                  bgStyle = `linear-gradient(${p.background.angle}deg, ${p.background.stops.join(", ")})`;
+                } else if (p.background.kind === "mesh") {
+                  bgStyle = `radial-gradient(circle at 50% 50%, ${p.background.colors[0]}, ${p.background.colors[1]})`;
+                }
 
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleApplyPalette(p.id)}
-                  title={p.name}
-                  className={`group relative h-9 rounded-md overflow-hidden border transition-all ${
-                    isActive
-                      ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30 scale-102 shadow-xs"
-                      : "border-[var(--color-line)] hover:border-[var(--color-line-strong)]"
-                  }`}
-                  style={{ background: bgStyle }}
-                >
-                  <span className="sr-only">{p.name}</span>
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleApplyPalette(p.id)}
+                    title={p.name}
+                    className={`group relative h-9 rounded-md overflow-hidden border transition-all ${
+                      isActive
+                        ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30 scale-102 shadow-xs"
+                        : "border-[var(--color-line)] hover:border-[var(--color-line-strong)]"
+                    }`}
+                    style={{ background: bgStyle }}
+                  >
+                    <span className="sr-only">{p.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
 
-          <Field label="Custom Background Color">
+          <Field label="Color">
             <ColorField
+              aria-label="Background color"
               value={
                 doc.style.background.kind === "solid"
                   ? doc.style.background.color
@@ -181,77 +158,66 @@ export const VideoInspector: React.FC = () => {
         </div>
       </Section>
 
-      {/* Appearance & Post */}
-      <Section title="Frame & Post-Processing">
+      <Section title="Frame and effects">
         <div className="space-y-3">
-          <Field label="Shadow Preset">
+          <Field label="Shadow">
             <Select
+              aria-label="Shadow"
               value={doc.style.shadow}
               onChange={(val) =>
                 apply(
                   (draft) => {
-                    draft.style.shadow = val as ShadowPreset;
+                    draft.style.shadow = val;
                   },
                   { label: "Change shadow preset" },
                 )
               }
-              options={[
-                { value: "none", label: "None" },
-                { value: "soft", label: "Soft Gaussian" },
-                { value: "medium", label: "Medium Depth" },
-                { value: "dramatic", label: "Dramatic Contact" },
-              ]}
+              options={optionsFor(SHADOW_LABELS, SHADOW_ORDER)}
             />
           </Field>
 
           {hasDeviceShot && (
-            <Field label="Device Finish">
+            <Field label="Device finish">
               <Select
+                aria-label="Device finish"
                 value={doc.style.deviceFinish}
                 onChange={(val) =>
                   apply(
                     (draft) => {
-                      draft.style.deviceFinish = val as DeviceFinish;
+                      draft.style.deviceFinish = val;
                     },
                     { label: "Change device finish" },
                   )
                 }
-                options={[
-                  { value: "silver", label: "Silver" },
-                  { value: "graphite", label: "Graphite" },
-                  { value: "black", label: "Space Black" },
-                  { value: "sand", label: "Starlight Sand" },
-                ]}
+                options={optionsFor(DEVICE_FINISH_LABELS, FINISH_ORDER)}
               />
             </Field>
           )}
 
           {hasBrowserShot && (
             <>
-              <Field label="Browser Chrome">
+              <Field label="Browser chrome">
                 <Select
+                  aria-label="Browser chrome"
                   value={doc.style.browserChrome}
                   onChange={(val) =>
                     apply(
                       (draft) => {
-                        draft.style.browserChrome = val as "none" | "standard" | "minimal";
+                        draft.style.browserChrome = val;
                       },
                       { label: "Change browser chrome" },
                     )
                   }
-                  options={[
-                    { value: "none", label: "None" },
-                    { value: "standard", label: "Standard Desktop Chrome" },
-                    { value: "minimal", label: "Minimal URL Pill" },
-                  ]}
+                  options={optionsFor(BROWSER_CHROME_LABELS, CHROME_ORDER)}
                 />
               </Field>
 
               {doc.style.browserChrome !== "none" && (
-                <Field label="Browser URL">
+                <Field label="URL">
                   <input
                     type="text"
-                    placeholder="https://example.com"
+                    aria-label="Browser URL"
+                    placeholder="example.com"
                     value={doc.style.browserUrl || ""}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -269,8 +235,9 @@ export const VideoInspector: React.FC = () => {
             </>
           )}
 
-          <Field label={`Film Grain (${Math.round(doc.style.grain * 100)}%)`}>
+          <Field label="Grain" value={`${Math.round(doc.style.grain * 100)}%`}>
             <Slider
+              aria-label="Grain"
               min={0}
               max={100}
               step={1}
@@ -286,8 +253,9 @@ export const VideoInspector: React.FC = () => {
             />
           </Field>
 
-          <Field label={`Vignette (${Math.round(doc.style.vignette * 100)}%)`}>
+          <Field label="Vignette" value={`${Math.round(doc.style.vignette * 100)}%`}>
             <Slider
+              aria-label="Vignette"
               min={0}
               max={100}
               step={1}
@@ -305,15 +273,14 @@ export const VideoInspector: React.FC = () => {
         </div>
       </Section>
 
-      {/* Typography */}
       <Section title="Typography">
         <div className="space-y-3">
-          <Field label="Curated Font Pair">
+          <Field label="Font pair">
             <Select
+              aria-label="Font pair"
               value={
-                CURATED_FONT_PAIRS.find(
-                  (p) => p.display.family === doc.style.fonts.display.family,
-                )?.id || "inter"
+                CURATED_FONT_PAIRS.find((p) => p.display.family === doc.style.fonts.display.family)
+                  ?.id || "inter"
               }
               onChange={handleFontPairChange}
               options={CURATED_FONT_PAIRS.map((p) => ({
@@ -324,13 +291,17 @@ export const VideoInspector: React.FC = () => {
           </Field>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)]">
+            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)] min-w-0">
               <span className="text-[10px] text-[var(--color-text-3)] block mb-1">Display</span>
-              <span className="font-semibold truncate block">{doc.style.fonts.display.family}</span>
+              <span data-truncate className="font-semibold truncate block">
+                {doc.style.fonts.display.family}
+              </span>
             </div>
-            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)]">
+            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)] min-w-0">
               <span className="text-[10px] text-[var(--color-text-3)] block mb-1">Body</span>
-              <span className="font-normal truncate block">{doc.style.fonts.body.family}</span>
+              <span data-truncate className="font-normal truncate block">
+                {doc.style.fonts.body.family}
+              </span>
             </div>
           </div>
         </div>

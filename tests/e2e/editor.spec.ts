@@ -64,8 +64,8 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await shot1Card.click();
 
     // Verify inspector switched to shot inspector
-    await expect(page.getByText("Camera Motion")).toBeVisible();
-    const heroTiltBtn = page.getByRole("button", { name: "Hero Tilt" });
+    await expect(page.getByText("Camera", { exact: true })).toBeVisible();
+    const heroTiltBtn = page.getByRole("button", { name: "Hero tilt" });
     await expect(heroTiltBtn).toBeVisible();
     await heroTiltBtn.click();
 
@@ -80,18 +80,18 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // 6. Test Contextual Inspector filtering
     // Switch to Title Card
-    const layoutSelect = page.getByRole("combobox", { name: "Layout Type" });
+    const layoutSelect = page.getByRole("combobox", { name: "Layout", exact: true });
     await layoutSelect.click();
-    await page.getByRole("option", { name: "Title Card" }).click();
-    // Device frame should NOT be visible for Title Card
-    await expect(page.getByText("Device Frame")).not.toBeVisible();
-    await expect(page.getByText("Camera Motion")).not.toBeVisible();
+    await page.getByRole("option", { name: "Title card" }).click();
+    // The device picker should NOT be visible for a title card
+    await expect(page.getByText("Device", { exact: true })).not.toBeVisible();
+    await expect(page.getByText("Camera", { exact: true })).not.toBeVisible();
 
     // Switch back to Single Device
     await layoutSelect.click();
-    await page.getByRole("option", { name: "Single Device" }).click();
-    await expect(page.getByText("Device Frame")).toBeVisible();
-    await expect(page.getByText("Camera Motion")).toBeVisible();
+    await page.getByRole("option", { name: "Single device" }).click();
+    await expect(page.getByText("Device", { exact: true })).toBeVisible();
+    await expect(page.getByText("Camera", { exact: true })).toBeVisible();
 
     // 7. Test 1080p Video Export
     const exportBtn = page.getByRole("button", { name: "Export", exact: true });

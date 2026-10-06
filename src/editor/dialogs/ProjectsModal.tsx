@@ -258,7 +258,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                         />
                       ) : (
                         <div className="text-xs font-semibold text-[var(--color-text)] truncate">
-                          {p.name || "Untitled Project"}
+                          {p.name || "Untitled project"}
                         </div>
                       )}
                       <div className="text-[10px] text-[var(--color-text-3)] mt-0.5">{dateStr}</div>

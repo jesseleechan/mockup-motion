@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={isDisabled}
         className={clsx(
-          "inline-flex items-center justify-center font-medium select-none transition-colors duration-150",
+          "inline-flex items-center justify-center whitespace-nowrap font-medium select-none transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
           "disabled:opacity-40 disabled:pointer-events-none",
           // Sizes
@@ -67,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : (
           icon && <span className="shrink-0">{icon}</span>
         )}
-        {children && <span>{children}</span>}
+        {children && <span className="min-w-0 truncate">{children}</span>}
         {!loading && iconRight && <span className="shrink-0">{iconRight}</span>}
       </button>
     );

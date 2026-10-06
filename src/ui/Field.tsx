@@ -2,21 +2,47 @@ import React from "react";
 import clsx from "clsx";
 
 export interface FieldProps {
-  label: React.ReactNode;
+  label: string;
   children: React.ReactNode;
-  hint?: string;
+  /** Current value, shown after the control (or beside a stacked label), e.g. "25%". */
+  value?: string;
+  /** Puts the label above the control, for wide controls such as grids and text areas. */
+  stacked?: boolean;
   className?: string;
   htmlFor?: string;
 }
 
-export const Field: React.FC<FieldProps> = ({ label, children, hint, className }) => {
-  return (
-    <div className={clsx("flex items-center gap-3 w-full", className)}>
-      <div className="w-24 shrink-0 text-[12px] font-medium text-[var(--color-text-2)] select-none">
-        <span>{label}</span>
-        {hint && <div className="text-[10px] text-[var(--color-text-3)] font-normal">{hint}</div>}
+const labelText = "text-[12px] font-medium text-[var(--color-text-2)] select-none truncate";
+const valueText =
+  "shrink-0 whitespace-nowrap text-right text-[11px] tabular-nums text-[var(--color-text-3)]";
+
+/**
+ * A labelled control row. Labels never wrap: the inline label column is 104 px and
+ * truncates with an ellipsis (full text in the tooltip). Use `stacked` when a label or
+ * control needs the full panel width.
+ */
+export const Field: React.FC<FieldProps> = ({ label, children, value, stacked, className }) => {
+  if (stacked) {
+    return (
+      <div className={clsx("flex flex-col gap-1.5 w-full min-w-0", className)}>
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span className={labelText} title={label}>
+            {label}
+          </span>
+          {value !== undefined && <span className={valueText}>{value}</span>}
+        </div>
+        <div className="min-w-0">{children}</div>
       </div>
+    );
+  }
+
+  return (
+    <div className={clsx("flex items-center gap-3 w-full min-w-0", className)}>
+      <span className={clsx(labelText, "w-[104px] shrink-0")} title={label}>
+        {label}
+      </span>
       <div className="grow min-w-0">{children}</div>
+      {value !== undefined && <span className={clsx(valueText, "min-w-8")}>{value}</span>}
     </div>
   );
 };

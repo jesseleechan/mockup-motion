@@ -57,7 +57,7 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     await transitionChips.first().click();
 
     // Popover should be open
-    await expect(page.getByText("Transition", { exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("Transition", { exact: true })).toBeVisible();
     // Select "Fade"
     const fadeBtn = page.getByRole("button", { name: /Fade/i });
     if (await fadeBtn.isVisible()) {
@@ -103,13 +103,11 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     await page.keyboard.press("Enter");
 
     // Verify popover opened
-    await expect(page.locator('[data-radix-popper-content-wrapper]')).toBeVisible();
+    await expect(page.locator("[data-radix-popper-content-wrapper]")).toBeVisible();
     await page.keyboard.press("Escape");
 
     // Run Axe test on the timeline
-    const scanResults = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const scanResults = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
 
     const serious = scanResults.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",

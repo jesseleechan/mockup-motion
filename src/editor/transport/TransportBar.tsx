@@ -119,7 +119,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           </button>
         </Tooltip>
 
-        <Tooltip content={`Safe Margins Overlay: ${showSafeMargins ? "On" : "Off"}`}>
+        <Tooltip content={`Safe margins: ${showSafeMargins ? "on" : "off"}`}>
           <button
             type="button"
             aria-label="Toggle safe margins overlay"
