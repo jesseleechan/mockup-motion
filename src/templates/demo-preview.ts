@@ -16,8 +16,9 @@ const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
  */
 const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
   "quiet-hero": [desktopFull("aurelia")],
-  "tilted-showcase": [desktopHero("maison-oak")],
-  "responsive-pair": [desktopFull("northwind"), mobileHero("northwind")],
+  "tilted-showcase": [desktopHero("northwind")],
+  // A light site: Northwind's dark navy hero is close to the empty-screen fill.
+  "responsive-pair": [desktopFull("maison-oak"), mobileHero("maison-oak")],
   // No second desktop capture, so the tablet reuses the full page rather than a 16:10 hero.
   "responsive-trio": [desktopFull("field-notes"), mobileHero("field-notes")],
   "phone-spotlight": [mobileHero("studio-kova")],
