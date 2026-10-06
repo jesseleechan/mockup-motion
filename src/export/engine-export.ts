@@ -1,26 +1,16 @@
-import {
-  BufferTarget,
-  CanvasSource,
-  Mp4OutputFormat,
-  Output,
-  Quality,
-  WebMOutputFormat,
-} from "mediabunny";
 import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
-import { type AssetProvider, Engine } from "../engine/Engine";
+import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
-import type { FromWorker, ToWorker } from "./engine-worker";
-import { calculateBitrate, keyframeIntervalFor, outputDimensions } from "./destinations";
+import { gifOutput, outputDimensions } from "./destinations";
 import { createWebEmbedBundle } from "./bundle";
 import { encodeGif } from "./gif";
-import {
-  addAudioTrackToOutput,
-  prepareExportAudio,
-  withoutAudio,
-  writeAudio,
-  type ExportAudio,
-} from "./audio-mux";
+import { probeVideoEncoders } from "./probe";
+import { verifyExportBlob, type VerifyExportResult } from "./verify";
+import { prepareExportAudio, withoutAudio } from "./audio-mux";
+import { createCanvas, encodeInWorker, encodeMainThread, type StartMessage } from "./video-encode";
+
+export { liveExportWorkers } from "./video-encode";
 
 /**
  * Returns export dimensions (even integers, resolution is short side).
@@ -39,6 +29,24 @@ export interface ExportProgress {
   total: number;
   percentage: number;
   thumbnailUrl?: string;
+  /** The bundle video being rendered ("MP4", "WebM"); frame and total count its frames. */
+  part?: string;
+}
+
+/** verify.ts result for one exported file ("MP4", "WebM", "GIF", "PNG"). */
+export interface ExportVerification {
+  label: string;
+  result: VerifyExportResult;
+}
+
+export interface ExportResult {
+  blob: Blob;
+  mime: string;
+  bundleSnippet?: string;
+  /** Things the export left out or changed, e.g. music that could not be mixed. */
+  warnings: string[];
+  /** Every exported file, re-read with Mediabunny (or decoded, for images). */
+  verification: ExportVerification[];
 }
 
 /**
@@ -52,16 +60,7 @@ export async function exportCurrentFrame(
   format: "png" | "webp" = "png",
 ): Promise<Blob> {
   const { width, height } = outputDimensions(doc.aspect, resolution);
-
-  let canvas: HTMLCanvasElement | OffscreenCanvas;
-  if (typeof OffscreenCanvas !== "undefined") {
-    canvas = new OffscreenCanvas(width, height);
-  } else {
-    canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-  }
-
+  const canvas = createCanvas(width, height);
   const engine = await Engine.create(canvas, {
     width,
     height,
@@ -90,6 +89,8 @@ export async function exportCurrentFrame(
 
 /**
  * Main export coordinator using the Three.js Engine and Mediabunny / gifenc / fflate.
+ * `settings.format` is the container that is written; the editor resolves MP4/WebM
+ * against the encoder probe first (plan.ts).
  */
 export async function exportWithEngine(
   doc: ProjectDoc,
@@ -97,40 +98,41 @@ export async function exportWithEngine(
   settings: ExportSettings,
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
-): Promise<{ blob: Blob; mime: string; bundleSnippet?: string; warnings?: string[] }> {
-  // 1. Single-frame PNG export
+): Promise<ExportResult> {
+  const { total } = schedule(doc);
+
   if (settings.format === "png") {
-    const { total } = schedule(doc);
     const posterTime = total * 0.35;
     const blob = await exportCurrentFrame(doc, provider, posterTime, settings.resolution, "png");
-    return { blob, mime: "image/png" };
+    const { width, height } = outputDimensions(doc.aspect, settings.resolution);
+    const result = await verifyExportBlob(blob, { width, height, duration: 0, fps: 1 });
+    return { blob, mime: "image/png", warnings: [], verification: [{ label: "PNG", result }] };
   }
 
-  // 2. GIF export
   if (settings.format === "gif") {
-    return exportGifWithEngine(doc, provider, settings, signal, onProgress);
+    const { blob, mime } = await exportGifWithEngine(doc, provider, settings, signal, onProgress);
+    const gif = gifOutput(doc.aspect, settings.resolution, settings.fps);
+    const result = await verifyExportBlob(blob, { ...gif, duration: total });
+    return { blob, mime, warnings: [], verification: [{ label: "GIF", result }] };
   }
 
-  // 3. Web Embed Bundle (MP4 + WebM + poster + zip)
   if (settings.format === "bundle") {
     return exportBundleWithEngine(doc, provider, settings, signal, onProgress);
   }
 
-  // 4. Standard MP4 or WebM video export
+  // Standard MP4 or WebM video export
   const { width, height } = outputDimensions(doc.aspect, settings.resolution);
   const container = settings.format === "webm" ? "webm" : "mp4";
   const codec = container === "mp4" ? "avc" : "vp9";
 
   // Mix the optional music track (absent or unsupported => no audio, reasons in warnings)
-  const { total: audioTotal } = schedule(doc);
   const prepared = await prepareExportAudio(
     doc,
     provider.getAudio?.bind(provider),
-    audioTotal,
+    total,
     container,
   );
   const audio = prepared.audio;
-  const warnings = prepared.warnings;
   // The worker's abort listener is attached only after preparation, so a cancel
   // during preparation must be checked here or it is lost.
   signal?.throwIfAborted();
@@ -143,13 +145,17 @@ export async function exportWithEngine(
   });
   const images: Record<string, ImageBitmap> = {};
   for (const [id, decodeWidth] of decodeWidths) {
-    images[id] = await provider.getImage(id, decodeWidth);
+    // The worker takes ownership of what it is sent, so send a copy: providers cache their
+    // bitmaps, and a transferred one is detached for the next export (a bundle's WebM) and
+    // for the editor preview.
+    const source = await provider.getImage(id, decodeWidth);
     signal?.throwIfAborted();
+    images[id] = await createImageBitmap(source);
   }
 
   // Pre-rasterize all text layers at export resolution
   const ss = settings.supersample ?? 1;
-  const texts: Record<string, import("../engine/Engine").TextRaster> = {};
+  const texts: Record<string, TextRaster> = {};
   for (const shot of doc.shots) {
     if (shot.texts && shot.texts.length > 0) {
       const shotStyle = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
@@ -161,98 +167,37 @@ export async function exportWithEngine(
     }
   }
 
-  // Try Web Worker first if supported
-  if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
-    return new Promise<{ blob: Blob; mime: string; warnings?: string[] }>((resolve, reject) => {
-      let worker: Worker;
-      try {
-        worker = new Worker(new URL("./engine-worker.ts", import.meta.url), { type: "module" });
-      } catch {
-        // Fall back to main thread
-        encodeMainThread(
-          doc,
-          provider,
-          settings,
-          width,
-          height,
-          codec,
-          container,
-          signal,
-          onProgress,
-          audio,
-        )
-          .then((r) => resolve({ ...r, warnings }))
-          .catch(reject);
-        return;
-      }
-
-      signal?.addEventListener("abort", () => {
-        worker.postMessage({ type: "cancel" } satisfies ToWorker);
-        worker.terminate();
-        reject(new Error("Export aborted."));
-      });
-
-      worker.onmessage = (e: MessageEvent<FromWorker>) => {
-        const msg = e.data;
-        if (msg.type === "progress") {
-          const percentage = Math.round((msg.frame / msg.total) * 100);
-          onProgress?.({
-            stage: msg.stage,
-            frame: msg.frame,
-            total: msg.total,
-            percentage,
-          });
-        } else if (msg.type === "done") {
-          worker.terminate();
-          resolve({ blob: msg.blob, mime: msg.mime, warnings });
-        } else if (msg.type === "error") {
-          worker.terminate();
-          reject(new Error(msg.message));
-        }
-      };
-
-      worker.onerror = (err) => {
-        worker.terminate();
-        reject(err);
-      };
-
-      const startMsg: ToWorker = {
-        type: "start",
-        doc,
-        images,
-        texts,
-        settings,
-        codec,
-        container,
-        width,
-        height,
-        audio,
-      };
-
-      // Transfer ImageBitmap and audio buffer ownership to worker
-      const transferList: Transferable[] = [
-        ...Object.values(images),
-        ...Object.values(texts).map((t) => t.bitmap),
-        ...(audio ? audio.mix.channels.map((c) => c.buffer) : []),
-      ];
-      worker.postMessage(startMsg, transferList);
-    });
-  }
-
-  // Fallback to main-thread encode
-  const main = await encodeMainThread(
+  const start: StartMessage = {
+    type: "start",
     doc,
-    provider,
+    images,
+    texts,
     settings,
-    width,
-    height,
     codec,
     container,
-    signal,
-    onProgress,
+    width,
+    height,
     audio,
-  );
-  return { ...main, warnings };
+  };
+  const useWorker = typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined";
+  const { blob, mime } = useWorker
+    ? await encodeInWorker(start, signal, onProgress)
+    : await encodeMainThread(doc, provider, start, signal, onProgress);
+
+  const result = await verifyExportBlob(blob, {
+    width,
+    height,
+    duration: total,
+    fps: settings.fps,
+    codec,
+    audio: Boolean(audio),
+  });
+  return {
+    blob,
+    mime,
+    warnings: prepared.warnings,
+    verification: [{ label: container === "mp4" ? "MP4" : "WebM", result }],
+  };
 }
 
 /**
@@ -265,20 +210,8 @@ async function exportGifWithEngine(
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
 ): Promise<{ blob: Blob; mime: string }> {
-  // GIF max width 960 px per WP-16 §7
-  const gifResolution = Math.min(960, settings.resolution);
-  const { width, height } = outputDimensions(doc.aspect, gifResolution);
-  const fps = Math.min(20, Math.max(10, settings.fps || 15));
-
-  let canvas: HTMLCanvasElement | OffscreenCanvas;
-  if (typeof OffscreenCanvas !== "undefined") {
-    canvas = new OffscreenCanvas(width, height);
-  } else {
-    canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-  }
-
+  const { width, height, fps } = gifOutput(doc.aspect, settings.resolution, settings.fps);
+  const canvas = createCanvas(width, height);
   const engine = await Engine.create(canvas, {
     width,
     height,
@@ -286,36 +219,32 @@ async function exportGifWithEngine(
     preserveDrawingBuffer: true,
   });
 
-  await engine.setDocument(doc, provider);
-
   const { total: duration } = schedule(doc);
   const totalFrames = Math.max(1, Math.round(duration * fps));
-
-  onProgress?.({ stage: "preparing", frame: 0, total: totalFrames, percentage: 0 });
-
   const frames: Uint8ClampedArray[] = [];
+  try {
+    await engine.setDocument(doc, provider);
+    onProgress?.({ stage: "preparing", frame: 0, total: totalFrames, percentage: 0 });
 
-  for (let frame = 0; frame < totalFrames; frame++) {
-    signal?.throwIfAborted();
+    for (let frame = 0; frame < totalFrames; frame++) {
+      signal?.throwIfAborted();
 
-    const t = frame / fps;
-    engine.renderAt(t);
+      engine.renderAt(frame / fps);
+      frames.push(engine.readPixels());
 
-    const flipped = engine.readPixels();
-    frames.push(flipped);
-
-    if (frame % 3 === 0 || frame === totalFrames - 1) {
-      onProgress?.({
-        stage: "rendering",
-        frame,
-        total: totalFrames,
-        percentage: Math.round((frame / totalFrames) * 70),
-      });
-      await new Promise((r) => setTimeout(r, 0));
+      if (frame % 3 === 0 || frame === totalFrames - 1) {
+        onProgress?.({
+          stage: "rendering",
+          frame,
+          total: totalFrames,
+          percentage: Math.round((frame / totalFrames) * 70),
+        });
+        await new Promise((r) => setTimeout(r, 0));
+      }
     }
+  } finally {
+    engine.dispose();
   }
-
-  engine.dispose();
 
   onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 80 });
 
@@ -332,7 +261,8 @@ async function exportGifWithEngine(
 }
 
 /**
- * Web Embed Bundle export: generates MP4, WebM, and WebP poster, then packages into .zip
+ * Web embed bundle: the MP4 and WebM this browser can encode, a WebP poster and embed
+ * code, packaged into a .zip.
  */
 async function exportBundleWithEngine(
   doc: ProjectDoc,
@@ -340,61 +270,51 @@ async function exportBundleWithEngine(
   settings: ExportSettings,
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
-): Promise<{ blob: Blob; mime: string; bundleSnippet?: string }> {
+): Promise<ExportResult> {
   const { width, height } = outputDimensions(doc.aspect, settings.resolution);
-
-  // 1. Export MP4
-  onProgress?.({ stage: "preparing", frame: 0, total: 100, percentage: 5 });
-  const mp4Res = await exportWithEngine(
-    withoutAudio(doc),
-    provider,
-    { ...settings, format: "mp4" },
-    signal,
-    (p) => {
-      onProgress?.({
-        stage: "rendering",
-        frame: Math.round(p.percentage * 0.45),
-        total: 100,
-        percentage: Math.round(p.percentage * 0.45),
-      });
-    },
+  const encoders = await probeVideoEncoders({
+    width,
+    height,
+    fps: settings.fps,
+    quality: settings.quality,
+  });
+  const formats = (["mp4", "webm"] as const).filter((f) =>
+    f === "mp4" ? encoders.avc : encoders.vp9,
   );
+  if (formats.length === 0) throw new Error("This browser can't encode MP4 or WebM video.");
 
-  // 2. Export WebM
-  const webmRes = await exportWithEngine(
-    withoutAudio(doc),
-    provider,
-    { ...settings, format: "webm" },
-    signal,
-    (p) => {
-      onProgress?.({
-        stage: "rendering",
-        frame: 45 + Math.round(p.percentage * 0.45),
-        total: 100,
-        percentage: 45 + Math.round(p.percentage * 0.45),
-      });
-    },
-  );
+  onProgress?.({ stage: "preparing", frame: 0, total: 100, percentage: 0 });
+  const silent = withoutAudio(doc);
+  const videos: Partial<Record<"mp4" | "webm", Blob>> = {};
+  const verification: ExportVerification[] = [];
+  const share = 90 / formats.length;
+  for (const [index, format] of formats.entries()) {
+    const part = await exportWithEngine(silent, provider, { ...settings, format }, signal, (p) => {
+      const percentage = Math.round(index * share + p.percentage * (share / 100));
+      const part = format === "mp4" ? "MP4" : "WebM";
+      onProgress?.({ stage: "rendering", frame: p.frame, total: p.total, percentage, part });
+    });
+    videos[format] = part.blob;
+    verification.push(...part.verification);
+  }
 
-  // 3. Export Poster WebP (frame at 35% time)
+  // Poster: the frame at 35% of the video
   const { total } = schedule(doc);
-  const posterTime = total * 0.35;
   const posterBlob = await exportCurrentFrame(
     doc,
     provider,
-    posterTime,
+    total * 0.35,
     settings.resolution,
     "webp",
   );
 
-  // 4. Bundle into Zip via fflate
   onProgress?.({ stage: "finishing", frame: 95, total: 100, percentage: 95 });
   const { zipBlob, embedSnippet } = await createWebEmbedBundle({
     projectName: doc.name,
     width,
     height,
-    mp4Blob: mp4Res.blob,
-    webmBlob: webmRes.blob,
+    mp4Blob: videos.mp4,
+    webmBlob: videos.webm,
     posterBlob,
     webmCodec: "vp9",
   });
@@ -404,95 +324,7 @@ async function exportBundleWithEngine(
     blob: zipBlob,
     mime: "application/zip",
     bundleSnippet: embedSnippet,
+    warnings: formats.length < 2 ? [`The bundle holds ${formats[0].toUpperCase()} only.`] : [],
+    verification,
   };
-}
-
-async function encodeMainThread(
-  doc: ProjectDoc,
-  provider: AssetProvider,
-  settings: ExportSettings,
-  width: number,
-  height: number,
-  codec: "avc" | "vp9" | "av1",
-  container: "mp4" | "webm",
-  signal?: AbortSignal,
-  onProgress?: (p: ExportProgress) => void,
-  audio?: ExportAudio,
-): Promise<{ blob: Blob; mime: string }> {
-  let canvas: HTMLCanvasElement | OffscreenCanvas;
-  if (typeof OffscreenCanvas !== "undefined") {
-    canvas = new OffscreenCanvas(width, height);
-  } else {
-    canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-  }
-
-  const ss = settings.supersample;
-  const supersampleVal: 1 | 1.5 | 2 = ss === 2 ? 2 : ss === 1.5 ? 1.5 : 1;
-
-  const engine = await Engine.create(canvas, {
-    width,
-    height,
-    supersample: supersampleVal,
-    preserveDrawingBuffer: true,
-  });
-
-  await engine.setDocument(doc, provider);
-
-  const { total: duration } = schedule(doc);
-  const fps = settings.fps;
-  const totalFrames = Math.max(1, Math.round(duration * fps));
-
-  onProgress?.({ stage: "preparing", frame: 0, total: totalFrames, percentage: 0 });
-
-  const target = new BufferTarget();
-  const format =
-    container === "mp4" ? new Mp4OutputFormat({ fastStart: "in-memory" }) : new WebMOutputFormat();
-
-  const output = new Output({ format, target });
-  const bitrate = calculateBitrate(settings.quality, codec, width, height, fps);
-  const keyframeInterval = keyframeIntervalFor(settings.quality);
-
-  const source = new CanvasSource(canvas, {
-    codec,
-    quality: new Quality({ bitrate }),
-    keyFrameInterval: keyframeInterval,
-  });
-
-  output.addVideoTrack(source, { frameRate: fps });
-  const audioSource = audio ? addAudioTrackToOutput(output, audio) : null;
-  await output.start();
-
-  for (let frame = 0; frame < totalFrames; frame++) {
-    signal?.throwIfAborted();
-
-    const t = frame / fps;
-    if (settings.motionBlur) {
-      engine.renderAccumulated(t, (1 / fps) * 0.5, 4);
-    } else {
-      engine.renderAt(t);
-    }
-
-    await source.add(t, 1 / fps);
-
-    if (frame % 4 === 0 || frame === totalFrames - 1) {
-      onProgress?.({
-        stage: "rendering",
-        frame,
-        total: totalFrames,
-        percentage: Math.round((frame / totalFrames) * 100),
-      });
-      await new Promise((r) => setTimeout(r, 0));
-    }
-  }
-
-  onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 100 });
-  if (audio && audioSource) await writeAudio(audioSource, audio);
-  await output.finalize();
-  engine.dispose();
-
-  const mime = container === "mp4" ? "video/mp4" : "video/webm";
-  const blob = new Blob([target.buffer as ArrayBuffer], { type: mime });
-  return { blob, mime };
 }

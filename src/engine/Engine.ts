@@ -45,6 +45,8 @@ export interface EngineDebugInfo {
   devicesBuilt: number;
 }
 
+import { AccumulationPass } from "./post/accumulate";
+import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
 import { TextPass } from "./text/TextPass";
 
@@ -62,14 +64,12 @@ export class Engine {
 
   private targetA: THREE.WebGLRenderTarget;
   private targetB: THREE.WebGLRenderTarget;
+  // Linear composite of the active layers and transition, before the final pass
+  private compositeTarget: THREE.WebGLRenderTarget;
+  private compositePass: CompositePass;
   private finalPass: FinalPass;
-
-  // Motion blur accumulation target and blend pass
-  private accumTarget: THREE.WebGLRenderTarget | null = null;
-  private accumScene: THREE.Scene;
-  private accumCamera: THREE.OrthographicCamera;
-  private accumMaterial: THREE.ShaderMaterial;
-  private accumMesh: THREE.Mesh;
+  // Motion blur accumulation, created on first use (export only)
+  private accumulation: AccumulationPass | null = null;
 
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
@@ -129,44 +129,18 @@ export class Engine {
       colorSpace: THREE.SRGBColorSpace,
     });
 
+    // Single-sample composite target; sRGB byte storage like the shot targets
+    this.compositeTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
+      colorSpace: THREE.SRGBColorSpace,
+    });
+    this.compositePass = new CompositePass(opts.width / opts.height);
+
     // Final post-processing pass
     this.finalPass = new FinalPass({
       width: opts.width,
       height: opts.height,
       supersample: ss,
     });
-
-    // Motion blur accumulation
-    this.accumCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.accumScene = new THREE.Scene();
-    this.accumMaterial = new THREE.ShaderMaterial({
-      vertexShader: /* glsl */ `
-        varying vec2 vUv;
-        void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
-      `,
-      fragmentShader: /* glsl */ `
-        varying vec2 vUv;
-        uniform sampler2D map;
-        uniform float uWeight;
-        void main() {
-          vec4 col = texture2D(map, vUv);
-          gl_FragColor = vec4(col.rgb * uWeight, col.a * uWeight);
-        }
-      `,
-      uniforms: {
-        map: { value: null },
-        uWeight: { value: 1.0 },
-      },
-      blending: THREE.CustomBlending,
-      blendEquation: THREE.AddEquation,
-      blendSrc: THREE.OneFactor,
-      blendDst: THREE.OneFactor,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    });
-    this.accumMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.accumMaterial);
-    this.accumScene.add(this.accumMesh);
 
     this.setupContextLossHandling();
   }
@@ -237,13 +211,17 @@ export class Engine {
     const renderW = Math.round(w * ss);
     const renderH = Math.round(h * ss);
 
-    this.targetA.setSize(renderW, renderH);
-    this.targetB.setSize(renderW, renderH);
-    if (this.accumTarget) {
-      this.accumTarget.setSize(renderW, renderH);
-    }
+    this.resizeTargets(renderW, renderH);
+    this.compositePass.setAspect(w / h);
     this.finalPass.resize(w, h, ss);
     this.rescaleScreens();
+  }
+
+  private resizeTargets(renderW: number, renderH: number): void {
+    this.targetA.setSize(renderW, renderH);
+    this.targetB.setSize(renderW, renderH);
+    this.compositeTarget.setSize(renderW, renderH);
+    this.accumulation?.setSize(renderW, renderH);
   }
 
   private rescaleScreens(): void {
@@ -254,11 +232,7 @@ export class Engine {
     this.opts.supersample = supersample;
     const renderW = Math.round(this.opts.width * supersample);
     const renderH = Math.round(this.opts.height * supersample);
-    this.targetA.setSize(renderW, renderH);
-    this.targetB.setSize(renderW, renderH);
-    if (this.accumTarget) {
-      this.accumTarget.setSize(renderW, renderH);
-    }
+    this.resizeTargets(renderW, renderH);
     this.finalPass.resize(this.opts.width, this.opts.height, supersample);
     this.rescaleScreens();
   }
@@ -395,26 +369,23 @@ export class Engine {
   }
 
   /**
-   * Deterministic synchronous render of document state at time t.
+   * Renders the active layers at t and blends any transition into `target` as linear
+   * values, without vignette, sRGB encoding or grain. Returns the evaluated frame, or
+   * null when there is nothing to draw.
    */
-  renderAt(t: number): void {
-    if (!this.currentDoc) return;
-    this.renderCalls++;
+  renderComposite(t: number, target: THREE.WebGLRenderTarget): FrameState | null {
+    if (!this.currentDoc) return null;
 
     const frameState: FrameState = evaluate(this.currentDoc, t);
     const stageAspect = this.opts.width / this.opts.height;
     const layers = frameState.layers;
     this.lastRenderedNodes = layers.flatMap((layer) => layer.frame.nodes);
 
-    if (layers.length === 0) return;
+    if (layers.length === 0) return null;
 
-    this.renderer.info.reset();
-
-    // Render primary layer into targetA
+    // Outgoing (or only) layer into targetA, incoming layer into targetB during a transition
     this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect, frameState.backgroundPhase);
-
     if (layers.length > 1 && layers[1].weight > 0) {
-      // Transition active: render secondary layer into targetB
       this.renderShotToTarget(
         this.targetB,
         layers[1].frame,
@@ -423,35 +394,33 @@ export class Engine {
       );
     }
 
-    // Run final post-processing pass (transition blend, 13-tap downsample, vignette, grain, dither)
-    this.finalPass.render(
+    this.compositePass.render(
       this.renderer,
       this.targetA,
       this.targetB,
-      layers[0].frame.style,
-      t,
       layers,
       frameState.transition,
-      null,
+      target,
     );
-  }
-
-  private accumulateTarget(source: THREE.WebGLRenderTarget, weight: number): void {
-    if (!this.accumTarget) return;
-    this.accumMaterial.uniforms.map.value = source.texture;
-    this.accumMaterial.uniforms.uWeight.value = weight;
-
-    const prevTarget = this.renderer.getRenderTarget();
-    const prevAutoClear = this.renderer.autoClear;
-    this.renderer.autoClear = false;
-    this.renderer.setRenderTarget(this.accumTarget);
-    this.renderer.render(this.accumScene, this.accumCamera);
-    this.renderer.setRenderTarget(prevTarget);
-    this.renderer.autoClear = prevAutoClear;
+    return frameState;
   }
 
   /**
-   * Motion blur accumulated render over shutter interval.
+   * Deterministic synchronous render of document state at time t.
+   */
+  renderAt(t: number): void {
+    if (!this.currentDoc) return;
+    this.renderCalls++;
+    this.renderer.info.reset();
+
+    const frameState = this.renderComposite(t, this.compositeTarget);
+    if (!frameState) return;
+    this.finalPass.render(this.renderer, this.compositeTarget, frameState.layers[0].frame.style, t);
+  }
+
+  /**
+   * Motion blur: averages `samples` composites spread over the shutter interval centred
+   * on t (transitions included), then runs the final pass once.
    */
   renderAccumulated(t: number, shutter: number, samples: number): void {
     if (samples <= 1 || shutter <= 0) {
@@ -462,59 +431,31 @@ export class Engine {
     if (!this.currentDoc) return;
     this.renderCalls++;
 
-    const ss = this.opts.supersample ?? 1;
-    const renderW = Math.round(this.opts.width * ss);
-    const renderH = Math.round(this.opts.height * ss);
-
-    if (!this.accumTarget) {
-      this.accumTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
-        type: THREE.HalfFloatType,
-        colorSpace: THREE.LinearSRGBColorSpace,
-      });
+    if (!this.accumulation) {
+      const ss = this.opts.supersample ?? 1;
+      this.accumulation = new AccumulationPass(
+        Math.round(this.opts.width * ss),
+        Math.round(this.opts.height * ss),
+      );
     }
-
-    // Clear accumulation target to transparent
-    const prevTarget = this.renderer.getRenderTarget();
-    const prevClearColor = this.renderer.getClearColor(new THREE.Color()).clone();
-    const prevClearAlpha = this.renderer.getClearAlpha();
-    this.renderer.setRenderTarget(this.accumTarget);
-    this.renderer.setClearColor(0x000000, 0);
-    this.renderer.clear(true, true, true);
-    this.renderer.setRenderTarget(prevTarget);
-    this.renderer.setClearColor(prevClearColor, prevClearAlpha);
+    const accumulation = this.accumulation;
+    accumulation.clear(this.renderer);
 
     const halfShutter = shutter * 0.5;
     const dt = shutter / (samples - 1);
     const startT = Math.max(0, t - halfShutter);
 
     for (let i = 0; i < samples; i++) {
-      const sampleT = startT + i * dt;
-      const frameState = evaluate(this.currentDoc, sampleT);
-      const stageAspect = this.opts.width / this.opts.height;
-      if (frameState.layers.length === 0) continue;
-      this.lastRenderedNodes = frameState.layers[0].frame.nodes;
-
-      this.renderShotToTarget(
-        this.targetA,
-        frameState.layers[0].frame,
-        stageAspect,
-        frameState.backgroundPhase,
-      );
-
-      this.accumulateTarget(this.targetA, 1.0 / samples);
+      if (!this.renderComposite(startT + i * dt, this.compositeTarget)) continue;
+      accumulation.add(this.renderer, this.compositeTarget, 1.0 / samples);
     }
 
-    // Final pass directly from accumulation target to canvas
     const frameState = evaluate(this.currentDoc, t);
     this.finalPass.render(
       this.renderer,
-      this.accumTarget,
-      this.accumTarget,
+      accumulation.target,
       frameState.layers[0]?.frame.style ?? this.currentDoc.style,
       t,
-      [{ weight: 1.0 }],
-      undefined,
-      null,
     );
   }
 
@@ -610,12 +551,10 @@ export class Engine {
 
     this.targetA.dispose();
     this.targetB.dispose();
-    if (this.accumTarget) {
-      this.accumTarget.dispose();
-    }
+    this.compositeTarget.dispose();
+    this.accumulation?.dispose();
 
-    this.accumMaterial.dispose();
-    this.accumMesh.geometry.dispose();
+    this.compositePass.dispose();
     this.finalPass.dispose();
 
     this.renderer.dispose();

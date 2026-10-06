@@ -10,6 +10,12 @@ import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
 import { addAudioTrackToOutput, writeAudio, type ExportAudio } from "./audio-mux";
+import {
+  calculateBitrate,
+  keyframeIntervalFor,
+  MOTION_BLUR_SAMPLES,
+  motionBlurShutter,
+} from "./destinations";
 
 export type ToWorker =
   | {
@@ -35,29 +41,6 @@ export type FromWorker =
     }
   | { type: "done"; blob: Blob; mime: string }
   | { type: "error"; message: string };
-
-function calculateBitrate(
-  settings: ExportSettings,
-  codec: "avc" | "vp9" | "av1",
-  width: number,
-  height: number,
-): number {
-  let baseBps = 16_000_000; // high
-  if (settings.quality === "web") baseBps = 6_000_000;
-  if (settings.quality === "master") baseBps = 28_000_000;
-
-  if (codec === "av1" || codec === "vp9") {
-    baseBps *= 0.55;
-  }
-
-  const pixelScale = (width * height) / (1920 * 1080);
-  const fpsScale = Math.pow(Math.max(1, settings.fps) / 30, 0.75);
-  return Math.round(baseBps * pixelScale * fpsScale);
-}
-
-function keyframeIntervalFor(settings: ExportSettings): number {
-  return settings.quality === "web" ? 4 : 2;
-}
 
 let isCancelled = false;
 
@@ -116,8 +99,10 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         const output = new Output({ format, target });
         const source = new CanvasSource(canvas, {
           codec,
-          quality: new Quality({ bitrate: calculateBitrate(settings, codec, width, height) }),
-          keyFrameInterval: keyframeIntervalFor(settings),
+          quality: new Quality({
+            bitrate: calculateBitrate(settings.quality, codec, width, height, fps),
+          }),
+          keyFrameInterval: keyframeIntervalFor(settings.quality),
         });
 
         output.addVideoTrack(source, { frameRate: fps });
@@ -132,7 +117,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
 
           const t = frame / fps;
           if (settings.motionBlur) {
-            engine.renderAccumulated(t, (1 / fps) * 0.5, 4);
+            engine.renderAccumulated(t, motionBlurShutter(fps), MOTION_BLUR_SAMPLES);
           } else {
             engine.renderAt(t);
           }

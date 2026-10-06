@@ -101,7 +101,7 @@ test.describe("/lab page and Engine visual rendering", () => {
     expect(recovered).toBe(true);
   });
 
-  test("exports 2s video and verifies dimensions and format", async ({ page }) => {
+  test("exports 1s video and verifies dimensions, duration and format", async ({ page }) => {
     await page.goto("/lab?fixture=card-hero&t=1.0&aspect=16:9");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
 
@@ -117,13 +117,15 @@ test.describe("/lab page and Engine visual rendering", () => {
       const cardHero = fixtures["card-hero"];
       const testDoc = {
         ...cardHero,
-        shots: [{ ...cardHero.shots[0], duration: 2 }],
+        loop: false,
+        shots: [{ ...cardHero.shots[0], duration: 1 }],
       };
 
+      // 640x360 so the test measures export correctness, not SwiftShader speed (F09).
       const provider = createProvider();
       const result = await exportFn(testDoc, provider, {
         destination: "custom",
-        resolution: 720,
+        resolution: 360,
         fps: 30,
         quality: "high",
         format: "webm",
@@ -134,10 +136,17 @@ test.describe("/lab page and Engine visual rendering", () => {
       return {
         size: result.blob.size,
         mime: result.mime,
+        verification: result.verification,
       };
     });
 
     expect(exportInfo.size).toBeGreaterThan(5000);
     expect(exportInfo.mime).toBe("video/webm");
+    const [webm] = exportInfo.verification;
+    expect(webm.result.warnings).toEqual([]);
+    expect(webm.result.actual?.codec).toMatch(/^vp0?9/);
+    expect([webm.result.actual?.width, webm.result.actual?.height]).toEqual([640, 360]);
+    // 30 frames at 30 fps: 1 s within one frame
+    expect(Math.abs((webm.result.actual?.duration ?? 0) - 1)).toBeLessThanOrEqual(1 / 30 + 0.001);
   });
 });
