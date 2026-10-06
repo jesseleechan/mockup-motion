@@ -8,6 +8,7 @@ import {
 } from "mediabunny";
 import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine } from "../engine/Engine";
+import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
 import type { FromWorker, ToWorker } from "./engine-worker";
 import { calculateBitrate, keyframeIntervalFor, outputDimensions } from "./destinations";
@@ -38,43 +39,6 @@ export interface ExportProgress {
   total: number;
   percentage: number;
   thumbnailUrl?: string;
-}
-
-/**
- * Collects all image asset IDs referenced in the document across
- * all layout types (single, pair, trio, rows, columns, stack, wall) and styles.
- */
-export function collectNeededAssetIds(doc: ProjectDoc): Set<string> {
-  const needed = new Set<string>();
-
-  for (const shot of doc.shots) {
-    const layout = shot.layout;
-    if (layout.kind === "single" && layout.assetId) {
-      needed.add(layout.assetId);
-    } else if (layout.kind === "pair") {
-      if (layout.desktopId) needed.add(layout.desktopId);
-      if (layout.mobileId) needed.add(layout.mobileId);
-    } else if (layout.kind === "trio") {
-      if (layout.desktopId) needed.add(layout.desktopId);
-      if (layout.tabletId) needed.add(layout.tabletId);
-      if (layout.mobileId) needed.add(layout.mobileId);
-    } else if (
-      layout.kind === "rows" ||
-      layout.kind === "columns" ||
-      layout.kind === "stack" ||
-      layout.kind === "wall"
-    ) {
-      for (const id of layout.assetIds) {
-        if (id) needed.add(id);
-      }
-    }
-  }
-
-  if (doc.style.background.kind === "image" && doc.style.background.assetId) {
-    needed.add(doc.style.background.assetId);
-  }
-
-  return needed;
 }
 
 /**
@@ -171,11 +135,15 @@ export async function exportWithEngine(
   // during preparation must be checked here or it is lost.
   signal?.throwIfAborted();
 
-  // Decode needed images at export scale
-  const neededAssetIds = collectNeededAssetIds(doc);
+  // Decode every image at the width it appears on screen (quality-bar §3.1)
+  const decodeWidths = textureWidths(doc, {
+    outputWidthPx: width,
+    supersample: settings.supersample ?? 1,
+    quality: settings.quality,
+  });
   const images: Record<string, ImageBitmap> = {};
-  for (const id of neededAssetIds) {
-    images[id] = await provider.getImage(id, width * (settings.supersample ?? 1));
+  for (const [id, decodeWidth] of decodeWidths) {
+    images[id] = await provider.getImage(id, decodeWidth);
     signal?.throwIfAborted();
   }
 

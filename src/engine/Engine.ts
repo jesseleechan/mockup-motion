@@ -1,9 +1,11 @@
 import * as THREE from "three";
-import type { ProjectDoc, Style, TextLayer } from "../doc/types";
+import { collectAssetIds, resolveShotStyle } from "../doc/assets";
+import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
 import { evaluate, type FrameState, type LayoutNode, type ShotFrame } from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
-import { buildDevice, type DeviceInstance } from "./devices/DeviceBuilder";
+import { DevicePool } from "./devices/DevicePool";
 import { applyCameraPose } from "./stage";
+import { textureWidths } from "./textures/sizing";
 import { TextureManager } from "./textures/TextureManager";
 
 export interface EngineOptions {
@@ -30,6 +32,17 @@ export interface AssetProvider {
   getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
   /** Raw bytes of an audio asset (music track); absent where audio is unsupported (worker). */
   getAudio?(assetId: string): Promise<Blob | null>;
+}
+
+export interface EngineDebugInfo {
+  /** Nodes drawn by the most recent render, with whether their screen texture is loaded. */
+  nodes: { id: string; device: DeviceKind; assetId: string | null; textureLoaded: boolean }[];
+  textures: number;
+  geometries: number;
+  setDocumentCalls: number;
+  renderCalls: number;
+  /** Device instances built so far; unchanged when setDocument keeps every device. */
+  devicesBuilt: number;
 }
 
 import { FinalPass } from "./post/final";
@@ -60,7 +73,12 @@ export class Engine {
 
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
-  private deviceInstances = new Map<string, DeviceInstance>();
+  private devices: DevicePool;
+
+  private generation = 0;
+  private setDocumentCalls = 0;
+  private renderCalls = 0;
+  private lastRenderedNodes: LayoutNode[] = [];
 
   private _onContextRestored?: () => void;
 
@@ -81,6 +99,11 @@ export class Engine {
     this.textPass = new TextPass();
 
     this.scene = new THREE.Scene();
+    this.devices = new DevicePool(this.scene, () => ({
+      outputWidthPx: this.opts.width,
+      outputHeightPx: this.opts.height,
+      supersample: this.opts.supersample ?? 1,
+    }));
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     this.scene.add(ambientLight);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -220,6 +243,11 @@ export class Engine {
       this.accumTarget.setSize(renderW, renderH);
     }
     this.finalPass.resize(w, h, ss);
+    this.rescaleScreens();
+  }
+
+  private rescaleScreens(): void {
+    this.devices.rescale(this.opts.height * (this.opts.supersample ?? 1));
   }
 
   setSupersample(supersample: 1 | 1.5 | 2): void {
@@ -232,69 +260,56 @@ export class Engine {
       this.accumTarget.setSize(renderW, renderH);
     }
     this.finalPass.resize(this.opts.width, this.opts.height, supersample);
+    this.rescaleScreens();
   }
 
   /**
-   * Diff document against current state, pre-upload needed textures,
-   * rebuild devices, and pre-warm shader cache.
+   * Loads every image and text raster the document needs, then swaps the
+   * document in: keeps device instances whose key still exists, disposes the
+   * rest, and releases textures the document no longer uses. A newer call
+   * supersedes an older one that is still loading; the older one changes nothing.
    */
   async setDocument(doc: ProjectDoc, assets: AssetProvider): Promise<void> {
-    this.currentDoc = doc;
-    this.currentAssets = assets;
+    const generation = ++this.generation;
+    this.setDocumentCalls++;
 
-    // Remove obsolete device instances
-    for (const [id, dev] of this.deviceInstances.entries()) {
-      this.scene.remove(dev.object3d);
-      dev.dispose();
-      this.deviceInstances.delete(id);
-    }
-
-    // Pre-load textures for all shots
     const ss = this.opts.supersample ?? 1;
-    const targetWidthPx = Math.ceil(this.opts.width * ss * 1.5);
+    const widths = textureWidths(doc, {
+      outputWidthPx: this.opts.width,
+      supersample: ss,
+      quality: doc.export?.quality,
+      cameraDistanceOverride: this.opts.cameraDistanceOverride,
+    });
+    const frameHeightPx = Math.round(this.opts.height * ss);
+    const rasters = new Map<string, TextRaster>();
 
-    const loadPromises: Promise<unknown>[] = [];
-    for (const shot of doc.shots) {
-      if (shot.layout.kind === "single" && shot.layout.assetId) {
-        loadPromises.push(
-          this.textureManager.getTexture(shot.layout.assetId, targetWidthPx, assets),
+    const loads: Promise<unknown>[] = [];
+    for (const [assetId, widthPx] of widths) {
+      loads.push(this.textureManager.getTexture(assetId, widthPx, assets));
+    }
+    doc.shots.forEach((shot, shotIndex) => {
+      const style = resolveShotStyle(doc, shotIndex);
+      for (const layer of shot.texts ?? []) {
+        loads.push(
+          assets.getText(layer, style, frameHeightPx).then((raster) => {
+            rasters.set(layer.id, raster);
+          }),
         );
       }
-      if (shot.texts && shot.texts.length > 0) {
-        const shotStyle = shot.styleOverrides
-          ? { ...doc.style, ...shot.styleOverrides }
-          : doc.style;
-        const frameHeightPx = Math.round(this.opts.height * ss);
-        for (const layer of shot.texts) {
-          loadPromises.push(
-            assets.getText(layer, shotStyle, frameHeightPx).then((raster) => {
-              this.textRasters.set(layer.id, raster);
-              this.textPass.setTextRaster(layer.id, raster);
-            }),
-          );
-        }
-      }
-    }
+    });
+    await Promise.all(loads);
+    if (generation !== this.generation) return;
 
-    await Promise.all(loadPromises);
+    this.currentDoc = doc;
+    this.currentAssets = assets;
+    this.textureManager.retainOnly(collectAssetIds(doc));
+    this.textRasters = rasters;
+    for (const [layerId, raster] of rasters) this.textPass.setTextRaster(layerId, raster);
+    this.textPass.retainOnly(rasters.keys());
+    this.devices.sync(doc);
 
     // Warm-up compilation
     this.renderAt(0);
-  }
-
-  private getOrCreateDevice(node: LayoutNode, style: Style): DeviceInstance {
-    let dev = this.deviceInstances.get(node.id);
-    if (!dev) {
-      const ss = this.opts.supersample ?? 1;
-      dev = buildDevice(node, style, {
-        outputWidthPx: this.opts.width,
-        outputHeightPx: this.opts.height,
-        supersample: ss,
-      });
-      this.deviceInstances.set(node.id, dev);
-      this.scene.add(dev.object3d);
-    }
-    return dev;
   }
 
   private renderShotToTarget(
@@ -322,16 +337,11 @@ export class Engine {
       stageAspect,
     );
 
-    // 3. Update / compose devices
-    const activeNodeIds = new Set(frame.nodes.map((n) => n.id));
-    for (const [id, dev] of this.deviceInstances.entries()) {
-      if (!activeNodeIds.has(id)) {
-        dev.object3d.visible = false;
-      }
-    }
+    // 3. Update / compose devices (only this frame's devices are visible)
+    this.devices.hideAll();
 
     for (const node of frame.nodes) {
-      const dev = this.getOrCreateDevice(node, frame.style);
+      const dev = this.devices.acquire(node, frame.style);
       dev.object3d.visible = true;
       dev.object3d.userData.nodeId = node.id;
 
@@ -389,10 +399,12 @@ export class Engine {
    */
   renderAt(t: number): void {
     if (!this.currentDoc) return;
+    this.renderCalls++;
 
     const frameState: FrameState = evaluate(this.currentDoc, t);
     const stageAspect = this.opts.width / this.opts.height;
     const layers = frameState.layers;
+    this.lastRenderedNodes = layers.flatMap((layer) => layer.frame.nodes);
 
     if (layers.length === 0) return;
 
@@ -448,6 +460,7 @@ export class Engine {
     }
 
     if (!this.currentDoc) return;
+    this.renderCalls++;
 
     const ss = this.opts.supersample ?? 1;
     const renderW = Math.round(this.opts.width * ss);
@@ -479,6 +492,7 @@ export class Engine {
       const frameState = evaluate(this.currentDoc, sampleT);
       const stageAspect = this.opts.width / this.opts.height;
       if (frameState.layers.length === 0) continue;
+      this.lastRenderedNodes = frameState.layers[0].frame.nodes;
 
       this.renderShotToTarget(
         this.targetA,
@@ -516,14 +530,7 @@ export class Engine {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera);
 
-    const candidates: THREE.Object3D[] = [];
-    for (const dev of this.deviceInstances.values()) {
-      if (dev.object3d.visible) {
-        candidates.push(dev.object3d);
-      }
-    }
-
-    const intersects = raycaster.intersectObjects(candidates, true);
+    const intersects = raycaster.intersectObjects(this.devices.visibleObjects(), true);
     for (const hit of intersects) {
       let curr: THREE.Object3D | null = hit.object;
       while (curr) {
@@ -543,6 +550,25 @@ export class Engine {
     return {
       geometries: this.renderer.info.memory.geometries,
       textures: this.renderer.info.memory.textures,
+    };
+  }
+
+  /** Cheap, always-on counters and texture state for tests and the editor (F05). */
+  debugInfo(): EngineDebugInfo {
+    return {
+      nodes: this.lastRenderedNodes.map((node) => ({
+        id: node.id,
+        device: node.device,
+        assetId: node.assetId,
+        textureLoaded: node.assetId
+          ? this.textureManager.getLoadedTexture(node.assetId) !== null
+          : false,
+      })),
+      textures: this.renderer.info.memory.textures,
+      geometries: this.renderer.info.memory.geometries,
+      setDocumentCalls: this.setDocumentCalls,
+      renderCalls: this.renderCalls,
+      devicesBuilt: this.devices.built,
     };
   }
 
@@ -575,11 +601,7 @@ export class Engine {
   }
 
   dispose(): void {
-    for (const dev of this.deviceInstances.values()) {
-      this.scene.remove(dev.object3d);
-      dev.dispose();
-    }
-    this.deviceInstances.clear();
+    this.devices.dispose();
 
     this.textureManager.dispose();
     this.backgroundRenderer.dispose();

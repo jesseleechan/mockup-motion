@@ -369,9 +369,20 @@ export class Engine {
   /** Hit-test output-pixel coordinates; returns the LayoutNode id and screen UV (0..1), or null. */
   pick(x: number, y: number): { nodeId: string; u: number; v: number } | null;
   readonly info: { maxTextureSize: number; renderer: string; drawCalls: number };
+  /** Cheap, always-on state for tests and the editor. */
+  debugInfo(): {
+    nodes: { id: string; device: DeviceKind; assetId: string | null; textureLoaded: boolean }[]; // last render
+    textures: number;
+    geometries: number;
+    setDocumentCalls: number;
+    renderCalls: number;
+    devicesBuilt: number;
+  };
   dispose(): void;
 }
 ```
+
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`), and the final pass handles transition blend, grain, vignette, dither, and downsample to the canvas.
 
