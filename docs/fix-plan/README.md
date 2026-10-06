@@ -94,7 +94,7 @@ The previous run failed mainly because work was marked done without being looked
 | [F07](tasks/F07-previews-and-thumbnails.md) | Real template previews, shot and project thumbnails | M | F04, F06 | Done |
 | [F08](tasks/F08-ui-polish.md) | Inspector and editor UI polish | M | F06 | Done |
 | [F09](tasks/F09-export.md) | Export dialog and export correctness | M | F03 | Done |
-| [F10](tasks/F10-audio-sync.md) | Music preview sync and audio specs | S | F05 | Not started |
+| [F10](tasks/F10-audio-sync.md) | Music preview sync and audio specs | S | F05 | Done |
 | [F11](tasks/F11-art-direction.md) | Template art direction, ambient blur, chrome details (**user review gate**) | L | F01–F04 | Not started |
 | [F12](tasks/F12-demo-sites.md) | Demo site fixes and recapture | S | — | Not started |
 | [F13](tasks/F13-visual-regression-and-ci.md) | Visual baselines and CI that runs everything | M | F11 | Not started |

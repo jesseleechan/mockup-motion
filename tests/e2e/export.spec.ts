@@ -414,7 +414,7 @@ test.describe("F09 destination presets export at their size and length", () => {
       await expect(dialog.getByText("Export complete")).toBeVisible({
         timeout: exportTimeout,
       });
-      const download = dialog.getByRole("button", { name: /Download/ });
+      const download = dialog.getByRole("link", { name: /Download/ });
       const filename = (await download.getAttribute("download")) ?? "";
       const videos = await readDownload(page, (await download.getAttribute("href"))!);
 
