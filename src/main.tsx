@@ -4,8 +4,11 @@ import { createRoot } from "react-dom/client";
 import { EditorShell } from "./editor/EditorShell";
 import "./ui/theme.css";
 
-const isLabUi = import.meta.env.DEV && window.location.pathname.startsWith("/lab/ui");
-const isLab = import.meta.env.DEV && window.location.pathname.startsWith("/lab");
+// The lab is dev-only. `scripts/template-previews.ts` builds with VITE_LAB=1 into a scratch
+// directory so it can render previews from a production build; shipped builds never set it.
+const labEnabled = import.meta.env.DEV || import.meta.env.VITE_LAB === "1";
+const isLabUi = labEnabled && window.location.pathname.startsWith("/lab/ui");
+const isLab = labEnabled && window.location.pathname.startsWith("/lab");
 
 if (isLabUi) {
   const UiGallery = lazy(() => import("./lab/UiGallery.tsx"));

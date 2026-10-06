@@ -7,6 +7,7 @@ import { useTemplateActions } from "../template-actions";
 import { MediaTab } from "./MediaTab";
 import { BrandTab } from "./BrandTab";
 import { UserTemplatesSection } from "./UserTemplatesSection";
+import { templatePosterUrl } from "./template-media";
 import { CaptureHelpModal } from "../dialogs/CaptureHelpModal";
 import { SaveTemplateModal } from "../dialogs/SaveTemplateModal";
 import {
@@ -149,8 +150,16 @@ export const LibraryPanel: React.FC = () => {
                     key={template.id}
                     // Like the gallery, applying never waits for screenshots (F06).
                     onClick={() => applyTemplateById(template.id)}
+                    data-testid="library-template-card"
                     className="p-3 rounded-lg border transition-all border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] cursor-pointer group"
                   >
+                    <img
+                      src={templatePosterUrl(template.id)}
+                      alt=""
+                      loading="lazy"
+                      draggable={false}
+                      className="block w-full aspect-video object-cover rounded-md border border-[var(--color-line)] mb-2.5 bg-[var(--color-bg)]"
+                    />
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
                         {template.name}

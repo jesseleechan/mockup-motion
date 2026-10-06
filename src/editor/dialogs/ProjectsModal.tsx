@@ -9,6 +9,9 @@ import {
   saveProject,
 } from "../../storage/projects";
 import { useEditorStore } from "../../state/store";
+import { useThumbnailRenderer } from "../thumbnails/context";
+import { writeProjectThumbnail } from "../thumbnails/project-thumbnail";
+import { ThumbnailCancelledError } from "../thumbnails/ThumbnailRenderer";
 import { Copy, Plus, Trash2, FolderOpen, Check, Edit2 } from "lucide-react";
 
 interface ProjectsModalProps {
@@ -39,6 +42,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
   const currentDoc = useEditorStore((s) => s.doc);
   const loadDoc = useEditorStore((s) => s.loadDoc);
   const newDoc = useEditorStore((s) => s.newDoc);
+  const renderer = useThumbnailRenderer();
 
   const refreshProjects = async () => {
     const list = await listProjects();
@@ -50,6 +54,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
         thumbs[p.id] = URL.createObjectURL(blob);
       }
     }
+    for (const url of Object.values(thumbnailsRef.current)) URL.revokeObjectURL(url);
     setThumbnails(thumbs);
   };
 
@@ -70,7 +75,26 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
             thumbs[p.id] = URL.createObjectURL(blob);
           }
         }
-        if (active) setThumbnails(thumbs);
+        if (!active) return;
+        setThumbnails(thumbs);
+        setLoading(false);
+
+        // The open project's stored thumbnail can be up to 30 s old; show it as it is now.
+        const doc = useEditorStore.getState().doc;
+        if (renderer && list.some((p) => p.id === doc.id)) {
+          const blob = await writeProjectThumbnail(renderer, doc);
+          if (active) {
+            setThumbnails((prev) => {
+              const old = prev[doc.id];
+              if (old) URL.revokeObjectURL(old);
+              return { ...prev, [doc.id]: URL.createObjectURL(blob) };
+            });
+          }
+        }
+      } catch (err) {
+        if (!(err instanceof ThumbnailCancelledError)) {
+          console.error("[Projects] Failed to load projects", err);
+        }
       } finally {
         if (active) {
           setLoading(false);
@@ -84,7 +108,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
         URL.revokeObjectURL(url as string);
       }
     };
-  }, [open]);
+  }, [open, renderer]);
 
   const handleSelect = async (id: string) => {
     if (id === currentDoc.id) {
@@ -187,6 +211,8 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                 <div
                   key={p.id}
                   onClick={() => handleSelect(p.id)}
+                  data-testid="project-card"
+                  data-project-id={p.id}
                   className={`flex flex-col rounded-lg border overflow-hidden cursor-pointer transition-all group ${
                     isCurrent
                       ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"

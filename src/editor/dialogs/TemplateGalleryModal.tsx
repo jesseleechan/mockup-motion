@@ -4,6 +4,7 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { BUILTIN_TEMPLATES, validateTemplateRequirements, type Template } from "../../templates";
 import { useTemplateActions } from "../template-actions";
+import { TemplatePreview } from "../library/TemplatePreview";
 import { Check, Film, Layers, Monitor, Play, Search, Smartphone, Sparkles, X } from "lucide-react";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
@@ -22,6 +23,7 @@ export const TemplateGalleryModal: React.FC = () => {
     doc.templateId || BUILTIN_TEMPLATES[0].id,
   );
   const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
+  const [focusedTemplateId, setFocusedTemplateId] = useState<string | null>(null);
 
   // The modal stays mounted between openings, so each opening starts on the current template.
   const [wasOpen, setWasOpen] = useState(open);
@@ -61,7 +63,7 @@ export const TemplateGalleryModal: React.FC = () => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl">
+      <DialogContent className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--color-line)] flex items-center justify-between bg-[var(--color-panel)] shrink-0">
           <div>
@@ -138,7 +140,8 @@ export const TemplateGalleryModal: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTemplates.map((template) => {
                 const isSelected = selectedTemplateId === template.id;
-                const isHovered = hoveredTemplateId === template.id;
+                const isPreviewing =
+                  hoveredTemplateId === template.id || focusedTemplateId === template.id;
                 const validation = validateTemplateRequirements(template, doc.assets);
                 const requiredSlots = template.slots.filter((s) => s.required);
 
@@ -148,6 +151,8 @@ export const TemplateGalleryModal: React.FC = () => {
                     onClick={() => setSelectedTemplateId(template.id)}
                     onMouseEnter={() => setHoveredTemplateId(template.id)}
                     onMouseLeave={() => setHoveredTemplateId(null)}
+                    onFocus={() => setFocusedTemplateId(template.id)}
+                    onBlur={() => setFocusedTemplateId(null)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         setSelectedTemplateId(template.id);
@@ -156,6 +161,8 @@ export const TemplateGalleryModal: React.FC = () => {
                     tabIndex={0}
                     role="button"
                     aria-label={`Select template ${template.name}`}
+                    data-testid="template-card"
+                    data-template-id={template.id}
                     className={`flex flex-col rounded-xl border transition-all text-left overflow-hidden group cursor-pointer ${
                       isSelected
                         ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/20 bg-[var(--color-raised)]"
@@ -163,33 +170,12 @@ export const TemplateGalleryModal: React.FC = () => {
                     }`}
                   >
                     {/* Media Preview Box */}
-                    <div className="aspect-video w-full bg-[var(--color-raised)] relative overflow-hidden flex items-center justify-center border-b border-[var(--color-line)]">
-                      {/* Video or Poster fallback */}
-                      <video
-                        src={`/templates/${template.id}.webm`}
-                        poster={`/templates/${template.id}.webp`}
-                        autoPlay={isHovered}
-                        loop
-                        muted
-                        playsInline
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          // Hide broken video and show fallback thumbnail
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
+                    <div className="aspect-video w-full bg-[var(--color-raised)] relative overflow-hidden border-b border-[var(--color-line)]">
+                      <TemplatePreview
+                        templateId={template.id}
+                        active={isPreviewing}
+                        className="block w-full h-full object-cover"
                       />
-
-                      {/* Fallback Graphic if no video exists yet */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[var(--color-panel)] to-[var(--color-raised)] -z-10">
-                        <Icon
-                          icon={Film}
-                          size={28}
-                          className="text-[var(--color-text-3)] mb-1 opacity-60"
-                        />
-                        <span className="text-[11px] font-mono text-[var(--color-text-3)]">
-                          {template.id}
-                        </span>
-                      </div>
 
                       {/* Top Badges */}
                       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
