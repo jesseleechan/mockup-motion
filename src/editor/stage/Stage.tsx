@@ -10,35 +10,26 @@ import {
   getTemplateById,
 } from "../../templates";
 import type { AssetRef } from "../../doc/types";
-import { schedule } from "../../motion";
+import { aspectRatioValue, schedule } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 import { validateAndDecodeAsset } from "../../assets/decode";
+import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
 
 const EngineCanvas = lazy(() =>
   import("../../engine/react/EngineCanvas").then((m) => ({ default: m.EngineCanvas })),
 );
 
+declare global {
+  interface Window {
+    /** Dev builds only: the editor preview engine, for e2e counters (F05). */
+    __editorEngine?: Engine;
+  }
+}
+
 interface StageProps {
   showSafeMargins: boolean;
   onOpenTemplates?: () => void;
-}
-
-function aspectToRatio(aspect: string): number {
-  switch (aspect) {
-    case "16:9":
-      return 16 / 9;
-    case "9:16":
-      return 9 / 16;
-    case "1:1":
-      return 1;
-    case "4:5":
-      return 4 / 5;
-    case "4:3":
-      return 4 / 3;
-    default:
-      return 16 / 9;
-  }
 }
 
 export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }) => {
@@ -65,7 +56,27 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [stageSize, setStageSize] = useState<PreviewSize | null>(null);
   const { toast } = useToast();
+
+  // Measure the stage so the preview gets an explicit pixel size (F05).
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      // clientWidth/Height include the padding that fitPreview subtracts.
+      setStageSize({ width: el.clientWidth, height: el.clientHeight });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (import.meta.env.DEV) delete window.__editorEngine;
+    };
+  }, []);
 
   const handleFiles = React.useCallback(
     async (files: File[]) => {
@@ -203,11 +214,18 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
     );
   };
 
-  const ratio = aspectToRatio(doc.aspect);
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
+  const preview = stageSize
+    ? fitPreview(stageSize.width, stageSize.height, aspectRatioValue(doc.aspect), stageZoom)
+    : null;
 
   return (
-    <div className="relative flex-1 w-full h-full bg-[var(--color-stage)] p-8 flex items-center justify-center overflow-hidden select-none">
+    <div
+      ref={stageRef}
+      data-testid="stage"
+      className="relative flex-1 w-full h-full bg-[var(--color-stage)] flex items-center justify-center overflow-hidden select-none"
+      style={{ padding: STAGE_PADDING }}
+    >
       {/* Hidden file input for file picker button */}
       <input
         ref={fileInputRef}
@@ -267,18 +285,9 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
             </Button>
           </div>
         </div>
-      ) : (
-        /* Canvas Stage Output Boundary */
-        <div
-          className="relative max-w-full max-h-full flex items-center justify-center transition-transform duration-180"
-          style={{
-            aspectRatio: `${ratio}`,
-            width: stageZoom === 0.5 ? "50%" : stageZoom > 1 ? "100%" : "auto",
-            height: stageZoom === 0.5 ? "50%" : stageZoom > 1 ? "100%" : "auto",
-            maxWidth: "100%",
-            maxHeight: "100%",
-          }}
-        >
+      ) : preview && preview.width > 0 && preview.height > 0 ? (
+        /* Canvas Stage Output Boundary: explicit pixels, fitted to the stage */
+        <div className="relative shrink-0" style={{ width: preview.width, height: preview.height }}>
           <div
             ref={canvasContainerRef}
             onDragOver={(e) => {
@@ -320,10 +329,11 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
                 setHoveredNodeId(null);
               }
             }}
-            className={`relative w-full h-full border rounded-sm overflow-hidden shadow-2xl bg-black transition-all ${
+            // A ring instead of a border: the outline must not shrink the canvas below the fit.
+            className={`relative w-full h-full rounded-sm overflow-hidden shadow-2xl bg-black transition-shadow ${
               hoveredNodeId
-                ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/50"
-                : "border-[var(--color-line)]"
+                ? "ring-2 ring-[var(--color-accent)]"
+                : "ring-1 ring-[var(--color-line)]"
             }`}
           >
             <Suspense fallback={null}>
@@ -332,6 +342,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
                 assets={provider}
                 onEngineReady={(engine) => {
                   engineRef.current = engine;
+                  if (import.meta.env.DEV) window.__editorEngine = engine;
                 }}
                 onCanvasClick={handleCanvasClick}
               />
@@ -366,7 +377,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Global Drag-and-drop Overlay */}
       {isDragOver && (
