@@ -1,5 +1,5 @@
 import type { AssetRef } from "../doc/types";
-import manifest from "../../public/demo/manifest.json";
+import manifest from "../../public/demo/manifest.json" with { type: "json" };
 
 export type DemoSite = "aurelia" | "northwind" | "maison-oak" | "field-notes" | "studio-kova";
 export type DemoDevice = "desktop" | "mobile";
