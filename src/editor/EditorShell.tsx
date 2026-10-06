@@ -14,6 +14,8 @@ import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
 import { useAudioPreview } from "./audio/useAudioPreview";
 import { ToastProvider, TooltipProvider } from "../ui";
+import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
+import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
 import { Monitor } from "lucide-react";
 
 const ExportModal = lazy(() =>
@@ -264,57 +266,60 @@ export const EditorShell: React.FC = () => {
   return (
     <ToastProvider>
       <TooltipProvider>
-        <div
-          id="app-root"
-          data-theme={theme}
-          className="flex flex-col h-screen w-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans overflow-hidden select-none"
-        >
-          {/* Screen size note (< 1024px) */}
-          {isMobileScreen && (
-            <div className="bg-[var(--color-raised)] border-b border-[var(--color-line)] px-3 py-1.5 text-center text-xs text-[var(--color-text-2)] flex items-center justify-center gap-1.5 shrink-0 z-40">
-              <Monitor size={14} className="text-[var(--color-accent)]" />
-              <span>Best edited on a larger screen (1280px+). Panels are collapsed.</span>
+        <ThumbnailProvider>
+          <ProjectThumbnailWriter />
+          <div
+            id="app-root"
+            data-theme={theme}
+            className="flex flex-col h-screen w-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans overflow-hidden select-none"
+          >
+            {/* Screen size note (< 1024px) */}
+            {isMobileScreen && (
+              <div className="bg-[var(--color-raised)] border-b border-[var(--color-line)] px-3 py-1.5 text-center text-xs text-[var(--color-text-2)] flex items-center justify-center gap-1.5 shrink-0 z-40">
+                <Monitor size={14} className="text-[var(--color-accent)]" />
+                <span>Best edited on a larger screen (1280px+). Panels are collapsed.</span>
+              </div>
+            )}
+
+            {/* TopBar */}
+            <TopBar
+              onOpenProjects={() => setProjectsOpen(true)}
+              onOpenShortcuts={() => setShortcutsOpen(true)}
+              onOpenExport={() => setExportOpen(true)}
+            />
+
+            {/* Workspace Body */}
+            <div className="flex-1 flex min-h-0 overflow-hidden relative">
+              {/* Library Panel (Left) */}
+              {!isMobileScreen && panels.library && <LibraryPanel />}
+
+              {/* Center Stage & Transport */}
+              <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
+                <Stage showSafeMargins={showSafeMargins} />
+                <TransportBar
+                  showSafeMargins={showSafeMargins}
+                  onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
+                />
+              </main>
+
+              {/* Inspector Panel (Right) */}
+              {!isMobileScreen && panels.inspector && <InspectorPanel />}
             </div>
-          )}
 
-          {/* TopBar */}
-          <TopBar
-            onOpenProjects={() => setProjectsOpen(true)}
-            onOpenShortcuts={() => setShortcutsOpen(true)}
-            onOpenExport={() => setExportOpen(true)}
-          />
+            {/* Timeline Area (Bottom) */}
+            {!isMobileScreen && panels.timeline && <TimelineContainer />}
 
-          {/* Workspace Body */}
-          <div className="flex-1 flex min-h-0 overflow-hidden relative">
-            {/* Library Panel (Left) */}
-            {!isMobileScreen && panels.library && <LibraryPanel />}
-
-            {/* Center Stage & Transport */}
-            <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
-              <Stage showSafeMargins={showSafeMargins} />
-              <TransportBar
-                showSafeMargins={showSafeMargins}
-                onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
-              />
-            </main>
-
-            {/* Inspector Panel (Right) */}
-            {!isMobileScreen && panels.inspector && <InspectorPanel />}
+            {/* Dialogs */}
+            {exportOpen && (
+              <Suspense fallback={null}>
+                <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
+              </Suspense>
+            )}
+            <TemplateGalleryModal />
+            <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+            <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
           </div>
-
-          {/* Timeline Area (Bottom) */}
-          {!isMobileScreen && panels.timeline && <TimelineContainer />}
-
-          {/* Dialogs */}
-          {exportOpen && (
-            <Suspense fallback={null}>
-              <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
-            </Suspense>
-          )}
-          <TemplateGalleryModal />
-          <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
-          <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
-        </div>
+        </ThumbnailProvider>
       </TooltipProvider>
     </ToastProvider>
   );

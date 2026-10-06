@@ -26,6 +26,7 @@ import {
   Maximize2,
   Columns,
 } from "lucide-react";
+import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
 
 export interface ShotCardProps {
   shot: Shot;
@@ -144,10 +145,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   };
 
   // --- Text pill drag handlers ---
-  const handleTextPointerDown = (
-    e: React.PointerEvent<HTMLDivElement>,
-    textLayer: TextLayer,
-  ) => {
+  const handleTextPointerDown = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
     e.stopPropagation();
     if (e.button !== 0) return;
     onSelectText(textLayer.id);
@@ -163,10 +161,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     }
   };
 
-  const handleTextPointerMove = (
-    e: React.PointerEvent<HTMLDivElement>,
-    textLayer: TextLayer,
-  ) => {
+  const handleTextPointerMove = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
     if (!textDragRef.current || textDragRef.current.layerId !== textLayer.id) return;
     const dx = e.clientX - textDragRef.current.startX;
     const dDelay = dx / pxPerSecond;
@@ -177,10 +172,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     onTextDelayChange(textLayer.id, Number(nextDelay.toFixed(2)));
   };
 
-  const handleTextPointerUp = (
-    e: React.PointerEvent<HTMLDivElement>,
-    textLayer: TextLayer,
-  ) => {
+  const handleTextPointerUp = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
     if (textDragRef.current?.layerId === textLayer.id) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -280,6 +272,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
       <ContextMenuTrigger asChild>
         <div
           role="group"
+          data-testid="shot-card"
           tabIndex={0}
           aria-label={`Shot ${index + 1}: ${subLabel}, duration ${currentDuration.toFixed(1)} seconds`}
           onClick={onSelect}
@@ -302,65 +295,68 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 : ""
           }`}
         >
-          {/* Main Card Body */}
-          <div className="p-2 flex-1 flex flex-col justify-between overflow-hidden">
-            {/* Top row: Shot title, device icon, quick actions */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-semibold text-[var(--color-text)] shrink-0">
-                  Shot {index + 1}
-                </span>
-                <span className="text-[var(--color-text-3)] shrink-0">{getLayoutIcon()}</span>
-              </div>
+          {/* Main Card Body: the shot at its local midpoint (F07), details beside it */}
+          <div className="p-1.5 flex-1 min-h-0 flex gap-2 overflow-hidden">
+            <ShotThumbnail
+              shot={shot}
+              className="h-full shrink-0 rounded overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)]/60"
+            />
 
-              {/* Quick actions hover */}
-              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
-                <Tooltip content="Duplicate shot">
-                  <button
-                    type="button"
-                    aria-label="Duplicate shot"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDuplicate();
-                    }}
-                    className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] rounded hover:bg-[var(--color-hover)]"
-                  >
-                    <Icon icon={Copy} size={11} />
-                  </button>
-                </Tooltip>
-                {canDelete && (
-                  <Tooltip content="Delete shot">
+            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+              {/* Top row: Shot title, device icon, quick actions */}
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[11px] font-semibold text-[var(--color-text)] truncate">
+                    Shot {index + 1}
+                  </span>
+                  <span className="text-[var(--color-text-3)] shrink-0">{getLayoutIcon()}</span>
+                </div>
+
+                {/* Quick actions hover */}
+                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+                  <Tooltip content="Duplicate shot">
                     <button
                       type="button"
-                      aria-label="Delete shot"
+                      aria-label="Duplicate shot"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onDelete();
+                        onDuplicate();
                       }}
-                      className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-danger)] rounded hover:bg-[var(--color-hover)]"
+                      className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] rounded hover:bg-[var(--color-hover)]"
                     >
-                      <Icon icon={Trash2} size={11} />
+                      <Icon icon={Copy} size={11} />
                     </button>
                   </Tooltip>
-                )}
+                  {canDelete && (
+                    <Tooltip content="Delete shot">
+                      <button
+                        type="button"
+                        aria-label="Delete shot"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete();
+                        }}
+                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-danger)] rounded hover:bg-[var(--color-hover)]"
+                      >
+                        <Icon icon={Trash2} size={11} />
+                      </button>
+                    </Tooltip>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Midpoint Preview Area */}
-            <div className="my-1 h-7 rounded bg-[var(--color-bg)] border border-[var(--color-line)]/60 flex items-center justify-center px-1.5 overflow-hidden">
-              <span className="text-[10px] text-[var(--color-text-2)] font-mono truncate">
-                {subLabel}
-              </span>
-            </div>
-
-            {/* Footer row: duration label */}
-            <div className="flex items-center justify-between text-[10px] text-[var(--color-text-3)] font-mono">
-              <span>{currentDuration.toFixed(1)}s</span>
-              {shot.texts.length > 0 && (
-                <span className="text-[9px]">
-                  {shot.texts.length} text{shot.texts.length > 1 ? "s" : ""}
+              {/* Footer: duration, layout and text count */}
+              <div className="flex flex-col gap-0.5 text-[10px] text-[var(--color-text-3)] font-mono min-w-0">
+                <span className="truncate">{subLabel}</span>
+                <span className="flex items-center gap-1.5">
+                  <span>{currentDuration.toFixed(1)}s</span>
+                  {shot.texts.length > 0 && (
+                    <span className="text-[9px]">
+                      · {shot.texts.length} text{shot.texts.length > 1 ? "s" : ""}
+                    </span>
+                  )}
                 </span>
-              )}
+              </div>
             </div>
           </div>
 

@@ -91,7 +91,7 @@ The previous run failed mainly because work was marked done without being looked
 | [F04](tasks/F04-lab-real-assets.md) | `/lab` and template previews use real demo assets | S | F03 | Done |
 | [F05](tasks/F05-stage-and-playback.md) | Stage sizing and preview playback loop | M | F03 | Done |
 | [F06](tasks/F06-first-run-and-templates.md) | First run and template flow | S | F05 | Done |
-| [F07](tasks/F07-previews-and-thumbnails.md) | Real template previews, shot and project thumbnails | M | F04, F06 | Not started |
+| [F07](tasks/F07-previews-and-thumbnails.md) | Real template previews, shot and project thumbnails | M | F04, F06 | Done |
 | [F08](tasks/F08-ui-polish.md) | Inspector and editor UI polish | M | F06 | Not started |
 | [F09](tasks/F09-export.md) | Export dialog and export correctness | M | F03 | Not started |
 | [F10](tasks/F10-audio-sync.md) | Music preview sync and audio specs | S | F05 | Not started |
