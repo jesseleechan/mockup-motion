@@ -37,7 +37,10 @@ export const LibraryPanel: React.FC = () => {
   );
 
   return (
-    <aside className="w-[280px] bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden">
+    <aside
+      data-panel="library"
+      className="w-[280px] bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden"
+    >
       {/* Dialogs */}
       <CaptureHelpModal open={captureModalOpen} onOpenChange={setCaptureModalOpen} />
       <SaveTemplateModal open={saveTemplateModalOpen} onOpenChange={setSaveTemplateModalOpen} />
@@ -95,7 +98,8 @@ export const LibraryPanel: React.FC = () => {
                 { id: "templates", label: "Templates", icon: <Icon icon={Film} size={13} /> },
                 {
                   id: "media",
-                  label: `Media (${doc.assets.length})`,
+                  label: "Media",
+                  badge: doc.assets.length,
                   icon: <Icon icon={FolderOpen} size={13} />,
                 },
                 { id: "brand", label: "Brand", icon: <Icon icon={Palette} size={13} /> },
@@ -110,15 +114,15 @@ export const LibraryPanel: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                className="w-full text-xs gap-1.5 justify-center py-1.5 mb-1"
+                className="w-full mb-1"
                 onClick={openTemplateGallery}
+                icon={<Icon icon={Sparkles} size={13} className="text-[var(--color-accent)]" />}
               >
-                <Icon icon={Sparkles} size={13} className="text-[var(--color-accent)]" />
                 Browse all templates
               </Button>
             </div>
 
-            <div className="flex items-center gap-1 overflow-x-auto pb-2 shrink-0">
+            <div data-scroll-x className="flex items-center gap-1 overflow-x-auto pb-2 shrink-0">
               {categories.map((cat) => (
                 <button
                   key={cat}

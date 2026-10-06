@@ -19,6 +19,11 @@ export interface SelectProps<T extends string = string> {
   size?: "sm" | "md";
   className?: string;
   "aria-label"?: string;
+  /**
+   * The options are user content (file names): the value may truncate with an ellipsis.
+   * Our own option labels must fit, so the overflow guard (F08) flags them if they don't.
+   */
+  userContent?: boolean;
 }
 
 export function Select<T extends string = string>({
@@ -30,7 +35,9 @@ export function Select<T extends string = string>({
   size = "md",
   className,
   "aria-label": ariaLabel,
+  userContent = false,
 }: SelectProps<T>) {
+  const selectedLabel = options.find((opt) => opt.value === value)?.label;
   return (
     <SelectPrimitive.Root
       value={value}
@@ -40,7 +47,7 @@ export function Select<T extends string = string>({
       <SelectPrimitive.Trigger
         aria-label={ariaLabel ?? placeholder ?? "Select option"}
         className={clsx(
-          "inline-flex items-center justify-between w-full font-medium select-none cursor-pointer",
+          "inline-flex items-center justify-between w-full min-w-0 whitespace-nowrap font-medium select-none cursor-pointer",
           "bg-[var(--color-panel)] text-[var(--color-text)] border border-[var(--color-line)] shadow-xs rounded-sm transition-colors",
           "hover:bg-[var(--color-hover)] hover:border-[var(--color-line-strong)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
@@ -50,7 +57,13 @@ export function Select<T extends string = string>({
           className,
         )}
       >
-        <SelectPrimitive.Value placeholder={placeholder} />
+        <span
+          className="min-w-0 flex-1 truncate text-left"
+          title={selectedLabel}
+          data-truncate={userContent ? "" : undefined}
+        >
+          <SelectPrimitive.Value placeholder={placeholder} />
+        </span>
         <SelectPrimitive.Icon asChild>
           <Icon
             icon={ChevronDown}

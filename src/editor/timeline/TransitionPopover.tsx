@@ -1,13 +1,6 @@
 import React from "react";
 import type { EasingId, Transition } from "../../doc/types";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  Slider,
-  Select,
-  Icon,
-} from "../../ui";
+import { Popover, PopoverTrigger, PopoverContent, Slider, Select, Icon } from "../../ui";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +14,7 @@ import {
   Maximize2,
   Paintbrush,
 } from "lucide-react";
+import { EASING_LABELS, TRANSITION_LABELS, optionsFor } from "../labels";
 
 export interface TransitionPopoverProps {
   transition: Transition;
@@ -37,23 +31,23 @@ const TRANSITION_KINDS: Array<{
   icon: React.ComponentType<{ className?: string; size?: number }>;
   desc: string;
 }> = [
-  { id: "cut", label: "Cut", icon: Scissors, desc: "Instant cut" },
-  { id: "fade", label: "Fade", icon: Layers, desc: "Smooth crossfade" },
-  { id: "blur", label: "Blur", icon: Eye, desc: "Lens blur peak" },
-  { id: "push", label: "Push", icon: MoveRight, desc: "Slide along direction" },
-  { id: "zoom", label: "Zoom", icon: Maximize2, desc: "Scale into view" },
-  { id: "wipe", label: "Wipe", icon: Paintbrush, desc: "Diagonal feather wipe" },
+  { id: "cut", label: TRANSITION_LABELS.cut, icon: Scissors, desc: "Instant cut" },
+  { id: "fade", label: TRANSITION_LABELS.fade, icon: Layers, desc: "Smooth crossfade" },
+  { id: "blur", label: TRANSITION_LABELS.blur, icon: Eye, desc: "Lens blur peak" },
+  { id: "push", label: TRANSITION_LABELS.push, icon: MoveRight, desc: "Slide along direction" },
+  { id: "zoom", label: TRANSITION_LABELS.zoom, icon: Maximize2, desc: "Scale into view" },
+  { id: "wipe", label: TRANSITION_LABELS.wipe, icon: Paintbrush, desc: "Diagonal feather wipe" },
 ];
 
-const EASING_OPTIONS: Array<{ value: EasingId; label: string }> = [
-  { value: "quintInOut", label: "Quintic (Smooth In/Out)" },
-  { value: "smooth", label: "Smooth" },
-  { value: "gentle", label: "Gentle" },
-  { value: "linear", label: "Linear" },
-  { value: "expoOut", label: "Exponential Out" },
-  { value: "backOut", label: "Back Out (Overshoot)" },
-  { value: "spring", label: "Spring (Elastic)" },
-];
+const EASING_OPTIONS = optionsFor<EasingId>(EASING_LABELS, [
+  "quintInOut",
+  "smooth",
+  "gentle",
+  "linear",
+  "expoOut",
+  "backOut",
+  "spring",
+]);
 
 export const TransitionPopover: React.FC<TransitionPopoverProps> = ({
   transition,
@@ -240,7 +234,9 @@ export const TransitionPopover: React.FC<TransitionPopoverProps> = ({
             {/* Direction buttons for push and wipe */}
             {(currentKind === "push" || currentKind === "wipe") && (
               <div className="space-y-1.5">
-                <span className="text-[11px] font-medium text-[var(--color-text-2)]">Direction</span>
+                <span className="text-[11px] font-medium text-[var(--color-text-2)]">
+                  Direction
+                </span>
                 <div className="grid grid-cols-4 gap-1">
                   {(["left", "right", "up", "down"] as const).map((dir) => {
                     const isDirActive = currentDirection === dir;

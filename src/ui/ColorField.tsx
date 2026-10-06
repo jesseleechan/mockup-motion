@@ -141,7 +141,7 @@ export const ColorField: React.FC<ColorFieldProps> = ({
           {brandSwatches && brandSwatches.length > 0 && (
             <div>
               <div className="text-[11px] font-medium text-[var(--color-text-3)] mb-1.5 uppercase tracking-wider">
-                Brand Kit
+                Brand kit
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {brandSwatches.map((color) => (

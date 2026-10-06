@@ -312,8 +312,11 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
 
             {/* Hovered Device Drop Indicator */}
             {hoveredNodeId && (
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5">
-                <span>Assign media to {hoveredNodeId}</span>
+              <div
+                data-testid="drop-hint"
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5"
+              >
+                <span>Drop to use this screenshot</span>
               </div>
             )}
 
@@ -323,14 +326,14 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
                 {/* 7% perimeter margin */}
                 <div className="absolute inset-[7%] border border-dashed border-[var(--color-accent)]/50 rounded-xs flex items-center justify-center">
                   <span className="absolute top-1 left-1.5 text-[9px] font-mono text-[var(--color-accent)]/70 uppercase">
-                    7% Safe Margin
+                    7% safe margin
                   </span>
 
                   {/* 80% central vertical safe area for 9:16 and 4:5 */}
                   {isVertical && (
                     <div className="w-full h-[80%] border border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 rounded-xs flex items-center justify-center">
                       <span className="text-[10px] font-mono text-[var(--color-danger)]/80 uppercase font-semibold">
-                        80% Action Area
+                        80% action area
                       </span>
                     </div>
                   )}

@@ -37,12 +37,12 @@ export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title="Save as Template"
+        title="Save as template"
         description="Save your current shots, camera angles, and style as a reusable template for other projects."
         className="max-w-md"
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <Field label="Template Name" htmlFor="tmpl-name">
+          <Field label="Name" htmlFor="tmpl-name">
             <input
               id="tmpl-name"
               type="text"
@@ -54,7 +54,7 @@ export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
             />
           </Field>
 
-          <Field label="Description (optional)" htmlFor="tmpl-desc">
+          <Field label="Description" htmlFor="tmpl-desc">
             <input
               id="tmpl-desc"
               type="text"
@@ -70,7 +70,7 @@ export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
               Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={saving || !name.trim()}>
-              {saving ? "Saving..." : "Save Template"}
+              {saving ? "Saving" : "Save template"}
             </Button>
           </div>
         </form>

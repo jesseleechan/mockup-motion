@@ -25,14 +25,14 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await expect(page.locator("canvas")).toBeVisible();
 
     // Open Library panel Templates tab
-    const browseTemplatesBtn = page.getByRole("button", { name: /Browse All Templates/i });
+    const browseTemplatesBtn = page.getByRole("button", { name: "Browse all templates" });
     await expect(browseTemplatesBtn).toBeVisible();
     await browseTemplatesBtn.click();
 
     // Verify Template Gallery Modal is open
     const modal = page.getByRole("dialog");
     await expect(modal).toBeVisible();
-    await expect(modal.getByText("Template Gallery")).toBeVisible();
+    await expect(modal.getByText("Template gallery")).toBeVisible();
 
     // Category tabs should be present
     await expect(modal.getByRole("button", { name: "All", exact: true })).toBeVisible();
@@ -52,7 +52,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await tiltedCard.click();
 
     // Apply template
-    const applyBtn = modal.getByRole("button", { name: /Apply Template/i });
+    const applyBtn = modal.getByRole("button", { name: "Apply template" });
     await expect(applyBtn).toBeVisible();
     await applyBtn.click();
 
@@ -63,9 +63,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await browseTemplatesBtn.click();
     await expect(modal).toBeVisible();
 
-    const scanResults = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const scanResults = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
     const serious = scanResults.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",
     );
@@ -83,9 +81,9 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const shot1Card = page.locator(".group", { hasText: "Shot 1" });
     await shot1Card.click();
 
-    // 1. Scroll Through Page section
-    await expect(page.getByText("Scroll Through Page")).toBeVisible();
-    const scrollSwitch = page.getByRole("switch", { name: "Scroll Through Page" });
+    // 1. Scroll section
+    await expect(page.getByText("Scroll through page")).toBeVisible();
+    const scrollSwitch = page.getByRole("switch", { name: "Scroll through page" });
     await expect(scrollSwitch).toBeVisible();
 
     // Initially unchecked
@@ -96,11 +94,11 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     expect(await scrollSwitch.getAttribute("data-state")).toBe("checked");
 
     // Scroll settings now visible (Hold at stops, Easing, Stops)
-    await expect(page.getByText(/Hold Time/i)).toBeVisible();
+    await expect(page.getByText("Hold", { exact: true })).toBeVisible();
 
-    // 2. Cursor Overlay section
-    await expect(page.getByText("Enable Cursor")).toBeVisible();
-    const cursorSwitch = page.getByRole("switch", { name: "Enable Cursor" });
+    // 2. Cursor section
+    await expect(page.getByText("Show cursor")).toBeVisible();
+    const cursorSwitch = page.getByRole("switch", { name: "Show cursor" });
     await expect(cursorSwitch).toBeVisible();
 
     // Toggle cursor ON
@@ -108,7 +106,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     expect(await cursorSwitch.getAttribute("data-state")).toBe("checked");
 
     // Cursor Style and Keyframes should be visible
-    await expect(page.getByText("Cursor Style")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Cursor style" })).toBeVisible();
     await expect(page.getByText(/Keyframes/i)).toBeVisible();
 
     // Verify initial keyframe with Click badge is rendered
@@ -128,13 +126,15 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("heading", { name: "Export Video" })).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible();
 
     // Check Destination Presets are rendered
-    await expect(dialog.getByRole("button", { name: /Web Embed/i })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Website", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: /Dribbble/i })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: /Instagram Feed/i })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: /4K Keynote/i })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Instagram", exact: true })).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "4K presentation", exact: true }),
+    ).toBeVisible();
 
     // Select Dribbble preset
     await dialog.getByRole("button", { name: /Dribbble/i }).click();
@@ -142,8 +142,8 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Should indicate Dribbble 4:3 recommendation and switch prompt
     await expect(dialog.getByText(/Preset recommends/i)).toBeVisible();
 
-    // Select 4K Keynote preset
-    await dialog.getByRole("button", { name: /4K Keynote/i }).click();
+    // Select 4K presentation preset
+    await dialog.getByRole("button", { name: "4K presentation", exact: true }).click();
 
     // Verify format dropdown options include MP4, WebM, Web Bundle, GIF, Still Frame
     const formatSelect = dialog.getByRole("combobox").first();
@@ -153,9 +153,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await page.keyboard.press("Escape");
 
     // Run Axe scan on Export Modal
-    const scanResults = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const scanResults = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
     const serious = scanResults.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",
     );

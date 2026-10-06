@@ -2,25 +2,39 @@ import React from "react";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import type { Anchor, TextAnimId, TextLayer } from "../../doc/types";
-import { Button, ColorField, Field, Icon, Section, SegmentedControl, Select, Slider, Switch } from "../../ui";
+import {
+  Button,
+  ColorField,
+  Field,
+  Icon,
+  Section,
+  SegmentedControl,
+  Select,
+  Slider,
+  Switch,
+} from "../../ui";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { ANCHOR_LABELS, TEXT_ANIMATION_LABELS, TEXT_ROLE_LABELS, optionsFor } from "../labels";
 
 interface TextInspectorProps {
   shotId: string;
   textId: string;
 }
 
-const ANCHORS: { id: Anchor; label: string; row: number; col: number }[] = [
-  { id: "top-left", label: "TL", row: 0, col: 0 },
-  { id: "top", label: "TC", row: 0, col: 1 },
-  { id: "top-right", label: "TR", row: 0, col: 2 },
-  { id: "left", label: "ML", row: 1, col: 0 },
-  { id: "center", label: "MC", row: 1, col: 1 },
-  { id: "right", label: "MR", row: 1, col: 2 },
-  { id: "bottom-left", label: "BL", row: 2, col: 0 },
-  { id: "bottom", label: "BC", row: 2, col: 1 },
-  { id: "bottom-right", label: "BR", row: 2, col: 2 },
+// Row-major 3×3 grid; the cell glyphs are compact, the full names are in the tooltip.
+const ANCHORS: { id: Anchor; glyph: string }[] = [
+  { id: "top-left", glyph: "TL" },
+  { id: "top", glyph: "TC" },
+  { id: "top-right", glyph: "TR" },
+  { id: "left", glyph: "ML" },
+  { id: "center", glyph: "MC" },
+  { id: "right", glyph: "MR" },
+  { id: "bottom-left", glyph: "BL" },
+  { id: "bottom", glyph: "BC" },
+  { id: "bottom-right", glyph: "BR" },
 ];
+
+const TEXT_ANIMATIONS: TextAnimId[] = ["fadeUp", "maskReveal", "blurIn", "typewriter"];
 
 export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) => {
   const doc = useEditorStore((s) => s.doc);
@@ -38,6 +52,16 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
     );
   }
 
+  const updateText = (
+    mutate: (target: TextLayer) => void,
+    options?: { label?: string; coalesceKey?: string },
+  ) =>
+    apply((draft) => {
+      const targetShot = draft.shots.find((s) => s.id === shotId);
+      const targetText = targetShot?.texts.find((t) => t.id === textId);
+      if (targetText) mutate(targetText);
+    }, options);
+
   const handleDeleteText = () => {
     apply(
       (draft) => {
@@ -51,34 +75,36 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
     setSelection({ kind: "shot", id: shotId });
   };
 
+  const animations = TEXT_ANIMATIONS.includes(text.animation)
+    ? TEXT_ANIMATIONS
+    : [...TEXT_ANIMATIONS, text.animation];
+
   return (
     <div className="space-y-4">
-      {/* Back to shot header */}
       <div className="flex items-center gap-2 pb-1 border-b border-[var(--color-line)]">
         <button
           type="button"
+          aria-label="Back to shot"
           onClick={() => setSelection({ kind: "shot", id: shotId })}
           className="p-1 -ml-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] rounded transition-colors"
         >
           <Icon icon={ArrowLeft} size={15} />
         </button>
-        <span className="text-xs font-semibold text-[var(--color-text)]">Edit Text Layer</span>
+        <span className="text-xs font-semibold text-[var(--color-text)]">Text layer</span>
       </div>
 
-      {/* Content */}
-      <Section title="Text Content">
+      <Section title="Content">
         <div className="space-y-3">
-          <Field label="Text">
+          <Field label="Text" stacked>
             <textarea
+              aria-label="Text"
               rows={3}
               value={text.text}
               onChange={(e) => {
                 const val = e.target.value;
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.text = val;
+                updateText(
+                  (target) => {
+                    target.text = val;
                   },
                   { coalesceKey: `text-content-${textId}` },
                 );
@@ -89,57 +115,50 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
 
           <Field label="Role">
             <Select
+              aria-label="Role"
               value={text.role}
-              onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.role = val as TextLayer["role"];
+              onChange={(role) =>
+                updateText(
+                  (target) => {
+                    target.role = role;
                   },
                   { label: "Change text role" },
                 )
               }
-              options={[
-                { value: "title", label: "Title (Display)" },
-                { value: "subtitle", label: "Subtitle" },
-                { value: "caption", label: "Caption / Footnote" },
-              ]}
+              options={optionsFor(TEXT_ROLE_LABELS)}
             />
           </Field>
 
-          <Field label="Font Style">
+          <Field label="Font">
             <Select
+              aria-label="Font"
               value={text.font}
-              onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.font = val as "display" | "body";
+              onChange={(font) =>
+                updateText(
+                  (target) => {
+                    target.font = font;
                   },
                   { label: "Change text font" },
                 )
               }
               options={[
-                { value: "display", label: `Display (${doc.style.fonts.display.family})` },
-                { value: "body", label: `Body (${doc.style.fonts.body.family})` },
+                { value: "display", label: "Display" },
+                { value: "body", label: "Body" },
               ]}
             />
           </Field>
 
-          <Field label={`Font Size (${text.size.toFixed(1)})`}>
+          <Field label="Size" value={text.size.toFixed(1)}>
             <Slider
+              aria-label="Size"
               min={1.0}
               max={10.0}
               step={0.5}
               value={text.size}
               onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.size = val;
+                updateText(
+                  (target) => {
+                    target.size = val;
                   },
                   { coalesceKey: `text-size-${textId}` },
                 )
@@ -149,26 +168,25 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
         </div>
       </Section>
 
-      {/* Placement & Alignment */}
-      <Section title="Layout & Anchor">
+      <Section title="Position">
         <div className="space-y-3">
-          <Field label="Screen Anchor">
-            <div className="grid grid-cols-3 gap-1.5 w-36 mx-auto bg-[var(--color-raised)] p-2 rounded-lg border border-[var(--color-line)]">
+          <Field label="Anchor">
+            <div className="grid grid-cols-3 gap-1.5 w-fit bg-[var(--color-raised)] p-2 rounded-lg border border-[var(--color-line)]">
               {ANCHORS.map((a) => {
                 const isActive = text.anchor === a.id;
                 return (
                   <button
                     key={a.id}
                     type="button"
-                    title={a.id}
+                    title={ANCHOR_LABELS[a.id]}
+                    aria-label={ANCHOR_LABELS[a.id]}
+                    aria-pressed={isActive}
                     onClick={() =>
-                      apply(
-                        (draft) => {
-                          const targetShot = draft.shots.find((s) => s.id === shotId);
-                          const targetText = targetShot?.texts.find((t) => t.id === textId);
-                          if (targetText) targetText.anchor = a.id;
+                      updateText(
+                        (target) => {
+                          target.anchor = a.id;
                         },
-                        { label: `Change text anchor to ${a.id}` },
+                        { label: `Move text to ${ANCHOR_LABELS[a.id].toLowerCase()}` },
                       )
                     }
                     className={`w-9 h-7 rounded text-[10px] font-mono font-medium flex items-center justify-center transition-colors ${
@@ -177,22 +195,21 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
                         : "bg-[var(--color-panel)] text-[var(--color-text-3)] hover:text-[var(--color-text)]"
                     }`}
                   >
-                    {a.label}
+                    {a.glyph}
                   </button>
                 );
               })}
             </div>
           </Field>
 
-          <Field label="Text Alignment">
+          <Field label="Alignment" stacked>
             <SegmentedControl
+              aria-label="Alignment"
               value={text.align}
-              onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.align = val as "left" | "center" | "right";
+              onChange={(align) =>
+                updateText(
+                  (target) => {
+                    target.align = align;
                   },
                   { label: "Change text alignment" },
                 )
@@ -205,82 +222,71 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
             />
           </Field>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[var(--color-text-2)]">Auto Contrast Color</span>
+          <Field label="Auto color">
+            <div className="flex justify-end">
               <Switch
+                aria-label="Auto color"
                 checked={!text.color}
                 onCheckedChange={(auto) =>
-                  apply(
-                    (draft) => {
-                      const targetShot = draft.shots.find((s) => s.id === shotId);
-                      const targetText = targetShot?.texts.find((t) => t.id === textId);
-                      if (targetText) targetText.color = auto ? "" : "#FFFFFF";
+                  updateText(
+                    (target) => {
+                      target.color = auto ? "" : "#FFFFFF";
                     },
                     { label: "Toggle auto-contrast text color" },
                   )
                 }
               />
             </div>
+          </Field>
 
-            {text.color && (
-              <Field label="Custom Color">
-                <ColorField
-                  value={text.color}
-                  onChange={(col) =>
-                    apply(
-                      (draft) => {
-                        const targetShot = draft.shots.find((s) => s.id === shotId);
-                        const targetText = targetShot?.texts.find((t) => t.id === textId);
-                        if (targetText) targetText.color = col;
-                      },
-                      { coalesceKey: `text-color-${textId}` },
-                    )
-                  }
-                />
-              </Field>
-            )}
-          </div>
+          {text.color && (
+            <Field label="Color">
+              <ColorField
+                aria-label="Text color"
+                value={text.color}
+                onChange={(col) =>
+                  updateText(
+                    (target) => {
+                      target.color = col;
+                    },
+                    { coalesceKey: `text-color-${textId}` },
+                  )
+                }
+              />
+            </Field>
+          )}
         </div>
       </Section>
 
-      {/* Animation */}
-      <Section title="Text Animation">
+      <Section title="Animation">
         <div className="space-y-3">
-          <Field label="Reveal Style">
+          <Field label="Reveal">
             <Select
+              aria-label="Reveal"
               value={text.animation}
-              onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.animation = val as TextAnimId;
+              onChange={(animation) =>
+                updateText(
+                  (target) => {
+                    target.animation = animation;
                   },
                   { label: "Change text animation" },
                 )
               }
-              options={[
-                { value: "fadeUp", label: "Fade Up" },
-                { value: "maskReveal", label: "Kinetic Mask Reveal" },
-                { value: "blurIn", label: "Gaussian Blur In" },
-                { value: "typewriter", label: "Typewriter Step" },
-              ]}
+              options={optionsFor(TEXT_ANIMATION_LABELS, animations)}
             />
           </Field>
 
-          <Field label={`Entrance Delay (${text.delay.toFixed(1)}s)`}>
+          <Field label="Delay" value={`${text.delay.toFixed(1)} s`}>
             <Slider
+              aria-label="Delay"
               min={0}
               max={3}
               step={0.1}
               value={text.delay}
               onChange={(val) =>
-                apply(
-                  (draft) => {
-                    const targetShot = draft.shots.find((s) => s.id === shotId);
-                    const targetText = targetShot?.texts.find((t) => t.id === textId);
-                    if (targetText) targetText.delay = val;
+                updateText(
+                  (target) => {
+                    target.delay = val;
                   },
                   { coalesceKey: `text-delay-${textId}` },
                 )
@@ -290,16 +296,15 @@ export const TextInspector: React.FC<TextInspectorProps> = ({ shotId, textId }) 
         </div>
       </Section>
 
-      {/* Actions */}
       <div className="pt-2">
         <Button
           size="sm"
           variant="danger"
-          className="w-full justify-center"
+          className="w-full"
           onClick={handleDeleteText}
           icon={<Icon icon={Trash2} size={14} />}
         >
-          Delete Text Layer
+          Delete text
         </Button>
       </div>
     </div>

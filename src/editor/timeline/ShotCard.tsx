@@ -27,6 +27,7 @@ import {
   Columns,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
+import { LAYOUT_LABELS, shotSummary } from "../labels";
 
 export interface ShotCardProps {
   shot: Shot;
@@ -50,6 +51,10 @@ export interface ShotCardProps {
   onNavigateLeft?: () => void;
   onNavigateRight?: () => void;
 }
+
+const TEXT_LANE_ROW_PX = 12;
+// Beyond three texts the rows repeat; the card body would get too short otherwise.
+const MAX_TEXT_LANE_ROWS = 3;
 
 export const ShotCard: React.FC<ShotCardProps> = ({
   shot,
@@ -262,10 +267,8 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     }
   };
 
-  const subLabel =
-    layoutKind === "title"
-      ? "Title Card"
-      : `${device ? device.charAt(0).toUpperCase() + device.slice(1) : layoutKind.charAt(0).toUpperCase() + layoutKind.slice(1)} · ${shot.camera.preset}`;
+  const subLabel = shotSummary(shot);
+  const laneRows = Math.min(shot.texts.length, MAX_TEXT_LANE_ROWS);
 
   return (
     <ContextMenu>
@@ -310,6 +313,9 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                     Shot {index + 1}
                   </span>
                   <span className="text-[var(--color-text-3)] shrink-0">{getLayoutIcon()}</span>
+                  <span className="text-[10px] font-mono text-[var(--color-text-3)] shrink-0">
+                    {currentDuration.toFixed(1)}s
+                  </span>
                 </div>
 
                 {/* Quick actions hover */}
@@ -345,25 +351,21 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 </div>
               </div>
 
-              {/* Footer: duration, layout and text count */}
-              <div className="flex flex-col gap-0.5 text-[10px] text-[var(--color-text-3)] font-mono min-w-0">
-                <span className="truncate">{subLabel}</span>
-                <span className="flex items-center gap-1.5">
-                  <span>{currentDuration.toFixed(1)}s</span>
-                  {shot.texts.length > 0 && (
-                    <span className="text-[9px]">
-                      · {shot.texts.length} text{shot.texts.length > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </span>
+              {/* Footer: device or layout, and camera move. Two lines in all, so the card
+                  body still fits above two text-lane rows. */}
+              <div className="text-[10px] text-[var(--color-text-3)] font-mono min-w-0 truncate">
+                {subLabel}
               </div>
             </div>
           </div>
 
           {/* Text Lanes (at bottom of card) */}
           {shot.texts.length > 0 && (
-            <div className="h-4 bg-[var(--color-bg)]/80 border-t border-[var(--color-line)]/50 relative px-1 flex items-center overflow-hidden">
-              {shot.texts.map((t) => {
+            <div
+              className="shrink-0 bg-[var(--color-bg)]/80 border-t border-[var(--color-line)]/50 relative px-1 overflow-hidden"
+              style={{ height: `${laneRows * TEXT_LANE_ROW_PX + 4}px` }}
+            >
+              {shot.texts.map((t, i) => {
                 const leftPct = (t.delay / shot.duration) * 100;
                 const widthPct = Math.max(10, ((shot.duration - t.delay) / shot.duration) * 100);
                 return (
@@ -376,11 +378,15 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                     style={{
                       left: `${leftPct}%`,
                       width: `${widthPct}%`,
+                      // One row per text so pills that start together don't cover each other.
+                      top: `${2 + (i % laneRows) * TEXT_LANE_ROW_PX}px`,
                     }}
                     title={`Text: "${t.text || "Untitled"}" · Delay ${t.delay.toFixed(1)}s`}
                     className="absolute h-2.5 rounded-full bg-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/60 border border-[var(--color-accent)] text-[8px] font-mono text-[var(--color-text)] flex items-center px-1 truncate cursor-ew-resize select-none"
                   >
-                    <span className="truncate leading-none">{t.text || "Text"}</span>
+                    <span data-truncate className="truncate leading-none">
+                      {t.text || "Text"}
+                    </span>
                   </div>
                 );
               })}
@@ -473,7 +479,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Pair
+              {LAYOUT_LABELS.pair}
             </ContextMenuItem>
             <ContextMenuItem
               icon={<Icon icon={Layers} size={12} />}
@@ -485,7 +491,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Trio
+              {LAYOUT_LABELS.trio}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -501,7 +507,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Rows (Marquee)
+              {LAYOUT_LABELS.rows}
             </ContextMenuItem>
             <ContextMenuItem
               icon={<Icon icon={Columns} size={12} />}
@@ -515,7 +521,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Columns (Vertical)
+              {LAYOUT_LABELS.columns}
             </ContextMenuItem>
             <ContextMenuItem
               icon={<Icon icon={LayoutGrid} size={12} />}
@@ -528,7 +534,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Wall (Isometric)
+              {LAYOUT_LABELS.wall}
             </ContextMenuItem>
             <ContextMenuItem
               icon={<Icon icon={Layers} size={12} />}
@@ -541,14 +547,14 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 })
               }
             >
-              Stack (Fanned 3D)
+              {LAYOUT_LABELS.stack}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
               icon={<Icon icon={Type} size={12} />}
               onClick={() => onChangeLayout({ kind: "title" })}
             >
-              Title Card
+              {LAYOUT_LABELS.title}
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>

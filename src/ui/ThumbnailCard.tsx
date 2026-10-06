@@ -54,7 +54,7 @@ export const ThumbnailCard: React.FC<ThumbnailCardProps> = ({
           <img src={imageSrc} alt={title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[var(--color-text-3)] text-[11px]">
-            No Preview
+            No preview
           </div>
         )}
         {badge && (

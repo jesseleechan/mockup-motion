@@ -34,7 +34,7 @@ export const TemplateGalleryModal: React.FC = () => {
 
   const categories = [
     { id: "all", label: "All", icon: Sparkles },
-    { id: "single", label: "Single Shot", icon: Monitor },
+    { id: "single", label: "Single shot", icon: Monitor },
     { id: "responsive", label: "Responsive", icon: Layers },
     { id: "mobile", label: "Mobile", icon: Smartphone },
     { id: "portfolio", label: "Portfolio", icon: Film },
@@ -69,10 +69,10 @@ export const TemplateGalleryModal: React.FC = () => {
           <div>
             <DialogTitle className="text-base font-semibold text-[var(--color-text)] flex items-center gap-2">
               <Icon icon={Sparkles} size={18} className="text-[var(--color-accent)]" />
-              Template Gallery
+              Template gallery
             </DialogTitle>
             <DialogDescription className="text-xs text-[var(--color-text-2)] mt-0.5">
-              12 curated motion layouts tuned for high-impact product showcases.
+              Curated motion layouts for presenting websites.
             </DialogDescription>
           </div>
 
@@ -85,7 +85,7 @@ export const TemplateGalleryModal: React.FC = () => {
               />
               <input
                 type="text"
-                placeholder="Search templates..."
+                placeholder="Search templates"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-8 pl-8 pr-3 text-xs bg-[var(--color-raised)] border border-[var(--color-line)] rounded-lg text-[var(--color-text)] placeholder-[var(--color-text-3)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
@@ -133,7 +133,7 @@ export const TemplateGalleryModal: React.FC = () => {
               <Film size={32} className="text-[var(--color-text-3)] mb-2 opacity-50" />
               <p className="text-sm font-medium text-[var(--color-text-2)]">No templates found</p>
               <p className="text-xs text-[var(--color-text-3)] mt-1">
-                Try another category or search query
+                Try another category or search
               </p>
             </div>
           ) : (
@@ -256,9 +256,8 @@ export const TemplateGalleryModal: React.FC = () => {
               variant="primary"
               disabled={!selectedTemplate}
               onClick={() => selectedTemplate && handleApply(selectedTemplate)}
-              className="gap-1.5"
+              icon={<Icon icon={Sparkles} size={14} />}
             >
-              <Sparkles size={14} />
               Apply template
             </Button>
           </div>

@@ -22,6 +22,7 @@ import {
 import { probeVideoEncoders, type CodecProbeResult } from "../../export/probe";
 import { verifyExportBlob, type VerifyExportResult } from "../../export/verify";
 import { schedule } from "../../motion";
+import { DESTINATION_LABELS } from "../labels";
 import type { DestinationId, ExportFormat, ExportQuality, ExportSettings } from "../../doc/types";
 import {
   AlertTriangle,
@@ -261,13 +262,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
     label: string;
     icon: React.ComponentType<{ size: number; className?: string }>;
   }[] = [
-    { id: "web-embed", label: "Web Embed", icon: Globe },
-    { id: "dribbble", label: "Dribbble", icon: Film },
-    { id: "instagram-feed", label: "Instagram Feed", icon: Smartphone },
-    { id: "instagram-story", label: "Stories & Reels", icon: Play },
-    { id: "linkedin", label: "LinkedIn / X", icon: Share2 },
-    { id: "presentation-4k", label: "4K Keynote", icon: Monitor },
-    { id: "custom", label: "Custom", icon: Sparkles },
+    { id: "web-embed", label: DESTINATION_LABELS["web-embed"], icon: Globe },
+    { id: "dribbble", label: DESTINATION_LABELS.dribbble, icon: Film },
+    { id: "instagram-feed", label: DESTINATION_LABELS["instagram-feed"], icon: Smartphone },
+    { id: "instagram-story", label: DESTINATION_LABELS["instagram-story"], icon: Play },
+    { id: "linkedin", label: DESTINATION_LABELS.linkedin, icon: Share2 },
+    { id: "presentation-4k", label: DESTINATION_LABELS["presentation-4k"], icon: Monitor },
+    { id: "custom", label: DESTINATION_LABELS.custom, icon: Sparkles },
   ];
 
   return (
@@ -278,7 +279,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           <div>
             <DialogTitle className="text-base font-semibold text-[var(--color-text)] flex items-center gap-2">
               <Download size={18} className="text-[var(--color-accent)]" />
-              Export Video
+              Export video
             </DialogTitle>
             <DialogDescription className="text-xs text-[var(--color-text-2)] mt-0.5">
               Production-ready renders tuned for web, social media, and presentations.
@@ -291,7 +292,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           {!isExporting && !downloadUrl && (
             <div>
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-3)] mb-2 block">
-                Destination Preset
+                Destination
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {destinationCards.map((card) => {
@@ -357,27 +358,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           {!isExporting && !downloadUrl && (
             <div className="space-y-4 pt-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-3)] block">
-                Encoding Settings
+                Encoding
               </span>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {/* Format */}
-                <Field label="Format">
+                <Field label="Format" stacked>
                   <Select
                     value={format}
                     onChange={(v) => setFormat(v as ExportFormat)}
                     options={[
                       { value: "mp4", label: "MP4 (H.264)" },
                       { value: "webm", label: "WebM (VP9)" },
-                      { value: "bundle", label: "Web Bundle (.zip)" },
+                      { value: "bundle", label: "Web bundle (.zip)" },
                       { value: "gif", label: "Animated GIF" },
-                      { value: "png", label: "Still Frame (.png)" },
+                      { value: "png", label: "Still frame (.png)" },
                     ]}
                   />
                 </Field>
 
                 {/* Resolution */}
-                <Field label="Resolution">
+                <Field label="Resolution" stacked>
                   <Select
                     value={String(resolution)}
                     onChange={(v) => setResolution(Number(v))}
@@ -391,7 +392,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 </Field>
 
                 {/* Frame Rate */}
-                <Field label="Frame Rate">
+                <Field label="Frame rate" stacked>
                   <Select
                     value={String(fps)}
                     onChange={(v) => setFps(Number(v))}
@@ -405,7 +406,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 </Field>
 
                 {/* Quality */}
-                <Field label="Quality Bitrate">
+                <Field label="Quality" stacked>
                   <Select
                     value={quality}
                     onChange={(v) => setQuality(v as ExportQuality)}
@@ -418,7 +419,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 </Field>
 
                 {/* Supersample */}
-                <Field label="Anti-Aliasing">
+                <Field label="Anti-aliasing" stacked>
                   <Select
                     value={String(supersample)}
                     onChange={(v) => setSupersample(Number(v))}
@@ -433,10 +434,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 {/* Motion Blur */}
                 <div className="flex items-center justify-between pt-5 px-1">
                   <span className="text-xs font-medium text-[var(--color-text-2)]">
-                    Motion Blur
+                    Motion blur
                   </span>
                   <Switch
-                    aria-label="Motion Blur"
+                    aria-label="Motion blur"
                     checked={motionBlur}
                     onCheckedChange={setMotionBlur}
                   />
@@ -552,7 +553,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   <div className="flex items-center justify-between text-[var(--color-text)] font-semibold">
                     <span className="flex items-center gap-1.5 text-emerald-400">
                       <Check size={14} />
-                      Verified Output
+                      Verified output
                     </span>
                     <span>
                       {verifyResult.actual?.width} × {verifyResult.actual?.height}
@@ -594,7 +595,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[var(--color-text)] flex items-center gap-1.5">
                       <Code2 size={14} className="text-[var(--color-accent)]" />
-                      HTML Video Embed Code
+                      Embed code
                     </span>
                     <Button
                       size="sm"
@@ -607,7 +608,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                       ) : (
                         <Copy size={12} />
                       )}
-                      {copiedSnippet ? "Copied" : "Copy Code"}
+                      {copiedSnippet ? "Copied" : "Copy code"}
                     </Button>
                   </div>
                   <pre className="p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] text-[11px] font-mono text-[var(--color-text-2)] overflow-x-auto select-all">
@@ -620,7 +621,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button variant="secondary" onClick={() => setDownloadUrl(null)}>
                   <RotateCcw size={14} className="mr-1" />
-                  Export Another
+                  Export another
                 </Button>
                 <a
                   href={downloadUrl}
@@ -629,7 +630,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-semibold bg-[var(--color-accent)] text-white hover:opacity-90 transition-opacity gap-1.5"
                 >
                   <Download size={14} />
-                  Download {format === "bundle" ? ".ZIP Bundle" : downloadFilename}
+                  Download {format === "bundle" ? "ZIP bundle" : downloadFilename}
                 </a>
               </div>
             </div>

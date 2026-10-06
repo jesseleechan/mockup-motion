@@ -2,15 +2,8 @@ import React, { useState } from "react";
 import type { Transition } from "../../doc/types";
 import { TransitionPopover } from "./TransitionPopover";
 import { Icon } from "../../ui";
-import {
-  Scissors,
-  Layers,
-  Eye,
-  MoveRight,
-  Maximize2,
-  Paintbrush,
-  Repeat,
-} from "lucide-react";
+import { Scissors, Layers, Eye, MoveRight, Maximize2, Paintbrush, Repeat } from "lucide-react";
+import { TRANSITION_LABELS } from "../labels";
 
 export interface TransitionChipProps {
   transition: Transition;
@@ -68,8 +61,8 @@ export const TransitionChip: React.FC<TransitionChipProps> = ({
         tabIndex={0}
         aria-label={
           isLoopWrap
-            ? `Loop wrap transition: ${transition.kind}`
-            : `Transition: ${transition.kind}`
+            ? `Loop wrap transition: ${TRANSITION_LABELS[transition.kind]}`
+            : `Transition: ${TRANSITION_LABELS[transition.kind]}`
         }
         onKeyDown={handleKeyDown}
         className={`group relative z-10 flex items-center justify-center -mx-2.5 h-6 px-1.5 rounded-full border cursor-pointer select-none transition-all outline-none ${
@@ -89,7 +82,9 @@ export const TransitionChip: React.FC<TransitionChipProps> = ({
 
         {/* Hover label */}
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-[var(--color-panel)] border border-[var(--color-line)] px-1.5 py-0.5 rounded text-[9px] text-[var(--color-text-2)] whitespace-nowrap shadow-sm">
-          {isLoopWrap ? `Loop: ${transition.kind}` : transition.kind}
+          {isLoopWrap
+            ? `Loop: ${TRANSITION_LABELS[transition.kind].toLowerCase()}`
+            : TRANSITION_LABELS[transition.kind]}
         </div>
       </div>
     </TransitionPopover>

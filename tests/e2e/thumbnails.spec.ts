@@ -150,7 +150,7 @@ test.describe("F07: shot and project thumbnails", () => {
     const before = await imageStats(thumb);
 
     const started = Date.now();
-    await page.getByRole("button", { name: "Iso Drift", exact: true }).click();
+    await page.getByRole("button", { name: "Isometric drift", exact: true }).click();
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => (el.complete ? el.src : "")), {
         timeout: 1500,
@@ -248,7 +248,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
       .evaluate((v: HTMLVideoElement) => [v.videoWidth, v.videoHeight]);
     expect(size).toEqual([640, 360]);
 
-    await page.getByRole("heading", { name: /Template Gallery/i }).hover();
+    await page.getByRole("heading", { name: /Template gallery/ }).hover();
     await expect.poll(() => videoState(pair)).toEqual({ paused: true, time: 0 });
 
     const hero = page.locator('[data-testid="template-card"][data-template-id="quiet-hero"]');

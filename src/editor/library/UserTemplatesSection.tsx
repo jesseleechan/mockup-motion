@@ -68,7 +68,7 @@ export const UserTemplatesSection: React.FC = () => {
     <div className="pt-3 pb-1 border-t border-[var(--color-line)] mt-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] font-semibold text-[var(--color-text)] uppercase tracking-wider">
-          My Templates ({templates.length})
+          My templates ({templates.length})
         </span>
       </div>
 
@@ -95,7 +95,11 @@ export const UserTemplatesSection: React.FC = () => {
                   className="h-5 px-1 text-xs rounded border border-[var(--color-accent)] bg-[var(--color-panel)] text-[var(--color-text)] outline-none"
                 />
               ) : (
-                <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors truncate">
+                <span
+                  data-truncate
+                  title={template.name}
+                  className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors truncate"
+                >
                   {template.name}
                 </span>
               )}
@@ -126,7 +130,9 @@ export const UserTemplatesSection: React.FC = () => {
 
             <div className="flex items-center justify-between text-[10px] text-[var(--color-text-3)]">
               <span>{template.shots.length} shot(s)</span>
-              <span className="text-[9px] text-[var(--color-accent)] font-medium">Click to apply</span>
+              <span className="text-[9px] text-[var(--color-accent)] font-medium">
+                Click to apply
+              </span>
             </div>
           </div>
         ))}

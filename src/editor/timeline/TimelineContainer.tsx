@@ -180,6 +180,7 @@ export const TimelineContainer: React.FC = () => {
     <div
       onWheel={handleWheel}
       data-testid="timeline"
+      data-panel="timeline"
       style={{ height: 148 + (doc.audio ? LANE_HEIGHT : 0) }}
       className="bg-[var(--color-panel)] border-t border-[var(--color-line)] flex flex-col select-none shrink-0 z-20 overflow-hidden"
     >
@@ -298,6 +299,7 @@ export const TimelineContainer: React.FC = () => {
       {/* Main Track & Ruler Area */}
       <div
         ref={trackWrapperRef}
+        data-scroll-x
         className="flex-1 flex flex-col min-h-0 overflow-x-auto overflow-y-hidden"
       >
         {/* Time Ruler (24px) */}

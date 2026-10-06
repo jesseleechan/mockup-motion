@@ -39,7 +39,7 @@ export function validateTemplateRequirements(
     if (!hasRoleMatch) {
       return {
         valid: false,
-        reason: `Needs ${slot.role} screenshot (${slot.label})`,
+        reason: slot.role === "logo" ? "Needs a logo" : `Needs a ${slot.role} screenshot`,
       };
     }
   }

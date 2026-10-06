@@ -10,6 +10,9 @@ export interface TimeRulerProps {
   onScrubEnd?: () => void;
 }
 
+// Room for a "10.0s" label (9 px mono) plus its 4 px inset; a label that won't fit is not drawn.
+const TICK_LABEL_PX = 30;
+
 export const TimeRuler: React.FC<TimeRulerProps> = ({
   totalDuration,
   playhead,
@@ -37,9 +40,11 @@ export const TimeRuler: React.FC<TimeRulerProps> = ({
   }
 
   const ticks: Array<{ time: number; isMajor: boolean }> = [];
-  const maxTime = Math.max(1, Math.ceil(totalDuration));
-  for (let t = 0; t <= maxTime; t += minorStep) {
-    const isMajor = Math.abs(t % majorStep) < 0.001 || Math.abs((t % majorStep) - majorStep) < 0.001;
+  const rulerWidth = Math.max(1, totalDuration * pxPerSecond);
+  // Ticks past the end would be clipped by the ruler.
+  for (let t = 0; t <= totalDuration + 0.001; t += minorStep) {
+    const isMajor =
+      Math.abs(t % majorStep) < 0.001 || Math.abs((t % majorStep) - majorStep) < 0.001;
     ticks.push({ time: Number(t.toFixed(2)), isMajor });
   }
 
@@ -107,8 +112,8 @@ export const TimeRuler: React.FC<TimeRulerProps> = ({
       aria-valuemax={totalDuration}
       aria-valuenow={playhead}
       tabIndex={0}
-      className="relative h-6 bg-[var(--color-raised)] border-b border-[var(--color-line)] cursor-pointer select-none overflow-hidden touch-none"
-      style={{ width: `${Math.max(1, totalDuration * pxPerSecond)}px` }}
+      className="relative h-6 shrink-0 bg-[var(--color-raised)] border-b border-[var(--color-line)] cursor-pointer select-none overflow-hidden touch-none"
+      style={{ width: `${rulerWidth}px` }}
     >
       {/* Ticks and time labels */}
       {ticks.map(({ time, isMajor }) => {
@@ -121,9 +126,11 @@ export const TimeRuler: React.FC<TimeRulerProps> = ({
           >
             {isMajor ? (
               <>
-                <span className="absolute top-1 left-1 text-[9px] font-mono text-[var(--color-text-3)] leading-none select-none">
-                  {time.toFixed(majorStep < 1 ? 1 : 0)}s
-                </span>
+                {leftPx + TICK_LABEL_PX <= rulerWidth && (
+                  <span className="absolute top-1 left-1 text-[9px] font-mono text-[var(--color-text-3)] leading-none select-none">
+                    {time.toFixed(majorStep < 1 ? 1 : 0)}s
+                  </span>
+                )}
                 <div className="h-2.5 w-[1px] bg-[var(--color-line-strong)]" />
               </>
             ) : (
