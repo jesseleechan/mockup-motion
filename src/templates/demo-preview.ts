@@ -1,112 +1,71 @@
 import type { AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
+import { demoAssetId, demoAssetRef } from "../lab/demo-assets";
+import type { DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots } from "./slots";
 
-export const DEMO_PREVIEW_ASSETS: AssetRef[] = [
-  {
-    id: "demo-aurelia-desktop-full",
-    name: "Aurelia Studio Desktop",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 367382,
-    role: "desktop",
-    width: 1440,
-    height: 4300,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-aurelia-desktop-hero",
-    name: "Aurelia Hero",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 348640,
-    role: "desktop",
-    width: 2880,
-    height: 1800,
-    meta: { tall: false },
-  },
-  {
-    id: "demo-aurelia-mobile-full",
-    name: "Aurelia Mobile Full",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 482306,
-    role: "mobile",
-    width: 780,
-    height: 13372,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-aurelia-mobile-hero",
-    name: "Aurelia Mobile Hero",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 159248,
-    role: "mobile",
-    width: 780,
-    height: 1688,
-    meta: { tall: false },
-  },
-  {
-    id: "demo-northwind-desktop",
-    name: "Northwind Studio",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 269130,
-    role: "desktop",
-    width: 1440,
-    height: 4052,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-northwind-mobile",
-    name: "Northwind Mobile",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 553414,
-    role: "mobile",
-    width: 780,
-    height: 5000,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-maison-desktop",
-    name: "Maison Oak",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 285688,
-    role: "desktop",
-    width: 1440,
-    height: 3519,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-fieldnotes-desktop",
-    name: "Field Notes",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 477240,
-    role: "desktop",
-    width: 1440,
-    height: 4261,
-    meta: { tall: true },
-  },
-  {
-    id: "demo-studiokova-desktop",
-    name: "Studio Kova",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 254500,
-    role: "desktop",
-    width: 1440,
-    height: 4365,
-    meta: { tall: true },
-  },
-];
+const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
+const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
+const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
+
+/**
+ * Demo captures per template, in slot order (fillSlots is greedy by role).
+ * Multi-screen layouts use a different site per screen; responsive layouts show one
+ * site across devices. Templates not listed use DEFAULT_DEMO_IDS.
+ */
+const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
+  "quiet-hero": [desktopFull("aurelia")],
+  "tilted-showcase": [desktopHero("maison-oak")],
+  "responsive-pair": [desktopFull("northwind"), mobileHero("northwind")],
+  // No second desktop capture, so the tablet reuses the full page rather than a 16:10 hero.
+  "responsive-trio": [desktopFull("field-notes"), mobileHero("field-notes")],
+  "phone-spotlight": [mobileHero("studio-kova")],
+  "phone-parade": [
+    mobileHero("aurelia"),
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("field-notes"),
+    mobileHero("studio-kova"),
+  ],
+  "portfolio-rows": [
+    desktopHero("aurelia"),
+    desktopHero("northwind"),
+    desktopHero("maison-oak"),
+    desktopHero("field-notes"),
+  ],
+  "isometric-wall": [
+    desktopHero("studio-kova"),
+    desktopHero("field-notes"),
+    desktopHero("northwind"),
+    desktopHero("aurelia"),
+  ],
+  "cascade-stack": [
+    desktopHero("maison-oak"),
+    desktopHero("studio-kova"),
+    desktopHero("aurelia"),
+    desktopHero("northwind"),
+  ],
+  "scroll-story": [desktopFull("studio-kova")],
+  "launch-reel": [desktopFull("aurelia"), mobileHero("aurelia")],
+  "case-study-reel": [
+    desktopFull("maison-oak"),
+    desktopHero("field-notes"),
+    desktopHero("northwind"),
+  ],
+};
+
+const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
+
+/** Demo assets that fill the template's slots; the same set the template preview uses. */
+export function demoAssetsForTemplate(templateId: string): AssetRef[] {
+  const ids = DEMO_IDS_BY_TEMPLATE[templateId] ?? DEFAULT_DEMO_IDS;
+  return ids.map(demoAssetRef);
+}
 
 export function buildTemplatePreviewDoc(template: Template): ProjectDoc {
-  const slots = fillSlots(template, DEMO_PREVIEW_ASSETS);
+  const assets = demoAssetsForTemplate(template.id);
+  const slots = fillSlots(template, assets);
   const built = template.build({
     aspect: "16:9",
     slots,
@@ -119,7 +78,7 @@ export function buildTemplatePreviewDoc(template: Template): ProjectDoc {
     name: template.name,
     aspect: "16:9",
     templateId: template.id,
-    assets: DEMO_PREVIEW_ASSETS,
+    assets,
     style: built.style,
     shots: built.shots,
     loop: built.loop,

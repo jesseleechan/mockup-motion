@@ -3,7 +3,12 @@ import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
-import { BUILTIN_TEMPLATES, buildTemplate } from "../../templates";
+import {
+  BUILTIN_TEMPLATES,
+  buildTemplate,
+  demoAssetsForTemplate,
+  getTemplateById,
+} from "../../templates";
 import type { AssetRef } from "../../doc/types";
 import { schedule } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
@@ -18,29 +23,6 @@ interface StageProps {
   showSafeMargins: boolean;
   onOpenTemplates?: () => void;
 }
-
-const DEMO_ASSETS: AssetRef[] = [
-  {
-    id: "/demo/aurelia/desktop-hero.webp",
-    name: "Aurelia Desktop Hero",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 348640,
-    role: "desktop",
-    width: 2880,
-    height: 1800,
-  },
-  {
-    id: "/demo/aurelia/mobile-hero.webp",
-    name: "Aurelia Mobile Hero",
-    kind: "image",
-    mime: "image/webp",
-    bytes: 159248,
-    role: "mobile",
-    width: 780,
-    height: 1688,
-  },
-];
 
 function aspectToRatio(aspect: string): number {
   switch (aspect) {
@@ -164,11 +146,13 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins, onOpenTemplates }
   }, [handleFiles]);
 
   const handleTryDemoContent = async () => {
-    await addAssets(DEMO_ASSETS);
-    const template = BUILTIN_TEMPLATES[0]; // Hero Drift
+    const template =
+      (doc.templateId ? getTemplateById(doc.templateId) : undefined) ?? BUILTIN_TEMPLATES[0];
+    const demoAssets = demoAssetsForTemplate(template.id);
+    await addAssets(demoAssets);
     const res = buildTemplate(template, {
       aspect: doc.aspect,
-      assets: DEMO_ASSETS,
+      assets: demoAssets,
       name: doc.name,
       style: doc.style,
     });

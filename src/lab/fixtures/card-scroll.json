@@ -8,13 +8,17 @@
   "loop": true,
   "assets": [
     {
-      "id": "demo-aurelia",
+      "id": "demo-aurelia-desktop-full",
       "kind": "image",
-      "name": "aurelia.png",
-      "mime": "image/png",
-      "bytes": 2020268,
+      "name": "aurelia-desktop-full.webp",
+      "mime": "image/webp",
+      "bytes": 367382,
       "width": 1440,
-      "height": 3600
+      "height": 4300,
+      "role": "desktop",
+      "meta": {
+        "tall": true
+      }
     }
   ],
   "style": {
@@ -43,7 +47,7 @@
       "layout": {
         "kind": "single",
         "device": "card",
-        "assetId": "demo-aurelia"
+        "assetId": "demo-aurelia-desktop-full"
       },
       "camera": {
         "preset": "static",

@@ -8,13 +8,17 @@
   "loop": true,
   "assets": [
     {
-      "id": "demo-aurelia",
+      "id": "demo-northwind-mobile-hero",
       "kind": "image",
-      "name": "aurelia.png",
-      "mime": "image/png",
-      "bytes": 2020268,
-      "width": 1440,
-      "height": 3600
+      "name": "northwind-mobile-hero.webp",
+      "mime": "image/webp",
+      "bytes": 84948,
+      "width": 780,
+      "height": 1688,
+      "role": "mobile",
+      "meta": {
+        "tall": false
+      }
     }
   ],
   "style": {
@@ -43,7 +47,7 @@
       "layout": {
         "kind": "single",
         "device": "phone",
-        "assetId": "demo-aurelia"
+        "assetId": "demo-northwind-mobile-hero"
       },
       "camera": {
         "preset": "heroTilt",

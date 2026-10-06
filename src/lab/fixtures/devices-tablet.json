@@ -8,13 +8,17 @@
   "loop": true,
   "assets": [
     {
-      "id": "demo-aurelia",
+      "id": "demo-field-notes-desktop-full",
       "kind": "image",
-      "name": "aurelia.png",
-      "mime": "image/png",
-      "bytes": 2020268,
+      "name": "field-notes-desktop-full.webp",
+      "mime": "image/webp",
+      "bytes": 477240,
       "width": 1440,
-      "height": 3600
+      "height": 4261,
+      "role": "desktop",
+      "meta": {
+        "tall": true
+      }
     }
   ],
   "style": {
@@ -43,7 +47,7 @@
       "layout": {
         "kind": "single",
         "device": "tablet",
-        "assetId": "demo-aurelia"
+        "assetId": "demo-field-notes-desktop-full"
       },
       "camera": {
         "preset": "static",

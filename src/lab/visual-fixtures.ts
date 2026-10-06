@@ -1,22 +1,25 @@
 import { createDoc, defaultShot, defaultStyle } from "../doc/defaults";
 import type { Background, DeviceKind, ProjectDoc, TextAnimId, Transition } from "../doc/types";
+import { demoAssetRef } from "./demo-assets";
 
-/** Shared screenshot so every still uses the lab asset provider's demo image. */
-const ASSET = {
-  id: "demo-aurelia",
-  kind: "image" as const,
-  name: "aurelia.png",
-  mime: "image/png",
-  bytes: 1,
-  width: 1440,
-  height: 3600,
-  role: "desktop" as const,
-};
+/**
+ * Real demo captures with their true sizes. Phones get the mobile capture and tablets the
+ * full page, so their portrait screens fill to width instead of showing a 16:10 hero.
+ */
+const DESKTOP = demoAssetRef("demo-aurelia-desktop-hero");
+const DESKTOP_FULL = demoAssetRef("demo-aurelia-desktop-full");
+const MOBILE = demoAssetRef("demo-aurelia-mobile-hero");
+
+function screenAssetId(device: DeviceKind): string {
+  if (device === "phone") return MOBILE.id;
+  if (device === "tablet") return DESKTOP_FULL.id;
+  return DESKTOP.id;
+}
 
 const DEVICES: DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
 
 function stillDoc(name: string): ProjectDoc {
-  const doc = createDoc({ name, loop: false, assets: [ASSET] });
+  const doc = createDoc({ name, loop: false, assets: [DESKTOP, DESKTOP_FULL, MOBILE] });
   doc.style = {
     ...defaultStyle(),
     grain: 0.25,
@@ -31,7 +34,7 @@ function singleShot(
   device: DeviceKind,
   camera: ProjectDoc["shots"][number]["camera"],
 ) {
-  const shot = defaultShot({ kind: "single", device, assetId: ASSET.id });
+  const shot = defaultShot({ kind: "single", device, assetId: screenAssetId(device) });
   shot.id = `${doc.name}-shot`;
   shot.duration = 5;
   shot.entrance = "none";
@@ -61,8 +64,8 @@ const BACKGROUNDS: Record<string, Background> = {
   solid: { kind: "solid", color: "#141417" },
   gradient: { kind: "gradient", stops: ["#F1EDE6", "#E3DCD0"], angle: 290, angleConvention: "css" },
   mesh: { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.2, seed: 3 },
-  ambient: { kind: "ambient", assetId: ASSET.id, blur: 0.55, dim: 0.35 },
-  image: { kind: "image", assetId: ASSET.id, dim: 0.15 },
+  ambient: { kind: "ambient", assetId: DESKTOP.id, blur: 0.55, dim: 0.35 },
+  image: { kind: "image", assetId: DESKTOP.id, dim: 0.15 },
 };
 
 export function backgroundFixtures(): Record<string, ProjectDoc> {
@@ -89,7 +92,7 @@ export function transitionFixtures(): Record<string, ProjectDoc> {
   const out: Record<string, ProjectDoc> = {};
   for (const kind of TRANSITIONS) {
     const doc = stillDoc(`transition-${kind}`);
-    const a = defaultShot({ kind: "single", device: "browser", assetId: ASSET.id });
+    const a = defaultShot({ kind: "single", device: "browser", assetId: DESKTOP.id });
     a.id = `${kind}-a`;
     a.duration = 4;
     a.entrance = "none";
@@ -97,7 +100,7 @@ export function transitionFixtures(): Record<string, ProjectDoc> {
     a.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
     a.texts = [];
 
-    const b = defaultShot({ kind: "single", device: "phone", assetId: ASSET.id });
+    const b = defaultShot({ kind: "single", device: "phone", assetId: MOBILE.id });
     b.id = `${kind}-b`;
     b.duration = 4;
     b.entrance = "none";
