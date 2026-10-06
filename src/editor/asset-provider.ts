@@ -1,4 +1,5 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
+import { DEMO_ASSETS } from "../lab/demo-assets";
 import { getBlob } from "../storage/blobs";
 import { rasterizeText } from "../text";
 
@@ -19,7 +20,15 @@ export function createEditorAssetProvider(): AssetProvider {
           blob = await getBlob(assetId);
         }
 
-        // 2. If not found in IndexedDB, try fetching if assetId is a URL or demo path
+        // 2. Demo content has no stored blob; resolve it through the demo manifest
+        const demo = assetId ? DEMO_ASSETS.get(assetId) : undefined;
+        if (!blob && demo) {
+          const res = await fetch(demo.url);
+          if (!res.ok) throw new Error(`Failed to fetch ${demo.url}: HTTP ${res.status}`);
+          blob = await res.blob();
+        }
+
+        // 3. If not found in IndexedDB, try fetching if assetId is a URL or demo path
         if (
           !blob &&
           assetId &&
@@ -34,7 +43,7 @@ export function createEditorAssetProvider(): AssetProvider {
           }
         }
 
-        // 3. Fallback to default demo asset
+        // 4. Fallback to default demo asset
         if (!blob) {
           const fallbackRes = await fetch("/demo/aurelia/desktop-hero.webp");
           if (fallbackRes.ok) {

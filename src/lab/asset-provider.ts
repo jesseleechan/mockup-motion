@@ -1,5 +1,18 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
 import { rasterizeText } from "../text";
+import { DEMO_ASSETS } from "./demo-assets";
+
+function isDirectUrl(assetId: string): boolean {
+  return assetId.startsWith("http") || assetId.startsWith("/") || assetId.startsWith("blob:");
+}
+
+/** Lab asset source: demo ids resolve through `public/demo/manifest.json`; URLs load directly. */
+export function resolveLabAssetUrl(assetId: string): string {
+  if (isDirectUrl(assetId)) return assetId;
+  const demo = DEMO_ASSETS.get(assetId);
+  if (!demo) throw new Error(`Unknown demo asset: ${assetId}`);
+  return demo.url;
+}
 
 export function createLabAssetProvider(): AssetProvider {
   const cache = new Map<string, ImageBitmap>();
@@ -10,54 +23,22 @@ export function createLabAssetProvider(): AssetProvider {
       const cached = cache.get(cacheKey);
       if (cached) return cached;
 
-      let src = "/demo/aurelia.png";
-      if (assetId.startsWith("http") || assetId.startsWith("/") || assetId.startsWith("blob:")) {
-        src = assetId;
+      const src = resolveLabAssetUrl(assetId);
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(`Failed to fetch ${src}: HTTP ${res.status}`);
+      const blob = await res.blob();
+      let bmp = await createImageBitmap(blob);
+      if (bmp.width > maxWidth) {
+        const targetH = Math.round((bmp.height * maxWidth) / bmp.width);
+        bmp.close();
+        bmp = await createImageBitmap(blob, {
+          resizeWidth: maxWidth,
+          resizeHeight: targetH,
+          resizeQuality: "high",
+        });
       }
-
-      try {
-        const res = await fetch(src);
-        const blob = await res.blob();
-        let bmp: ImageBitmap;
-        if (typeof createImageBitmap !== "undefined") {
-          // If maxWidth is smaller than source, resize
-          bmp = await createImageBitmap(blob);
-          if (bmp.width > maxWidth) {
-            const scale = maxWidth / bmp.width;
-            const targetH = Math.round(bmp.height * scale);
-            bmp.close();
-            bmp = await createImageBitmap(blob, {
-              resizeWidth: maxWidth,
-              resizeHeight: targetH,
-              resizeQuality: "high",
-            });
-          }
-        } else {
-          throw new Error("createImageBitmap unavailable");
-        }
-        cache.set(cacheKey, bmp);
-        return bmp;
-      } catch {
-        // Fallback: create mock canvas bitmap with test grid
-        const canvas =
-          typeof OffscreenCanvas !== "undefined"
-            ? new OffscreenCanvas(maxWidth, Math.round((maxWidth * 9) / 16))
-            : document.createElement("canvas");
-        canvas.width = maxWidth;
-        canvas.height = Math.round((maxWidth * 9) / 16);
-        const ctx = canvas.getContext("2d") as
-          CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-        if (ctx) {
-          ctx.fillStyle = "#222";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = "#fff";
-          ctx.font = "24px sans-serif";
-          ctx.fillText(`Asset: ${assetId}`, 20, 50);
-        }
-        const bmp = await createImageBitmap(canvas);
-        cache.set(cacheKey, bmp);
-        return bmp;
-      }
+      cache.set(cacheKey, bmp);
+      return bmp;
     },
 
     async getText(layer, style, frameHeightPx): Promise<TextRaster> {

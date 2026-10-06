@@ -30,14 +30,36 @@ export const phoneParadeTemplate: Template = {
       prefer: "any",
       label: "Mobile screenshot 3",
     },
+    {
+      key: "mobile4",
+      role: "mobile",
+      required: false,
+      prefer: "any",
+      label: "Mobile screenshot 4",
+    },
+    {
+      key: "mobile5",
+      role: "mobile",
+      required: false,
+      prefer: "any",
+      label: "Mobile screenshot 5",
+    },
   ],
   defaultDuration: 8,
   build: (ctx: TemplateBuildContext) => {
+    // fillSlots reuses an asset when a slot has no distinct one; the optional slots must
+    // not repeat a phone within the column window (quality-bar §4).
     const assets = [
-      ctx.slots.mobile1?.id,
-      ctx.slots.mobile2?.id,
-      ctx.slots.mobile3?.id,
-    ].filter((id): id is string => Boolean(id));
+      ...new Set(
+        [
+          ctx.slots.mobile1?.id,
+          ctx.slots.mobile2?.id,
+          ctx.slots.mobile3?.id,
+          ctx.slots.mobile4?.id,
+          ctx.slots.mobile5?.id,
+        ].filter((id): id is string => Boolean(id)),
+      ),
+    ];
 
     const baseStyle: Style = {
       ...defaultStyle(),

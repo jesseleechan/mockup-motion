@@ -8,13 +8,17 @@
   "loop": true,
   "assets": [
     {
-      "id": "demo-aurelia",
+      "id": "demo-maison-oak-desktop-hero",
       "kind": "image",
-      "name": "aurelia.png",
-      "mime": "image/png",
-      "bytes": 2020268,
-      "width": 1440,
-      "height": 3600
+      "name": "maison-oak-desktop-hero.webp",
+      "mime": "image/webp",
+      "bytes": 294530,
+      "width": 2880,
+      "height": 1800,
+      "role": "desktop",
+      "meta": {
+        "tall": false
+      }
     }
   ],
   "style": {
@@ -43,7 +47,7 @@
       "layout": {
         "kind": "single",
         "device": "laptop",
-        "assetId": "demo-aurelia"
+        "assetId": "demo-maison-oak-desktop-hero"
       },
       "camera": {
         "preset": "heroTilt",

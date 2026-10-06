@@ -1,29 +1,59 @@
 import { expect, test } from "@playwright/test";
-import type { Aspect, Layout, ProjectDoc } from "../../src/doc/types";
+import type { AssetRef, Aspect, Layout, ProjectDoc } from "../../src/doc/types";
+import { layoutAssetIds } from "../../src/doc/assets";
+import { demoAssetRef } from "../../src/lab/demo-assets";
 
 test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
   const layouts: { name: string; layout: Layout }[] = [
     {
       name: "pair-overlap",
-      layout: { kind: "pair", desktopId: "demo-aurelia", mobileId: "demo-mobile", arrangement: "overlap" },
+      layout: {
+        kind: "pair",
+        desktopId: "demo-aurelia-desktop-hero",
+        mobileId: "demo-aurelia-mobile-hero",
+        arrangement: "overlap",
+      },
     },
     {
       name: "pair-side",
-      layout: { kind: "pair", desktopId: "demo-aurelia", mobileId: "demo-mobile", arrangement: "side" },
+      layout: {
+        kind: "pair",
+        desktopId: "demo-aurelia-desktop-hero",
+        mobileId: "demo-aurelia-mobile-hero",
+        arrangement: "side",
+      },
     },
     {
       name: "trio",
-      layout: { kind: "trio", desktopId: "demo-aurelia", tabletId: "demo-tablet", mobileId: "demo-mobile" },
+      layout: {
+        kind: "trio",
+        desktopId: "demo-aurelia-desktop-hero",
+        tabletId: "demo-aurelia-desktop-full",
+        mobileId: "demo-aurelia-mobile-hero",
+      },
     },
     {
       name: "stack",
-      layout: { kind: "stack", assetIds: ["demo-aurelia", "demo-2", "demo-3"], device: "browser", spread: 0.5 },
+      layout: {
+        kind: "stack",
+        assetIds: [
+          "demo-aurelia-desktop-hero",
+          "demo-northwind-desktop-hero",
+          "demo-maison-oak-desktop-hero",
+        ],
+        device: "browser",
+        spread: 0.5,
+      },
     },
     {
       name: "rows",
       layout: {
         kind: "rows",
-        assetIds: ["demo-aurelia", "demo-2", "demo-3"],
+        assetIds: [
+          "demo-aurelia-desktop-hero",
+          "demo-northwind-desktop-hero",
+          "demo-maison-oak-desktop-hero",
+        ],
         rows: 2,
         device: "browser",
         tilt: 12,
@@ -34,7 +64,11 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
       name: "columns",
       layout: {
         kind: "columns",
-        assetIds: ["demo-mobile", "demo-2", "demo-3"],
+        assetIds: [
+          "demo-aurelia-mobile-hero",
+          "demo-northwind-mobile-hero",
+          "demo-maison-oak-mobile-hero",
+        ],
         columns: 3,
         tilt: 10,
         speed: 0.25,
@@ -44,7 +78,11 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
       name: "wall",
       layout: {
         kind: "wall",
-        assetIds: ["demo-aurelia", "demo-2", "demo-3"],
+        assetIds: [
+          "demo-aurelia-desktop-hero",
+          "demo-northwind-desktop-hero",
+          "demo-maison-oak-desktop-hero",
+        ],
         columns: 4,
         speed: 0.2,
       },
@@ -61,7 +99,7 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
 
         // Update document with layout & aspect
         await page.evaluate(
-          ({ lay, asp }) => {
+          ({ lay, asp, refs }) => {
             const engine = window.__labEngine;
             const provider = window.__createLabAssetProvider!();
             const base = window.__fixtures!["card-hero"];
@@ -69,6 +107,7 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
             const updatedDoc: ProjectDoc = {
               ...base,
               aspect: asp as Aspect,
+              assets: refs as AssetRef[],
               shots: [
                 {
                   ...base.shots[0],
@@ -82,7 +121,7 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
               engine.renderAt(1.5);
             });
           },
-          { lay: layout, asp: aspect },
+          { lay: layout, asp: aspect, refs: layoutAssetIds(layout).map(demoAssetRef) },
         );
 
         // Verify canvas renders
