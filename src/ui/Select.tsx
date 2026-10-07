@@ -19,6 +19,7 @@ export interface SelectProps<T extends string = string> {
   size?: "sm" | "md";
   className?: string;
   "aria-label"?: string;
+  "aria-describedby"?: string;
   /**
    * The options are user content (file names): the value may truncate with an ellipsis.
    * Our own option labels must fit, so the overflow guard (F08) flags them if they don't.
@@ -35,6 +36,7 @@ export function Select<T extends string = string>({
   size = "md",
   className,
   "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy,
   userContent = false,
 }: SelectProps<T>) {
   const selectedLabel = options.find((opt) => opt.value === value)?.label;
@@ -46,6 +48,7 @@ export function Select<T extends string = string>({
     >
       <SelectPrimitive.Trigger
         aria-label={ariaLabel ?? placeholder ?? "Select option"}
+        aria-describedby={ariaDescribedBy}
         className={clsx(
           "inline-flex items-center justify-between w-full min-w-0 whitespace-nowrap font-medium select-none cursor-pointer",
           "bg-[var(--color-panel)] text-[var(--color-text)] border border-[var(--color-line)] shadow-xs rounded-sm transition-colors",
