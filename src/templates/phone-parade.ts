@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const phoneParadeTemplate: Template = {
@@ -64,11 +65,9 @@ export const phoneParadeTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#1E2024",
-      },
-      textColor: "#F1F5F9",
+      background: paletteBackground("fog"),
+      textColor: "",
+      frameAppearance: "light",
       shadow: "soft",
       deviceFinish: "graphite",
     };

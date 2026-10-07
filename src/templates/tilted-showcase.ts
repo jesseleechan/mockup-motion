@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const tiltedShowcaseTemplate: Template = {
@@ -23,11 +24,10 @@ export const tiltedShowcaseTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#18191B",
-      },
-      textColor: "#F3F4F6",
+      background: paletteBackground("graphite"),
+      textColor: paletteTextColor("graphite"),
+      frameAppearance: "dark",
+      vignette: 0.08,
       shadow: "medium",
       deviceFinish: "graphite",
       browserChrome: "standard",

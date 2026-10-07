@@ -14,23 +14,24 @@ export function computeFitDistance(fovDegrees: number): number {
 }
 
 /**
- * Transforms a local point on a node into world/stage space.
- * Rotation order: Euler XYZ (rx, then ry, then rz).
+ * Transforms a local point on a node into world/stage space, exactly as the engine's
+ * `group.rotation.set(rx, ry, rz)` does: three.js Euler order "XYZ" is the matrix
+ * Rx · Ry · Rz, so a point is rotated around Z first, then Y, then X.
  */
 export function transformNodePoint(local: Point3D, node: LayoutNode): Point3D {
   const { scale = 1, rx = 0, ry = 0, rz = 0, x = 0, y = 0, z = 0 } = node.transform;
 
-  // 1. Scale
+  // 1. Scale (the engine scales x and y only; local points lie at z = 0)
   const sx = local.x * scale;
   const sy = local.y * scale;
-  const sz = local.z * scale;
+  const sz = local.z;
 
-  // 2. Rotate rx (around X)
-  const cosRx = Math.cos(rx);
-  const sinRx = Math.sin(rx);
-  const x1 = sx;
-  const y1 = sy * cosRx - sz * sinRx;
-  const z1 = sy * sinRx + sz * cosRx;
+  // 2. Rotate rz (around Z)
+  const cosRz = Math.cos(rz);
+  const sinRz = Math.sin(rz);
+  const x1 = sx * cosRz - sy * sinRz;
+  const y1 = sx * sinRz + sy * cosRz;
+  const z1 = sz;
 
   // 3. Rotate ry (around Y)
   const cosRy = Math.cos(ry);
@@ -39,12 +40,12 @@ export function transformNodePoint(local: Point3D, node: LayoutNode): Point3D {
   const y2 = y1;
   const z2 = -x1 * sinRy + z1 * cosRy;
 
-  // 4. Rotate rz (around Z)
-  const cosRz = Math.cos(rz);
-  const sinRz = Math.sin(rz);
-  const x3 = x2 * cosRz - y2 * sinRz;
-  const y3 = x2 * sinRz + y2 * cosRz;
-  const z3 = z2;
+  // 4. Rotate rx (around X)
+  const cosRx = Math.cos(rx);
+  const sinRx = Math.sin(rx);
+  const x3 = x2;
+  const y3 = y2 * cosRx - z2 * sinRx;
+  const z3 = y2 * sinRx + z2 * cosRx;
 
   // 5. Translate
   return {

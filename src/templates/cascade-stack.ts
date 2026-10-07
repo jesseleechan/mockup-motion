@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const cascadeStackTemplate: Template = {
@@ -50,12 +51,8 @@ export const cascadeStackTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "gradient",
-        stops: ["#EEF2F6", "#E2E8F0"],
-        angle: 330,
-        angleConvention: "css",
-      },
+      background: paletteBackground("mist"),
+      frameAppearance: "light",
       shadow: "medium",
       browserChrome: "standard",
     };
@@ -63,7 +60,7 @@ export const cascadeStackTemplate: Template = {
     const shot = defaultShot({
       kind: "stack",
       assetIds: assets.length > 0 ? assets : [""],
-      device: "card",
+      device: "browser",
       spread: 0.25,
     });
 

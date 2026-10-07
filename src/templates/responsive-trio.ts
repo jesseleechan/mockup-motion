@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const responsiveTrioTemplate: Template = {
@@ -40,10 +41,8 @@ export const responsiveTrioTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#F1F3F5",
-      },
+      background: paletteBackground("fog"),
+      frameAppearance: "light",
       shadow: "soft",
       browserChrome: "standard",
     };

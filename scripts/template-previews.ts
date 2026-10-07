@@ -7,21 +7,18 @@
  *   npm run template-previews
  */
 import fs from "node:fs";
-import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { chromium } from "@playwright/test";
 import sharp from "sharp";
 import { ALL_FORMATS, BufferSource, Input } from "mediabunny";
-import { build } from "vite";
 import { schedule } from "../src/motion";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
+import { buildLab, launchSwiftShader, serveBuild } from "./lab-build";
 
 const PORT = 3789;
 const OUT_DIR = path.resolve("public/templates");
 // The build has the lab enabled, so it goes to a scratch directory, never to dist/.
 const BUILD_DIR = path.join(os.tmpdir(), "mockupmotion-template-previews");
-const WINDOWS_CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const MAX_WEBM_BYTES = 450 * 1024;
 const POSTER_TIME_FRACTION = 0.35;
 // Posters show until a card is hovered, so they are 2x the video (1280x720) for sharp cards.
@@ -35,52 +32,6 @@ const PREVIEW_SETTINGS = {
   supersample: 1,
   motionBlur: false,
 } as const;
-
-const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".webp": "image/webp",
-  ".webm": "video/webm",
-  ".svg": "image/svg+xml",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".wasm": "application/wasm",
-};
-
-/** Serves the build; extensionless paths (`/lab`) fall back to index.html like any SPA host. */
-function serve(root: string): Promise<http.Server> {
-  const server = http.createServer((req, res) => {
-    const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
-    let filePath = path.join(root, pathname);
-    if (!filePath.startsWith(root)) {
-      res.writeHead(403).end();
-      return;
-    }
-    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-      if (path.extname(pathname) !== "") {
-        res.writeHead(404, { "Content-Type": "text/plain" }).end(`Not found: ${pathname}`);
-        return;
-      }
-      filePath = path.join(root, "index.html");
-    }
-    const type = MIME_TYPES[path.extname(filePath).toLowerCase()];
-    if (!type) {
-      res.writeHead(500, { "Content-Type": "text/plain" }).end(`No MIME type for ${filePath}`);
-      return;
-    }
-    res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-cache" });
-    fs.createReadStream(filePath).pipe(res);
-  });
-  return new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(PORT, () => resolve(server));
-  });
-}
 
 interface RenderedTemplate {
   webm: Buffer;
@@ -112,10 +63,9 @@ async function probeWebm(
 
 async function main(): Promise<void> {
   console.log(`Building the app with the lab enabled into ${BUILD_DIR}`);
-  process.env.VITE_LAB = "1";
-  await build({ logLevel: "warn", build: { outDir: BUILD_DIR, emptyOutDir: true } });
+  await buildLab(BUILD_DIR);
 
-  const server = await serve(BUILD_DIR);
+  const server = await serveBuild(BUILD_DIR, PORT);
   // `npm run template-previews -- quiet-hero` regenerates a subset.
   const requested = process.argv.slice(2);
   const unknown = requested.filter((id) => !BUILTIN_TEMPLATES.some((t) => t.id === id));
@@ -124,20 +74,7 @@ async function main(): Promise<void> {
     requested.length === 0
       ? BUILTIN_TEMPLATES
       : BUILTIN_TEMPLATES.filter((t) => requested.includes(t.id));
-  // Same browser choice as playwright.config.ts: an explicit executable, else installed
-  // Chrome on Windows, else Playwright's Chromium.
-  const executablePath = process.env.PW_CHROMIUM_EXECUTABLE;
-  const useChrome = process.platform === "win32" && fs.existsSync(WINDOWS_CHROME);
-  const browser = await chromium.launch({
-    headless: true,
-    ...(executablePath ? { executablePath } : useChrome ? { channel: "chrome" } : {}),
-    args: [
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-      "--ignore-gpu-blocklist",
-    ],
-  });
+  const browser = await launchSwiftShader();
 
   const rows: Row[] = [];
   try {

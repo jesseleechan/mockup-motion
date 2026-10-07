@@ -23,16 +23,29 @@ export function deviceKey(node: LayoutNode, style: Style): string {
   ].join("|");
 }
 
+// Screens render at up to 2x their on-screen size (sharper text under perspective), while
+// all screen targets together stay under this many pixels: about 130 MB of RGBA8 with
+// mipmaps. A single browser at 4K stays at 2x; a 60-card wall drops towards 1x.
+const MAX_SCREEN_TARGET_SCALE = 2;
+const SCREEN_PIXEL_BUDGET = 24_000_000;
+
 /** The scene's device instances, diffed against each new document. */
 export class DevicePool {
   private instances = new Map<string, DeviceInstance>();
   private builtCount = 0;
   private scene: THREE.Scene;
   private context: () => DeviceBuilderContext;
+  private maxTextureSize: number;
+  private screenScale = MAX_SCREEN_TARGET_SCALE;
 
-  constructor(scene: THREE.Scene, context: () => DeviceBuilderContext) {
+  constructor(
+    scene: THREE.Scene,
+    context: () => DeviceBuilderContext,
+    maxTextureSize = 4096,
+  ) {
     this.scene = scene;
     this.context = context;
+    this.maxTextureSize = maxTextureSize;
   }
 
   /**
@@ -62,6 +75,18 @@ export class DevicePool {
       this.instances.delete(key);
     }
     for (const { node, style } of wanted.values()) this.acquire(node, style);
+    this.updateScreenScale();
+  }
+
+  /** One scale for every screen, the largest that keeps all targets inside the budget. */
+  private updateScreenScale(): void {
+    let baseArea = 0;
+    for (const dev of this.instances.values()) baseArea += dev.compositor.baseArea;
+    const fit = baseArea > 0 ? Math.sqrt(SCREEN_PIXEL_BUDGET / baseArea) : MAX_SCREEN_TARGET_SCALE;
+    this.screenScale = Math.max(1, Math.min(MAX_SCREEN_TARGET_SCALE, fit));
+    for (const dev of this.instances.values()) {
+      dev.compositor.setTargetScale(this.screenScale, this.maxTextureSize);
+    }
   }
 
   /** The instance for this node and style, built on first use. */
@@ -70,6 +95,7 @@ export class DevicePool {
     let dev = this.instances.get(key);
     if (!dev) {
       dev = buildDevice(node, style, this.context());
+      dev.compositor.setTargetScale(this.screenScale, this.maxTextureSize);
       this.builtCount++;
       dev.object3d.visible = false;
       this.instances.set(key, dev);
@@ -90,6 +116,7 @@ export class DevicePool {
   /** Screen targets are sized in output px per stage unit (stage height = 1). */
   rescale(pixelsPerUnit: number): void {
     for (const dev of this.instances.values()) dev.compositor.setPixelsPerUnit(pixelsPerUnit);
+    this.updateScreenScale();
   }
 
   visibleObjects(): THREE.Object3D[] {

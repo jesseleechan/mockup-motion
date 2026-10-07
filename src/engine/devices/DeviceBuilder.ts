@@ -2,6 +2,7 @@ import type * as THREE from "three";
 import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import type { ScreenCompositor } from "../materials/screen";
+import type { ChromeUrlText } from "../text/ChromeUrlTextures";
 import { buildBrowserDevice } from "./browser";
 import { buildCardDevice } from "./card";
 import { buildLaptopDevice } from "./laptop";
@@ -12,6 +13,8 @@ export interface DeviceBuilderContext {
   outputWidthPx: number;
   outputHeightPx: number;
   supersample: number;
+  /** The URL pill raster for a `chromeUrlKey`, once the document's rasters are loaded. */
+  chromeUrlText?: (key: string) => ChromeUrlText | null;
 }
 
 export interface DeviceInstance {

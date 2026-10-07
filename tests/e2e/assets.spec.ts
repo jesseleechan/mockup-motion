@@ -530,6 +530,9 @@ test("F03: alternating documents releases old textures", async ({ page }) => {
         width: 1600,
         height: 1000,
       });
+      // F11: the asset also feeds a blurred ambient background, whose cached render
+      // target must be released with it.
+      doc.style.background = { kind: "ambient", assetId, blur: 1, dim: 0.35 };
       return doc;
     };
     const bitmaps = await Promise.all([
@@ -626,14 +629,20 @@ test("F03: devices whose key disappears are disposed", async ({ page }) => {
     const snapshots = [];
     for (let cycle = 1; cycle <= 20; cycle++) {
       // The URL is part of the browser's device key, so every cycle needs a new device.
+      // F11: it is also a new URL raster, whose texture must be released.
       const doc = structuredClone(base);
       doc.style.browserUrl = `site-${cycle}.example`;
       await setDoc(doc);
       const info = engine.debugInfo();
-      snapshots.push({ geometries: info.geometries, built: info.devicesBuilt });
+      snapshots.push({
+        geometries: info.geometries,
+        textures: info.textures,
+        built: info.devicesBuilt,
+      });
     }
     return snapshots;
   });
   expect(counts[19].built, "each cycle built a new browser").toBeGreaterThan(counts[1].built);
   expect(counts[19].geometries, JSON.stringify(counts)).toBe(counts[1].geometries);
+  expect(counts[19].textures, JSON.stringify(counts)).toBe(counts[1].textures);
 });
