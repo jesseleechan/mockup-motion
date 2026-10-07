@@ -290,7 +290,8 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 
 - Shot `i` starts at `s_0 = 0` and `s_{i+1} = s_i + duration_i − transitionIn_{i+1}.duration` (a `cut` has duration 0). A transition overlaps the end of the previous shot.
 - `totalDuration = s_last + duration_last`. When `doc.loop` is true and the doc has more than one shot **or** `shots[0].transitionIn.kind !== "cut"`: `totalDuration −= shots[0].transitionIn.duration`, and in `[total − d0, total)` the last shot blends into shot 0 with shot-0 local time `t − total`, clamped to 0 (shot 0 holds its first pose while fading in). So frame(total) ≡ frame(0) for every loop.
-- A single looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade). Marquee layouts loop natively because travel per `totalDuration` is an integer number of pattern periods (`motion/layouts.ts` snaps speed to `k · period / totalDuration`, k ≥ 1).
+- A single looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade).
+- Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade. At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
 - Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts

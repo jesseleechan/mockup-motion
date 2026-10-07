@@ -12,6 +12,12 @@ export interface ActiveShot {
   index: number;
   localT: number;
   weight: number;
+  /**
+   * Only on the incoming shot 0 during the loop wrap: its unclamped time, t − total (< 0).
+   * `localT` stays clamped to 0 (contracts.md §5); marquee layouts use this instead so
+   * their strip keeps moving in step with the outgoing layer.
+   */
+  wrapT?: number;
 }
 
 export interface ActiveTimeline {
@@ -115,7 +121,13 @@ export function activeLayers(doc: ProjectDoc, t: number): ActiveTimeline {
     return {
       layers: [
         { shot: outgoingShot, index: outgoingIndex, localT: outgoingLocalT, weight: 1 - easedP },
-        { shot: incomingShot, index: 0, localT: incomingLocalT, weight: easedP },
+        {
+          shot: incomingShot,
+          index: 0,
+          localT: incomingLocalT,
+          weight: easedP,
+          wrapT: normT - total,
+        },
       ],
       transition: {
         kind: incomingShot.transitionIn.kind,

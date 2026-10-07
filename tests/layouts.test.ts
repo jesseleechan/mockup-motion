@@ -288,3 +288,107 @@ describe("WP-09 Layouts and Camera Framing", () => {
     }
   });
 });
+
+describe("Marquee speed (quality-bar §2.5)", () => {
+  const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
+  // Quality-bar §2.5: a marquee never moves faster than 0.12 frame widths per second.
+  const MAX_FRAME_WIDTHS_PER_SECOND = 0.12;
+
+  const CONFIGS: ((assetIds: string[]) => Layout)[] = [
+    ...([1, 2, 3] as const).map(
+      (rows) => (assetIds: string[]) =>
+        ({ kind: "rows", assetIds, rows, device: "browser", tilt: 8, speed: 1 }) as Layout,
+    ),
+    ...[2, 3, 4, 5].map(
+      (columns) => (assetIds: string[]) =>
+        ({ kind: "columns", assetIds, columns, tilt: 12, speed: 1 }) as Layout,
+    ),
+    ...[3, 4, 5].map(
+      (columns) => (assetIds: string[]) =>
+        ({ kind: "wall", assetIds, columns, speed: 1 }) as Layout,
+    ),
+  ];
+  const SPEEDS = [0.05, 0.35, 1];
+  const DURATIONS = [3, 5, 8, 12];
+
+  function assetsOf(count: number) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `asset_${i}`,
+      kind: "image" as const,
+      name: `asset_${i}`,
+      mime: "image/png",
+      bytes: 100,
+      width: 1440,
+      height: 900,
+    }));
+  }
+
+  /** Fastest node speed in frame widths per second, from two nearby frames. */
+  function maxNodeSpeed(layout: Layout, aspect: Aspect, duration: number): number {
+    const assets = assetsOf(12);
+    const dt = 1e-3;
+    let fastest = 0;
+    for (const t of [0.3 * duration, 0.7 * duration]) {
+      const before = new Map(
+        resolveLayout(layout, aspect, assets, t, duration).map((node) => [node.id, node]),
+      );
+      for (const node of resolveLayout(layout, aspect, assets, t + dt, duration)) {
+        const prev = before.get(node.id);
+        if (!prev) throw new Error(`Node ${node.id} has no match one step earlier`);
+        const dx = node.transform.x - prev.transform.x;
+        const dy = node.transform.y - prev.transform.y;
+        const dz = node.transform.z - prev.transform.z;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        // A node that wraps from one end of its ring to the other jumps far; skip it.
+        if (distance > 0.1) continue;
+        fastest = Math.max(fastest, distance / dt);
+      }
+    }
+    return fastest / aspectRatioValue(aspect);
+  }
+
+  it("rows, columns and wall stay at or under 0.12 frame widths per second for 1 to 12 assets", () => {
+    const failures: string[] = [];
+    for (const config of CONFIGS) {
+      for (let count = 1; count <= 12; count++) {
+        const assetIds = assetsOf(count).map((asset) => asset.id);
+        for (const aspect of ASPECTS) {
+          for (const speed of SPEEDS) {
+            for (const duration of DURATIONS) {
+              const layout = { ...config(assetIds), speed } as Layout;
+              const v = maxNodeSpeed(layout, aspect, duration);
+              const label = `${layout.kind} ${JSON.stringify({ ...layout, assetIds: undefined })} ${count} assets ${aspect} ${duration}s`;
+              if (v > MAX_FRAME_WIDTHS_PER_SECOND + 1e-9) {
+                failures.push(`${label}: ${v.toFixed(3)} frame widths/s`);
+              }
+              if (v <= 0) failures.push(`${label}: does not move`);
+            }
+          }
+        }
+      }
+    }
+    expect(failures.slice(0, 12), `${failures.length} cases fail`).toEqual([]);
+  });
+
+  it("marquee speed does not depend on the number of assets", () => {
+    const failures: string[] = [];
+    for (const config of CONFIGS) {
+      for (const aspect of ASPECTS) {
+        for (const duration of DURATIONS) {
+          const speeds = Array.from({ length: 12 }, (_, i) => {
+            const assetIds = assetsOf(i + 1).map((asset) => asset.id);
+            return maxNodeSpeed({ ...config(assetIds), speed: 0.35 } as Layout, aspect, duration);
+          });
+          const spread = Math.max(...speeds) - Math.min(...speeds);
+          if (spread > 1e-6) {
+            const kind = config([]).kind;
+            failures.push(
+              `${kind} ${aspect} ${duration}s: ${speeds.map((v) => v.toFixed(3)).join(" ")}`,
+            );
+          }
+        }
+      }
+    }
+    expect(failures.slice(0, 12), `${failures.length} cases fail`).toEqual([]);
+  });
+});

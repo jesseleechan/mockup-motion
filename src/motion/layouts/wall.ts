@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { marqueeVelocity } from "./marquee";
 import { type LayoutNode, screenAspectFor } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
@@ -74,14 +75,8 @@ export function resolveWallLayout(
   const N = distinctAssets.length;
   const period = N * stepY;
 
-  // Speed snapping: an integer number of periods per shot keeps the loop seamless.
-  const vMax = 0.12 * W;
-  const duration = Math.max(0.1, shotDuration);
-  const normalizedSpeed = Math.max(0.05, Math.min(1.0, speed));
-  let k = Math.round((normalizedSpeed * vMax * duration) / period);
-  if (k < 1) k = 1;
-  while (k > 1 && (k * period) / duration > vMax) k--;
-  const velocity = (k * period) / duration;
+  // Quality-bar §2.5: at most 0.12 frame widths per second, whatever N is.
+  const velocity = marqueeVelocity(speed, W, stepY, shotDuration);
 
   // The frame seen on the tipped plane, in rotated-plane coordinates: the full width,
   // and the height stretched by 1 / cos(rx). One card of margin on every side covers

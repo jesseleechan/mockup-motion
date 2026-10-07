@@ -5,6 +5,7 @@ import {
   fillSlots,
   validateTemplateRequirements,
   applyTemplate,
+  buildTemplatePreviewDoc,
 } from "../src/templates";
 import { createEditorStore } from "../src/state/store";
 import { sanitizeDoc } from "../src/doc/validate";
@@ -12,6 +13,10 @@ import type { Aspect, AssetRef } from "../src/doc/types";
 import { evaluate } from "../src/motion/evaluate";
 import { schedule } from "../src/motion/timeline";
 import { createDoc } from "../src/doc/defaults";
+import { aspectRatioValue } from "../src/motion/camera";
+import type { ShotFrame } from "../src/motion/evaluate";
+import { computeCameraBasis, projectPointToNDC } from "../src/motion/framing";
+import type { LayoutNode } from "../src/motion/layouts";
 
 describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   const sampleAssets: AssetRef[] = [
@@ -271,5 +276,116 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     store.getState().undo();
     expect(store.getState().past.length).toBe(0);
     expect(store.getState().doc.templateId).toBeUndefined();
+  });
+});
+
+describe("Marquee template loop seam", () => {
+  const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
+  const MARQUEE_TEMPLATES = ["portfolio-rows", "phone-parade", "isometric-wall"];
+
+  // A marquee at 0.12 frame widths per second cannot travel a whole asset period in one
+  // shot, so the frame just before the loop point must already be the first frame:
+  // either the strip came back to its start, or the wrap crossfade has finished.
+  it("the frame just before the loop point shows the first frame with the demo content", () => {
+    for (const id of MARQUEE_TEMPLATES) {
+      const template = BUILTIN_TEMPLATES.find((t) => t.id === id)!;
+      for (const aspect of ASPECTS) {
+        const doc = buildTemplatePreviewDoc(template, aspect);
+        const label = `${id} ${aspect}`;
+        const { total } = schedule(doc);
+        const start = evaluate(doc, 0).layers;
+        expect(start, label).toHaveLength(1);
+        const first = start[0].frame;
+
+        const end = evaluate(doc, total - 1e-4).layers;
+        const shown = end.reduce((a, b) => (b.weight > a.weight ? b : a));
+        expect(shown.weight, `${label}: weight of the dominant layer`).toBeGreaterThan(0.999);
+
+        for (const key of ["yaw", "pitch", "roll", "distance", "panX", "panY"] as const) {
+          expect(shown.frame.camera[key], `${label}: camera ${key}`).toBeCloseTo(
+            first.camera[key],
+            3,
+          );
+        }
+        // Cards near the frame: within half the frame diagonal plus one card of the
+        // centre. Each ring wraps much farther out, where a card may sit on either end.
+        const halfDiagonal = Math.sqrt(aspectRatioValue(aspect) ** 2 + 1) / 2;
+        const near = (node: LayoutNode) =>
+          Math.hypot(node.transform.x, node.transform.y, node.transform.z) <
+          halfDiagonal + Math.max(node.width, node.height);
+        const same = (a: LayoutNode, b: LayoutNode) =>
+          a.assetId === b.assetId &&
+          Math.abs(a.transform.x - b.transform.x) < 1e-3 &&
+          Math.abs(a.transform.y - b.transform.y) < 1e-3 &&
+          Math.abs(a.transform.z - b.transform.z) < 1e-3;
+        const checks: [LayoutNode[], LayoutNode[], string][] = [
+          [first.nodes, shown.frame.nodes, "at the start"],
+          [shown.frame.nodes, first.nodes, "at the loop point"],
+        ];
+        for (const [from, to, where] of checks) {
+          const nearby = from.filter(near);
+          expect(nearby.length, `${label}: cards near the frame`).toBeGreaterThan(3);
+          for (const node of nearby) {
+            const match = to.find((other) => same(node, other));
+            expect(match, `${label}: ${node.id} (${node.assetId}) ${where}`).toBeDefined();
+          }
+        }
+      }
+    }
+  });
+  // Where a whole card step fits under the speed limit in one loop, the strip travels
+  // whole steps, so halfway through the wrap crossfade both layers show cards in the same
+  // places on screen and only the screens dissolve. The exceptions: portfolio-rows 9:16
+  // and phone-parade 9:16 and 4:5 would need more than 0.12 frame widths per second to
+  // move one card per loop, and isometric-wall's isoDrift camera ends away from its start
+  // pose, so its cards line up on the plane but not on screen.
+  const UNREGISTERED = new Set([
+    "portfolio-rows 9:16",
+    "phone-parade 9:16",
+    "phone-parade 4:5",
+    ...ASPECTS.map((aspect) => `isometric-wall ${aspect}`),
+  ]);
+
+  it("cards stay in place during the wrap crossfade wherever a whole card step fits", () => {
+    for (const id of MARQUEE_TEMPLATES) {
+      const template = BUILTIN_TEMPLATES.find((t) => t.id === id)!;
+      for (const aspect of ASPECTS) {
+        const doc = buildTemplatePreviewDoc(template, aspect);
+        const label = `${id} ${aspect}`;
+        const { total } = schedule(doc);
+        const fade = doc.shots[0].transitionIn.duration;
+        expect(fade, `${label}: wrap crossfade`).toBeGreaterThan(0);
+        const [outgoing, incoming] = evaluate(doc, total - fade / 2).layers;
+        expect(incoming, `${label}: two layers halfway through the wrap`).toBeDefined();
+        // Card centres on screen, through each layer's own camera.
+        const onScreen = (frame: ShotFrame, node: LayoutNode) =>
+          projectPointToNDC(node.transform, computeCameraBasis(frame.camera, aspect));
+        const placedOnScreen = (a: LayoutNode, b: LayoutNode) => {
+          const pa = onScreen(outgoing.frame, a);
+          const pb = onScreen(incoming.frame, b);
+          return Math.abs(pa.x - pb.x) < 1e-4 && Math.abs(pa.y - pb.y) < 1e-4;
+        };
+        const placed = (a: LayoutNode, b: LayoutNode) =>
+          Math.abs(a.transform.x - b.transform.x) < 1e-6 &&
+          Math.abs(a.transform.y - b.transform.y) < 1e-6 &&
+          Math.abs(a.transform.z - b.transform.z) < 1e-6;
+        const visible = outgoing.frame.nodes.filter((node) => {
+          const p = onScreen(outgoing.frame, node);
+          return Math.abs(p.x) < 1 && Math.abs(p.y) < 1;
+        });
+        expect(visible.length, `${label}: cards on screen`).toBeGreaterThan(1);
+        const registered = visible.every((node) =>
+          incoming.frame.nodes.some((other) => placedOnScreen(node, other)),
+        );
+        expect(registered, label).toBe(!UNREGISTERED.has(label));
+        // The screens do change: a cut here would swap them.
+        const sameScreens = outgoing.frame.nodes.every((node) =>
+          incoming.frame.nodes.some(
+            (other) => placed(node, other) && other.assetId === node.assetId,
+          ),
+        );
+        expect(sameScreens, label).toBe(false);
+      }
+    }
   });
 });

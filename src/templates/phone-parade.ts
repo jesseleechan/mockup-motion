@@ -1,7 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground } from "./looks";
+import { loopWrapCrossfade, paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const phoneParadeTemplate: Template = {
@@ -84,6 +84,7 @@ export const phoneParadeTemplate: Template = {
     });
 
     shot.duration = 8;
+    shot.transitionIn = loopWrapCrossfade();
     shot.camera = {
       preset: "static",
       intensity: 0,

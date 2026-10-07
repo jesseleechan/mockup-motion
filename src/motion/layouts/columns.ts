@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { marqueeVelocity } from "./marquee";
 import { type LayoutNode } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
@@ -20,7 +21,7 @@ export function resolveColumnsLayout(
   let itemH: number;
   switch (numCols) {
     case 2:
-      itemH = 0.70;
+      itemH = 0.7;
       break;
     case 3:
       itemH = 0.58;
@@ -30,7 +31,7 @@ export function resolveColumnsLayout(
       break;
     case 5:
     default:
-      itemH = 0.40;
+      itemH = 0.4;
       break;
   }
   const itemW = itemH * 0.488; // body aspect 0.488
@@ -44,23 +45,12 @@ export function resolveColumnsLayout(
   const rx = (tilt * 0.6 * Math.PI) / 180;
   const rz = (-tilt * Math.PI) / 180;
 
-  const distinctAssets =
-    assetIds.length > 0 ? assetIds : [assets[0]?.id ?? "empty"];
+  const distinctAssets = assetIds.length > 0 ? assetIds : [assets[0]?.id ?? "empty"];
   const N = distinctAssets.length;
   const period = N * stepY;
 
-  // Speed snapping
-  const vMax = 0.12 * W;
-  const duration = Math.max(0.1, shotDuration);
-  const normalizedSpeed = Math.max(0.05, Math.min(1.0, speed));
-  const targetVelocity = normalizedSpeed * vMax;
-
-  let k = Math.round((targetVelocity * duration) / period);
-  if (k < 1) k = 1;
-  while (k > 1 && (k * period) / duration > vMax) {
-    k--;
-  }
-  const velocity = (k * period) / duration;
+  // Quality-bar §2.5: at most 0.12 frame widths per second, whatever N is.
+  const velocity = marqueeVelocity(speed, W, stepY, shotDuration);
 
   const diag = Math.sqrt(W * W + 1.0);
   const visibleSpan = diag * 2.0;

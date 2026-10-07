@@ -53,18 +53,26 @@ export function clearLayoutCache(): void {
   // Modular layouts resolve deterministically
 }
 
+function isMarquee(shot: Shot): boolean {
+  return (
+    shot.layout.kind === "rows" || shot.layout.kind === "columns" || shot.layout.kind === "wall"
+  );
+}
+
 function evaluateNodes(
   shot: Shot,
   aspect: Aspect,
   assets: AssetRef[],
   localT: number,
+  layoutT: number,
+  layoutDuration: number,
 ): LayoutNode[] {
   const nodes = resolveLayout(
     shot.layout,
     aspect,
     assets,
-    localT,
-    shot.duration,
+    layoutT,
+    layoutDuration,
     shot.entrance ?? "none",
   );
 
@@ -144,16 +152,20 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     const p = shot.duration > 0 ? Math.max(0, Math.min(1, localT / shot.duration)) : 0;
     const baseCamera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
 
+    // Marquees snap their travel to whole card steps per loop when they can (layouts/marquee.ts).
+    // A single looping shot loops after `total`, which is shorter than the shot when it has
+    // a wrap crossfade; during that crossfade the incoming strip runs on t − total, so both
+    // layers show the cards in the same places and only the screens dissolve.
+    const marquee = isMarquee(shot);
+    const layoutT = marquee ? (activeShot.wrapT ?? localT) : localT;
+    const layoutDuration = marquee && doc.loop && doc.shots.length === 1 ? total : shot.duration;
+
     // Nodes evaluation with entrance and scroll
-    const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT);
+    const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT, layoutT, layoutDuration);
 
     // Auto-framing: keep safe margins under camera moves for bounded layouts
     let camera = baseCamera;
-    const isFullBleed =
-      shot.layout.kind === "rows" ||
-      shot.layout.kind === "columns" ||
-      shot.layout.kind === "wall" ||
-      shot.layout.kind === "title";
+    const isFullBleed = marquee || shot.layout.kind === "title";
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {
