@@ -135,4 +135,4 @@ criterion with its evidence.
 
 Every follow-up noted in the F00–F14 pull requests that is still open is collected in [`docs/plan/follow-ups.md`](../plan/follow-ups.md), with its source task and one line each. The work-package statuses and their known gaps are in [`docs/plan/README.md`](../plan/README.md). The per-template quality review is in [`docs/plan/quality-review.md`](../plan/quality-review.md), and what was run in which browser is in [`docs/plan/browser-matrix.md`](../plan/browser-matrix.md).
 
-Still open against the definition of done in §6: Safari and Firefox were never run, so "every template renders right side up … in exported MP4/WebM" is proven for Chromium only.
+Safari and Firefox are out of scope for now (decided 7 Oct 2026), so the definition of done in §6 ("every template renders right side up … in exported MP4/WebM") is proven in Chromium only.

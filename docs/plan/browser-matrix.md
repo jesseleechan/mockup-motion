@@ -2,7 +2,7 @@
 
 What has actually been run, in which browser, and where the result is recorded. Last updated 7 Oct 2026 (F14). The WP-18 version of this page reported "no blocking issue" from code review alone; nothing in it had been run.
 
-Only Chromium-based browsers have been tested. **Safari, Firefox and Edge have never been run.** The steps to run them are [below](#running-safari-and-firefox).
+Only Chromium-based browsers have been tested. **Safari, Firefox and Edge have never been run**, and they are out of scope for now (decided 7 Oct 2026). The steps to run them later are [below](#running-safari-and-firefox).
 
 ## Browsers that were run
 
