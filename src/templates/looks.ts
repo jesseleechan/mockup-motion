@@ -1,4 +1,4 @@
-import type { Background } from "../doc/types";
+import type { Background, Transition } from "../doc/types";
 import { BUILTIN_PALETTES } from "../doc/palettes";
 
 export type PaletteId = "bone" | "fog" | "graphite" | "ink" | "sage" | "clay" | "dusk" | "mist";
@@ -19,4 +19,13 @@ export function paletteBackground(id: PaletteId, angle?: number): Background {
 /** The palette's text colour, chosen for contrast against its background. */
 export function paletteTextColor(id: PaletteId): string {
   return palette(id).textColor;
+}
+
+/**
+ * The loop wrap crossfade (quality-bar §2.2: 0.8 s) for a single-shot loop whose last
+ * frame differs from its first. Marquees need it: at 0.12 frame widths per second a shot
+ * cannot travel a whole asset period, so a cut back to t = 0 would swap every screen.
+ */
+export function loopWrapCrossfade(): Transition {
+  return { kind: "fade", duration: 0.8, easing: "quintInOut" };
 }

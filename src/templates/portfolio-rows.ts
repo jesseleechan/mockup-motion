@@ -1,7 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground, paletteTextColor } from "./looks";
+import { loopWrapCrossfade, paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const portfolioRowsTemplate: Template = {
@@ -71,6 +71,7 @@ export const portfolioRowsTemplate: Template = {
     });
 
     shot.duration = 8;
+    shot.transitionIn = loopWrapCrossfade();
     shot.camera = {
       preset: "static",
       intensity: 0,
