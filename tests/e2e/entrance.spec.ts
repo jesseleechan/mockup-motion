@@ -228,3 +228,51 @@ test("a fading phone stays in front of the browser it overlaps under an orbiting
     phone.count * 0.3,
   );
 });
+
+test("entrance frames create no GPU objects: the fade layer is allocated with the document", async ({
+  page,
+}) => {
+  await ready(page);
+  const created = await page.evaluate(async () => {
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    const doc = structuredClone(window.__fixtures?.["device-browser-frontal"]);
+    if (!engine || !setDoc || !doc) throw new Error("Lab hooks are unavailable");
+    doc.loop = false;
+    doc.shots[0].entrance = "rise";
+    await setDoc(doc);
+    // The engine's renderer is private; the context is reached through it.
+    const gl = (
+      engine as unknown as { renderer: { getContext(): WebGL2RenderingContext } }
+    ).renderer.getContext();
+    const counts = { texture: 0, framebuffer: 0, renderbuffer: 0 };
+    const originals = {
+      createTexture: gl.createTexture,
+      createFramebuffer: gl.createFramebuffer,
+      createRenderbuffer: gl.createRenderbuffer,
+    };
+    gl.createTexture = () => {
+      counts.texture++;
+      return originals.createTexture.call(gl);
+    };
+    gl.createFramebuffer = () => {
+      counts.framebuffer++;
+      return originals.createFramebuffer.call(gl);
+    };
+    gl.createRenderbuffer = () => {
+      counts.renderbuffer++;
+      return originals.createRenderbuffer.call(gl);
+    };
+    try {
+      for (let frame = 1; frame <= 10; frame++) engine.renderAt(frame * 0.05);
+    } finally {
+      Object.assign(gl, originals);
+    }
+    return counts;
+  });
+  expect(created, "WebGL objects created while the device fades in").toEqual({
+    texture: 0,
+    framebuffer: 0,
+    renderbuffer: 0,
+  });
+});

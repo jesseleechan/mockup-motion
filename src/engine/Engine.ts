@@ -1,7 +1,13 @@
 import * as THREE from "three";
 import { collectAssetIds, resolveShotStyle } from "../doc/assets";
 import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
-import { evaluate, type FrameState, type LayoutNode, type ShotFrame } from "../motion";
+import {
+  evaluate,
+  shotEntrance,
+  type FrameState,
+  type LayoutNode,
+  type ShotFrame,
+} from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
 import { DeviceFadePass, type DeviceDraw } from "./devices/DeviceFade";
 import { DevicePool } from "./devices/DevicePool";
@@ -232,6 +238,7 @@ export class Engine {
     this.targetB.setSize(renderW, renderH);
     this.compositeTarget.setSize(renderW, renderH);
     this.accumulation?.setSize(renderW, renderH);
+    this.deviceFade.setSize(renderW, renderH);
   }
 
   private rescaleScreens(): void {
@@ -299,6 +306,11 @@ export class Engine {
     this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
+    this.deviceFade.prepare(
+      this.renderer,
+      this.targetA,
+      doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
+    );
 
     // Warm-up compilation
     this.renderAt(0);

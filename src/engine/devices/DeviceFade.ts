@@ -138,7 +138,25 @@ export class DeviceFadePass {
     renderer.render(this.scene, this.camera);
   }
 
-  /** A multisampled sRGB layer matching the shot targets, created on first use. */
+  /**
+   * Allocates the layer for a document whose devices can fade, or frees it for one whose
+   * devices never do, so rendering a frame never creates GPU objects.
+   */
+  prepare(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget, needed: boolean): void {
+    if (!needed) {
+      this.layer?.dispose();
+      this.layer = null;
+      return;
+    }
+    renderer.initRenderTarget(this.layerFor(target));
+  }
+
+  /** Follows the shot targets' size; the layer reallocates on its next use. */
+  setSize(width: number, height: number): void {
+    this.layer?.setSize(width, height);
+  }
+
+  /** A multisampled sRGB layer matching the shot targets. */
   private layerFor(target: THREE.WebGLRenderTarget): THREE.WebGLRenderTarget {
     if (!this.layer) {
       this.layer = new THREE.WebGLRenderTarget(target.width, target.height, {
