@@ -20,7 +20,11 @@ export default defineConfig({
   timeout: 45000,
   fullyParallel: false,
   workers: 1,
-  reporter: "list",
+  // CI also writes playwright-report/, which the workflow uploads when a job fails.
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // A missing or changed baseline fails and is never written implicitly. Baselines change only
+  // through `npm run test:visual:update` (tests/visual/README.md).
+  updateSnapshots: "none",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",

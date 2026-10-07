@@ -1,12 +1,16 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
 import { rasterizeText } from "../text";
 import { DEMO_ASSETS } from "./demo-assets";
+import { labTestImageFromId } from "./test-images";
 
 function isDirectUrl(assetId: string): boolean {
   return assetId.startsWith("http") || assetId.startsWith("/") || assetId.startsWith("blob:");
 }
 
-/** Lab asset source: demo ids resolve through `public/demo/manifest.json`; URLs load directly. */
+/**
+ * Lab asset source: demo ids resolve through `public/demo/manifest.json`; URLs load directly.
+ * `lab-test-*` ids are generated pixel fixtures (see `test-images.ts`) and never fetched.
+ */
 export function resolveLabAssetUrl(assetId: string): string {
   if (isDirectUrl(assetId)) return assetId;
   const demo = DEMO_ASSETS.get(assetId);
@@ -22,6 +26,12 @@ export function createLabAssetProvider(): AssetProvider {
       const cacheKey = `${assetId}:${maxWidth}`;
       const cached = cache.get(cacheKey);
       if (cached) return cached;
+
+      const testImage = await labTestImageFromId(assetId, maxWidth);
+      if (testImage) {
+        cache.set(cacheKey, testImage);
+        return testImage;
+      }
 
       const src = resolveLabAssetUrl(assetId);
       const res = await fetch(src);
