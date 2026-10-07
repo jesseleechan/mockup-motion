@@ -52,9 +52,10 @@ describe("F11 isometric wall", () => {
             worst = Math.max(worst, Math.abs(dot(sub(corner, c0), normal)));
           }
         }
-        expect(worst, `${aspect} t=${t}: distance of the farthest corner from the plane`).toBeLessThan(
-          1e-9,
-        );
+        expect(
+          worst,
+          `${aspect} t=${t}: distance of the farthest corner from the plane`,
+        ).toBeLessThan(1e-9);
         // A plane facing the camera would be a flat grid, not a wall seen from above.
         const tiltDeg = (Math.acos(Math.abs(normal.z)) * 180) / Math.PI;
         expect(tiltDeg, `${aspect}: plane tilt`).toBeGreaterThan(30);

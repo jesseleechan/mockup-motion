@@ -154,7 +154,9 @@ async function main(): Promise<void> {
           { doc, times, resolution },
         );
         if (pageErrors.length > 0) {
-          throw new Error(`Page errors while rendering ${template.id} ${aspect}:\n${pageErrors.join("\n")}`);
+          throw new Error(
+            `Page errors while rendering ${template.id} ${aspect}:\n${pageErrors.join("\n")}`,
+          );
         }
 
         const expected = outputDimensions(aspect, resolution);
@@ -198,7 +200,9 @@ async function main(): Promise<void> {
     `\nWrote ${frames.length} frames (${(totalBytes / 1024 / 1024).toFixed(2)} MB) and index.html to ${outDir}`,
   );
   if (totalBytes > MAX_TOTAL_BYTES) {
-    throw new Error(`The contact sheet is ${totalBytes} bytes, over the ${MAX_TOTAL_BYTES}-byte limit`);
+    throw new Error(
+      `The contact sheet is ${totalBytes} bytes, over the ${MAX_TOTAL_BYTES}-byte limit`,
+    );
   }
 }
 

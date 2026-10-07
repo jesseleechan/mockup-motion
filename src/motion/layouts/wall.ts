@@ -130,7 +130,15 @@ export function resolveWallLayout(
         height: itemH,
         screenAspect: screenAspectFor("card", asset),
         // Each card carries the plane's rotation, so its corners lie on the plane.
-        transform: { x: p.x, y: p.y, z: p.z, rx: WALL_RX, ry: 0, rz: WALL_RZ, scale: entranceScale },
+        transform: {
+          x: p.x,
+          y: p.y,
+          z: p.z,
+          rx: WALL_RX,
+          ry: 0,
+          rz: WALL_RZ,
+          scale: entranceScale,
+        },
         opacity: entranceOpacity,
         scroll: 0,
         depthOrder: (c + colReach) * totalCount + j,

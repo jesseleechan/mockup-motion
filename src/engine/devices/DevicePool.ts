@@ -38,11 +38,7 @@ export class DevicePool {
   private maxTextureSize: number;
   private screenScale = MAX_SCREEN_TARGET_SCALE;
 
-  constructor(
-    scene: THREE.Scene,
-    context: () => DeviceBuilderContext,
-    maxTextureSize = 4096,
-  ) {
+  constructor(scene: THREE.Scene, context: () => DeviceBuilderContext, maxTextureSize = 4096) {
     this.scene = scene;
     this.context = context;
     this.maxTextureSize = maxTextureSize;

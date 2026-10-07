@@ -44,10 +44,10 @@ export const launchReelTemplate: Template = {
       ...defaultStyle(),
       ...ctx.style,
       // The primary screenshot, blurred, sets the mood; graphite when there is none yet.
-      // Dim 0.55 (F11 suggested 0.35) keeps white text above 4.5:1 on light screenshots
-      // (quality-bar §7); the demo's blurred hero is about sRGB 150 undimmed.
+      // Dim 0.65 (F11 suggested 0.35): the demo's blurred hero reaches relative luminance
+      // 0.57 undimmed, and white titles need 3:1 against it (quality-bar §7).
       background: desktopAsset
-        ? { kind: "ambient", assetId: desktopAsset.id, blur: 1, dim: 0.55 }
+        ? { kind: "ambient", assetId: desktopAsset.id, blur: 1, dim: 0.65 }
         : paletteBackground("graphite"),
       textColor: paletteTextColor("graphite"),
       frameAppearance: "light",

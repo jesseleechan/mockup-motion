@@ -86,6 +86,14 @@ test.describe("F11 ambient background", () => {
       };
     });
 
+    // Cover-fit at 9:16 shows only the middle ~35% of the width: the green band reaches
+    // both edges. Stretched, the edges would be red and blue.
+    for (const side of ["left", "right"] as const) {
+      const [r, g, b] = result.tall[side];
+      expect(g, `9:16 ${side} edge is green (${r}, ${g}, ${b})`).toBeGreaterThan(
+        Math.max(r, b) + 40,
+      );
+    }
     // The checker is 40 px in the source: unblurred it is 30+ levels per pixel step.
     expect(result.wide.energy, "16:9 mean |dI/dx| per channel").toBeLessThan(1.5);
     expect(result.tall.energy, "9:16 mean |dI/dx| per channel").toBeLessThan(1.5);
@@ -97,12 +105,6 @@ test.describe("F11 ambient background", () => {
     expect(result.wide.centre[1], "16:9 centre is green").toBeGreaterThan(
       result.wide.centre[0] + 40,
     );
-    // Cover-fit at 9:16 shows only the middle ~35% of the width: the green band reaches
-    // both edges. Stretched, the edges would be red and blue.
-    for (const side of ["left", "right"] as const) {
-      const [r, g, b] = result.tall[side];
-      expect(g, `9:16 ${side} edge is green (${r}, ${g}, ${b})`).toBeGreaterThan(Math.max(r, b) + 40);
-    }
   });
 
   test("the ambient background uses only the screenshot's first viewport", async ({ page }) => {
@@ -290,9 +292,12 @@ test.describe("F11 browser URL pill", () => {
       doc.style.frameAppearance = "light";
       const bitmap = await images.bands(1600, 1000, ["#808080"]);
       const render = async (url: string) => {
-        await setDoc({ ...structuredClone(doc), style: { ...doc.style, browserUrl: url } }, {
-          [id]: bitmap,
-        });
+        await setDoc(
+          { ...structuredClone(doc), style: { ...doc.style, browserUrl: url } },
+          {
+            [id]: bitmap,
+          },
+        );
         engine.renderAt(1);
         return engine.readPixels().slice();
       };
@@ -447,9 +452,12 @@ test.describe("F11 browser URL pill", () => {
       const width = 1280;
       const height = 720;
       engine.resize(width, height);
-      await setDoc({ ...structuredClone(doc), style: { ...doc.style, browserUrl: "" } }, {
-        [id]: bitmap,
-      });
+      await setDoc(
+        { ...structuredClone(doc), style: { ...doc.style, browserUrl: "" } },
+        {
+          [id]: bitmap,
+        },
+      );
       engine.renderAt(0);
       const without = engine.readPixels().slice();
       await setDoc(structuredClone(doc), { [id]: bitmap });
@@ -463,7 +471,9 @@ test.describe("F11 browser URL pill", () => {
       const baseProvider = createProvider();
       const provider: AssetProvider = {
         async getImage(assetId, maxWidth) {
-          return assetId === id ? createImageBitmap(bitmap) : baseProvider.getImage(assetId, maxWidth);
+          return assetId === id
+            ? createImageBitmap(bitmap)
+            : baseProvider.getImage(assetId, maxWidth);
         },
         getText: baseProvider.getText.bind(baseProvider),
       };
