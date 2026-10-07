@@ -57,9 +57,10 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     await transitionChips.first().click();
 
     // Popover should be open
-    await expect(page.getByRole("dialog").getByText("Transition", { exact: true })).toBeVisible();
-    // Select "Fade"
-    const fadeBtn = page.getByRole("button", { name: /Fade/i });
+    const picker = page.getByRole("dialog");
+    await expect(picker.getByText("Transition", { exact: true })).toBeVisible();
+    // Select "Fade" in the picker (the loop wrap chip in the timeline is also labelled "Fade")
+    const fadeBtn = picker.getByRole("button", { name: /Fade/i });
     if (await fadeBtn.isVisible()) {
       await fadeBtn.click();
     }
