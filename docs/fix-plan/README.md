@@ -98,7 +98,7 @@ The previous run failed mainly because work was marked done without being looked
 | [F11](tasks/F11-art-direction.md) | Template art direction, ambient blur, chrome details (**user review gate**) | L | F01–F04 | Done |
 | [F12](tasks/F12-demo-sites.md) | Demo site fixes and recapture | S | — | Done |
 | [F13](tasks/F13-visual-regression-and-ci.md) | Visual baselines and CI that runs everything | M | F11 | Done |
-| [F14](tasks/F14-docs-truth.md) | Make docs and statuses truthful | S | all | Not started |
+| [F14](tasks/F14-docs-truth.md) | Make docs and statuses truthful | S | all | Done |
 
 F12 is independent and can be done at any time. Everything else is sequential. F01 and F02 both touch shaders, so do them one after the other, not at the same time.
 
@@ -130,3 +130,9 @@ criterion with its evidence.
 - "Start with a template", demo content, apply template, edit, undo/redo and export all work end to end (e2e green).
 - All e2e specs pass. Visual baselines are committed and CI runs unit, e2e and visual tests on every PR.
 - The user has signed off on the F11 contact sheet.
+
+## 7. Known issues and follow-ups
+
+Every follow-up noted in the F00–F14 pull requests that is still open is collected in [`docs/plan/follow-ups.md`](../plan/follow-ups.md), with its source task and one line each. The work-package statuses and their known gaps are in [`docs/plan/README.md`](../plan/README.md). The per-template quality review is in [`docs/plan/quality-review.md`](../plan/quality-review.md), and what was run in which browser is in [`docs/plan/browser-matrix.md`](../plan/browser-matrix.md).
+
+Safari and Firefox are out of scope for now (decided 7 Oct 2026), so the definition of done in §6 ("every template renders right side up … in exported MP4/WebM") is proven in Chromium only.
