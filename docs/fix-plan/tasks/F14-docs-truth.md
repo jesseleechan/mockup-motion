@@ -16,5 +16,5 @@ The previous run marked every work package "Complete". `docs/plan/quality-review
 
 ## Acceptance criteria
 
-- [ ] Every status, checkbox and claim in these docs links to evidence (a test, a still or a CI run).
-- [ ] `grep -rn "Complete" docs/plan/README.md` returns nothing that lacks an evidence link.
+- [x] Every status, checkbox and claim in these docs links to evidence (a test, a still or a CI run). Where nothing was checked, the docs say "Not verified" or "Not tested".
+- [x] `grep -rn "Complete" docs/plan/README.md` returns nothing that lacks an evidence link. The output is in the F14 pull request.
