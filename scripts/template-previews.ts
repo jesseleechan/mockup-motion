@@ -19,7 +19,9 @@ const PORT = 3789;
 const OUT_DIR = path.resolve("public/templates");
 // The build has the lab enabled, so it goes to a scratch directory, never to dist/.
 const BUILD_DIR = path.join(os.tmpdir(), "mockupmotion-template-previews");
-const MAX_WEBM_BYTES = 450 * 1024;
+// The encoder targets a fixed bitrate, so size follows length: the 11.3-11.4 s reels land at
+// 420-475 KB (launch-reel's ambient background uses the full bitrate since F11).
+const MAX_WEBM_BYTES = 500 * 1024;
 const POSTER_TIME_FRACTION = 0.35;
 // Posters show until a card is hovered, so they are 2x the video (1280x720) for sharp cards.
 const POSTER_RESOLUTION = 720;
