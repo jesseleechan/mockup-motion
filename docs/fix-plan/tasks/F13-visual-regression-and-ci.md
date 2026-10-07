@@ -23,6 +23,6 @@ The visual regression suite has never compared anything: no baselines are commit
 
 ## Acceptance criteria
 
-- [ ] CI is green on the PR with all three jobs.
-- [ ] **Mutation check:** on a scratch branch, set `texture.flipY = true` again (undoing F01). The `visual` and `e2e` jobs go red. Link the failed run in the PR.
-- [ ] `tests/visual/README.md` explains when and how to update baselines, and says that baseline updates need the user's approval of the rendered diff.
+- [x] CI is green on the PR with all three jobs.
+- [x] **Mutation check:** on a scratch branch, set `texture.flipY = true` again (undoing F01). The `visual` and `e2e` jobs go red. Link the failed run in the PR.
+- [x] `tests/visual/README.md` explains when and how to update baselines, and says that baseline updates need the user's approval of the rendered diff.

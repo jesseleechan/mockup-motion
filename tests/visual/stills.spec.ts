@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/**
+ * Pixel baselines for every look the product ships. One test per still, so a failure names the
+ * still and the others still run. Baselines are Linux-only and generated in CI; see README.md.
+ */
+
 const TEMPLATES = [
   "quiet-hero",
   "tilted-showcase",
@@ -26,16 +31,66 @@ const TEXT_ANIMS: Record<string, number> = {
   typewriter: 0.15,
 };
 
+interface Still {
+  name: string;
+  fixture: string;
+  aspect: string;
+  t: number;
+}
+
+const STILLS: Still[] = [];
+for (const id of TEMPLATES) {
+  for (const aspect of ["16:9", "9:16"]) {
+    for (const t of [0.8, 2.4]) {
+      STILLS.push({ name: `${id}-${aspect.replace(":", "x")}-t${t}`, fixture: id, aspect, t });
+    }
+  }
+}
+for (const device of DEVICES) {
+  STILLS.push({
+    name: `device-${device}-frontal`,
+    fixture: `device-${device}-frontal`,
+    aspect: "16:9",
+    t: 1,
+  });
+  STILLS.push({
+    name: `device-${device}-tilted`,
+    fixture: `device-${device}-tilted`,
+    aspect: "16:9",
+    t: 4.2,
+  });
+}
+for (const name of BACKGROUNDS) {
+  STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
+}
+for (const kind of TRANSITIONS) {
+  STILLS.push({
+    name: `transition-${kind}`,
+    fixture: `transition-${kind}`,
+    aspect: "16:9",
+    t: 3.6,
+  });
+}
+for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
+  STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });
+}
+// F01: quadrants on every device. F02: source colour bands on a frameless card.
+for (const device of DEVICES) {
+  STILLS.push({ name: `orient-${device}`, fixture: `orient-${device}`, aspect: "16:9", t: 1 });
+}
+STILLS.push({ name: "color-bands", fixture: "color-bands", aspect: "16:9", t: 1 });
+
 function stillWidth(aspect: string): number {
   return aspect === "9:16" ? 360 : 640;
 }
 
-async function openStill(page: Page, fixture: string, aspect: string, t: number) {
-  const w = stillWidth(aspect);
+async function openStill(page: Page, still: Still) {
+  const w = stillWidth(still.aspect);
   await page.goto(
-    `/lab?still=1&fixture=${fixture}&aspect=${encodeURIComponent(aspect)}&t=${t}&w=${w}`,
+    `/lab?still=1&fixture=${still.fixture}&aspect=${encodeURIComponent(still.aspect)}&t=${still.t}&w=${w}`,
   );
-  await page.waitForFunction(() => window.__labReady === true, { timeout: 20_000 });
+  // The GitHub runner is about 5x slower than a laptop on SwiftShader.
+  await page.waitForFunction(() => window.__labReady === true, { timeout: 60_000 });
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
@@ -44,54 +99,21 @@ async function openStill(page: Page, fixture: string, aspect: string, t: number)
   );
 }
 
-async function expectStill(page: Page, name: string) {
-  const canvas = page.locator("[data-testid='lab-still'] canvas");
-  await expect(canvas).toBeVisible();
-  await expect(canvas).toHaveScreenshot(name, { maxDiffPixelRatio: 0.002 });
-}
+test.describe("F13 visual stills", () => {
+  test.describe.configure({ timeout: 120_000 });
 
-test.describe("WP-18 visual stills", () => {
-  test.describe.configure({ timeout: 180_000 });
-
-  test("every template at 16:9 and 9:16, two times", async ({ page }) => {
-    for (const id of TEMPLATES) {
-      for (const aspect of ["16:9", "9:16"]) {
-        for (const t of [0.8, 2.4]) {
-          await openStill(page, id, aspect, t);
-          const aspectName = aspect.replace(":", "x");
-          await expectStill(page, `${id}-${aspectName}-t${t}.png`);
-        }
-      }
-    }
-  });
-
-  test("every device, frontal and tilted", async ({ page }) => {
-    for (const device of DEVICES) {
-      await openStill(page, `device-${device}-frontal`, "16:9", 1);
-      await expectStill(page, `device-${device}-frontal.png`);
-      await openStill(page, `device-${device}-tilted`, "16:9", 4.2);
-      await expectStill(page, `device-${device}-tilted.png`);
-    }
-  });
-
-  test("every background", async ({ page }) => {
-    for (const name of BACKGROUNDS) {
-      await openStill(page, `bg-${name}`, "16:9", 1);
-      await expectStill(page, `bg-${name}.png`);
-    }
-  });
-
-  test("every transition at progress 0.5", async ({ page }) => {
-    for (const kind of TRANSITIONS) {
-      await openStill(page, `transition-${kind}`, "16:9", 3.6);
-      await expectStill(page, `transition-${kind}.png`);
-    }
-  });
-
-  test("every text animation at its midpoint", async ({ page }) => {
-    for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
-      await openStill(page, `text-${anim}`, "16:9", t);
-      await expectStill(page, `text-${anim}.png`);
-    }
-  });
+  for (const still of STILLS) {
+    test(still.name, async ({ page }) => {
+      await openStill(page, still);
+      const canvas = page.locator("[data-testid='lab-still'] canvas");
+      await expect(canvas).toBeVisible();
+      await expect(canvas).toHaveScreenshot(`${still.name}.png`, { maxDiffPixelRatio: 0.002 });
+    });
+  }
 });
+
+declare global {
+  interface Window {
+    __labReady?: boolean;
+  }
+}

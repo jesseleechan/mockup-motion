@@ -10,3 +10,6 @@ coverage/
 test-results/
 playwright-report/
 contact-sheet/
+# Visual baselines are Linux-only (tests/visual/README.md); local runs on other OSes never commit theirs.
+tests/visual/stills.spec.ts-snapshots/*-win32.png
+tests/visual/stills.spec.ts-snapshots/*-darwin.png

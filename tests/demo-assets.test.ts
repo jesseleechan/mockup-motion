@@ -7,6 +7,7 @@ import type { ProjectDoc } from "../src/doc/types";
 import { createLabAssetProvider, resolveLabAssetUrl } from "../src/lab/asset-provider";
 import { DEMO_ASSETS, demoAsset } from "../src/lab/demo-assets";
 import { VISUAL_FIXTURES } from "../src/lab/visual-fixtures";
+import { labTestBandsId, labTestQuadrantsId, parseLabTestId } from "../src/lab/test-images";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
 
 const PUBLIC_DIR = path.resolve("public");
@@ -53,6 +54,18 @@ async function assetProblems(doc: ProjectDoc): Promise<string[]> {
     ...collectAssetIds(doc),
   ]);
   for (const id of ids) {
+    // Generated pixel fixtures have no file; their declared size must match the id.
+    const generated = parseLabTestId(id);
+    if (generated) {
+      const ref = declared.get(id);
+      if (!ref) problems.push(`${id}: drawn but not declared in doc.assets`);
+      else if (ref.width !== generated.width || ref.height !== generated.height) {
+        problems.push(
+          `${id}: declared ${ref.width}x${ref.height}, generated ${generated.width}x${generated.height}`,
+        );
+      }
+      continue;
+    }
     const demo = DEMO_ASSETS.get(id);
     if (!demo) {
       problems.push(`${id}: not in the demo map`);
@@ -99,6 +112,24 @@ describe("F04 demo asset map", () => {
       expect(await assetProblems(DOCS[key])).toEqual([]);
     },
   );
+
+  it("generated lab-test ids round-trip, and malformed ones throw", () => {
+    expect(parseLabTestId(labTestQuadrantsId(780, 1688))).toEqual({
+      kind: "quadrants",
+      width: 780,
+      height: 1688,
+      colors: [],
+    });
+    expect(parseLabTestId(labTestBandsId(1600, 1000, ["#808080", "#3366CC"]))).toEqual({
+      kind: "bands",
+      width: 1600,
+      height: 1000,
+      colors: ["#808080", "#3366CC"],
+    });
+    expect(parseLabTestId("demo-aurelia-desktop-hero")).toBeNull();
+    expect(() => parseLabTestId("lab-test-quadrants-780")).toThrow("Malformed lab test asset id");
+    expect(() => parseLabTestId("lab-test-bands-10x10")).toThrow("at least one colour");
+  });
 
   it("the lab provider rejects unknown ids instead of substituting an image", async () => {
     expect(() => resolveLabAssetUrl("demo-aurelia")).toThrow("Unknown demo asset: demo-aurelia");
