@@ -119,6 +119,9 @@ for (const device of ["card", "browser", "phone", "tablet", "laptop"] as const) 
 }
 
 test("F01 tall screenshot scroll preserves top-down color bands at both endpoints", async ({ page }) => {
+  // 62 scrolled frames at 1280x720 (supersample 1.5), each recomposing the 2x screen target and
+  // its mipmaps (F11): about 50 s locally before F11 and 57 s after, and about 5x slower on the CI runner.
+  test.setTimeout(300_000);
   await ready(page);
   const frames = await page.evaluate(async () => {
     const engine = window.__labEngine;

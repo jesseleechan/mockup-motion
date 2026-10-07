@@ -8,6 +8,14 @@ const URL_TEXT_OPACITY = 0.55;
 // A long URL is scaled down to fit inside the pill with this much side padding in total.
 const URL_PILL_FILL = 0.88;
 
+/**
+ * Decorations are never hit-tested: Engine.pick() raycasts invisible meshes too, and these
+ * carry no screen UVs (the URL plane is a hidden 1x1 quad until a raster arrives).
+ */
+function ignoreRaycast(mesh: THREE.Mesh): void {
+  mesh.raycast = () => {};
+}
+
 const urlVertexShader = /* glsl */ `
   varying vec2 vUv;
   void main() {
@@ -47,6 +55,7 @@ export class UrlText {
       depthWrite: false,
     });
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
+    ignoreRaycast(this.mesh);
     this.mesh.visible = false;
   }
 
@@ -96,7 +105,9 @@ export function createHairline(
     opacity: 0.08,
     depthWrite: false,
   });
-  return new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
+  ignoreRaycast(mesh);
+  return mesh;
 }
 
 /** Quality-bar §3.2 hairline colours: white 8% on dark frames, black 8% on light. */
@@ -163,5 +174,7 @@ export function createRimHighlight(
     transparent: true,
     depthWrite: false,
   });
-  return new THREE.Mesh(new THREE.ShapeGeometry(outer, 24), material);
+  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(outer, 24), material);
+  ignoreRaycast(mesh);
+  return mesh;
 }
