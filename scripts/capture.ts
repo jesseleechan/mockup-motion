@@ -83,20 +83,45 @@ export async function preparePage(
   if (options.unstick) {
     await page.evaluate(() => {
       const vh = window.innerHeight;
-      const elements = Array.from(document.querySelectorAll('*'));
-      for (const el of elements) {
-        const style = window.getComputedStyle(el);
-        if (style.position === 'fixed' || style.position === 'sticky') {
-          const rect = el.getBoundingClientRect();
-          // Sticky header or fixed element
-          if (rect.top + window.scrollY > vh) {
-            (el as HTMLElement).style.setProperty('position', 'static', 'important');
-          } else {
-            // Anchor in place at current top offset so it doesn't repeat down full page
-            const currentTop = window.scrollY + rect.top;
-            (el as HTMLElement).style.setProperty('position', 'absolute', 'important');
-            (el as HTMLElement).style.setProperty('top', `${currentTop}px`, 'important');
+      // Measure everything first so one change cannot shift the next element's rect.
+      const targets = Array.from(document.querySelectorAll('*'))
+        .map((el) => ({ el: el as HTMLElement, position: window.getComputedStyle(el).position }))
+        .filter((t) => t.position === 'fixed' || t.position === 'sticky')
+        .map((t) => ({ ...t, rect: t.el.getBoundingClientRect() }));
+
+      for (const { el, position, rect } of targets) {
+        if (rect.top + window.scrollY > vh) {
+          el.style.setProperty('position', 'static', 'important');
+        } else if (position === 'sticky') {
+          // At scroll 0 a sticky element sits at its in-flow position, which is exactly
+          // `relative` with no offset. `absolute` would pull it out of the flow, shrink it to
+          // fit its content and slide the page up underneath it (the F12 header bug).
+          el.style.setProperty('position', 'relative', 'important');
+          el.style.setProperty('top', 'auto', 'important');
+          el.style.setProperty('bottom', 'auto', 'important');
+        } else {
+          // Fixed elements are already out of the flow. Pin them at their current page
+          // position and size so they do not repeat down the full page.
+          // offsetParent is null for fixed elements, so find the absolute containing block.
+          let parent = el.parentElement;
+          while (parent && parent !== document.body && window.getComputedStyle(parent).position === 'static') {
+            parent = parent.parentElement;
           }
+          let originX = 0;
+          let originY = 0;
+          if (parent && window.getComputedStyle(parent).position !== 'static') {
+            const parentRect = parent.getBoundingClientRect();
+            originX = parentRect.left + window.scrollX + parent.clientLeft;
+            originY = parentRect.top + window.scrollY + parent.clientTop;
+          }
+          el.style.setProperty('position', 'absolute', 'important');
+          el.style.setProperty('box-sizing', 'border-box', 'important');
+          el.style.setProperty('margin', '0', 'important');
+          el.style.setProperty('top', `${rect.top + window.scrollY - originY}px`, 'important');
+          el.style.setProperty('left', `${rect.left + window.scrollX - originX}px`, 'important');
+          el.style.setProperty('right', 'auto', 'important');
+          el.style.setProperty('bottom', 'auto', 'important');
+          el.style.setProperty('width', `${rect.width}px`, 'important');
         }
       }
     });
