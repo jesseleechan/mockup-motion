@@ -90,7 +90,7 @@ describe("F04 demo asset map", () => {
       }
     }
     expect(wrong).toEqual([]);
-    expect(demoAsset("demo-northwind-mobile-full")).toMatchObject({ width: 780, height: 15006 });
+    expect(demoAsset("demo-northwind-mobile-full")).toMatchObject({ width: 780, height: 12954 });
   });
 
   it.each(Object.keys(DOCS))(

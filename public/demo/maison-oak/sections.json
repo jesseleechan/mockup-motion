@@ -2,55 +2,55 @@
   "url": "http://localhost:3591/maison-oak/",
   "viewportWidth": 1440,
   "scale": 1,
-  "pageHeight": 3519,
+  "pageHeight": 3507,
   "sections": [
     {
       "tag": "header",
       "id": "header",
       "className": "site-header",
-      "top": 0,
+      "top": 35,
       "height": 79
     },
     {
       "tag": "section",
       "id": "hero",
       "className": "hero-section",
-      "top": 35,
+      "top": 115,
       "height": 720
     },
     {
       "tag": "section",
       "id": "collection",
       "className": "collection-section",
-      "top": 755,
-      "height": 689
+      "top": 835,
+      "height": 666
     },
     {
       "tag": "section",
       "id": "spotlight",
       "className": "spotlight-section",
-      "top": 1444,
-      "height": 680
+      "top": 1501,
+      "height": 629
     },
     {
       "tag": "section",
       "id": "workshop",
       "className": "workshop-section",
-      "top": 2124,
+      "top": 2130,
       "height": 524
     },
     {
       "tag": "section",
       "id": "reviews",
       "className": "reviews-section",
-      "top": 2648,
-      "height": 510
+      "top": 2654,
+      "height": 492
     },
     {
       "tag": "footer",
       "id": "footer",
       "className": "site-footer",
-      "top": 3157,
+      "top": 3146,
       "height": 361
     }
   ]
