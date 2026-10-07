@@ -574,6 +574,42 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     assertDeepCloseTo(evaluate(doc3Shot, 0), evaluate(doc3Shot, sched3Shot.total));
   });
 
+  it("entrances: shot 0 enters from opacity 0 unless the doc loops", () => {
+    const doc = createDoc();
+    doc.loop = false;
+    doc.shots[0].entrance = "rise";
+    const start = evaluate(doc, 0).layers[0].frame.nodes[0];
+    const settled = evaluate(doc, 1).layers[0].frame.nodes[0];
+    expect(start.opacity).toBe(0);
+    expect(start.transform.y).toBeCloseTo(-0.03, 6); // quality-bar §2.5: a 3% rise
+    expect(settled.opacity).toBe(1);
+    expect(settled.transform.y).toBeCloseTo(0, 9);
+
+    // frame(0) is also the frame a loop wraps into, so a looping shot 0 starts settled.
+    for (const transitionIn of [
+      { kind: "cut" as const, duration: 0, easing: "smooth" as const },
+      { kind: "fade" as const, duration: 0.8, easing: "quintInOut" as const },
+    ]) {
+      const looping = structuredClone(doc);
+      looping.loop = true;
+      looping.shots[0].transitionIn = transitionIn;
+      const { total } = schedule(looping);
+      expect(evaluate(looping, 0).layers[0].frame.nodes[0].opacity).toBe(1);
+      for (const layer of evaluate(looping, total - 0.1).layers) {
+        expect(layer.frame.nodes[0].opacity, transitionIn.kind).toBe(1);
+      }
+    }
+
+    // Later shots of a loop keep their entrance.
+    const reel = structuredClone(doc);
+    reel.loop = true;
+    reel.shots.push({ ...defaultShot(), id: "shot-1", entrance: "rise" });
+    const shot1Start = schedule(reel).shots[1].start;
+    const shot1 = evaluate(reel, shot1Start).layers.at(-1)!.frame;
+    expect(shot1.shotId).toBe("shot-1");
+    expect(shot1.nodes[0].opacity).toBe(0);
+  });
+
   it("determinism: 1,000 random docs (seeded) evaluate identically twice", () => {
     const rng = mulberry32(987654);
 
