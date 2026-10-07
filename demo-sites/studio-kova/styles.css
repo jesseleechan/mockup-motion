@@ -62,6 +62,7 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 32px;
   padding: 20px 40px;
   background: rgba(8, 8, 8, 0.88);
   backdrop-filter: blur(16px);
@@ -176,6 +177,7 @@ a {
   font-family: var(--font-display);
   font-size: 44px;
   font-weight: 700;
+  line-height: 1.1;
   text-transform: uppercase;
   letter-spacing: -0.02em;
 }
@@ -211,6 +213,16 @@ a {
   position: relative;
 }
 
+/* SVG artwork fills its box exactly (viewBox 600 x 480), so no letterbox bands show. */
+.case-media--graphic {
+  height: auto;
+  aspect-ratio: 5 / 4;
+}
+
+.case-media--graphic svg {
+  display: block;
+}
+
 .case-media-img {
   width: 100%;
   height: 100%;
@@ -221,6 +233,7 @@ a {
 .case-info {
   padding: 32px;
   display: flex;
+  gap: 24px;
   justify-content: space-between;
   align-items: flex-end;
 }
@@ -229,6 +242,7 @@ a {
   font-family: var(--font-display);
   font-size: 28px;
   font-weight: 700;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   margin-bottom: 6px;
 }
@@ -244,6 +258,7 @@ a {
   text-transform: uppercase;
   color: var(--accent-lime);
   letter-spacing: 0.1em;
+  white-space: nowrap;
 }
 
 /* Manifesto */
@@ -404,6 +419,64 @@ a {
   }
   .case-media {
     height: 320px;
+  }
+  .case-media--graphic {
+    height: auto;
+  }
+  .hero-section {
+    padding: 64px 0 56px;
+  }
+  .works-section,
+  .manifesto-section,
+  .clients-section,
+  .awards-section {
+    padding: 72px 0;
+  }
+  .site-footer {
+    padding: 80px 0 48px;
+  }
+  .hero-meta-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 34px;
+  }
+  .case-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 24px;
+  }
+  .case-name {
+    font-size: 24px;
+  }
+  .client-cell {
+    padding: 24px 16px;
+    font-size: 16px;
+    text-align: center;
+  }
+  .awards-table tr {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    row-gap: 4px;
+    padding: 18px 0;
+  }
+  .awards-table td {
+    padding: 0;
+  }
+  .award-year {
+    width: auto;
+  }
+  .award-work {
+    grid-column: 2;
+    text-align: left;
   }
   .manifesto-grid {
     grid-template-columns: 1fr;

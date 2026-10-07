@@ -116,6 +116,14 @@
                 <div style="color: var(--accent-emerald); font-weight: 600; margin-bottom: 4px;">SFO-02 (San Francisco)</div>
                 <div style="color: var(--text-muted);">Zero packet loss during multi-gigabit spike</div>
               </div>
+              <div class="feed-item">
+                <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 4px;">AMS-03 (Amsterdam)</div>
+                <div style="color: var(--text-muted);">Edge cache warmed across 12 points in 38ms</div>
+              </div>
+              <div class="feed-item">
+                <div style="color: var(--accent-indigo); font-weight: 600; margin-bottom: 4px;">GRU-01 (São Paulo)</div>
+                <div style="color: var(--text-muted);">TLS session resumption holding at 99.2%</div>
+              </div>
             </div>
           </div>
         </div>
@@ -169,15 +177,15 @@
           </div>
           <div class="code-block">
             <span style="color: #64748B;">// edge-handler.ts</span><br>
-            <span style="color: #F43F5E;">import</span> { EdgeHandler, kv } <span style="color: #F43F5E;">from</span> <span style="color: #10B981;">'@northwind/runtime'</span>;<br><br>
+            <span style="color: #F43F5E;">import</span> { EdgeHandler, kv } <span style="color: #F43F5E;">from</span> <span style="color: #10B981;">'northwind'</span>;<br><br>
             <span style="color: #F43F5E;">export default</span> <span style="color: #38BDF8;">new</span> <span style="color: #FBBF24;">EdgeHandler</span>({<br>
             &nbsp;&nbsp;<span style="color: #6366F1;">async</span> <span style="color: #60A5FA;">fetch</span>(req, env) {<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #64748B;">// Inspect geo distance and nearest vector shard</span><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> cache = <span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">getNearest</span>(req.clientGeo);<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">if</span> (cache) <span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(cache);<br><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> result = <span style="color: #F43F5E;">await</span> env.ENGINE.<span style="color: #60A5FA;">infer</span>(req.body);<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">replicate</span>(req.clientGeo, result);<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(result);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #64748B;">// Nearest shard by geo distance</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> hit = <span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">nearest</span>(req.geo);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">if</span> (hit) <span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(hit);<br><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">const</span> out = <span style="color: #F43F5E;">await</span> env.AI.<span style="color: #60A5FA;">infer</span>(req.body);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">await</span> kv.<span style="color: #60A5FA;">replicate</span>(req.geo, out);<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #F43F5E;">return</span> Response.<span style="color: #60A5FA;">json</span>(out);<br>
             &nbsp;&nbsp;}<br>
             });
           </div>
