@@ -1,7 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground, paletteTextColor } from "./looks";
+import { loopWrapCrossfade, paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const tiltedShowcaseTemplate: Template = {
@@ -40,6 +40,7 @@ export const tiltedShowcaseTemplate: Template = {
     });
 
     shot.duration = 6;
+    shot.transitionIn = loopWrapCrossfade();
     shot.camera = {
       preset: "heroTilt",
       intensity: 1.0,

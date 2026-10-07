@@ -1,7 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground } from "./looks";
+import { loopWrapCrossfade, paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const responsivePairTemplate: Template = {
@@ -50,6 +50,7 @@ export const responsivePairTemplate: Template = {
     });
 
     shot.duration = 6;
+    shot.transitionIn = loopWrapCrossfade();
     shot.entrance = "stagger";
     shot.camera = {
       preset: "orbitRight",
