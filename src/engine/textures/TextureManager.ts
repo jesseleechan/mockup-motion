@@ -151,7 +151,7 @@ export class TextureManager {
 
   private createTexture(imageSource: ImageBitmap | HTMLCanvasElement): THREE.Texture {
     const texture = new THREE.Texture(imageSource);
-    texture.flipY = false;
+    texture.flipY = true;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.generateMipmaps = true;
     texture.minFilter = THREE.LinearMipmapLinearFilter;

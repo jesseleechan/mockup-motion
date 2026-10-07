@@ -8,7 +8,7 @@ export function createTopLeftQuad(): THREE.PlaneGeometry {
     geometry.translate(0.5, 0.5, 0);
     const positions = geometry.attributes.position;
     const uvs = geometry.attributes.uv;
-    for (let i = 0; i < positions.count; i++) uvs.setY(i, positions.getY(i) > 0 ? 0 : 1);
+    for (let i = 0; i < positions.count; i++) uvs.setY(i, positions.getY(i) > 0 ? 1 : 0);
     uvs.needsUpdate = true;
     topLeftQuad = geometry;
   }
