@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
+import { ciTimeout } from "../helpers/ci";
 
 interface EditorWindow {
   __editorStore?: {
@@ -198,6 +199,13 @@ test.describe("WP-17: Music track", () => {
     for (const fraction of [0.1, 0.55, 0.3, 0.8, 0.02]) {
       await page.mouse.click(rulerBox.x + rulerBox.width * fraction * 0.8, rulerBox.y + 8);
       await playButton.click();
+      // Music starts on the playback loop's first frame, which the CI runner draws later.
+      await expect
+        .poll(() => page.evaluate(() => window.__mmAudio?.drift() ?? null), {
+          timeout: ciTimeout(400),
+          message: "audio should be sounding while playing",
+        })
+        .not.toBeNull();
       await page.waitForTimeout(400);
       const drift = await page.evaluate(() => window.__mmAudio?.drift() ?? null);
       expect(drift, "audio should be sounding while playing").not.toBeNull();

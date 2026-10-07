@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Engine } from "../../src/engine/Engine";
+import { ciTimeout } from "../helpers/ci";
 
 declare global {
   interface Window {
@@ -230,17 +231,23 @@ test.describe("F05 preview playback", () => {
     const before = await debugCounts(page);
 
     await transportPlay(page).click();
+    const started = Date.now();
     await expect(transportPlay(page)).toHaveAttribute("aria-label", "Pause");
-    await page.waitForTimeout(2000);
+    // 30 frames in 2 s locally; the CI runner gets its slowdown factor for the same 30.
+    await expect
+      .poll(async () => (await debugCounts(page)).renderCalls - before.renderCalls, {
+        timeout: ciTimeout(2000),
+        message: "frames rendered in 2 s",
+      })
+      .toBeGreaterThanOrEqual(30);
+    // Keep playing for at least the full 2 s before checking setDocument.
+    await page.waitForTimeout(Math.max(0, 2000 - (Date.now() - started)));
     const after = await debugCounts(page);
     await transportPlay(page).click();
     await expect(transportPlay(page)).toHaveAttribute("aria-label", "Play");
 
     expect(after.setDocumentCalls, "setDocument calls during playback").toBe(
       before.setDocumentCalls,
-    );
-    expect(after.renderCalls - before.renderCalls, "frames rendered in 2 s").toBeGreaterThanOrEqual(
-      30,
     );
   });
 

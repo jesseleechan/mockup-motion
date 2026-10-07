@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
+import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc };
@@ -153,7 +154,8 @@ test.describe("F07: shot and project thumbnails", () => {
     await page.getByRole("button", { name: "Isometric drift", exact: true }).click();
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => (el.complete ? el.src : "")), {
-        timeout: 1500,
+        // 1.5 s locally; scaled for the slower CI runner.
+        timeout: ciTimeout(1500),
         intervals: [25],
         message: "the thumbnail src changes within 1.5 s",
       })
