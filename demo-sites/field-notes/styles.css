@@ -282,14 +282,31 @@ a {
   gap: 32px;
 }
 
+/* The SVG artwork is 500 x 380; matching its aspect avoids letterbox bands. */
 .spread-box {
-  height: 380px;
+  aspect-ratio: 500 / 380;
   background: #E5DFD3;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.spread-box svg {
+  display: block;
+}
+
+.section-heading {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.section-heading--small {
+  font-size: 28px;
+  margin-bottom: 24px;
 }
 
 /* Related Stories */
@@ -342,6 +359,13 @@ a {
   margin-bottom: 48px;
 }
 
+.footer-brand {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .footer-columns {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
@@ -363,8 +387,47 @@ a {
   .site-header {
     padding: 12px 20px;
   }
+  .masthead-meta {
+    flex-direction: column;
+    gap: 2px;
+  }
   .site-nav {
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+  .nav-link {
+    letter-spacing: 0.1em;
+  }
+  .byline-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .article-section,
+  .dispatch-section,
+  .related-section {
+    padding: 64px 0;
+  }
+  .photo-essay-section {
+    padding: 72px 0;
+  }
+  .section-heading {
+    font-size: 28px;
+  }
+  .section-heading--small {
+    font-size: 26px;
+  }
+  .footer-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .footer-brand {
+    font-size: 28px;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: 6px;
   }
   .container {
     padding: 0 20px;

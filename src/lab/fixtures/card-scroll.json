@@ -12,9 +12,9 @@
       "kind": "image",
       "name": "aurelia-desktop-full.webp",
       "mime": "image/webp",
-      "bytes": 367382,
+      "bytes": 354182,
       "width": 1440,
-      "height": 4300,
+      "height": 4183,
       "role": "desktop",
       "meta": {
         "tall": true

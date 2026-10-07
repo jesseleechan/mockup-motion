@@ -2,55 +2,55 @@
   "url": "http://localhost:3591/field-notes/",
   "viewportWidth": 1440,
   "scale": 1,
-  "pageHeight": 4261,
+  "pageHeight": 4298,
   "sections": [
     {
       "tag": "header",
       "id": "header",
       "className": "site-header",
-      "top": 0,
+      "top": 192,
       "height": 49
     },
     {
       "tag": "section",
       "id": "hero",
       "className": "hero-section",
-      "top": 192,
+      "top": 242,
       "height": 1128
     },
     {
       "tag": "section",
       "id": "article",
       "className": "article-section",
-      "top": 1320,
+      "top": 1369,
       "height": 871
     },
     {
       "tag": "section",
       "id": "dispatch",
       "className": "dispatch-section",
-      "top": 2191,
-      "height": 472
+      "top": 2240,
+      "height": 456
     },
     {
       "tag": "section",
       "id": "photo-essay",
       "className": "photo-essay-section",
-      "top": 2663,
-      "height": 690
+      "top": 2697,
+      "height": 708
     },
     {
       "tag": "section",
       "id": "related",
       "className": "related-section",
-      "top": 3353,
-      "height": 428
+      "top": 3404,
+      "height": 414
     },
     {
       "tag": "footer",
       "id": "footer",
       "className": "site-footer",
-      "top": 3781,
+      "top": 3818,
       "height": 480
     }
   ]

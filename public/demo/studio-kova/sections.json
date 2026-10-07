@@ -2,7 +2,7 @@
   "url": "http://localhost:3591/studio-kova/",
   "viewportWidth": 1440,
   "scale": 1,
-  "pageHeight": 4365,
+  "pageHeight": 4341,
   "sections": [
     {
       "tag": "header",
@@ -15,42 +15,42 @@
       "tag": "section",
       "id": "hero",
       "className": "hero-section",
-      "top": 0,
+      "top": 74,
       "height": 652
     },
     {
       "tag": "section",
       "id": "works",
       "className": "works-section",
-      "top": 652,
-      "height": 1610
+      "top": 727,
+      "height": 1577
     },
     {
       "tag": "section",
       "id": "manifesto",
       "className": "manifesto-section",
-      "top": 2262,
-      "height": 555
+      "top": 2303,
+      "height": 533
     },
     {
       "tag": "section",
       "id": "clients",
       "className": "clients-section",
-      "top": 2817,
-      "height": 518
+      "top": 2836,
+      "height": 496
     },
     {
       "tag": "section",
       "id": "awards",
       "className": "awards-section",
-      "top": 3335,
-      "height": 585
+      "top": 3332,
+      "height": 563
     },
     {
       "tag": "footer",
       "id": "footer",
       "className": "site-footer",
-      "top": 3920,
+      "top": 3895,
       "height": 446
     }
   ]

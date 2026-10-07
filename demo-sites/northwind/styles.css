@@ -56,6 +56,7 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
   padding: 18px 40px;
   background: rgba(11, 14, 23, 0.82);
   backdrop-filter: blur(14px);
@@ -101,6 +102,7 @@ a {
   display: flex;
   align-items: center;
   gap: 16px;
+  white-space: nowrap;
 }
 
 .btn-secondary {
@@ -295,6 +297,13 @@ a {
   margin-bottom: 16px;
 }
 
+/* Keep the chart's 700 x 220 aspect at any width; a fixed height letterboxes it on phones. */
+.dash-chart svg {
+  display: block;
+  height: auto;
+  aspect-ratio: 700 / 220;
+}
+
 .chart-title {
   font-size: 13px;
   font-weight: 600;
@@ -329,6 +338,7 @@ a {
 .section-title {
   font-size: 36px;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   margin-bottom: 12px;
 }
@@ -364,6 +374,7 @@ a {
 .bento-title {
   font-size: 20px;
   font-weight: 600;
+  line-height: 1.3;
   margin-bottom: 8px;
   letter-spacing: -0.01em;
 }
@@ -525,14 +536,68 @@ a {
   .site-nav {
     display: none;
   }
+  .header-actions .btn-secondary {
+    display: none;
+  }
   .container {
     padding: 0 20px;
   }
+  .hero-section {
+    padding: 56px 0 40px;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    text-align: center;
+  }
+  .dashboard-section {
+    padding: 20px 0 72px;
+  }
+  .window-title {
+    display: none;
+  }
   .dash-body {
     grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
   }
   .metric-cards {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .chart-header {
+    gap: 12px;
+  }
+  .dash-sidebar {
+    gap: 12px;
+  }
+  .features-section,
+  .code-section,
+  .pricing-section {
+    padding: 72px 0;
+  }
+  .social-section {
+    padding: 56px 0;
+  }
+  .section-head {
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 28px;
+  }
+  .code-block {
+    padding: 16px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .logo-strip {
+    gap: 16px 28px;
+  }
+  .logo-item {
+    font-size: 15px;
+  }
+  .pricing-grid {
+    margin-top: 40px;
   }
   .bento-grid {
     grid-template-columns: 1fr;
@@ -547,7 +612,14 @@ a {
     grid-template-columns: 1fr;
   }
   .footer-grid {
-    grid-template-columns: 1fr;
-    gap: 32px;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px 24px;
+  }
+  .footer-grid > :first-child {
+    grid-column: 1 / -1;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: 6px;
   }
 }

@@ -7,7 +7,7 @@
     "width": 2880,
     "height": 1800,
     "category": "desktop",
-    "sizeBytes": 348640
+    "sizeBytes": 363882
   },
   {
     "site": "aurelia",
@@ -15,9 +15,9 @@
     "role": "full",
     "tall": true,
     "width": 1440,
-    "height": 4300,
+    "height": 4183,
     "category": "desktop",
-    "sizeBytes": 367382
+    "sizeBytes": 354182
   },
   {
     "site": "aurelia",
@@ -27,7 +27,7 @@
     "width": 780,
     "height": 1688,
     "category": "mobile",
-    "sizeBytes": 159248
+    "sizeBytes": 148030
   },
   {
     "site": "aurelia",
@@ -35,9 +35,9 @@
     "role": "full",
     "tall": true,
     "width": 780,
-    "height": 13372,
+    "height": 11436,
     "category": "mobile",
-    "sizeBytes": 482306
+    "sizeBytes": 474974
   },
   {
     "site": "northwind",
@@ -55,9 +55,9 @@
     "role": "full",
     "tall": true,
     "width": 1440,
-    "height": 4052,
+    "height": 4078,
     "category": "desktop",
-    "sizeBytes": 269130
+    "sizeBytes": 267396
   },
   {
     "site": "northwind",
@@ -67,7 +67,7 @@
     "width": 780,
     "height": 1688,
     "category": "mobile",
-    "sizeBytes": 84948
+    "sizeBytes": 83148
   },
   {
     "site": "northwind",
@@ -75,9 +75,9 @@
     "role": "full",
     "tall": true,
     "width": 780,
-    "height": 15006,
+    "height": 12954,
     "category": "mobile",
-    "sizeBytes": 553414
+    "sizeBytes": 536948
   },
   {
     "site": "maison-oak",
@@ -87,7 +87,7 @@
     "width": 2880,
     "height": 1800,
     "category": "desktop",
-    "sizeBytes": 294530
+    "sizeBytes": 294534
   },
   {
     "site": "maison-oak",
@@ -95,9 +95,9 @@
     "role": "full",
     "tall": true,
     "width": 1440,
-    "height": 3519,
+    "height": 3507,
     "category": "desktop",
-    "sizeBytes": 285688
+    "sizeBytes": 286316
   },
   {
     "site": "maison-oak",
@@ -107,7 +107,7 @@
     "width": 780,
     "height": 1688,
     "category": "mobile",
-    "sizeBytes": 118674
+    "sizeBytes": 125570
   },
   {
     "site": "maison-oak",
@@ -115,9 +115,9 @@
     "role": "full",
     "tall": true,
     "width": 780,
-    "height": 13340,
+    "height": 10034,
     "category": "mobile",
-    "sizeBytes": 487518
+    "sizeBytes": 473242
   },
   {
     "site": "field-notes",
@@ -127,7 +127,7 @@
     "width": 2880,
     "height": 1800,
     "category": "desktop",
-    "sizeBytes": 278324
+    "sizeBytes": 277710
   },
   {
     "site": "field-notes",
@@ -135,9 +135,9 @@
     "role": "full",
     "tall": true,
     "width": 1440,
-    "height": 4261,
+    "height": 4298,
     "category": "desktop",
-    "sizeBytes": 477240
+    "sizeBytes": 477356
   },
   {
     "site": "field-notes",
@@ -147,17 +147,17 @@
     "width": 780,
     "height": 1688,
     "category": "mobile",
-    "sizeBytes": 111360
+    "sizeBytes": 105354
   },
   {
     "site": "field-notes",
     "file": "field-notes/mobile-full.webp",
     "role": "full",
     "tall": true,
-    "width": 844,
-    "height": 13370,
+    "width": 780,
+    "height": 12594,
     "category": "mobile",
-    "sizeBytes": 833468
+    "sizeBytes": 842526
   },
   {
     "site": "studio-kova",
@@ -167,7 +167,7 @@
     "width": 2880,
     "height": 1800,
     "category": "desktop",
-    "sizeBytes": 116764
+    "sizeBytes": 116492
   },
   {
     "site": "studio-kova",
@@ -175,9 +175,9 @@
     "role": "full",
     "tall": true,
     "width": 1440,
-    "height": 4365,
+    "height": 4341,
     "category": "desktop",
-    "sizeBytes": 254500
+    "sizeBytes": 256620
   },
   {
     "site": "studio-kova",
@@ -187,7 +187,7 @@
     "width": 780,
     "height": 1688,
     "category": "mobile",
-    "sizeBytes": 61640
+    "sizeBytes": 69648
   },
   {
     "site": "studio-kova",
@@ -195,8 +195,8 @@
     "role": "full",
     "tall": true,
     "width": 780,
-    "height": 11634,
+    "height": 9786,
     "category": "mobile",
-    "sizeBytes": 398942
+    "sizeBytes": 387924
   }
 ]
