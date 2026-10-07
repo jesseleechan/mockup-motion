@@ -1,7 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground, paletteTextColor } from "./looks";
+import { loopWrapCrossfade, paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const phoneSpotlightTemplate: Template = {
@@ -39,6 +39,7 @@ export const phoneSpotlightTemplate: Template = {
     });
 
     shot.duration = 6;
+    shot.transitionIn = loopWrapCrossfade();
     shot.camera = {
       preset: "orbitLeft",
       intensity: 0.8,

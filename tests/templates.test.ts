@@ -279,15 +279,33 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   });
 });
 
-describe("Marquee template loop seam", () => {
+describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
   const MARQUEE_TEMPLATES = ["portfolio-rows", "phone-parade", "isometric-wall"];
+  const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
+    const doc = buildTemplatePreviewDoc(template);
+    return doc.loop && doc.shots.length === 1;
+  }).map((template) => template.id);
 
-  // A marquee at 0.12 frame widths per second cannot travel a whole asset period in one
-  // shot, so the frame just before the loop point must already be the first frame:
-  // either the strip came back to its start, or the wrap crossfade has finished.
-  it("the frame just before the loop point shows the first frame with the demo content", () => {
-    for (const id of MARQUEE_TEMPLATES) {
+  it("covers every looping single-shot template", () => {
+    expect([...LOOPING_SINGLE_SHOT].sort()).toEqual(
+      [
+        "quiet-hero",
+        "tilted-showcase",
+        "responsive-pair",
+        "responsive-trio",
+        "phone-spotlight",
+        "cascade-stack",
+        ...MARQUEE_TEMPLATES,
+      ].sort(),
+    );
+  });
+
+  // A single shot whose camera or strip moves one way cannot end where it starts, so a
+  // cut back to t = 0 would pop. The frame just before the loop point must already be
+  // the first frame: the wrap crossfade has finished (contracts.md §5).
+  it("the frame just before the loop point is the first frame", () => {
+    for (const id of LOOPING_SINGLE_SHOT) {
       const template = BUILTIN_TEMPLATES.find((t) => t.id === id)!;
       for (const aspect of ASPECTS) {
         const doc = buildTemplatePreviewDoc(template, aspect);
@@ -301,38 +319,72 @@ describe("Marquee template loop seam", () => {
         const shown = end.reduce((a, b) => (b.weight > a.weight ? b : a));
         expect(shown.weight, `${label}: weight of the dominant layer`).toBeGreaterThan(0.999);
 
-        for (const key of ["yaw", "pitch", "roll", "distance", "panX", "panY"] as const) {
+        for (const key of ["yaw", "pitch", "roll", "distance", "panX", "panY", "fov"] as const) {
           expect(shown.frame.camera[key], `${label}: camera ${key}`).toBeCloseTo(
             first.camera[key],
             3,
           );
         }
-        // Cards near the frame: within half the frame diagonal plus one card of the
-        // centre. Each ring wraps much farther out, where a card may sit on either end.
-        const halfDiagonal = Math.sqrt(aspectRatioValue(aspect) ** 2 + 1) / 2;
-        const near = (node: LayoutNode) =>
-          Math.hypot(node.transform.x, node.transform.y, node.transform.z) <
-          halfDiagonal + Math.max(node.width, node.height);
-        const same = (a: LayoutNode, b: LayoutNode) =>
-          a.assetId === b.assetId &&
-          Math.abs(a.transform.x - b.transform.x) < 1e-3 &&
-          Math.abs(a.transform.y - b.transform.y) < 1e-3 &&
-          Math.abs(a.transform.z - b.transform.z) < 1e-3;
-        const checks: [LayoutNode[], LayoutNode[], string][] = [
-          [first.nodes, shown.frame.nodes, "at the start"],
-          [shown.frame.nodes, first.nodes, "at the loop point"],
-        ];
-        for (const [from, to, where] of checks) {
-          const nearby = from.filter(near);
-          expect(nearby.length, `${label}: cards near the frame`).toBeGreaterThan(3);
-          for (const node of nearby) {
-            const match = to.find((other) => same(node, other));
-            expect(match, `${label}: ${node.id} (${node.assetId}) ${where}`).toBeDefined();
-          }
+
+        if (MARQUEE_TEMPLATES.includes(id)) {
+          expectSameMarqueeCards(first.nodes, shown.frame.nodes, aspect, label);
+        } else {
+          expectSameNodes(first.nodes, shown.frame.nodes, label);
         }
       }
     }
   });
+
+  function expectSameNodes(first: LayoutNode[], last: LayoutNode[], label: string): void {
+    expect(
+      last.map((node) => node.id),
+      `${label}: node ids`,
+    ).toEqual(first.map((node) => node.id));
+    first.forEach((node, i) => {
+      const other = last[i];
+      const where = `${label}: ${node.id}`;
+      expect(other.assetId, `${where} asset`).toBe(node.assetId);
+      expect(other.device, `${where} device`).toBe(node.device);
+      for (const key of ["width", "height", "opacity", "scroll"] as const) {
+        expect(other[key], `${where} ${key}`).toBeCloseTo(node[key], 4);
+      }
+      for (const key of ["x", "y", "z", "rx", "ry", "rz", "scale"] as const) {
+        expect(other.transform[key], `${where} ${key}`).toBeCloseTo(node.transform[key], 4);
+      }
+    });
+  }
+
+  function expectSameMarqueeCards(
+    first: LayoutNode[],
+    last: LayoutNode[],
+    aspect: Aspect,
+    label: string,
+  ): void {
+    // Cards near the frame: within half the frame diagonal plus one card of the
+    // centre. Each ring wraps much farther out, where a card may sit on either end.
+    const halfDiagonal = Math.sqrt(aspectRatioValue(aspect) ** 2 + 1) / 2;
+    const near = (node: LayoutNode) =>
+      Math.hypot(node.transform.x, node.transform.y, node.transform.z) <
+      halfDiagonal + Math.max(node.width, node.height);
+    const same = (a: LayoutNode, b: LayoutNode) =>
+      a.assetId === b.assetId &&
+      Math.abs(a.transform.x - b.transform.x) < 1e-3 &&
+      Math.abs(a.transform.y - b.transform.y) < 1e-3 &&
+      Math.abs(a.transform.z - b.transform.z) < 1e-3;
+    const checks: [LayoutNode[], LayoutNode[], string][] = [
+      [first, last, "at the start"],
+      [last, first, "at the loop point"],
+    ];
+    for (const [from, to, where] of checks) {
+      const nearby = from.filter(near);
+      expect(nearby.length, `${label}: cards near the frame`).toBeGreaterThan(3);
+      for (const node of nearby) {
+        const match = to.find((other) => same(node, other));
+        expect(match, `${label}: ${node.id} (${node.assetId}) ${where}`).toBeDefined();
+      }
+    }
+  }
+
   // Where a whole card step fits under the speed limit in one loop, the strip travels
   // whole steps, so halfway through the wrap crossfade both layers show cards in the same
   // places on screen and only the screens dissolve. The exceptions: portfolio-rows 9:16

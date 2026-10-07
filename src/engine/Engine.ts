@@ -300,6 +300,9 @@ export class Engine {
 
     // Warm-up compilation
     this.renderAt(0);
+    // A frame never creates GPU objects (F03/F11). The incoming-layer target is first drawn
+    // only during a transition or the loop wrap crossfade, so allocate it here.
+    this.renderer.initRenderTarget(this.targetB);
   }
 
   private renderShotToTarget(
