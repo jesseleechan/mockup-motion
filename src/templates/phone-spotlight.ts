@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const phoneSpotlightTemplate: Template = {
@@ -23,13 +24,12 @@ export const phoneSpotlightTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#0F1117",
-      },
-      textColor: "#F8FAFC",
+      background: paletteBackground("dusk"),
+      textColor: paletteTextColor("dusk"),
+      frameAppearance: "dark",
       shadow: "dramatic",
-      deviceFinish: "graphite",
+      // Silver keeps the phone's edge visible against the dark mesh.
+      deviceFinish: "silver",
     };
 
     const shot = defaultShot({

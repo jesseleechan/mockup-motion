@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const portfolioRowsTemplate: Template = {
@@ -50,11 +51,9 @@ export const portfolioRowsTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#16171A",
-      },
-      textColor: "#F3F4F6",
+      background: paletteBackground("graphite"),
+      textColor: paletteTextColor("graphite"),
+      frameAppearance: "dark",
       shadow: "soft",
       deviceFinish: "graphite",
     };

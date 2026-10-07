@@ -1,6 +1,6 @@
-import type { AssetRef, ProjectDoc } from "../doc/types";
+import type { Aspect, AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
-import { demoAssetId, demoAssetRef } from "../lab/demo-assets";
+import { demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
 import type { DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots, missingRequiredSlots } from "./slots";
@@ -58,6 +58,25 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
 
+/** Fictional domains for the demo sites, shown in the browser's URL pill. */
+const DEMO_SITE_URLS: Record<DemoSite, string> = {
+  aurelia: "aurelia.studio",
+  northwind: "northwind.dev",
+  "maison-oak": "maisonoak.design",
+  "field-notes": "fieldnotes.press",
+  "studio-kova": "studiokova.co",
+};
+
+/**
+ * The demo site's domain for template previews, or "" when the screens show more than
+ * one site: the pill shows one URL for every browser in the document.
+ */
+export function demoBrowserUrl(assets: AssetRef[]): string {
+  const sites = new Set(assets.map((asset) => demoAsset(asset.id).site));
+  const [site] = [...sites];
+  return sites.size === 1 && site ? DEMO_SITE_URLS[site] : "";
+}
+
 /** Demo assets that fill the template's slots; the same set the template preview uses. */
 export function demoAssetsForTemplate(templateId: string): AssetRef[] {
   const ids = DEMO_IDS_BY_TEMPLATE[templateId] ?? DEFAULT_DEMO_IDS;
@@ -78,11 +97,11 @@ export function demoAssetsToFill(template: Template, assets: AssetRef[]): AssetR
   );
 }
 
-export function buildTemplatePreviewDoc(template: Template): ProjectDoc {
+export function buildTemplatePreviewDoc(template: Template, aspect: Aspect = "16:9"): ProjectDoc {
   const assets = demoAssetsForTemplate(template.id);
   const slots = fillSlots(template, assets);
   const built = template.build({
-    aspect: "16:9",
+    aspect,
     slots,
     projectName: template.name,
   });
@@ -91,10 +110,10 @@ export function buildTemplatePreviewDoc(template: Template): ProjectDoc {
   return {
     ...base,
     name: template.name,
-    aspect: "16:9",
+    aspect,
     templateId: template.id,
     assets,
-    style: built.style,
+    style: { ...built.style, browserUrl: built.style.browserUrl || demoBrowserUrl(assets) },
     shots: built.shots,
     loop: built.loop,
   };

@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const isometricWallTemplate: Template = {
@@ -50,10 +51,8 @@ export const isometricWallTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#F5F3EF",
-      },
+      background: paletteBackground("bone"),
+      frameAppearance: "light",
       shadow: "soft",
       browserChrome: "standard",
     };

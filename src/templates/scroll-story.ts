@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const scrollStoryTemplate: Template = {
@@ -25,10 +26,8 @@ export const scrollStoryTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#F6F7F9",
-      },
+      background: paletteBackground("fog"),
+      frameAppearance: "light",
       shadow: "soft",
       browserChrome: "standard",
     };

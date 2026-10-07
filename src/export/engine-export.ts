@@ -1,5 +1,6 @@
 import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
+import { chromeUrlRequests } from "../engine/text/chrome-url";
 import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
 import { gifOutput, outputDimensions } from "./destinations";
@@ -59,6 +60,18 @@ export async function exportCurrentFrame(
   resolution = 1080,
   format: "png" | "webp" = "png",
 ): Promise<Blob> {
+  const [blob] = await exportFrames(doc, provider, [time], resolution, format);
+  return blob;
+}
+
+/** Exports still frames at several times with one engine (contact sheets). */
+export async function exportFrames(
+  doc: ProjectDoc,
+  provider: AssetProvider,
+  times: number[],
+  resolution = 1080,
+  format: "png" | "webp" = "png",
+): Promise<Blob[]> {
   const { width, height } = outputDimensions(doc.aspect, resolution);
   const canvas = createCanvas(width, height);
   const engine = await Engine.create(canvas, {
@@ -69,22 +82,25 @@ export async function exportCurrentFrame(
   });
 
   await engine.setDocument(doc, provider);
-  engine.renderAt(time);
-
-  let blob: Blob;
-  if (canvas instanceof OffscreenCanvas) {
-    blob = await canvas.convertToBlob({ type: `image/${format}` });
-  } else {
-    blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => {
-        if (b) resolve(b);
-        else reject(new Error("Failed to capture canvas snapshot"));
-      }, `image/${format}`);
-    });
+  const blobs: Blob[] = [];
+  for (const time of times) {
+    engine.renderAt(time);
+    if (canvas instanceof OffscreenCanvas) {
+      blobs.push(await canvas.convertToBlob({ type: `image/${format}` }));
+    } else {
+      blobs.push(
+        await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error("Failed to capture canvas snapshot"));
+          }, `image/${format}`);
+        }),
+      );
+    }
   }
 
   engine.dispose();
-  return blob;
+  return blobs;
 }
 
 /**
@@ -155,16 +171,21 @@ export async function exportWithEngine(
 
   // Pre-rasterize all text layers at export resolution
   const ss = settings.supersample ?? 1;
+  const frameHeightPx = Math.round(height * ss);
   const texts: Record<string, TextRaster> = {};
   for (const shot of doc.shots) {
     if (shot.texts && shot.texts.length > 0) {
       const shotStyle = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
-      const frameHeightPx = Math.round(height * ss);
       for (const layer of shot.texts) {
         texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
         signal?.throwIfAborted();
       }
     }
+  }
+  // The browser URL pills: synthetic `chrome-url` layers, rasterized here like any text.
+  for (const request of chromeUrlRequests(doc)) {
+    texts[request.layer.id] = await provider.getText(request.layer, request.style, frameHeightPx);
+    signal?.throwIfAborted();
   }
 
   const start: StartMessage = {

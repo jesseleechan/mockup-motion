@@ -48,6 +48,8 @@ export interface EngineDebugInfo {
 import { AccumulationPass } from "./post/accumulate";
 import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
+import { loadChromeUrlRasters, type LoadedChromeUrl } from "./text/chrome-url";
+import { ChromeUrlTextures } from "./text/ChromeUrlTextures";
 import { TextPass } from "./text/TextPass";
 
 export class Engine {
@@ -61,6 +63,7 @@ export class Engine {
   private backgroundRenderer: BackgroundRenderer;
   private textPass: TextPass;
   private textRasters = new Map<string, TextRaster>();
+  private chromeUrls = new ChromeUrlTextures();
 
   private targetA: THREE.WebGLRenderTarget;
   private targetB: THREE.WebGLRenderTarget;
@@ -99,11 +102,16 @@ export class Engine {
     this.textPass = new TextPass();
 
     this.scene = new THREE.Scene();
-    this.devices = new DevicePool(this.scene, () => ({
-      outputWidthPx: this.opts.width,
-      outputHeightPx: this.opts.height,
-      supersample: this.opts.supersample ?? 1,
-    }));
+    this.devices = new DevicePool(
+      this.scene,
+      () => ({
+        outputWidthPx: this.opts.width,
+        outputHeightPx: this.opts.height,
+        supersample: this.opts.supersample ?? 1,
+        chromeUrlText: (key) => this.chromeUrls.get(key),
+      }),
+      maxTex,
+    );
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     this.scene.add(ambientLight);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -271,15 +279,23 @@ export class Engine {
         );
       }
     });
+    let chromeUrls = new Map<string, LoadedChromeUrl>();
+    loads.push(
+      loadChromeUrlRasters(doc, assets, frameHeightPx).then((loaded) => {
+        chromeUrls = loaded;
+      }),
+    );
     await Promise.all(loads);
     if (generation !== this.generation) return;
 
     this.currentDoc = doc;
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
+    this.backgroundRenderer.prepareDocument(this.renderer, doc, this.textureManager);
     this.textRasters = rasters;
     for (const [layerId, raster] of rasters) this.textPass.setTextRaster(layerId, raster);
     this.textPass.retainOnly(rasters.keys());
+    this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
 
     // Warm-up compilation
@@ -547,6 +563,7 @@ export class Engine {
     this.textureManager.dispose();
     this.backgroundRenderer.dispose();
     this.textPass.dispose();
+    this.chromeUrls.dispose();
     this.textRasters.clear();
 
     this.targetA.dispose();

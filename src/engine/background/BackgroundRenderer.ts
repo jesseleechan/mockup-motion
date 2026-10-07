@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import { oklab } from "culori";
-import type { Background } from "../../doc/types";
+import { resolveShotStyle } from "../../doc/assets";
+import type { Background, ProjectDoc } from "../../doc/types";
 import type { ShotFrame } from "../../motion";
 import type { TextureManager } from "../textures/TextureManager";
+import { AmbientBlur, ambientKey, ambientSourceAspect } from "./AmbientBlur";
 
 // Shader: Fullscreen quad vertex shader with optional pan parallax
 const bgVertexShader = /* glsl */ `
@@ -147,12 +149,18 @@ const meshFragmentShader = /* glsl */ `
   }
 `;
 
+// Cover-fit: uCoverScale shrinks the sampled UV range on the axis where the source is
+// wider than the frame, so the image fills the frame without stretching. uFlipV is 1
+// for raw image textures (v = 0 is the image top) and 0 for render targets.
 const ambientFragmentShader = /* glsl */ `
   varying vec2 vUv;
   uniform sampler2D map;
   uniform float uDim;
   uniform bool uHasMap;
   uniform vec3 uFallbackColor;
+  uniform vec2 uCoverScale;
+  uniform vec2 uPanOffset;
+  uniform float uFlipV;
 
   void main() {
     if (!uHasMap) {
@@ -160,11 +168,17 @@ const ambientFragmentShader = /* glsl */ `
       return;
     }
 
-    vec4 tex = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));
+    vec2 uv = 0.5 + (vUv - uPanOffset - 0.5) * uCoverScale + uPanOffset;
+    uv.y = mix(uv.y, 1.0 - uv.y, uFlipV);
+    vec4 tex = texture2D(map, uv);
     vec3 col = tex.rgb * (1.0 - uDim);
     gl_FragColor = vec4(col, 1.0);
   }
 `;
+
+// Ambient and image backgrounds zoom in this much past cover so the pan parallax
+// (at most 2% of the frame) never samples past the image edge.
+const COVER_OVERSCAN = 0.96;
 
 function hexToOklab(hex: string): [number, number, number] {
   const lab = oklab(hex);
@@ -185,8 +199,9 @@ export class BackgroundRenderer {
   private meshMat: THREE.ShaderMaterial;
   private ambientMat: THREE.ShaderMaterial;
   private quadMesh: THREE.Mesh;
+  private panOffset = new THREE.Vector2();
 
-  private ambientBlurTargets = new Map<string, THREE.WebGLRenderTarget>();
+  private ambientBlur = new AmbientBlur();
 
   constructor() {
     const quadGeo = new THREE.PlaneGeometry(2, 2);
@@ -259,6 +274,8 @@ export class BackgroundRenderer {
         uDim: { value: 0.2 },
         uHasMap: { value: false },
         uFallbackColor: { value: new THREE.Vector3(0.08, 0.08, 0.1) },
+        uCoverScale: { value: new THREE.Vector2(1, 1) },
+        uFlipV: { value: 0 },
       },
       depthWrite: false,
       depthTest: false,
@@ -266,6 +283,29 @@ export class BackgroundRenderer {
 
     this.quadMesh = new THREE.Mesh(quadGeo, this.solidMat);
     this.orthoScene.add(this.quadMesh);
+  }
+
+  /**
+   * Blurs each ambient background's first viewport once (textures must be loaded) and
+   * disposes the blurs the document no longer uses. Rendering only samples them.
+   */
+  prepareDocument(
+    renderer: THREE.WebGLRenderer,
+    doc: ProjectDoc,
+    textureManager: TextureManager,
+  ): void {
+    const keys: string[] = [];
+    doc.shots.forEach((_, shotIndex) => {
+      const background = resolveShotStyle(doc, shotIndex).background;
+      if (background.kind !== "ambient" || !background.assetId) return;
+      const managed = textureManager.getLoadedTexture(background.assetId);
+      if (!managed) return;
+      const asset = doc.assets.find((a) => a.id === background.assetId);
+      const aspect = ambientSourceAspect(asset);
+      this.ambientBlur.prepare(renderer, background.assetId, managed, aspect, background.blur);
+      keys.push(ambientKey(background.assetId, background.blur));
+    });
+    this.ambientBlur.retainOnly(keys);
   }
 
   render(
@@ -281,7 +321,7 @@ export class BackgroundRenderer {
     // Up to 2% subtle parallax following camera pan
     const panX = (frame.camera?.panX ?? 0) * 0.02;
     const panY = (frame.camera?.panY ?? 0) * 0.02;
-    const panOffset = new THREE.Vector2(panX, panY);
+    const panOffset = this.panOffset.set(panX, panY);
 
     if (bg.kind === "solid") {
       this.solidMat.uniforms.uPanOffset.value.copy(panOffset);
@@ -322,15 +362,29 @@ export class BackgroundRenderer {
     } else if (bg.kind === "ambient" || bg.kind === "image") {
       this.ambientMat.uniforms.uPanOffset.value.copy(panOffset);
       const assetId = bg.assetId;
-      const managed = assetId && textureManager ? textureManager.getLoadedTexture(assetId) : null;
+      const uniforms = this.ambientMat.uniforms;
+      uniforms.uDim.value = bg.dim ?? 0.2;
+      let source: { texture: THREE.Texture; aspect: number; flipV: number } | null = null;
+      if (assetId && bg.kind === "ambient") {
+        const blurred = this.ambientBlur.get(assetId, bg.blur ?? 1);
+        if (blurred) source = { ...blurred, flipV: 0 };
+      } else if (assetId && textureManager) {
+        const managed = textureManager.getLoadedTexture(assetId);
+        const strip = managed?.strips[0];
+        if (managed && strip) {
+          source = { texture: strip.texture, aspect: managed.width / strip.height, flipV: 1 };
+        }
+      }
 
-      if (managed && managed.strips.length > 0) {
-        this.ambientMat.uniforms.map.value = managed.strips[0].texture;
-        this.ambientMat.uniforms.uHasMap.value = true;
-        this.ambientMat.uniforms.uDim.value = bg.dim ?? 0.2;
-      } else {
-        this.ambientMat.uniforms.uHasMap.value = false;
-        this.ambientMat.uniforms.uDim.value = bg.dim ?? 0.2;
+      uniforms.uHasMap.value = source !== null;
+      if (source) {
+        uniforms.map.value = source.texture;
+        uniforms.uFlipV.value = source.flipV;
+        const wider = source.aspect > stageAspect;
+        uniforms.uCoverScale.value.set(
+          (wider ? stageAspect / source.aspect : 1) * COVER_OVERSCAN,
+          (wider ? 1 : source.aspect / stageAspect) * COVER_OVERSCAN,
+        );
       }
       this.quadMesh.material = this.ambientMat;
     }
@@ -349,9 +403,6 @@ export class BackgroundRenderer {
     this.ambientMat.dispose();
     this.quadMesh.geometry.dispose();
 
-    for (const rt of this.ambientBlurTargets.values()) {
-      rt.dispose();
-    }
-    this.ambientBlurTargets.clear();
+    this.ambientBlur.dispose();
   }
 }

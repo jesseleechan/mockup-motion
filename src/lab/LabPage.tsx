@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Aspect, ProjectDoc } from "../doc/types";
 import { EngineCanvas } from "../engine/react/EngineCanvas";
 import type { AssetProvider, Engine } from "../engine/Engine";
-import { exportCurrentFrame, exportWithEngine } from "../export/engine-export";
+import { exportCurrentFrame, exportFrames, exportWithEngine } from "../export/engine-export";
 import { schedule } from "../motion";
 import { useUIStore } from "../state/ui-store";
 import { createLabAssetProvider } from "./asset-provider";
@@ -30,6 +30,7 @@ declare global {
     __labEngine?: Engine;
     __exportWithEngine?: typeof exportWithEngine;
     __exportCurrentFrame?: typeof exportCurrentFrame;
+    __exportFrames?: typeof exportFrames;
     __createLabAssetProvider?: typeof createLabAssetProvider;
     __fixtures?: Record<string, ProjectDoc>;
     __labTestImages?: LabTestImages;
@@ -130,6 +131,7 @@ export const LabPage: React.FC = () => {
 
       window.__exportWithEngine = exportWithEngine;
       window.__exportCurrentFrame = exportCurrentFrame;
+      window.__exportFrames = exportFrames;
       window.__createLabAssetProvider = createLabAssetProvider;
       window.__fixtures = FIXTURES;
       window.__labReady = false;

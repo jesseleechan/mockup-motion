@@ -1,6 +1,7 @@
 import type { ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const launchReelTemplate: Template = {
@@ -42,26 +43,22 @@ export const launchReelTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "gradient",
-        stops: ["#0B0C10", "#1F2833"],
-        angle: 305,
-        angleConvention: "css",
-      },
-      textColor: "#66FCF1",
-      accent: "#45A29E",
+      // The primary screenshot, blurred, sets the mood; graphite when there is none yet.
+      // Dim 0.65 (F11 suggested 0.35): the demo's blurred hero reaches relative luminance
+      // 0.57 undimmed, and white titles need 3:1 against it (quality-bar §7).
+      background: desktopAsset
+        ? { kind: "ambient", assetId: desktopAsset.id, blur: 1, dim: 0.65 }
+        : paletteBackground("graphite"),
+      textColor: paletteTextColor("graphite"),
+      frameAppearance: "light",
       shadow: "medium",
       deviceFinish: "graphite",
       browserChrome: "standard",
     };
 
-    // Shot 1: Title card (2.5s)
+    // Shot 1: Title card (2.5s): the name over the blurred screenshot, no device yet
     const shot1: Shot = {
-      ...defaultShot({
-        kind: "single",
-        device: "card",
-        assetId: desktopAsset?.id ?? "",
-      }),
+      ...defaultShot({ kind: "title" }),
       id: "shot-title",
       duration: 2.5,
       entrance: "rise",
@@ -76,7 +73,7 @@ export const launchReelTemplate: Template = {
           id: "txt-intro",
           role: "label",
           text: "INTRODUCING",
-          color: "#45A29E",
+          color: "",
           font: "display",
           size: 2.2,
           anchor: "top",
@@ -90,8 +87,8 @@ export const launchReelTemplate: Template = {
           text: projectName,
           color: "#FFFFFF",
           font: "display",
-          size: 4.8,
-          anchor: "bottom",
+          size: 6,
+          anchor: "center",
           align: "center",
           animation: "fadeUp",
           delay: 0.4,
@@ -146,13 +143,9 @@ export const launchReelTemplate: Template = {
       },
     };
 
-    // Shot 4: Branded end card (2.5s)
+    // Shot 4: Branded end card (2.5s), text only like the title card
     const shot4: Shot = {
-      ...defaultShot({
-        kind: "single",
-        device: "browser",
-        assetId: desktopAsset?.id ?? "",
-      }),
+      ...defaultShot({ kind: "title" }),
       id: "shot-end",
       duration: 2.5,
       transitionIn: {
@@ -173,8 +166,8 @@ export const launchReelTemplate: Template = {
           text: projectName,
           color: "#FFFFFF",
           font: "display",
-          size: 4.0,
-          anchor: "top",
+          size: 6,
+          anchor: "center",
           align: "center",
           animation: "fadeUp",
           delay: 0.2,
@@ -182,8 +175,8 @@ export const launchReelTemplate: Template = {
         {
           id: "txt-end-subtitle",
           role: "subtitle",
-          text: logoAsset ? "Available Now" : "mockupmotion.app",
-          color: "#C5C6C7",
+          text: logoAsset ? "Available now" : "mockupmotion.app",
+          color: "",
           font: "body",
           size: 2.4,
           anchor: "bottom",

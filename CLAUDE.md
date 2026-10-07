@@ -23,7 +23,7 @@ npm run typecheck
 npm run lint          # ESLint after WP-00
 npm run build
 npm run test:e2e      # Playwright (WP-03 sets it up; WP-18 expands it)
-npm run contact-sheet # renders every template at 4 times x all aspects into ./contact-sheet (after WP-11)
+npm run contact-sheet # renders every template at 3 aspects x 3 times into ./contact-sheet (F11)
 ```
 
 Playwright browsers:

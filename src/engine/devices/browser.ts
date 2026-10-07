@@ -3,8 +3,10 @@ import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
 import { DeviceShadowGroup } from "../shadows/DeviceShadow";
+import { chromeUrlKey, toolbarHeightFor, URL_TEXT_FRACTION } from "../text/chrome-url";
 import { createRoundedExtrudeGeometry, createRoundedRectShape } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
+import { createHairline, setHairlineAppearance, UrlText } from "./details";
 
 export function buildBrowserDevice(
   node: LayoutNode,
@@ -19,8 +21,7 @@ export function buildBrowserDevice(
   // Quality-bar §3.2
   const cornerRadius = width * 0.011;
   const depth = 0.004;
-  const toolbarHeight =
-    chrome === "standard" ? Math.max(0.028, width * 0.042) : 0;
+  const toolbarHeight = chrome === "standard" ? toolbarHeightFor(width) : 0;
 
   const screenW = width;
   const screenH = height - toolbarHeight;
@@ -63,6 +64,16 @@ export function buildBrowserDevice(
   // Chrome decorations group
   const chromeGroup = new THREE.Group();
   group.add(chromeGroup);
+
+  // Window hairline (quality-bar §3.2), above the toolbar and screen so dark frames
+  // keep an edge on dark backgrounds.
+  const hairline = createHairline(width, height, cornerRadius, 0.0009);
+  hairline.position.set(0, 0, 0.00036);
+  setHairlineAppearance(hairline, isDark);
+  group.add(hairline);
+
+  let urlText: UrlText | null = null;
+  let pillWidth = 0;
 
   const trafficLights = [
     { color: 0xff5f57, ringColor: 0xd9443c }, // Red
@@ -130,6 +141,11 @@ export function buildBrowserDevice(
     const pillMesh = new THREE.Mesh(pillGeo, pillMat);
     pillMesh.position.set(0, lightCenterY, 0.0003);
     chromeGroup.add(pillMesh);
+
+    urlText = new UrlText();
+    urlText.mesh.position.set(0, lightCenterY, 0.00034);
+    group.add(urlText.mesh);
+    pillWidth = pillW;
   } else if (chrome === "minimal") {
     // Floating traffic lights inside top-left corner
     const diameter = width * 0.0085;
@@ -172,6 +188,12 @@ export function buildBrowserDevice(
     compositor.material.uniforms.uBorderWidth.value = 0.0009;
 
     bodyMat.color.set(dark ? 0x1e1e21 : 0xf6f6f7);
+    setHairlineAppearance(hairline, dark);
+    urlText?.update(
+      updatedStyle.browserUrl ? (ctx.chromeUrlText?.(chromeUrlKey(updatedStyle)) ?? null) : null,
+      toolbarHeight * URL_TEXT_FRACTION,
+      pillWidth,
+    );
   }
 
   function dispose(): void {
@@ -180,6 +202,9 @@ export function buildBrowserDevice(
     bodyMat.dispose();
     screenGeo.dispose();
     compositor.dispose();
+    hairline.geometry.dispose();
+    hairline.material.dispose();
+    urlText?.dispose();
 
     chromeGroup.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {

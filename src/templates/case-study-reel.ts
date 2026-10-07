@@ -1,6 +1,7 @@
 import type { ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground, paletteTextColor } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const caseStudyReelTemplate: Template = {
@@ -40,11 +41,9 @@ export const caseStudyReelTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "solid",
-        color: "#18191B",
-      },
-      textColor: "#F9FAFB",
+      background: paletteBackground("graphite"),
+      textColor: paletteTextColor("graphite"),
+      frameAppearance: "light",
       accent: "#3B82F6",
       shadow: "medium",
       deviceFinish: "graphite",
@@ -156,13 +155,9 @@ export const caseStudyReelTemplate: Template = {
       ],
     };
 
-    // End card: 2.5s, pullBack, fade transition
+    // End card: 2.5s, text over the background so it never collides with a device
     const shot4: Shot = {
-      ...defaultShot({
-        kind: "single",
-        device: "browser",
-        assetId: page1?.id ?? "",
-      }),
+      ...defaultShot({ kind: "title" }),
       id: "shot-summary",
       duration: 2.5,
       transitionIn: {
@@ -183,8 +178,8 @@ export const caseStudyReelTemplate: Template = {
           text: ctx.projectName || "Case Study",
           color: "#FFFFFF",
           font: "display",
-          size: 4.2,
-          anchor: "top",
+          size: 6,
+          anchor: "center",
           align: "center",
           animation: "fadeUp",
           delay: 0.2,
@@ -192,7 +187,7 @@ export const caseStudyReelTemplate: Template = {
         {
           id: "txt-case-sub",
           role: "subtitle",
-          text: "Full Story at studio.design",
+          text: "Full story at studio.design",
           color: "#9CA3AF",
           font: "body",
           size: 2.2,

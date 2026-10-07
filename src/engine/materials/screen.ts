@@ -92,12 +92,19 @@ export class ScreenCompositor {
   // Identity, not asset id: a wider reload of the same asset must recompose.
   private lastManaged: ManagedTexture | null | undefined = undefined;
   private lastCursorKey = "";
+  // On-screen viewport size; the target is this times `targetScale`.
+  private baseWidthPx: number;
+  private baseHeightPx: number;
+  private targetScale = 1;
+  private maxTargetSize = Infinity;
   private widthPx: number;
   private heightPx: number;
   private disposed = false;
 
   constructor(opts: ScreenCompositorOptions) {
     retainTopLeftQuad();
+    this.baseWidthPx = Math.max(1, opts.viewportWidthPx);
+    this.baseHeightPx = Math.max(1, opts.viewportHeightPx);
     this.widthPx = Math.max(1, Math.round(opts.viewportWidthPx));
     this.heightPx = Math.max(1, Math.round(opts.viewportHeightPx));
 
@@ -163,9 +170,36 @@ export class ScreenCompositor {
     });
   }
 
+  /** Pixel area of the on-screen viewport, before `targetScale`. */
+  get baseArea(): number {
+    return this.baseWidthPx * this.baseHeightPx;
+  }
+
+  /** Current render target size in px. */
+  get targetSize(): { width: number; height: number } {
+    return { width: this.widthPx, height: this.heightPx };
+  }
+
+  /**
+   * Renders the screen at `scale` times its on-screen size, so the 3D pass minifies
+   * the target through its mipmaps instead of resampling it at 1:1, which blurs text
+   * under perspective. The larger side never exceeds `maxSize`.
+   */
+  setTargetScale(scale: number, maxSize: number): void {
+    this.targetScale = Math.max(1, scale);
+    this.maxTargetSize = Math.max(1, maxSize);
+    const size = this.material.uniforms.uSize.value as THREE.Vector2;
+    this.resize(this.baseWidthPx, this.baseHeightPx, size.x, size.y);
+  }
+
   resize(viewportWidthPx: number, viewportHeightPx: number, meshW: number, meshH: number): void {
-    const w = Math.max(1, Math.round(viewportWidthPx));
-    const h = Math.max(1, Math.round(viewportHeightPx));
+    this.baseWidthPx = Math.max(1, viewportWidthPx);
+    this.baseHeightPx = Math.max(1, viewportHeightPx);
+    let scale = this.targetScale;
+    const largest = Math.max(this.baseWidthPx, this.baseHeightPx) * scale;
+    if (largest > this.maxTargetSize) scale *= this.maxTargetSize / largest;
+    const w = Math.max(1, Math.round(this.baseWidthPx * scale));
+    const h = Math.max(1, Math.round(this.baseHeightPx * scale));
     if (w !== this.widthPx || h !== this.heightPx) {
       this.widthPx = w;
       this.heightPx = h;

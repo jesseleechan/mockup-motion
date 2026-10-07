@@ -1,6 +1,7 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
+import { paletteBackground } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
 
 export const responsivePairTemplate: Template = {
@@ -32,12 +33,9 @@ export const responsivePairTemplate: Template = {
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: {
-        kind: "gradient",
-        stops: ["#E0E7FF", "#F1F5F9"],
-        angle: 315,
-        angleConvention: "css",
-      },
+      background: paletteBackground("mist"),
+      frameAppearance: "light",
+      deviceFinish: "silver",
       shadow: "soft",
       browserChrome: "standard",
     };

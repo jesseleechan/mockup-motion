@@ -10,6 +10,7 @@ import {
   DEVICE_FINISH_COLORS,
 } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
+import { createRimHighlight, rimHighlightColor } from "./details";
 
 export function buildPhoneDevice(
   node: LayoutNode,
@@ -51,6 +52,13 @@ export function buildPhoneDevice(
   const bodyMat = createBodyMaterial(finish);
   const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
   group.add(bodyMesh);
+
+  // Specular rim along the body edge, lit from the top-left (quality-bar §3.3). Its width
+  // is a quarter of the bezel so it reads as an edge, not a second bezel.
+  const rim = createRimHighlight(bodyW, bodyH, bodyRadius, bezel * 0.25);
+  rim.position.set(0, 0, 0.00005);
+  rim.material.uniforms.uColor.value.set(rimHighlightColor(DEVICE_FINISH_COLORS[finish]));
+  group.add(rim);
 
   // Screen mesh (sits at z = 0.0001, centered inside bezel)
   const screenGeo = new THREE.PlaneGeometry(screenW, screenH);
@@ -145,6 +153,8 @@ export function buildPhoneDevice(
     lensLeftGeo.dispose();
     lensRightGeo.dispose();
     lensMat.dispose();
+    rim.geometry.dispose();
+    rim.material.dispose();
   }
 
   return {

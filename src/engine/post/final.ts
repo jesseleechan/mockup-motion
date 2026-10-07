@@ -26,9 +26,19 @@ const finalFragmentShader = /* glsl */ `
   uniform float uGrain;
   uniform float uFrameSeed;
 
-  // PRNG
-  float hash1(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  // PCG integer hash. Integer arithmetic keeps the noise uniform at every frame size; the
+  // usual fract(sin(dot(p, k)) * 43758.5) loses float precision at large pixel coordinates
+  // and shifted whole regions of a 1080p frame by several levels (visible edges, F11).
+  uint pcgHash(uint v) {
+    uint state = v * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+  }
+
+  // Uniform in [0, 1) for an integer pixel and an independent stream.
+  float hash1(vec2 pixel, uint stream) {
+    uvec2 q = uvec2(pixel);
+    return float(pcgHash(q.x ^ pcgHash(q.y ^ pcgHash(stream)))) * (1.0 / 4294967296.0);
   }
 
   vec3 linearToSrgb(vec3 c) {
@@ -86,14 +96,13 @@ const finalFragmentShader = /* glsl */ `
       float g = clamp(uGrain, 0.0, 1.0);
       float grainAmp = g <= 0.25 ? mix(0.015, 0.025, g / 0.25)
         : mix(0.025, 0.04, (g - 0.25) / 0.75);
-      vec2 seedCoord = gl_FragCoord.xy + vec2(uFrameSeed * 17.13, uFrameSeed * 31.41);
-      float noise = hash1(seedCoord) * 2.0 - 1.0;
+      float noise = hash1(gl_FragCoord.xy, uint(uFrameSeed) + 3u) * 2.0 - 1.0;
       color += vec3(noise * grainAmp);
     }
 
     // 4. Triangular dither (±0.5 LSB before 8-bit quantization to prevent H.264 banding)
-    float d1 = hash1(gl_FragCoord.xy + vec2(0.1, 0.3));
-    float d2 = hash1(gl_FragCoord.xy + vec2(0.7, 0.9));
+    float d1 = hash1(gl_FragCoord.xy, 1u);
+    float d2 = hash1(gl_FragCoord.xy, 2u);
     float triangularDither = (d1 + d2 - 1.0) * (0.5 / 255.0);
     color += vec3(triangularDither);
 
