@@ -3,6 +3,7 @@ import { resolveColumnsLayout } from "./columns";
 import { resolvePairLayout } from "./pair";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
+import { resolveSliderLayout } from "./slider";
 import { resolveStackLayout } from "./stack";
 import { resolveTitleLayout } from "./title";
 import { resolveTrioLayout } from "./trio";
@@ -18,6 +19,7 @@ export { resolveColumnsLayout } from "./columns";
 export { resolveWallLayout } from "./wall";
 export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";
+export { resolveSliderLayout, sliderDuration, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
 
 export function resolveLayout(
   layout: Layout,
@@ -42,6 +44,8 @@ export function resolveLayout(
       return resolveWallLayout(layout, aspect, assets, shotT, shotDuration, entrance);
     case "stack":
       return resolveStackLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+    case "slider":
+      return resolveSliderLayout(layout, aspect, assets, shotT);
     case "title":
       return resolveTitleLayout();
     default: {

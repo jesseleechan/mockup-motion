@@ -341,3 +341,54 @@ describe("F02 CSS angle compatibility", () => {
     });
   });
 });
+
+describe("Slider layout validation (presets P01)", () => {
+  const image = (id: string) => ({
+    id,
+    kind: "image" as const,
+    name: id,
+    mime: "image/png",
+    bytes: 100,
+    width: 390,
+    height: 844,
+  });
+
+  it("keeps a valid slider layout unchanged", () => {
+    const layout = {
+      kind: "slider" as const,
+      assetIds: ["m1", "m2", "m3"],
+      axis: "y" as const,
+      shape: "desktop" as const,
+      step: 3.2,
+    };
+    const doc = createDoc({
+      assets: ["m1", "m2", "m3"].map(image),
+      shots: [{ ...defaultShot(layout), duration: 9.6 }],
+    });
+    const { doc: sanitized, warnings } = sanitizeDoc(doc);
+    expect(warnings).toEqual([]);
+    expect(sanitized.shots[0].layout).toEqual(layout);
+  });
+
+  it("repairs an invalid slider layout", () => {
+    const repaired = (layout: Record<string, unknown>) => {
+      const doc = createDoc({ assets: ["m1", "m2"].map(image) });
+      (doc.shots[0] as { layout: unknown }).layout = layout;
+      return sanitizeDoc(doc).doc.shots[0].layout;
+    };
+    expect(
+      repaired({ kind: "slider", assetIds: ["m1", "gone", 7, "m2"], axis: "z", shape: "watch" }),
+    ).toEqual({ kind: "slider", assetIds: ["m1", "m2"], axis: "x", shape: "mobile", step: 2 });
+    expect(repaired({ kind: "slider", assetIds: "m1", step: 9 })).toEqual({
+      kind: "slider",
+      assetIds: [],
+      axis: "x",
+      shape: "mobile",
+      step: 4,
+    });
+    expect(repaired({ kind: "slider", assetIds: ["m2"], step: 0.5 })).toMatchObject({ step: 1.6 });
+    expect(repaired({ kind: "slider", assetIds: ["m2"], step: Number.NaN })).toMatchObject({
+      step: 2,
+    });
+  });
+});

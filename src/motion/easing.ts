@@ -18,6 +18,9 @@ const BEZIER_PRESETS: Record<Exclude<EasingId, "linear" | "spring">, BezierCurve
   quintInOut: { x1: 0.83, y1: 0, x2: 0.17, y2: 1 },
   // backOut: cubic-bezier(0.34, 1.30, 0.64, 1) (overshoot <= 3%)
   backOut: { x1: 0.34, y1: 1.3, x2: 0.64, y2: 1 },
+  // slide: cubic-bezier(0.40, 0, 0.05, 1), fitted to the reference slider steps
+  // (docs/presets-plan/reference.md, max error 0.017). Short ease-in, long soft settle.
+  slide: { x1: 0.4, y1: 0, x2: 0.05, y2: 1 },
 };
 
 function sampleBezierX(t: number, x1: number, x2: number): number {
@@ -85,6 +88,7 @@ export function ease(id: EasingId, p: number): number {
     case "expoOut":
     case "quintInOut":
     case "backOut":
+    case "slide":
       return solveCubicBezier(p, BEZIER_PRESETS[id]);
   }
 }

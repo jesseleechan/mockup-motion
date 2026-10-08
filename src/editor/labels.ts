@@ -27,6 +27,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   columns: "Phone columns",
   wall: "Isometric wall",
   stack: "Cascading stack",
+  slider: "Slider",
   title: "Title card",
 };
 
@@ -108,6 +109,7 @@ export const EASING_LABELS: Record<EasingId, string> = {
   expoOut: "Ease out",
   backOut: "Overshoot",
   spring: "Spring",
+  slide: "Slide",
   linear: "Linear",
 };
 

@@ -34,6 +34,7 @@ const VALID_EASINGS: readonly EasingId[] = [
   "quintInOut",
   "backOut",
   "spring",
+  "slide",
 ];
 const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
   "static",
@@ -520,6 +521,17 @@ function sanitizeLayout(
           : [],
         device: l.device === "card" ? "card" : "browser",
         spread: clamp(typeof l.spread === "number" ? l.spread : 0.3, 0, 1),
+      };
+    case "slider":
+      return {
+        kind: "slider",
+        assetIds: Array.isArray(l.assetIds)
+          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+          : [],
+        axis: l.axis === "y" ? "y" : "x",
+        shape: l.shape === "desktop" ? "desktop" : "mobile",
+        // Quality bar §2.2: 1.6–4.0 s per step, default 2.0 s.
+        step: clamp(typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2, 1.6, 4),
       };
     case "title":
       return { kind: "title" };
