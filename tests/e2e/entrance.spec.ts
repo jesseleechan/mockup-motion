@@ -276,3 +276,62 @@ test("entrance frames create no GPU objects: the fade layer is allocated with th
     renderbuffer: 0,
   });
 });
+
+test.describe("entrance inspector", () => {
+  const HINT = "Loops start with the first shot in place.";
+
+  async function openLaunchReel(page: Page): Promise<void> {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/lab/ui");
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.deleteDatabase("mockupmotion-v2");
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error("deleteDatabase blocked"));
+      });
+    });
+    await page.goto("/");
+    // Launch reel has four shots and does not loop.
+    await page.getByRole("button", { name: "Start with a template" }).click();
+    await page.locator('[data-testid="template-card"][data-template-id="launch-reel"]').click();
+    await page.getByRole("button", { name: "Apply template" }).click();
+    await page.getByRole("button", { name: "Use demo content" }).click();
+  }
+
+  /** Selects shot `index` from its card's corner, clear of the text chips inside it. */
+  async function selectShot(page: Page, index: number): Promise<void> {
+    await page
+      .locator('[data-testid="shot-card"]')
+      .nth(index)
+      .click({ position: { x: 6, y: 6 } });
+    await expect(page.getByRole("combobox", { name: "Entrance" })).toBeVisible();
+  }
+
+  test("shot 0 of a looping doc says its entrance does not play", async ({ page }) => {
+    await openLaunchReel(page);
+    const entrance = page.getByRole("combobox", { name: "Entrance" });
+    const hint = page.getByText(HINT);
+    const loop = page.getByRole("button", { name: "Toggle loop playback" });
+
+    await selectShot(page, 0);
+    await expect(hint, "no hint while the doc does not loop").toHaveCount(0);
+    await expect(entrance).not.toHaveAttribute("aria-describedby");
+
+    await loop.click();
+    await expect(hint, "shot 1 of a looping doc shows the hint").toBeVisible();
+    const hintId = await hint.getAttribute("id");
+    expect(hintId, "the hint has an id").toBeTruthy();
+    await expect(entrance).toHaveAttribute("aria-describedby", hintId ?? "");
+
+    await selectShot(page, 1);
+    await expect(hint, "later shots keep their entrance").toHaveCount(0);
+
+    await selectShot(page, 0);
+    await expect(hint).toBeVisible();
+    await loop.click();
+    await expect(hint, "turning loop off removes the hint").toHaveCount(0);
+  });
+});

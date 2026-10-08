@@ -1,5 +1,7 @@
 import React from "react";
 import type { Shot } from "../../../doc/types";
+import { loopSkipsEntrance } from "../../../motion/evaluate";
+import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
 import { ENTRANCE_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
@@ -7,6 +9,13 @@ import { useShotUpdate } from "./useShotUpdate";
 /** Shot duration and how the layout's devices appear at the start of the shot. */
 export const EntranceSection: React.FC<{ shot: Shot }> = ({ shot }) => {
   const update = useShotUpdate(shot.id);
+  const skipped = useEditorStore((s) =>
+    loopSkipsEntrance(
+      s.doc,
+      s.doc.shots.findIndex((candidate) => candidate.id === shot.id),
+    ),
+  );
+  const hintId = `entrance-hint-${shot.id}`;
 
   return (
     <Section title="Entrance and duration">
@@ -29,9 +38,14 @@ export const EntranceSection: React.FC<{ shot: Shot }> = ({ shot }) => {
           />
         </Field>
 
-        <Field label="Entrance">
+        <Field
+          label="Entrance"
+          hint={skipped ? "Loops start with the first shot in place." : undefined}
+          hintId={hintId}
+        >
           <Select
             aria-label="Entrance"
+            aria-describedby={skipped ? hintId : undefined}
             value={shot.entrance}
             onChange={(entrance) =>
               update(
