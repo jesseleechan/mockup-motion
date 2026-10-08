@@ -1,6 +1,6 @@
 # Presets plan: Mobile Slider, Desktop Slider, Frames
 
-**Status: planned, not started.** Start after the fix plan and its open fix branches have merged (see "When to start"). Written 7 October 2026.
+**Status: in progress.** P00 is done ([#22](https://github.com/jesseleechan/mockup-motion/pull/22)); see "When to start" for which tasks can run now. Written 7 October 2026.
 
 The owner wants three new presets that will be used far more than the current twelve. Each one copies the motion of a Rico Supply Jitter template. [`reference.md`](reference.md) has the measurements; read it before any task.
 
@@ -40,14 +40,14 @@ The owner decided all eight on 8 October 2026: "D1. yes make them first", "D2. y
 
 ## 3. Tasks
 
-| Task                                     | Title                                                                                   | Size | Depends on      | Status      |
-| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | --------------- | ----------- |
-| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | —               | Not started |
-| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00             | Not started |
-| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged | Not started |
-| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02             | Not started |
-| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00             | Not started |
-| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04        | Not started |
+| Task                                     | Title                                                                                   | Size | Depends on      | Status                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | --------------- | ------------------------------------------------------------------ |
+| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | —               | Done: [#22](https://github.com/jesseleechan/mockup-motion/pull/22) |
+| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00             | Not started                                                        |
+| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged | Not started                                                        |
+| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02             | Not started                                                        |
+| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00             | Not started                                                        |
+| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04        | Not started                                                        |
 
 P01 → P02 → P03 is one lane. P04 is a second lane that can run alongside it after P00, because it only touches `rows`, `marquee.ts` and a new template. The two lanes meet in P05, along with the shared files: `registry.ts`, `tests/templates.test.ts` and `tests/visual/stills.spec.ts`. Keep each lane's edits to those files small so the second PR merges cleanly.
 
