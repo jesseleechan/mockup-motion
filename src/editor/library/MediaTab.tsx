@@ -8,12 +8,23 @@ import {
   useToast,
 } from "../../ui";
 import { useEditorStore } from "../../state/store";
+import { useUIStore } from "../../state/ui-store";
 import { getBlob } from "../../storage/blobs";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
 import { validateAndDecodeAsset } from "../../assets/decode";
 import { useTemplateActions } from "../template-actions";
-import { Copy, ImageIcon, Plus, RefreshCw, Tag, Trash2, UploadCloud } from "lucide-react";
+import {
+  Copy,
+  GalleryHorizontal,
+  ImageIcon,
+  Minus,
+  Plus,
+  RefreshCw,
+  Tag,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 
 interface MediaTabProps {
   onSelectAsset?: (assetId: string) => void;
@@ -31,6 +42,14 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const setAssetRole = useEditorStore((s) => s.setAssetRole);
   const duplicateAsset = useEditorStore((s) => s.duplicateAsset);
   const reorderAssets = useEditorStore((s) => s.reorderAssets);
+  const addAssetToShot = useEditorStore((s) => s.addAssetToShot);
+  const removeAssetFromShot = useEditorStore((s) => s.removeAssetFromShot);
+  // A slider shot takes screenshots from here (presets P03); other layouts use their fields.
+  const selection = useUIStore((s) => s.selection);
+  const selectedShotIndex =
+    selection.kind === "shot" ? fullDoc.shots.findIndex((shot) => shot.id === selection.id) : -1;
+  const selectedLayout = fullDoc.shots[selectedShotIndex]?.layout;
+  const selectedSlider = selectedLayout?.kind === "slider" ? selectedLayout : null;
 
   const [assetThumbnails, setAssetThumbnails] = useState<Record<string, string>>({});
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
@@ -93,7 +112,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         (lay.kind === "rows" ||
           lay.kind === "columns" ||
           lay.kind === "wall" ||
-          lay.kind === "stack") &&
+          lay.kind === "stack" ||
+          lay.kind === "slider") &&
         lay.assetIds.includes(assetId)
       )
         used = true;
@@ -340,6 +360,23 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
                   </ContextMenuTrigger>
 
                   <ContextMenuContent>
+                    {selectedSlider &&
+                      (selectedSlider.assetIds.includes(asset.id) ? (
+                        <ContextMenuItem
+                          icon={<Icon icon={Minus} size={13} />}
+                          onClick={() => removeAssetFromShot(selectedShotIndex, asset.id)}
+                        >
+                          Remove from slider
+                        </ContextMenuItem>
+                      ) : (
+                        <ContextMenuItem
+                          icon={<Icon icon={GalleryHorizontal} size={13} />}
+                          onClick={() => addAssetToShot(selectedShotIndex, asset.id)}
+                        >
+                          Add to slider
+                        </ContextMenuItem>
+                      ))}
+
                     <ContextMenuItem
                       icon={<Icon icon={RefreshCw} size={13} />}
                       onClick={() => {

@@ -10,6 +10,12 @@ import {
   quadrantCentroids,
   type PixelBuffer,
 } from "../helpers/pixels";
+import { keepResourceTimings } from "../helpers/resource-timing";
+
+// The specs below find the app's Mediabunny module in the resource-timing entries.
+test.beforeEach(async ({ page }) => {
+  await keepResourceTimings(page);
+});
 
 declare global {
   interface Window {

@@ -1,13 +1,15 @@
 import React from "react";
 import type { AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
+import { SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
 import { Field, Section, Select, Slider } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
 const STACK_DEVICES: ("browser" | "card")[] = ["browser", "card"];
-// The slider's controls arrive with its templates (presets plan P03); until then the picker
-// only shows it on a shot that already uses it.
+// Picking a layout here makes a single device or a title card (docs/plan/follow-ups.md); a slider
+// comes from the Mobile Slider and Desktop Slider templates, so the picker only lists it on a
+// shot that already uses it.
 const PICKER_LAYOUTS = (Object.keys(LAYOUT_LABELS) as Layout["kind"][]).filter(
   (kind) => kind !== "slider",
 );
@@ -162,6 +164,67 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 />
               </Field>
             )}
+          </>
+        )}
+
+        {layout.kind === "slider" && (
+          <>
+            <Field label="Direction">
+              <Select
+                aria-label="Direction"
+                value={layout.axis}
+                onChange={(axis) =>
+                  update(
+                    (target) => {
+                      if (target.layout.kind === "slider") target.layout.axis = axis;
+                    },
+                    { label: "Change slider direction" },
+                  )
+                }
+                options={[
+                  { value: "x", label: "Horizontal" },
+                  { value: "y", label: "Vertical" },
+                ]}
+              />
+            </Field>
+            <Field label="Card shape">
+              <Select
+                aria-label="Card shape"
+                value={layout.shape}
+                onChange={(shape) =>
+                  update(
+                    (target) => {
+                      if (target.layout.kind === "slider") target.layout.shape = shape;
+                    },
+                    { label: "Change card shape" },
+                  )
+                }
+                options={[
+                  { value: "mobile", label: "Mobile" },
+                  { value: "desktop", label: "Desktop" },
+                ]}
+              />
+            </Field>
+            <Field label="Step length" value={`${layout.step.toFixed(1)} s`}>
+              <Slider
+                aria-label="Step length"
+                min={SLIDER_MIN_STEP}
+                // One step per screenshot must fit in a 30 s shot (quality bar §2.2).
+                max={sliderStepMax(layout.assetIds.length)}
+                step={0.1}
+                value={layout.step}
+                onChange={(val) =>
+                  update(
+                    (target) => {
+                      // Whole tenths; the store sets the shot length to screenshots × step.
+                      if (target.layout.kind === "slider")
+                        target.layout.step = Math.round(val * 10) / 10;
+                    },
+                    { label: "Change step length", coalesceKey: `slider-step-${shot.id}` },
+                  )
+                }
+              />
+            </Field>
           </>
         )}
 

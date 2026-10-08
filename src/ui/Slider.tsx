@@ -12,6 +12,8 @@ export interface SliderProps {
   disabled?: boolean;
   className?: string;
   "aria-label"?: string;
+  /** Read with the value by screen readers; set on the thumb, which takes focus. */
+  "aria-describedby"?: string;
 }
 
 export const Slider: React.FC<SliderProps> = ({
@@ -23,6 +25,7 @@ export const Slider: React.FC<SliderProps> = ({
   disabled = false,
   className,
   "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy,
 }) => {
   return (
     <SliderPrimitive.Root
@@ -44,6 +47,7 @@ export const Slider: React.FC<SliderProps> = ({
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         aria-label={ariaLabel ?? "Slider"}
+        aria-describedby={ariaDescribedBy}
         className={clsx(
           "block w-3.5 h-3.5 bg-[var(--color-text)] rounded-full shadow-md border border-[var(--color-line-strong)]",
           "transition-transform hover:scale-110 active:scale-95",

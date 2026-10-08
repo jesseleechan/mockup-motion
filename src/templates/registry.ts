@@ -13,6 +13,8 @@ import { cascadeStackTemplate } from "./cascade-stack";
 import { scrollStoryTemplate } from "./scroll-story";
 import { launchReelTemplate } from "./launch-reel";
 import { caseStudyReelTemplate } from "./case-study-reel";
+import { mobileSliderTemplate } from "./mobile-slider";
+import { desktopSliderTemplate } from "./desktop-slider";
 
 export const BUILTIN_TEMPLATES: Template[] = [
   quietHeroTemplate,
@@ -27,6 +29,9 @@ export const BUILTIN_TEMPLATES: Template[] = [
   scrollStoryTemplate,
   launchReelTemplate,
   caseStudyReelTemplate,
+  // Presets P03. P05 moves them to the front of the gallery (D1).
+  mobileSliderTemplate,
+  desktopSliderTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {

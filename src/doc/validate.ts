@@ -1,6 +1,7 @@
 import { clampAudioTrack } from "../audio/mix";
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
+import { clampSliderStep, fixedShotDuration, MAX_SHOT_DURATION } from "../motion/layouts/duration";
 import type {
   Aspect,
   AssetRef,
@@ -397,7 +398,10 @@ function sanitizeShot(
 
   const shot: Shot = {
     id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
-    duration: clamp(typeof s.duration === "number" ? s.duration : 5, 1, 30),
+    // A slider sets its own length (N × step), so its loop stays native (contracts.md §5).
+    duration:
+      fixedShotDuration(layout) ??
+      clamp(typeof s.duration === "number" ? s.duration : 5, 1, MAX_SHOT_DURATION),
     layout,
     camera,
     entrance,
@@ -532,17 +536,23 @@ function sanitizeLayout(
         device: l.device === "card" ? "card" : "browser",
         spread: clamp(typeof l.spread === "number" ? l.spread : 0.3, 0, 1),
       };
-    case "slider":
+    case "slider": {
+      const sliderIds = Array.isArray(l.assetIds)
+        ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+        : [];
       return {
         kind: "slider",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
+        assetIds: sliderIds,
         axis: l.axis === "y" ? "y" : "x",
         shape: l.shape === "desktop" ? "desktop" : "mobile",
-        // Quality bar §2.2: 1.6–4.0 s per step, default 2.0 s.
-        step: clamp(typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2, 1.6, 4),
+        // Quality bar §2.2: 1.6–4.0 s per step (default 2.0 s), and short enough that one step
+        // per screenshot fits in a 30 s shot.
+        step: clampSliderStep(
+          typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
+          sliderIds.length,
+        ),
       };
+    }
     case "title":
       return { kind: "title" };
     default:

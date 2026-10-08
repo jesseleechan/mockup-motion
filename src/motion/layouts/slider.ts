@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { sliderAssetIds } from "./duration";
 import { type LayoutNode, screenAspectFor } from "./types";
 
 type SliderLayout = Extract<Layout, { kind: "slider" }>;
@@ -27,11 +28,6 @@ const Y_MAX_CARD_HEIGHT = 0.5; // of the frame height
 const REFERENCE_FRAME_WIDTH_4X5 = 0.8;
 const X_GAP_RATIO = 0.128 / (X_CARD_HEIGHT * PHONE_SCREEN_ASPECT);
 const Y_GAP_RATIO = 0.115 / ((Y_CARD_WIDTH * REFERENCE_FRAME_WIDTH_4X5) / DESKTOP_CARD_ASPECT);
-
-/** Shot length that keeps a slider loop seamless: one step per screenshot. */
-export function sliderDuration(layout: SliderLayout): number {
-  return Math.max(1, layout.assetIds.length) * layout.step;
-}
 
 /** Completed steps `k` and the eased progress `p` of the current step at shot time `t`. */
 export function sliderStep(t: number, step: number): { k: number; p: number } {
@@ -71,7 +67,9 @@ export function resolveSliderLayout(
 ): LayoutNode[] {
   const { axis, shape, step } = layout;
   const frameWidth = aspectRatioValue(aspect);
-  const ids: (string | null)[] = layout.assetIds.length > 0 ? layout.assetIds : [null];
+  // A shot shows at most 18 screenshots, so it fits in 30 s (duration.ts).
+  const shown = sliderAssetIds(layout);
+  const ids: (string | null)[] = shown.length > 0 ? shown : [null];
   const N = ids.length;
 
   const aspectOf = (assetId: string | null): number => {

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { differenceCiede2000, type Rgb as CuloriRgb } from "culori";
-import type { AssetRef, Layout } from "../../src/doc/types";
+import sharp from "sharp";
+import type { AssetRef, Layout, ProjectDoc } from "../../src/doc/types";
 import { resolveSliderLayout, type LayoutNode } from "../../src/motion";
 import { avgRegion, expectRgbNear, type PixelBuffer } from "../helpers/pixels";
 
@@ -314,5 +315,124 @@ test("slider frames create no GPU objects: the fade targets are allocated with t
     texture: 0,
     framebuffer: 0,
     renderbuffer: 0,
+  });
+});
+
+test.describe("slider editing", () => {
+  interface EditorWindow {
+    __editorStore?: { getState: () => { doc: ProjectDoc } };
+  }
+
+  const sliderShot = (page: Page) =>
+    page.evaluate(() => {
+      const doc = (window as unknown as EditorWindow).__editorStore?.getState().doc;
+      const shot = doc?.shots[0];
+      if (!shot || shot.layout.kind !== "slider") throw new Error("Shot 0 is not a slider");
+      return { assetIds: shot.layout.assetIds, step: shot.layout.step, duration: shot.duration };
+    });
+
+  /** First run → gallery → Mobile Slider → demo content, with shot 1 selected. */
+  async function openMobileSlider(page: Page): Promise<void> {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/lab/ui");
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.deleteDatabase("mockupmotion-v2");
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error("deleteDatabase blocked"));
+      });
+    });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start with a template" }).click();
+    await page.locator('[data-testid="template-card"][data-template-id="mobile-slider"]').click();
+    await page.getByRole("button", { name: "Apply template" }).click();
+    await page.getByRole("button", { name: "Use demo content" }).click();
+    await expect
+      .poll(async () => (await sliderShot(page)).assetIds.length, { timeout: 20_000 })
+      .toBeGreaterThanOrEqual(3);
+    await page
+      .locator('[data-testid="shot-card"]')
+      .first()
+      .click({ position: { x: 6, y: 6 } });
+    await expect(page.getByRole("slider", { name: "Step length" })).toBeVisible();
+  }
+
+  test("changing the step length sets the shot length, and undo restores both", async ({
+    page,
+  }) => {
+    await openMobileSlider(page);
+    const before = await sliderShot(page);
+    const n = before.assetIds.length;
+    expect(before.step).toBe(2);
+    expect(before.duration).toBe(n * 2);
+
+    // The duration control is read-only for a slider and says why.
+    const hint = page.getByText("Set by step length × screenshots");
+    await expect(hint).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
+      "aria-describedby",
+      (await hint.getAttribute("id")) ?? "",
+    );
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
+      "data-disabled",
+      "",
+    );
+
+    // Page Up moves the slider ten 0.1 s steps at once, 2.0 → 3.0 s, as one edit. (Ten arrow
+    // presses are ten edits, which coalesce into one undo step only within 800 ms.)
+    const step = page.getByRole("slider", { name: "Step length" });
+    await step.focus();
+    await step.press("PageUp");
+    await expect.poll(async () => (await sliderShot(page)).step).toBe(3);
+    expect((await sliderShot(page)).duration).toBe(n * 3);
+    await expect(page.getByText(`${(n * 3).toFixed(1)} s`).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Undo" }).click();
+    expect(await sliderShot(page)).toEqual(before);
+  });
+
+  test("a screenshot added from the Media tab joins the slider and adds one step", async ({
+    page,
+  }) => {
+    await openMobileSlider(page);
+    const before = await sliderShot(page);
+
+    await page.getByRole("tab", { name: "Media" }).click();
+    const png = await sharp({
+      create: { width: 780, height: 1688, channels: 3, background: "#3366CC" },
+    })
+      .png()
+      .toBuffer();
+    await page.getByTestId("media-input").setInputFiles({
+      name: "extra-mobile.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    await expect(card).toBeVisible();
+    await card.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Add to slider" }).click();
+
+    const added = await page.evaluate(
+      () =>
+        (window as unknown as EditorWindow).__editorStore
+          ?.getState()
+          .doc.assets.find((a) => a.name === "extra-mobile.png")?.id,
+    );
+    expect(added, "the upload is in the project").toBeTruthy();
+    const after = await sliderShot(page);
+    expect(after.assetIds).toEqual([...before.assetIds, added]);
+    expect(after.duration).toBe(before.duration + before.step);
+
+    // The inspector lists it, and its menu now offers to take it out again.
+    await expect(
+      page.getByRole("list", { name: "Slider screenshots" }).getByText("extra-mobile.png"),
+    ).toBeVisible();
+    await card.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Remove from slider" }).click();
+    expect(await sliderShot(page)).toEqual(before);
   });
 });

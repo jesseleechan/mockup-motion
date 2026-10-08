@@ -14,12 +14,24 @@ export * from "./types";
 export { resolveSingleLayout } from "./single";
 export { resolvePairLayout } from "./pair";
 export { resolveTrioLayout } from "./trio";
-export { framesDuration, minShotDuration, resolveRowsLayout, rowsGeometry } from "./rows";
+export { framesDuration, resolveRowsLayout, rowsGeometry } from "./rows";
+export {
+  clampSliderStep,
+  fixedShotDuration,
+  MAX_SHOT_DURATION,
+  minShotDuration,
+  SLIDER_MAX_SCREENSHOTS,
+  SLIDER_MAX_STEP,
+  SLIDER_MIN_STEP,
+  sliderAssetIds,
+  sliderDuration,
+  sliderStepMax,
+} from "./duration";
 export { resolveColumnsLayout } from "./columns";
 export { resolveWallLayout } from "./wall";
 export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";
-export { resolveSliderLayout, sliderDuration, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
+export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
 
 export function resolveLayout(
   layout: Layout,

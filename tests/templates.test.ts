@@ -99,10 +99,10 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 12 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(12);
+  it("exports all 14 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(14);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(12);
+    expect(ids.size).toBe(14);
 
     const expectedIds = [
       "quiet-hero",
@@ -117,6 +117,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "scroll-story",
       "launch-reel",
       "case-study-reel",
+      "mobile-slider",
+      "desktop-slider",
     ];
 
     for (const expectedId of expectedIds) {
@@ -282,6 +284,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
   const MARQUEE_TEMPLATES = ["portfolio-rows", "phone-parade", "isometric-wall"];
+  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
@@ -297,6 +300,7 @@ describe("Template loop seam", () => {
         "phone-spotlight",
         "cascade-stack",
         ...MARQUEE_TEMPLATES,
+        ...SLIDER_TEMPLATES,
       ].sort(),
     );
   });
@@ -328,6 +332,8 @@ describe("Template loop seam", () => {
 
         if (MARQUEE_TEMPLATES.includes(id)) {
           expectSameMarqueeCards(first.nodes, shown.frame.nodes, aspect, label);
+        } else if (SLIDER_TEMPLATES.includes(id)) {
+          expectSameSliderCards(first.nodes, shown.frame.nodes, label);
         } else {
           expectSameNodes(first.nodes, shown.frame.nodes, label);
         }
@@ -352,6 +358,35 @@ describe("Template loop seam", () => {
         expect(other.transform[key], `${where} ${key}`).toBeCloseTo(node.transform[key], 4);
       }
     });
+  }
+
+  /**
+   * A slider's ring holds more cards than screenshots, so after one loop a different ring card
+   * with the same screenshot sits in each slot. Every drawn card must have a twin in the other
+   * frame: same screenshot, size, place, scale and opacity.
+   */
+  function expectSameSliderCards(first: LayoutNode[], last: LayoutNode[], label: string): void {
+    const drawn = (nodes: LayoutNode[]) => nodes.filter((node) => node.opacity > 1e-3);
+    const same = (a: LayoutNode, b: LayoutNode) =>
+      a.assetId === b.assetId &&
+      a.device === b.device &&
+      Math.abs(a.width - b.width) < 1e-4 &&
+      Math.abs(a.height - b.height) < 1e-4 &&
+      Math.abs(a.opacity - b.opacity) < 1e-4 &&
+      (["x", "y", "z", "scale"] as const).every(
+        (key) => Math.abs(a.transform[key] - b.transform[key]) < 1e-4,
+      );
+    expect(drawn(last).length, `${label}: cards drawn at the loop point`).toBe(drawn(first).length);
+    expect(drawn(first).length, `${label}: cards drawn at the start`).toBeGreaterThanOrEqual(3);
+    for (const [from, to, where] of [
+      [first, last, "at the loop point"],
+      [last, first, "at the start"],
+    ] as const) {
+      for (const node of drawn(from)) {
+        const match = drawn(to).find((other) => same(node, other));
+        expect(match, `${label}: ${node.id} (${node.assetId}) ${where}`).toBeDefined();
+      }
+    }
   }
 
   function expectSameMarqueeCards(
