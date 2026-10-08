@@ -20,8 +20,8 @@ const PORT = 3789;
 const OUT_DIR = path.resolve("public/templates");
 // The build has the lab enabled, so it goes to a scratch directory, never to dist/.
 const BUILD_DIR = path.join(os.tmpdir(), "mockupmotion-template-previews");
-// The encoder targets a fixed bitrate, so size follows length: the 11.3-11.4 s reels land at
-// 420-475 KB (launch-reel's ambient background uses the full bitrate since F11).
+// The encoder targets a fixed bitrate, so size follows length: the 11.3-11.4 s reels (since
+// removed) landed at 420-475 KB, and Launch Reel's ambient background used the full bitrate.
 const MAX_WEBM_BYTES = 500 * 1024;
 // A preview whose web bitrate would pass this (Frames: 18.5 s) gets the bitrate that fits it,
 // under the 450 KiB that tests/template-previews.test.ts allows. Shorter previews keep the web
@@ -78,7 +78,7 @@ async function main(): Promise<void> {
   await buildLab(BUILD_DIR);
 
   const server = await serveBuild(BUILD_DIR, PORT);
-  // `npm run template-previews -- quiet-hero` regenerates a subset.
+  // `npm run template-previews -- scroll-story` regenerates a subset.
   const requested = process.argv.slice(2);
   const unknown = requested.filter((id) => !BUILTIN_TEMPLATES.some((t) => t.id === id));
   if (unknown.length > 0) throw new Error(`Unknown template ids: ${unknown.join(", ")}`);
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
             const doc = structuredClone(fixture);
             doc.export = { ...doc.export, ...settings };
             // Grain is new noise every frame, which VP9 cannot compress: at 360p it more than
-            // quadruples the file (phone-spotlight: 633 KB with grain, 145 KB without) and is
+            // quadruples the file (the removed Phone Spotlight: 633 KB with grain, 145 without) and is
             // invisible at card size. The video drops it; the poster keeps the template's look.
             const videoDoc = structuredClone(doc);
             videoDoc.style.grain = 0;

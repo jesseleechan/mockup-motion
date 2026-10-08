@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 // The still page renders at pixel ratio 1 and supersample 1 with no playback loop, so the
 // adaptive-quality drop of the interactive lab never changes the output mid-test.
 async function openLab(page: Page) {
-  await page.goto("/lab?still=1&fixture=quiet-hero&w=640&aspect=16:9");
+  await page.goto("/lab?still=1&fixture=single-browser&w=640&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
 }
 
@@ -23,7 +23,7 @@ test.describe("F11 ambient background", () => {
   }) => {
     await openLab(page);
     const result = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       if (!base || !engine || !setDoc) throw new Error("F11 ambient hooks are unavailable");
@@ -116,7 +116,7 @@ test.describe("F11 ambient background", () => {
   test("the ambient background uses only the screenshot's first viewport", async ({ page }) => {
     await openLab(page);
     const means = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       if (!base || !engine || !setDoc) throw new Error("F11 ambient hooks are unavailable");
@@ -158,7 +158,7 @@ test.describe("F11 ambient background", () => {
   test("image backgrounds are cover-fit at all five aspects", async ({ page }) => {
     await openLab(page);
     const ratios = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       if (!base || !engine || !setDoc) throw new Error("F11 image hooks are unavailable");
@@ -222,7 +222,7 @@ test.describe("F11 ambient background", () => {
   test("rendering an ambient background allocates no GPU objects per frame", async ({ page }) => {
     await openLab(page);
     const counts = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       const images = window.__labTestImages;
@@ -281,7 +281,7 @@ test.describe("F11 browser URL pill", () => {
   test("the URL is drawn centred inside the pill", async ({ page }) => {
     await openLab(page);
     const result = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       const images = window.__labTestImages;
@@ -353,7 +353,7 @@ test.describe("F11 browser URL pill", () => {
   test("a slower earlier setDocument cannot replace the newer URL raster", async ({ page }) => {
     await openLab(page);
     const result = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc as
         | ((
@@ -428,7 +428,7 @@ test.describe("F11 browser URL pill", () => {
       window.__mediabunnyTest = await import(url);
     }, mediabunnyUrl);
     const result = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       const createProvider = window.__createLabAssetProvider;
@@ -522,7 +522,7 @@ test.describe("F11 screens and grain", () => {
   test("screen targets render at 2x so mid-frequency detail stays sharp", async ({ page }) => {
     await openLab(page);
     const gradient = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       if (!base || !engine || !setDoc) throw new Error("F11 hooks are unavailable");
@@ -569,7 +569,7 @@ test.describe("F11 screens and grain", () => {
   test("grain is zero-mean across a 1080x1920 frame", async ({ page }) => {
     await openLab(page);
     const cells = await page.evaluate(async () => {
-      const base = window.__fixtures?.["quiet-hero"];
+      const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
       const setDoc = window.__labSetDoc;
       if (!base || !engine || !setDoc) throw new Error("F11 hooks are unavailable");

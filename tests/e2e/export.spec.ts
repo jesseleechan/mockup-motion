@@ -162,7 +162,7 @@ test.describe("F09 export correctness", () => {
     );
   });
 
-  test("a responsive-pair export is upright and fills the phone screen", async ({ page }) => {
+  test("a pair export is upright and fills the phone screen", async ({ page }) => {
     test.setTimeout(300_000);
     await openLab(page);
     const frame = await page.evaluate(async () => {
@@ -170,11 +170,16 @@ test.describe("F09 export correctness", () => {
       const media = w.__f09Media;
       const images = w.__labTestImages;
       const base = structuredClone(w.__fixtures?.["device-card-frontal"]);
-      if (!media || !images || !base || !w.__exportWithEngine || !w.__createLabAssetProvider)
+      const pair = structuredClone(w.__fixtures?.["pair"]);
+      if (
+        !media ||
+        !images ||
+        !base ||
+        !pair ||
+        !w.__exportWithEngine ||
+        !w.__createLabAssetProvider
+      )
         throw new Error("Lab export hooks are unavailable");
-      // A dev-server module path, resolved by the browser
-      const templatePath = "/src/templates/responsive-pair.ts";
-      const { responsivePairTemplate } = await import(/* @vite-ignore */ templatePath);
       const desktop = {
         id: "f09-desktop",
         kind: "image",
@@ -195,18 +200,18 @@ test.describe("F09 export correctness", () => {
         height: 780,
         role: "mobile",
       };
-      const built = responsivePairTemplate.build({
-        aspect: "16:9",
-        slots: { desktop1: desktop, mobile1: mobile },
-        projectName: "F09 pair",
-      });
       const doc = {
         ...base,
         assets: [desktop, mobile],
-        style: built.style,
-        shots: built.shots,
+        // No URL in the pill: only the test images' colours are counted below.
+        style: { ...pair.style, browserUrl: "" },
+        shots: pair.shots,
         loop: false,
       } as ProjectDoc;
+      const layout = doc.shots[0].layout;
+      if (layout.kind !== "pair") throw new Error(`Expected a pair layout, got ${layout.kind}`);
+      layout.desktopId = desktop.id;
+      layout.mobileId = mobile.id;
       doc.shots[0].duration = 3;
       const bitmaps: Record<string, ImageBitmap> = {
         [desktop.id]: await images.quadrants(1600, 1000),

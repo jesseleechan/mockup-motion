@@ -9,7 +9,7 @@ import {
 } from "../src/templates";
 import { createEditorStore } from "../src/state/store";
 import { sanitizeDoc } from "../src/doc/validate";
-import type { Aspect, AssetRef } from "../src/doc/types";
+import type { Aspect, AssetRef, ProjectDoc } from "../src/doc/types";
 import { evaluate } from "../src/motion/evaluate";
 import { schedule } from "../src/motion/timeline";
 import { createDoc } from "../src/doc/defaults";
@@ -17,6 +17,7 @@ import { aspectRatioValue } from "../src/motion/camera";
 import type { ShotFrame } from "../src/motion/evaluate";
 import { computeCameraBasis, projectPointToNDC } from "../src/motion/framing";
 import type { LayoutNode } from "../src/motion/layouts";
+import { LAYOUT_FIXTURES } from "../src/lab/layout-fixtures";
 
 describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   const sampleAssets: AssetRef[] = [
@@ -99,35 +100,27 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 15 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(15);
+  it("exports all 7 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(7);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(15);
+    expect(ids.size).toBe(7);
 
     // Gallery order: the presets lead (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
-      "quiet-hero",
-      "tilted-showcase",
-      "responsive-pair",
-      "responsive-trio",
-      "phone-spotlight",
       "phone-parade",
       "portfolio-rows",
       "isometric-wall",
-      "cascade-stack",
       "scroll-story",
-      "launch-reel",
-      "case-study-reel",
     ]);
 
     for (const t of BUILTIN_TEMPLATES) {
       expect(t.name).toBeTruthy();
       expect(t.description).toBeTruthy();
       expect(t.defaultDuration).toBeGreaterThan(0);
-      expect(["single", "responsive", "mobile", "portfolio", "reel"]).toContain(t.category);
+      expect(["single", "mobile", "portfolio"]).toContain(t.category);
       expect(t.slots.length).toBeGreaterThanOrEqual(1);
     }
   });
@@ -135,32 +128,32 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   describe("fillSlots & validateTemplateRequirements", () => {
     it("fillSlots enforces role correctness with no cross-role assignment", () => {
       const onlyDesktop = sampleAssets.filter((a) => a.role === "desktop");
-      const phoneSpotlight = BUILTIN_TEMPLATES.find((t) => t.id === "phone-spotlight")!;
+      const phoneParade = BUILTIN_TEMPLATES.find((t) => t.id === "phone-parade")!;
 
-      // Phone spotlight needs a mobile asset; desktop assets must not fill it
-      const slots = fillSlots(phoneSpotlight, onlyDesktop);
+      // Phone parade needs mobile assets; desktop assets must not fill it
+      const slots = fillSlots(phoneParade, onlyDesktop);
       expect(slots.mobile1).toBeUndefined();
 
       // Desktop template should not be filled by mobile assets
       const onlyMobile = sampleAssets.filter((a) => a.role === "mobile");
-      const quietHero = BUILTIN_TEMPLATES.find((t) => t.id === "quiet-hero")!;
-      const heroSlots = fillSlots(quietHero, onlyMobile);
-      expect(heroSlots.desktop1).toBeUndefined();
+      const scrollStory = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
+      const storySlots = fillSlots(scrollStory, onlyMobile);
+      expect(storySlots.desktop1).toBeUndefined();
     });
 
     it("fillSlots respects prefer: 'tall' when available", () => {
-      const quietHero = BUILTIN_TEMPLATES.find((t) => t.id === "quiet-hero")!;
-      const slots = fillSlots(quietHero, sampleAssets);
+      const scrollStory = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
+      const slots = fillSlots(scrollStory, sampleAssets);
       expect(slots.desktop1).toBeDefined();
       expect(slots.desktop1?.meta?.tall).toBe(true);
       expect(slots.desktop1?.id).toBe("desktop-full");
     });
 
     it("fillSlots preserves previous assignments when still valid", () => {
-      const quietHero = BUILTIN_TEMPLATES.find((t) => t.id === "quiet-hero")!;
+      const scrollStory = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
       // Explicitly assigned desktop-hero previously
       const previous = { desktop1: "desktop-hero" };
-      const slots = fillSlots(quietHero, sampleAssets, previous);
+      const slots = fillSlots(scrollStory, sampleAssets, previous);
       expect(slots.desktop1?.id).toBe("desktop-hero");
     });
 
@@ -190,7 +183,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     });
 
     it("applyTemplate preserves user's brand styling", () => {
-      const template = BUILTIN_TEMPLATES.find((t) => t.id === "quiet-hero")!;
+      const template = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
       const doc = createDoc();
       doc.assets = sampleAssets;
       doc.style.textColor = "#123456";
@@ -202,7 +195,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     });
   });
 
-  describe("All 12 templates across all 5 aspects", () => {
+  describe("Every template across all 5 aspects", () => {
     const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
 
     for (const template of BUILTIN_TEMPLATES) {
@@ -289,20 +282,21 @@ describe("Template loop seam", () => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
   }).map((template) => template.id);
+  // Camera-move loops (pushIn, orbits): no built-in template builds one, but saved projects can.
+  const CAMERA_LOOP_FIXTURES = ["single-browser", "pair"];
+
+  function loopDoc(id: string, aspect: Aspect): ProjectDoc {
+    const fixture = LAYOUT_FIXTURES[id];
+    if (fixture) return { ...structuredClone(fixture), aspect };
+    return buildTemplatePreviewDoc(
+      BUILTIN_TEMPLATES.find((t) => t.id === id)!,
+      aspect,
+    );
+  }
 
   it("covers every looping single-shot template", () => {
     expect([...LOOPING_SINGLE_SHOT].sort()).toEqual(
-      [
-        "quiet-hero",
-        "tilted-showcase",
-        "responsive-pair",
-        "responsive-trio",
-        "phone-spotlight",
-        "cascade-stack",
-        ...MARQUEE_TEMPLATES,
-        ...NATIVE_MARQUEE_TEMPLATES,
-        ...SLIDER_TEMPLATES,
-      ].sort(),
+      [...MARQUEE_TEMPLATES, ...NATIVE_MARQUEE_TEMPLATES, ...SLIDER_TEMPLATES].sort(),
     );
   });
 
@@ -310,10 +304,9 @@ describe("Template loop seam", () => {
   // cut back to t = 0 would pop. The frame just before the loop point must already be
   // the first frame: the wrap crossfade has finished (contracts.md §5).
   it("the frame just before the loop point is the first frame", () => {
-    for (const id of LOOPING_SINGLE_SHOT) {
-      const template = BUILTIN_TEMPLATES.find((t) => t.id === id)!;
+    for (const id of [...LOOPING_SINGLE_SHOT, ...CAMERA_LOOP_FIXTURES]) {
       for (const aspect of ASPECTS) {
-        const doc = buildTemplatePreviewDoc(template, aspect);
+        const doc = loopDoc(id, aspect);
         const label = `${id} ${aspect}`;
         const { total } = schedule(doc);
         const start = evaluate(doc, 0).layers;

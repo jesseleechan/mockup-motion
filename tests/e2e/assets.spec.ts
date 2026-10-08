@@ -70,7 +70,7 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "all 15 built-in templates are lab fixtures").toBe(15);
+  expect(results.length, "all 7 built-in templates are lab fixtures").toBe(7);
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",
@@ -86,18 +86,16 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
   ).toEqual([]);
 });
 
-test("F03: responsive-pair shows screenshots in both the browser and the phone", async ({
-  page,
-}) => {
+test("F03: a pair shows screenshots in both the browser and the phone", async ({ page }) => {
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const centres = await page.evaluate(async () => {
-    const doc = window.__fixtures?.["responsive-pair"];
+    const doc = window.__fixtures?.["pair"];
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
     const scheduleDoc = window.__labSchedule;
     if (!doc || !engine || !setDoc || !scheduleDoc)
-      throw new Error("F03 responsive-pair fixture hooks are unavailable");
+      throw new Error("F03 pair fixture hooks are unavailable");
     const width = 640;
     const height = 360;
     engine.resize(width, height);
@@ -142,7 +140,9 @@ test("F03: responsive-pair shows screenshots in both the browser and the phone",
   }
 });
 
-test("F03: alternating quiet-hero and isometric-wall keeps GPU memory flat", async ({ page }) => {
+test("F03: alternating a single browser and isometric-wall keeps GPU memory flat", async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
@@ -150,10 +150,10 @@ test("F03: alternating quiet-hero and isometric-wall keeps GPU memory flat", asy
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
-    if (!fixtures?.["quiet-hero"] || !fixtures["isometric-wall"] || !engine || !setDoc)
+    if (!fixtures?.["single-browser"] || !fixtures["isometric-wall"] || !engine || !setDoc)
       throw new Error("F03 memory fixture hooks are unavailable");
     engine.resize(640, 360);
-    const docs = [fixtures["quiet-hero"], fixtures["isometric-wall"]];
+    const docs = [fixtures["single-browser"], fixtures["isometric-wall"]];
     const snapshots = [];
     for (let cycle = 1; cycle <= 20; cycle++) {
       await setDoc(docs[(cycle - 1) % 2]);
@@ -174,7 +174,7 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const createProvider = window.__createLabAssetProvider;
-    if (!fixtures?.["isometric-wall"] || !fixtures["quiet-hero"] || !engine || !createProvider)
+    if (!fixtures?.["isometric-wall"] || !fixtures["single-browser"] || !engine || !createProvider)
       throw new Error("F03 race fixture hooks are unavailable");
     engine.resize(640, 360);
     const provider = createProvider();
@@ -186,14 +186,12 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
       getText: provider.getText.bind(provider),
     };
     const older = engine.setDocument(fixtures["isometric-wall"], slow);
-    const newer = engine.setDocument(fixtures["quiet-hero"], provider);
+    const newer = engine.setDocument(fixtures["single-browser"], provider);
     await Promise.all([older, newer]);
     engine.renderAt(1);
     return engine.debugInfo().nodes.map((n) => n.id);
   });
-  expect(nodeIds, "quiet-hero's single browser, none of isometric-wall's tiles").toEqual([
-    "single:0",
-  ]);
+  expect(nodeIds, "the single browser, none of isometric-wall's tiles").toEqual(["single:0"]);
 });
 
 test("F03: pair layouts preload both screen assets", async ({ page }) => {
@@ -400,7 +398,7 @@ test("F03: a slower earlier setDocument cannot replace the newer text raster", a
   expect(textColors.red, "the final frame must not use the stale red text raster").toBe(0);
 });
 
-test("F03: responsive-pair WebM export contains both screen assets", async ({ page }) => {
+test("F03: a pair's WebM export contains both screen assets", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
@@ -568,7 +566,7 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const built = await page.evaluate(async () => {
-    const base = window.__fixtures?.["responsive-pair"];
+    const base = window.__fixtures?.["pair"];
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
     if (!base || !engine || !setDoc) throw new Error("F03 diffing fixture hooks are unavailable");
@@ -627,7 +625,7 @@ test("F03: devices whose key disappears are disposed", async ({ page }) => {
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const counts = await page.evaluate(async () => {
-    const base = window.__fixtures?.["quiet-hero"];
+    const base = window.__fixtures?.["single-browser"];
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
     if (!base || !engine || !setDoc) throw new Error("F03 device fixture hooks are unavailable");

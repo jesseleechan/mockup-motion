@@ -31,7 +31,7 @@ export const LibraryPanel: React.FC = () => {
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
   const [saveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
 
-  const categories = ["all", "single", "mobile", "portfolio", "reel"];
+  const categories = ["all", "single", "mobile", "portfolio"];
   const filteredTemplates = BUILTIN_TEMPLATES.filter(
     (t) => selectedCategory === "all" || t.category === selectedCategory,
   );

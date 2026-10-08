@@ -151,23 +151,14 @@ describe("F04 template previews use varied demo sites", () => {
   };
   const sites = (templateId: string) => new Set(screens(templateId).map((a) => a.site));
 
-  it.each(["portfolio-rows", "isometric-wall", "cascade-stack"])(
-    "%s shows 4+ different desktop sites",
-    (id) => {
-      expect(screens(id).every((a) => a.role === "desktop")).toBe(true);
-      expect(sites(id).size).toBeGreaterThanOrEqual(4);
-    },
-  );
+  it.each(["portfolio-rows", "isometric-wall"])("%s shows 4+ different desktop sites", (id) => {
+    expect(screens(id).every((a) => a.role === "desktop")).toBe(true);
+    expect(sites(id).size).toBeGreaterThanOrEqual(4);
+  });
 
   it("phone-parade shows 4+ different mobile sites", () => {
     expect(screens("phone-parade").every((a) => a.role === "mobile")).toBe(true);
     expect(sites("phone-parade").size).toBeGreaterThanOrEqual(4);
-  });
-
-  it.each(["responsive-pair", "responsive-trio"])("%s shows one site on every device", (id) => {
-    const roles = new Set(screens(id).map((a) => a.role));
-    expect(roles).toEqual(new Set(["desktop", "mobile"]));
-    expect(sites(id).size).toBe(1);
   });
 
   it("scroll-story scrolls a full-page desktop capture", () => {

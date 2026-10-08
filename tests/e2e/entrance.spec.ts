@@ -199,7 +199,7 @@ test("a fading phone stays in front of the browser it overlaps under an orbiting
   page,
 }) => {
   await ready(page);
-  // Under responsive-pair's orbit the browser's centre is nearer the camera than the phone's,
+  // Under an orbitRight camera the browser's centre is nearer the camera than the phone's,
   // although the phone overlaps the browser in front (quality-bar §4), so draw order must
   // come from the layout, not from the centres' depth.
   const t = timeAtOpacity(0.5, STAGGER_DELAY);
@@ -280,7 +280,8 @@ test("entrance frames create no GPU objects: the fade layer is allocated with th
 test.describe("entrance inspector", () => {
   const HINT = "Loops start with the first shot in place.";
 
-  async function openLaunchReel(page: Page): Promise<void> {
+  /** Scroll Story, which does not loop, with a second shot of the same layout. */
+  async function openTwoShotStory(page: Page): Promise<void> {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/lab/ui");
     await page.evaluate(async () => {
@@ -294,11 +295,13 @@ test.describe("entrance inspector", () => {
       });
     });
     await page.goto("/");
-    // Launch reel has four shots and does not loop.
     await page.getByRole("button", { name: "Start with a template" }).click();
-    await page.locator('[data-testid="template-card"][data-template-id="launch-reel"]').click();
+    await page.locator('[data-testid="template-card"][data-template-id="scroll-story"]').click();
     await page.getByRole("button", { name: "Apply template" }).click();
     await page.getByRole("button", { name: "Use demo content" }).click();
+    await page.getByRole("button", { name: "Add shot" }).click();
+    await page.getByRole("menuitem", { name: "Same layout" }).click();
+    await expect(page.locator('[data-testid="shot-card"]')).toHaveCount(2);
   }
 
   /** Selects shot `index` from its card's corner, clear of the text chips inside it. */
@@ -311,7 +314,7 @@ test.describe("entrance inspector", () => {
   }
 
   test("shot 0 of a looping doc says its entrance does not play", async ({ page }) => {
-    await openLaunchReel(page);
+    await openTwoShotStory(page);
     const entrance = page.getByRole("combobox", { name: "Entrance" });
     const hint = page.getByText(HINT);
     const loop = page.getByRole("button", { name: "Toggle loop playback" });

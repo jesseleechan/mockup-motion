@@ -62,7 +62,7 @@ Do these in a fresh profile or private window, so storage starts empty. Keep the
 
 1. **First run.** The template gallery opens. Close it and click "Try with demo content". The stage shows an upright Aurelia browser with correct colours (compare with `docs/fix-plan/evidence/F11/after/quiet-hero.png`).
 2. **Playback.** Press Play. The push-in is smooth, never reverses, and loops.
-3. **Templates.** Open the template gallery and apply Responsive Pair, Isometric Wall and Launch Reel. Every screen shows a real screenshot (no black screens) and nothing is upside down.
+3. **Templates.** Open the template gallery and apply Frames, Phone Parade and Isometric Wall. Every screen shows a real screenshot (no black screens) and nothing is upside down.
 4. **Upload.** Drag a PNG from the desktop onto the stage. It appears in the Media tab. Drag it from the Media tab onto the device on the stage; the device shows it.
 5. **Music.** Click "Add music" and choose a short MP3. The waveform appears. Play: the music starts with the video. Seek twice; the music follows.
 6. **Export MP4.** Export, Custom, MP4, 720p. Note whether the result says "Verified MP4" or the dialog falls back to WebM. Download the file and play it in the system player: upright, correct colours, music audible.

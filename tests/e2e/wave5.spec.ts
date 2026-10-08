@@ -34,22 +34,24 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await expect(modal).toBeVisible();
     await expect(modal.getByText("Template gallery")).toBeVisible();
 
-    // Category tabs should be present
+    // Category tabs should be present, and none without templates
     await expect(modal.getByRole("button", { name: "All", exact: true })).toBeVisible();
-    await expect(modal.getByRole("button", { name: /Reels/i })).toBeVisible();
+    await expect(modal.getByRole("button", { name: "Portfolio", exact: true })).toBeVisible();
+    await expect(modal.getByRole("button", { name: "Reels", exact: true })).toHaveCount(0);
+    await expect(modal.getByRole("button", { name: "Responsive", exact: true })).toHaveCount(0);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
-    await searchInput.fill("Quiet");
-    await expect(modal.getByRole("heading", { name: "Quiet Hero" })).toBeVisible();
+    await searchInput.fill("Scroll");
+    await expect(modal.getByRole("heading", { name: "Scroll Story" })).toBeVisible();
 
     // Clear search
     await searchInput.fill("");
 
-    // Click on "Tilted Showcase" template card
-    const tiltedCard = modal.getByRole("button", { name: /Tilted Showcase/i });
-    await expect(tiltedCard).toBeVisible();
-    await tiltedCard.click();
+    // Click on "Isometric Wall" template card
+    const wallCard = modal.getByRole("button", { name: /Isometric Wall/i });
+    await expect(wallCard).toBeVisible();
+    await wallCard.click();
 
     // Apply template
     const applyBtn = modal.getByRole("button", { name: "Apply template" });
@@ -78,10 +80,10 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await expect(page.locator("canvas")).toBeVisible();
 
     // Scroll and cursor are single-device controls, and the first-run demo is Desktop Slider
-    // (presets D1), so switch to Quiet Hero's single browser first.
+    // (presets D1), so switch to Scroll Story's single browser first.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
-    await gallery.getByRole("button", { name: "Select template Quiet Hero" }).click();
+    await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 
@@ -94,14 +96,18 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const scrollSwitch = page.getByRole("switch", { name: "Scroll through page" });
     await expect(scrollSwitch).toBeVisible();
 
-    // Initially unchecked
-    expect(await scrollSwitch.getAttribute("data-state")).toBe("unchecked");
+    // Scroll Story turns scroll on, with its settings (Hold at stops, Easing, Stops)
+    await expect(scrollSwitch).toHaveAttribute("data-state", "checked");
+    await expect(page.getByText("Hold", { exact: true })).toBeVisible();
 
-    // Toggle scroll ON
+    // Toggle scroll OFF hides the settings
     await scrollSwitch.click();
-    expect(await scrollSwitch.getAttribute("data-state")).toBe("checked");
+    await expect(scrollSwitch).toHaveAttribute("data-state", "unchecked");
+    await expect(page.getByText("Hold", { exact: true })).toHaveCount(0);
 
-    // Scroll settings now visible (Hold at stops, Easing, Stops)
+    // Toggle scroll ON shows them again
+    await scrollSwitch.click();
+    await expect(scrollSwitch).toHaveAttribute("data-state", "checked");
     await expect(page.getByText("Hold", { exact: true })).toBeVisible();
 
     // 2. Cursor section
