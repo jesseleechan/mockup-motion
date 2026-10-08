@@ -1,6 +1,6 @@
 # P02: Portrait cards, faded neighbours, slider lab fixtures
 
-**Size:** M · **Depends on:** P01, and `fix/entrance-render` merged into `main` (it adds `DeviceFade.ts`)
+**Size:** M · **Depends on:** P01, and `fix/entrance-render` (#20, merged; it adds `DeviceFade.ts`)
 
 ## Why
 
@@ -9,7 +9,7 @@ P01 produces the right nodes, but two things don't render yet. A card node with 
 ## Context
 
 - `src/engine/devices/card.ts`: the radius is fixed at 1.6% of width, and an opaque body slab sits behind the screen.
-- `src/engine/devices/DeviceFade.ts` (from `fix/entrance-render`): draws each run of devices that share an opacity into a layer and composites it back to front by `depthOrder`.
+- `src/engine/devices/DeviceFade.ts` (`DeviceFadePass`, from #20): draws each run of devices that share an opacity into a layer and composites it back to front by `depthOrder`.
 - `src/lab/fixtures/`, `/lab?still=1&fixture=…&w=…` (memory: non-still `/lab` renders at supersample 1.5, so pixel tests use `still=1`).
 
 ## Required changes

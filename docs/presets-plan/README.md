@@ -19,7 +19,7 @@ The two sliders share one new layout. Frames is close to the existing `rows` lay
 - **A `slider` layout** (`src/motion/layouts/slider.ts`): a ring of cards on one axis that steps one slot per step period. The active card is at scale 1 and full opacity; the others are at scale 0.75 and opacity 0.65, interpolated with the step progress. It loops natively: after N steps (N = number of screenshots) the arrangement is back where it started, so a single looping shot with a `cut` wrap has frame(total) ≡ frame(0) and needs no crossfade.
 - **A `slide` easing**, cubic-bezier(0.40, 0, 0.05, 1), fitted to the reference (max error 0.017).
 - **Card shapes.** A portrait card shows a mobile screenshot at the phone screen aspect (0.4615) with a 7.5% corner radius. Today a `card` node gets the desktop aspect (1.6) for any tall image, which would crop a mobile screenshot to a landscape strip.
-- **Whole-card fading** for the faded neighbours. The `fix/entrance-render` branch adds `src/engine/devices/DeviceFade.ts`, which fades each device as one layer (screen, body, border, shadow). The slider builds on it, so that branch must merge first.
+- **Whole-card fading** for the faded neighbours. `src/engine/devices/DeviceFade.ts` (`DeviceFadePass`, merged in #20) fades each device as one layer (screen, body, border, shadow). The slider builds on it.
 - **Rows options for Frames:** card height and gap, and a loop mode where every row travels exactly one asset period per loop, so Frames loops natively instead of crossfading.
 - **Three templates**, a light neutral palette, gallery order, editor controls for the new layout fields, lab fixtures, previews, contact sheets and visual baselines.
 
@@ -53,10 +53,10 @@ P01 → P02 → P03 is one lane. P04 is a second lane that can run alongside it 
 
 ## 4. When to start
 
-State on 8 October 2026: `fix/marquee-speed` (#18) and `fix/camera-loop-seam` (#19) are merged. `fix/entrance-render` (#20) and `fix/entrance-loop-hint` (#21, which builds on #20) are still open.
+State on 8 October 2026: the fix branches are all merged: `fix/marquee-speed` (#18), `fix/camera-loop-seam` (#19), `fix/entrance-render` (#20, `DeviceFadePass`) and `fix/entrance-loop-hint` (#21; a looping shot 0 skips its entrance).
 
 - P00, P01 and P04 can start now. P04 builds on the merged marquee speed fix.
-- P02 needs `DeviceFade.ts` from #20, so it waits until #20 merges. If P01 finishes first, pause the slider lane there.
+- P02 needs `DeviceFade.ts` from #20, which is merged, so it can start once P01 is done.
 - Two open follow-ups touch the same code; do them first only if the owner asks: "`fillSlots` reuses one asset across slots" (the templates here dedupe on their own, as phone-parade does) and "the Shot inspector's Layout select only switches between a single device and a title card".
 
 Before P00, re-read `contracts.md` §4–§5 and `src/motion/layouts/marquee.ts` on the latest `main`. The loop and marquee rules were still changing when this plan was written.
