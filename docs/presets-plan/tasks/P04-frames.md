@@ -1,6 +1,6 @@
 # P04: Frames: rows options, native loop, template
 
-**Size:** M · **Depends on:** P00, and `fix/marquee-speed` merged into `main`
+**Size:** M · **Depends on:** P00 (`fix/marquee-speed` is already merged, #18)
 
 ## Why
 

@@ -40,23 +40,24 @@ Each decision has a recommended default. P00 records the answers in `quality-bar
 
 ## 3. Tasks
 
-| Task                                     | Title                                                                                   | Size | Depends on                        | Status      |
-| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | --------------------------------- | ----------- |
-| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | owner answers D1–D8               | Not started |
-| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00                               | Not started |
-| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, `fix/entrance-render` merged | Not started |
-| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02                               | Not started |
-| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00, `fix/marquee-speed` merged   | Not started |
-| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04                          | Not started |
+| Task                                     | Title                                                                                   | Size | Depends on          | Status      |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | ------------------- | ----------- |
+| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | owner answers D1–D8 | Not started |
+| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00                 | Not started |
+| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged     | Not started |
+| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02                 | Not started |
+| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00                 | Not started |
+| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04            | Not started |
 
 P01 → P02 → P03 is one lane. P04 is a second lane that can run alongside it after P00, because it only touches `rows`, `marquee.ts` and a new template. The two lanes meet in P05, along with the shared files: `registry.ts`, `tests/templates.test.ts` and `tests/visual/stills.spec.ts`. Keep each lane's edits to those files small so the second PR merges cleanly.
 
 ## 4. When to start
 
-Start once these have merged into `main`:
+State on 8 October 2026: `fix/marquee-speed` (#18) and `fix/camera-loop-seam` (#19) are merged. `fix/entrance-render` (#20) and `fix/entrance-loop-hint` (#21, which builds on #20) are still open.
 
-- The fix plan's open branches: `fix/camera-loop-seam`, `fix/entrance-loop-hint`, `fix/entrance-render` and `fix/marquee-speed`. P02 needs `DeviceFade.ts` from `fix/entrance-render`. P04 changes the same `marquee.ts` and `rows.ts` as `fix/marquee-speed`.
-- Any follow-ups the owner wants done first. These ones touch the same code: "`fillSlots` reuses one asset across slots" (the templates here dedupe on their own, as phone-parade does) and "the Shot inspector's Layout select only switches between a single device and a title card".
+- P00, P01 and P04 can start now. P04 builds on the merged marquee speed fix.
+- P02 needs `DeviceFade.ts` from #20, so it waits until #20 merges. If P01 finishes first, pause the slider lane there.
+- Two open follow-ups touch the same code; do them first only if the owner asks: "`fillSlots` reuses one asset across slots" (the templates here dedupe on their own, as phone-parade does) and "the Shot inspector's Layout select only switches between a single device and a title card".
 
 Before P00, re-read `contracts.md` §4–§5 and `src/motion/layouts/marquee.ts` on the latest `main`. The loop and marquee rules were still changing when this plan was written.
 
