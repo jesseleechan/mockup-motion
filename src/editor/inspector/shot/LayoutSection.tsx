@@ -6,6 +6,11 @@ import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
 const STACK_DEVICES: ("browser" | "card")[] = ["browser", "card"];
+// The slider's controls arrive with its templates (presets plan P03); until then the picker
+// only shows it on a shot that already uses it.
+const PICKER_LAYOUTS = (Object.keys(LAYOUT_LABELS) as Layout["kind"][]).filter(
+  (kind) => kind !== "slider",
+);
 
 interface LayoutSectionProps {
   shot: Shot;
@@ -58,7 +63,10 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
             aria-label="Layout"
             value={layout.kind}
             onChange={handleKindChange}
-            options={optionsFor(LAYOUT_LABELS)}
+            options={optionsFor(
+              LAYOUT_LABELS,
+              layout.kind === "slider" ? [...PICKER_LAYOUTS, "slider"] : PICKER_LAYOUTS,
+            )}
           />
         </Field>
 

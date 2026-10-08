@@ -22,6 +22,8 @@ import {
   resolveLayout,
   schedule,
   scrollPosition,
+  sliderDuration,
+  sliderStep,
   textFrame,
 } from "../src/motion";
 
@@ -683,5 +685,90 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
 
     console.log(`Average evaluate time for 30 nodes: ${avgMs.toFixed(4)} ms`);
     expect(avgMs).toBeLessThan(0.3);
+  });
+});
+
+describe("Slider motion (presets P01)", () => {
+  // docs/presets-plan/reference.md, "Slider step timing": progress p of one 1.85 s move.
+  const REFERENCE_STEP: [number, number][] = [
+    [0.1, 0.01],
+    [0.2, 0.04],
+    [0.3, 0.1],
+    [0.4, 0.21],
+    [0.45, 0.31],
+    [0.5, 0.41],
+    [0.55, 0.5],
+    [0.6, 0.6],
+    [0.7, 0.71],
+    [0.8, 0.77],
+    [0.9, 0.83],
+    [1.0, 0.87],
+    [1.2, 0.93],
+    [1.4, 0.97],
+    [1.6, 0.99],
+    [1.75, 1.0],
+  ];
+
+  it("slide matches the reference step within 0.03, from 0 to 1, monotonic", () => {
+    for (const [t, p] of REFERENCE_STEP) {
+      expect(Math.abs(ease("slide", t / 1.85) - p), `t = ${t}`).toBeLessThanOrEqual(0.03);
+    }
+    expect(ease("slide", 0)).toBe(0);
+    expect(ease("slide", 1)).toBe(1);
+    let previous = 0;
+    for (let i = 1; i <= 1000; i++) {
+      const value = ease("slide", i / 1000);
+      expect(value).toBeGreaterThanOrEqual(previous);
+      previous = value;
+    }
+  });
+
+  it("sliderStep starts each move on the step boundary and holds after 1.85 s", () => {
+    expect(sliderStep(0, 2)).toEqual({ k: 0, p: 0 });
+    expect(sliderStep(4, 2)).toEqual({ k: 2, p: 0 });
+    expect(sliderStep(4 + 0.55, 2).p).toBeCloseTo(ease("slide", 0.55 / 1.85), 12);
+    expect(sliderStep(4 + 1.85, 2).p).toBe(1);
+    expect(sliderStep(4 + 1.95, 3).p).toBe(1);
+    // A step shorter than the move moves for the whole step.
+    expect(sliderStep(0.8, 1.6).p).toBeCloseTo(ease("slide", 0.5), 12);
+  });
+
+  it("slider layouts are deterministic: no clock, no unseeded random", () => {
+    const layout = {
+      kind: "slider" as const,
+      assetIds: ["a", "b", "c", "d"],
+      axis: "x" as const,
+      shape: "mobile" as const,
+      step: 2,
+    };
+    const clocks = [vi.spyOn(Date, "now"), vi.spyOn(performance, "now"), vi.spyOn(Math, "random")];
+    try {
+      for (const t of [0, 0.37, 2.9, 7.99]) {
+        expect(resolveLayout(layout, "4:5", [], t, 8)).toEqual(
+          resolveLayout(layout, "4:5", [], t, 8),
+        );
+      }
+      for (const clock of clocks) expect(clock).not.toHaveBeenCalled();
+    } finally {
+      for (const clock of clocks) clock.mockRestore();
+    }
+  });
+
+  it("evaluate leaves the camera alone for a slider: its neighbours are cropped on purpose", () => {
+    const layout = {
+      kind: "slider" as const,
+      assetIds: ["a", "b", "c", "d"],
+      axis: "x" as const,
+      shape: "mobile" as const,
+      step: 2,
+    };
+    const shot = { ...defaultShot(layout), duration: sliderDuration(layout) };
+    shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    const doc = createDoc({ aspect: "16:9", loop: true, shots: [shot] });
+    for (const t of [0, 1, 5.5]) {
+      const frame = evaluate(doc, t).layers[0].frame;
+      const pose = cameraPose(shot.camera, doc.aspect, t / shot.duration, t, shot.duration);
+      expect(frame.camera.distance, `t = ${t}`).toBe(pose.distance);
+    }
   });
 });

@@ -13,6 +13,7 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "columns":
     case "wall":
     case "stack":
+    case "slider":
       return [...layout.assetIds];
     case "title":
       return [];

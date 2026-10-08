@@ -183,9 +183,10 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       entrance,
     );
 
-    // Auto-framing: keep safe margins under camera moves for bounded layouts
+    // Auto-framing: keep safe margins under camera moves for bounded layouts. A slider's
+    // neighbours are cropped by the frame on purpose (quality bar §4), so it is full bleed.
     let camera = baseCamera;
-    const isFullBleed = marquee || shot.layout.kind === "title";
+    const isFullBleed = marquee || shot.layout.kind === "title" || shot.layout.kind === "slider";
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {

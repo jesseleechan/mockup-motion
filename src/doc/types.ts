@@ -1,7 +1,7 @@
 export type Aspect = "16:9" | "9:16" | "1:1" | "4:5" | "4:3";
 export type AssetRole = "desktop" | "mobile" | "tablet" | "logo" | "background" | "other";
 export type EasingId =
-  | "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring";
+  | "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring" | "slide";
 
 export interface AssetRef {
   id: string;
@@ -61,8 +61,12 @@ export type Layout =
   | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number }
   | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
   | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
+  | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number }
   | { kind: "title" };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
+// slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
+// slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
+// slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
 
 export type CameraPresetId =
   | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
