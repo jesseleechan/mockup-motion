@@ -1,6 +1,6 @@
 # P00: Record the decisions in the quality bar and contracts
 
-**Size:** S · **Depends on:** the owner's answers to D1–D8 in the plan README · **Docs only**
+**Size:** S · **Depends on:** nothing (the owner decided D1–D8 on 8 October 2026) · **Docs only**
 
 ## Why
 
@@ -8,11 +8,11 @@ The presets break three rules on purpose: a new easing, faded neighbour screens,
 
 ## Required changes
 
-1. Copy the owner's answers into the Decisions table in `docs/presets-plan/README.md`, replacing "Recommended default" with "Decided" and the date. Quote any answer that differs from the recommendation.
+1. The owner's answers are already in the plan README's Decisions table (§2). Read them; this task turns them into rules.
 2. `docs/plan/quality-bar.md`:
    - §2.1: add `slide`, cubic-bezier(0.40, 0, 0.05, 1), "Carousel steps (slider layout)".
    - §2.2: add a "Carousel steps" bullet: one step per screenshot, 1.6–4.0 s per step (default 2.0 s), a 1.85 s move then a hold. The step starts on the step boundary.
-   - §2.5: apply D2. If the owner keeps the current cap for Frames, write down the longest Frames loop it allows at each aspect.
+   - §2.5: apply D2. Frames gets its own limit of 0.20 frame heights per second; every other marquee keeps 0.12 frame widths per second.
    - §3.1: apply D5. Faded slider neighbours are the only allowed exception to color-exact screens, and the active card stays exact.
    - §3.4: card radius is 1.6% of width for landscape cards and 7.5% for portrait (mobile) cards.
    - §4: add a "Slider" composition bullet with the active card size and spacing rules from P01, and a "Frames" bullet with the row count per aspect from P04. Use the 4:5 numbers in `reference.md` as the anchor.
@@ -35,6 +35,5 @@ The presets break three rules on purpose: a new easing, faded neighbour screens,
 
 ## Acceptance criteria
 
-- [ ] The README's Decisions table shows the owner's answers with the date.
 - [ ] `quality-bar.md` and `contracts.md` contain every rule above, and none of the text contradicts the decisions.
 - [ ] `npm run format` leaves the files unchanged.

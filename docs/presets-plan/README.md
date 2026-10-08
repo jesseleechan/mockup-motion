@@ -23,11 +23,11 @@ The two sliders share one new layout. Frames is close to the existing `rows` lay
 - **Rows options for Frames:** card height and gap, and a loop mode where every row travels exactly one asset period per loop, so Frames loops natively instead of crossfading.
 - **Three templates**, a light neutral palette, gallery order, editor controls for the new layout fields, lab fixtures, previews, contact sheets and visual baselines.
 
-## 2. Decisions for the owner
+## 2. Decisions
 
-Each decision has a recommended default. P00 records the answers in `quality-bar.md` and `contracts.md` before any code is written.
+The owner decided all eight on 8 October 2026: "D1. yes make them first", "D2. your recommended frames-only limit of 0.2 frame heights per second", "D3. one speed for all rows", and "D4-D8: whatever you recommend". So every row below is decided as written. P00 writes them into `quality-bar.md` and `contracts.md` before any code is written.
 
-| #   | Decision                                                          | Recommended default                                                                                                                                                                                                                                                                                                                                    |
+| #   | Decision                                                          | Decided (8 Oct 2026)                                                                                                                                                                                                                                                                                                                                   |
 | --- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | D1  | Gallery order and the default template                            | Put the three presets first in the gallery: Desktop Slider, Mobile Slider, Frames. `BUILTIN_TEMPLATES[0]` is also the first-run default, so Desktop Slider becomes the default.                                                                                                                                                                        |
 | D2  | Frames speed vs quality bar §2.5 (marquees ≤ 0.12 frame widths/s) | Add a Frames-specific limit of **0.20 frame heights per second** and keep 0.12 frame widths/s for every other marquee. At 4:5 the reference runs at 0.15–0.245 frame widths/s. Under the current cap a 4-screenshot Frames loop at 9:16 needs more than 30 s, which is over the shot limit.                                                            |
@@ -40,14 +40,14 @@ Each decision has a recommended default. P00 records the answers in `quality-bar
 
 ## 3. Tasks
 
-| Task                                     | Title                                                                                   | Size | Depends on          | Status      |
-| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | ------------------- | ----------- |
-| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | owner answers D1–D8 | Not started |
-| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00                 | Not started |
-| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged     | Not started |
-| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02                 | Not started |
-| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00                 | Not started |
-| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04            | Not started |
+| Task                                     | Title                                                                                   | Size | Depends on      | Status      |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- | ---- | --------------- | ----------- |
+| [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | —               | Not started |
+| [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00             | Not started |
+| [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged | Not started |
+| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02             | Not started |
+| [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00             | Not started |
+| [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04        | Not started |
 
 P01 → P02 → P03 is one lane. P04 is a second lane that can run alongside it after P00, because it only touches `rows`, `marquee.ts` and a new template. The two lanes meet in P05, along with the shared files: `registry.ts`, `tests/templates.test.ts` and `tests/visual/stills.spec.ts`. Keep each lane's edits to those files small so the second PR merges cleanly.
 
