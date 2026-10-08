@@ -4,8 +4,22 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The full e2e suite every night, so flaky or environment-dependent failures show up even on
+  # days when nothing merges.
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+# A new push to a pull request cancels its older run. Runs on main always finish.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Branch protection on main requires the `unit`, `e2e` and `visual` checks.
+# `unit` and `visual` run on every pull request. `e2e` always reports, but on a pull request it
+# runs Playwright only when the PR touches a path in `scripts/e2e-paths.ts` (src/, public/,
+# tests/e2e/, tests/helpers/, Vite, Playwright and npm config, this workflow). Pushes to main, the
+# nightly schedule and manual runs always run the full suite, split across four shards.
 # The `perf` project is not gated: it measures GPU throughput, which the runner's SwiftShader
 # cannot reach. Run `npm run test:perf` by hand on a machine with a real GPU.
 
@@ -38,10 +52,67 @@ jobs:
       - name: Build
         run: npm run build
 
-  e2e:
-    name: e2e
+  e2e-paths:
+    name: e2e paths
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - name: Checkout the path filter
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/e2e-paths.ts
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node.js
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Decide whether e2e runs
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "$EVENT always runs the full e2e suite."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Old and new names, so a rename out of a trigger path still counts.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files?per_page=100" \
+            --jq '.[] | [.filename, (.previous_filename // "")] | @tsv' > files.tsv
+          listed=$(wc -l < files.tsv)
+          # The files API lists at most 3,000 files. Run everything rather than guess.
+          if [ "$listed" -lt "$CHANGED_FILES" ]; then
+            echo "Listed $listed of $CHANGED_FILES changed files; running the full e2e suite."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          result=$(tr '\t' '\n' < files.tsv \
+            | node --experimental-strip-types --no-warnings scripts/e2e-paths.ts)
+          echo "$result" | tee -a "$GITHUB_OUTPUT"
+
+  e2e-shard:
+    name: e2e shard ${{ matrix.shard }}/4
+    needs: e2e-paths
+    if: needs.e2e-paths.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,18 +129,91 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      # The blob report is merged into one HTML report by the `e2e` job.
       - name: End-to-end tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=list,blob
+
+      - name: Upload blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-blob-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 3
 
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-results
-          path: |
-            test-results/
-            playwright-report/
+          name: e2e-results-shard-${{ matrix.shard }}
+          path: test-results/
           retention-days: 14
+
+  # The required check. It always runs and reports, so a pull request that skips the suite
+  # never waits on a missing check.
+  e2e:
+    name: e2e
+    needs: [e2e-paths, e2e-shard]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PATHS_RESULT: ${{ needs.e2e-paths.result }}
+      RUN_E2E: ${{ needs.e2e-paths.outputs.run }}
+      SHARDS_RESULT: ${{ needs.e2e-shard.result }}
+    steps:
+      - name: Check the path filter
+        run: |
+          if [ "$PATHS_RESULT" != "success" ]; then
+            echo "The e2e paths job ended with '$PATHS_RESULT'."
+            exit 1
+          fi
+          if [ "$RUN_E2E" != "true" ]; then
+            echo "No e2e trigger path changed (scripts/e2e-paths.ts); the suite was not run." \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Checkout repository
+        if: env.RUN_E2E == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: env.RUN_E2E == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: env.RUN_E2E == 'true'
+        run: npm ci
+
+      - name: Download blob reports
+        if: env.RUN_E2E == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-blob-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      # Prints every shard's results in one list and writes playwright-report/.
+      - name: Merge reports
+        if: env.RUN_E2E == 'true'
+        run: npx playwright merge-reports --reporter=list,html ./all-blob-reports
+
+      - name: Upload test results
+        if: env.RUN_E2E == 'true' && (failure() || env.SHARDS_RESULT != 'success')
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Check shard results
+        if: env.RUN_E2E == 'true'
+        run: |
+          echo "e2e shards: $SHARDS_RESULT"
+          test "$SHARDS_RESULT" = "success"
 
   visual:
     name: visual

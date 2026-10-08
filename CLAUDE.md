@@ -31,7 +31,14 @@ npm run template-previews  # regenerates the gallery previews in public/template
 npm run demo:capture       # recaptures the demo sites in demo-sites/ into public/demo
 ```
 
-CI (`.github/workflows/ci.yml`) runs three jobs on every pull request and on `main`: `unit` (typecheck, lint, test, build), `e2e` and `visual`. All three must be green. `perf` is not in CI, because the runner has no GPU.
+CI (`.github/workflows/ci.yml`) has three required checks: `unit` (typecheck, lint, test, build), `e2e` and `visual`. All three must be green.
+
+- `unit` and `visual` run in full on every pull request.
+- `e2e` reports on every pull request, but runs Playwright only when the PR changes an e2e trigger path: `src/`, `public/`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/e2e/`, `tests/helpers/`, `playwright.config.ts`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml` or `scripts/e2e-paths.ts`. The list lives in `scripts/e2e-paths.ts`. A PR that touches none of them (docs, unit tests, `tests/visual`, `tests/perf`, other scripts) gets a green `e2e` within seconds that says the suite was not run.
+- Pushes to `main`, the nightly run (06:00 UTC) and manual runs always run the full e2e suite.
+- The suite runs on four shards; the `e2e` check merges their reports, and uploads the HTML report as `e2e-results` when a test fails.
+
+`perf` is not in CI, because the runner has no GPU.
 
 Playwright browsers:
 
@@ -66,7 +73,7 @@ Playwright's Chromium on Linux (the CI runner) cannot encode H.264, so MP4 expor
 
 ## Definition of done (every task)
 
-- `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass, and the PR's three CI jobs (`unit`, `e2e`, `visual`) are green.
+- `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass, and the PR's three CI checks (`unit`, `e2e`, `visual`) are green. If the PR touches an e2e trigger path (see Commands), `e2e` must have run the full suite; otherwise it passes without running it.
 - The acceptance criteria of your task are met, and the PR shows how each one was verified.
 - Visual work: attach before/after frames or a contact sheet to the PR. Check `quality-bar.md` and say which rules you checked.
 - Update the status: the WP table in `docs/plan/README.md` for a work package, or remove the item from `docs/plan/follow-ups.md` for a follow-up. Link the evidence.
