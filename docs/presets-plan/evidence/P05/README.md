@@ -55,13 +55,13 @@ The owner decides these; P05 doesn't fix them.
 2. **Slider shots still show the Camera section.** A camera move breaks the native loop. Recommendation: hide the Camera section for slider shots (quality bar §4 already says still camera), as Frames hides its speed slider.
 3. **Frames past 10 screenshots at 4:5 (8 at 16:9) needs more than 30 s.** Recommendation: the slider rule's counterpart, show at most the screenshots that fit 30 s at 0.20 frame heights per second, with a short inspector note.
 
-## Visual baselines (waiting for the owner's approval)
+## Visual baselines (approved)
 
-The [Visual baselines run 37834212234](https://github.com/jesseleechan/mockup-motion/actions/runs/37834212234) on this branch wrote 91 Linux stills: the 79 committed ones unchanged byte for byte, plus 12 new ones. They are not committed yet.
+The [Visual baselines run 37834212234](https://github.com/jesseleechan/mockup-motion/actions/runs/37834212234) on this branch wrote 91 Linux stills: the 79 committed ones unchanged byte for byte, plus 12 new ones. The owner approved them on 8 October 2026 ("Baselines approved, accept the Frames row crossing with a §4 exception"), and they are committed exactly as the runner wrote them.
 
 - `baselines-review/new-baselines_16x9_rows-desktop-mobile-frames.webp` (lossless): rows Desktop Slider, Mobile Slider, Frames; left the rest pose (1.9 s; Frames 0.8 s), right mid-step (2.5 s; Frames 2.4 s).
 - `baselines-review/new-baselines_9x16_desktop-mobile-frames.webp` (lossless): the same six at 9:16, left to right.
 
 All 12 show real screenshots, the right way up, at the expected poses: the sliders settled at 1.9 s (Aurelia active for Desktop Slider, Northwind for Mobile Slider) and moving at 2.5 s; Frames with 2 rows at 16:9 and 3 at 9:16.
 
-**Found while checking them:** in `frames-9x16-t2-4`, the top and middle rows show the same two screenshots in the same columns (Field Notes over Field Notes, Studio Kova over Studio Kova). Adjacent rows move in opposite directions over the same screenshots, so they pass each other and, for a moment, line up the same screenshot. With every row sharing one set of screenshots this happens for any order of the rows, so it can't be fixed by reordering. Quality bar §4 says no asset appears twice in a column window. P04 fixed the outer rows, which move together; this is the adjacent pair. The owner decides: an exception in §4 for rows passing each other, or a design change (for example, rows offset so that crossings happen off-screen where possible).
+**Found while checking them:** in `frames-9x16-t2-4`, the top and middle rows show the same two screenshots in the same columns (Field Notes over Field Notes, Studio Kova over Studio Kova). Adjacent rows move in opposite directions over the same screenshots, so they pass each other and, for a moment, line up the same screenshot. With every row sharing one set of screenshots this happens for any order of the rows, so it can't be fixed by reordering. Quality bar §4 says no asset appears twice in a column window. P04 fixed the outer rows, which move together; this is the adjacent pair. The owner accepted it, and quality bar §4 now has an exception for Frames rows passing each other.
