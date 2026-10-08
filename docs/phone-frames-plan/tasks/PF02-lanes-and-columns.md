@@ -4,7 +4,7 @@
 
 ## Why
 
-Phone Frames is Desktop Frames turned 90°. Instead of copying the period loop into `columns.ts`, move it into one function that both layouts call (D5). This task changes no template and no pixel of Desktop Frames.
+Mobile Frames is Desktop Frames turned 90°. Instead of copying the period loop into `columns.ts`, move it into one function that both layouts call (D5). This task changes no template and no pixel of Desktop Frames.
 
 ## Context
 
@@ -25,7 +25,7 @@ Phone Frames is Desktop Frames turned 90°. Instead of copying the period loop i
    - keep `travel` only if it is `"steps"` or `"period"`;
    - otherwise leave the field unset.
 5. **Duration hook.** `minShotDuration` (`src/motion/layouts/duration.ts:70–73`) returns `framesDuration` for a columns layout with `travel: "period"`, as it does for rows. The store already clamps through it (`src/state/store.ts` at `assignAssetToSlot`, `addAssetToShot` and `setShotDuration`).
-6. **Columns period mode.** With `travel: "period"`, `resolveColumnsLayout` calls the lane function with `axis: "y"`. Node ids and sizes must not depend on time: the device pool builds devices from the layout at t = 0 (`src/engine/devices/DevicePool.ts:52–73`, checked by `tests/doc-assets.test.ts:193`). Column c sits at x = (c − (columns − 1) / 2) × (cardWidth + gap), starts c / columns of a period along, and moves up when c is even and down when c is odd. With `device: "card"` every node has `device: "card"`, `screenAspect: 0.4615` and height `cardWidth / 0.4615`, whatever the image's own aspect. `screenAspectFor("card", tallImage)` would return 1.6 and crop the screenshot to a strip. Tilt is honoured as for rows, but Phone Frames passes 0.
+6. **Columns period mode.** With `travel: "period"`, `resolveColumnsLayout` calls the lane function with `axis: "y"`. Node ids and sizes must not depend on time: the device pool builds devices from the layout at t = 0 (`src/engine/devices/DevicePool.ts:52–73`, checked by `tests/doc-assets.test.ts:193`). Column c sits at x = (c − (columns − 1) / 2) × (cardWidth + gap), starts c / columns of a period along, and moves up when c is even and down when c is odd. With `device: "card"` every node has `device: "card"`, `screenAspect: 0.4615` and height `cardWidth / 0.4615`, whatever the image's own aspect. `screenAspectFor("card", tallImage)` would return 1.6 and crop the screenshot to a strip. Tilt is honoured as for rows, but Mobile Frames passes 0.
 7. **Speed.** Columns use the same 0.20 stage units per second as rows (D6). Do not add a second constant.
 
 ## Tests
