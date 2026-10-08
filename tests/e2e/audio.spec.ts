@@ -77,6 +77,9 @@ async function useShortDoc(page: Page, seconds: number, loop: boolean) {
       if (!store) throw new Error("__editorStore is unavailable");
       store.getState().apply((draft) => {
         draft.shots = draft.shots.slice(0, 1);
+        // The first-run demo is Desktop Slider (presets D1), whose length follows its screenshots
+        // (contracts.md §5), so the shot shows the first screenshot in one browser instead.
+        draft.shots[0].layout = { kind: "single", device: "browser", assetId: draft.assets[0].id };
         draft.shots[0].duration = seconds;
         draft.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "linear" };
         draft.loop = loop;
