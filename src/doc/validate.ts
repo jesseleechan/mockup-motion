@@ -477,8 +477,8 @@ function sanitizeLayout(
       }
       return res;
     }
-    case "rows":
-      return {
+    case "rows": {
+      const res: Layout = {
         kind: "rows",
         assetIds: Array.isArray(l.assetIds)
           ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
@@ -488,6 +488,16 @@ function sanitizeLayout(
         tilt: typeof l.tilt === "number" ? l.tilt : 12,
         speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
       };
+      // Optional Frames fields stay unset when absent, so older rows render as before.
+      if (typeof l.cardHeight === "number" && Number.isFinite(l.cardHeight)) {
+        res.cardHeight = clamp(l.cardHeight, 0.1, 0.8);
+      }
+      if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
+        res.gap = clamp(l.gap, 0, 0.5);
+      }
+      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
+      return res;
+    }
     case "columns": {
       const cols = Number(l.columns);
       const columns = cols === 2 || cols === 3 || cols === 4 || cols === 5 ? cols : 3;

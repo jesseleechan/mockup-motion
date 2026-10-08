@@ -1,24 +1,20 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
-import { marqueeVelocity } from "./marquee";
+import { FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND, marqueeVelocity } from "./marquee";
 import { type LayoutNode, screenAspectFor } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
 
-export function resolveRowsLayout(
-  layout: Extract<Layout, { kind: "rows" }>,
-  aspect: Aspect,
-  assets: AssetRef[],
-  shotT: number,
-  shotDuration: number,
-  entrance: Shot["entrance"] = "none",
-): LayoutNode[] {
-  const { assetIds, rows = 2, device = "browser", tilt = 12, speed = 0.25 } = layout;
+type RowsLayout = Extract<Layout, { kind: "rows" }>;
+
+/** Card size and pitch of a rows layout at an aspect, shared by the layout and `framesDuration`. */
+export function rowsGeometry(layout: RowsLayout, aspect: Aspect) {
+  const { rows = 2, device = "browser", cardHeight, gap } = layout;
   const W = aspectRatioValue(aspect);
 
   const numRows = Math.max(1, Math.min(3, rows)) as 1 | 2 | 3;
-  let itemH = numRows === 1 ? 0.56 : numRows === 2 ? 0.42 : 0.32;
+  let itemH = cardHeight ?? (numRows === 1 ? 0.56 : numRows === 2 ? 0.42 : 0.32);
   const baseAspect = 1.6;
   const itemW = itemH * baseAspect;
   if (device === "browser") {
@@ -26,10 +22,41 @@ export function resolveRowsLayout(
   }
 
   // Spacing so 3 assets easily span beyond the visible window (no repeats)
-  const gapX = 0.14 * W;
+  const gapX = gap ?? 0.14 * W;
   const stepX = itemW + gapX;
-  const gapY = 0.06;
+  const gapY = gap ?? 0.06;
   const stepY = itemH + gapY;
+  return { numRows, itemW, itemH, stepX, stepY };
+}
+
+/**
+ * The shortest shot, rounded up to 0.5 s, in which a Frames layout (rows with travel
+ * "period") moves one asset period at no more than 0.20 frame heights per second
+ * (quality-bar §2.5). Templates and the editor use it as the minimum shot duration.
+ */
+export function framesDuration(layout: RowsLayout, aspect: Aspect): number {
+  const { stepX } = rowsGeometry(layout, aspect);
+  const period = Math.max(1, layout.assetIds.length) * stepX;
+  // The epsilon keeps an exact half second from rounding up a step.
+  return Math.ceil((period / FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND) * 2 - 1e-9) / 2;
+}
+
+/** The shortest shot a layout allows. Only Frames has one: its speed limit (quality-bar §2.5). */
+export function minShotDuration(layout: Layout, aspect: Aspect): number {
+  return layout.kind === "rows" && layout.travel === "period" ? framesDuration(layout, aspect) : 1;
+}
+
+export function resolveRowsLayout(
+  layout: RowsLayout,
+  aspect: Aspect,
+  assets: AssetRef[],
+  shotT: number,
+  shotDuration: number,
+  entrance: Shot["entrance"] = "none",
+): LayoutNode[] {
+  const { assetIds, device = "browser", tilt = 12, speed = 0.25, travel = "steps" } = layout;
+  const W = aspectRatioValue(aspect);
+  const { numRows, itemW, itemH, stepX, stepY } = rowsGeometry(layout, aspect);
 
   // Angles in radians
   const rx = (tilt * 0.6 * Math.PI) / 180;
@@ -39,8 +66,13 @@ export function resolveRowsLayout(
   const N = distinctAssets.length;
   const period = N * stepX;
 
-  // Quality-bar §2.5: at most 0.12 frame widths per second, whatever N is.
-  const velocity = marqueeVelocity(speed, W, stepX, shotDuration);
+  // Quality-bar §2.5: at most 0.12 frame widths per second, whatever N is. Frames ("period")
+  // instead moves one whole period per loop, so frame(total) equals frame(0) with a cut wrap;
+  // framesDuration keeps that under its own limit.
+  const velocity =
+    travel === "period"
+      ? period / Math.max(0.1, shotDuration)
+      : marqueeVelocity(speed, W, stepX, shotDuration);
 
   // Diagonal span with margin to guarantee full bleed coverage under tilt
   const diag = Math.sqrt(W * W + 1.0);
@@ -55,8 +87,11 @@ export function resolveRowsLayout(
 
   for (let r = 0; r < numRows; r++) {
     const dir = r % 2 === 0 ? -1 : 1;
-    // Offset by half a period for adjacent rows
-    const rowOffset = (r % 2) * (period / 2);
+    // Offset by half a period for adjacent rows. Frames ("period") spreads its rows over the
+    // period instead (0, 1/3, 2/3 for three rows): its outer rows move together, so half a
+    // period each would line up the same screenshot in the top and bottom rows for the whole
+    // loop (quality-bar §4).
+    const rowOffset = travel === "period" ? (r * period) / numRows : (r % 2) * (period / 2);
     const baseY = (r - (numRows - 1) / 2) * stepY;
     const shift = dir * velocity * shotT + rowOffset;
 

@@ -142,20 +142,26 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 }
               />
             </Field>
-            <Field label="Speed" value={percent(layout.speed)}>
-              <Slider
-                aria-label="Speed"
-                min={0.05}
-                max={1.0}
-                step={0.05}
-                value={layout.speed}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "rows") target.layout.speed = val;
-                  })
-                }
-              />
-            </Field>
+            {layout.travel === "period" ? (
+              <Field label="Speed">
+                <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
+              </Field>
+            ) : (
+              <Field label="Speed" value={percent(layout.speed)}>
+                <Slider
+                  aria-label="Speed"
+                  min={0.05}
+                  max={1.0}
+                  step={0.05}
+                  value={layout.speed}
+                  onChange={(val) =>
+                    update((target) => {
+                      if (target.layout.kind === "rows") target.layout.speed = val;
+                    })
+                  }
+                />
+              </Field>
+            )}
           </>
         )}
 

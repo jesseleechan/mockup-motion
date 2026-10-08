@@ -50,7 +50,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 8 Built-in curated palettes from quality-bar §6.
+ * 9 Built-in curated palettes from quality-bar §6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [
@@ -165,5 +165,14 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     frameAppearance: "light",
     textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D7E0EE" }),
+  },
+  // 9. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
+  {
+    id: "ash",
+    name: "Ash",
+    background: { kind: "solid", color: "#DFE1E3" },
+    frameAppearance: "light",
+    textColor: "#18181B",
+    shadowTint: shadowTintFor({ kind: "solid", color: "#DFE1E3" }),
   },
 ];

@@ -14,7 +14,7 @@ export * from "./types";
 export { resolveSingleLayout } from "./single";
 export { resolvePairLayout } from "./pair";
 export { resolveTrioLayout } from "./trio";
-export { resolveRowsLayout } from "./rows";
+export { framesDuration, minShotDuration, resolveRowsLayout, rowsGeometry } from "./rows";
 export { resolveColumnsLayout } from "./columns";
 export { resolveWallLayout } from "./wall";
 export { resolveStackLayout } from "./stack";

@@ -13,6 +13,7 @@ import type {
   Transition,
 } from "../doc/types";
 import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
+import { minShotDuration } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 import type { BrandKit } from "../storage/brand-kits";
 
@@ -444,6 +445,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               layout.assetIds.push(assetId);
             }
           }
+          // Another screenshot lengthens a Frames period; keep it under its speed limit.
+          shot.duration = Math.min(
+            30,
+            Math.max(shot.duration, minShotDuration(layout, draft.aspect)),
+          );
         },
         { label: "Assign media to slot" },
       );
@@ -559,7 +565,8 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         (draft) => {
           const shot = draft.shots[index];
           if (shot) {
-            shot.duration = Math.max(1, Math.min(30, duration));
+            const shortest = minShotDuration(shot.layout, draft.aspect);
+            shot.duration = Math.min(30, Math.max(shortest, duration));
           }
         },
         { label: "Change shot duration" },

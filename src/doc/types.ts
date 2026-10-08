@@ -57,7 +57,8 @@ export type Layout =
   | { kind: "single"; device: DeviceKind; assetId: string }
   | { kind: "pair"; desktopId: string; mobileId: string; arrangement: "overlap" | "side" }
   | { kind: "trio"; desktopId: string; tabletId?: string; mobileId: string }
-  | { kind: "rows"; assetIds: string[]; rows: 1 | 2 | 3; device: "browser" | "card"; tilt: number; speed: number }
+  | { kind: "rows"; assetIds: string[]; rows: 1 | 2 | 3; device: "browser" | "card"; tilt: number; speed: number;
+      cardHeight?: number; gap?: number; travel?: "steps" | "period" }
   | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number }
   | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
   | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
@@ -67,6 +68,10 @@ export type Layout =
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
+// rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
+// cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
+// today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
+// shot duration and `speed` is ignored.
 
 export type CameraPresetId =
   | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
