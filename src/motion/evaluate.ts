@@ -59,6 +59,16 @@ function isMarquee(shot: Shot): boolean {
   );
 }
 
+/**
+ * The entrance shot `index` plays. A loop has no first frame: frame(0) is also the frame the
+ * loop wraps into, and the wrap holds shot 0 at local t = 0. Playing shot 0's entrance there
+ * would dissolve the last shot into an empty canvas on every loop, so looping docs skip it.
+ */
+export function shotEntrance(doc: ProjectDoc, index: number): Shot["entrance"] {
+  if (doc.loop && index === 0) return "none";
+  return doc.shots[index]?.entrance ?? "none";
+}
+
 function evaluateNodes(
   shot: Shot,
   aspect: Aspect,
@@ -66,15 +76,9 @@ function evaluateNodes(
   localT: number,
   layoutT: number,
   layoutDuration: number,
+  entrance: Shot["entrance"],
 ): LayoutNode[] {
-  const nodes = resolveLayout(
-    shot.layout,
-    aspect,
-    assets,
-    layoutT,
-    layoutDuration,
-    shot.entrance ?? "none",
-  );
+  const nodes = resolveLayout(shot.layout, aspect, assets, layoutT, layoutDuration, entrance);
 
   // Scroll calculation (honoured for single-device layouts)
   if (shot.scroll?.enabled && shot.layout.kind === "single" && nodes.length > 0) {
@@ -160,8 +164,18 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     const layoutT = marquee ? (activeShot.wrapT ?? localT) : localT;
     const layoutDuration = marquee && doc.loop && doc.shots.length === 1 ? total : shot.duration;
 
+    const entrance = shotEntrance(doc, activeShot.index);
+
     // Nodes evaluation with entrance and scroll
-    const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT, layoutT, layoutDuration);
+    const nodes = evaluateNodes(
+      shot,
+      doc.aspect,
+      doc.assets,
+      localT,
+      layoutT,
+      layoutDuration,
+      entrance,
+    );
 
     // Auto-framing: keep safe margins under camera moves for bounded layouts
     let camera = baseCamera;

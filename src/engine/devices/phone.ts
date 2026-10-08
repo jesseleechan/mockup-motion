@@ -121,7 +121,6 @@ export function buildPhoneDevice(
     group.scale.set(tf.scale, tf.scale, 1.0);
 
     shadowGroup.update(updatedStyle);
-    compositor.material.opacity = updatedNode.opacity;
 
     // Border color
     const dark = updatedStyle.frameAppearance === "dark";

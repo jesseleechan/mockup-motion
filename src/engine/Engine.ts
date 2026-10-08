@@ -1,8 +1,15 @@
 import * as THREE from "three";
 import { collectAssetIds, resolveShotStyle } from "../doc/assets";
 import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
-import { evaluate, type FrameState, type LayoutNode, type ShotFrame } from "../motion";
+import {
+  evaluate,
+  shotEntrance,
+  type FrameState,
+  type LayoutNode,
+  type ShotFrame,
+} from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
+import { DeviceFadePass, type DeviceDraw } from "./devices/DeviceFade";
 import { DevicePool } from "./devices/DevicePool";
 import { applyCameraPose } from "./stage";
 import { textureWidths } from "./textures/sizing";
@@ -77,6 +84,7 @@ export class Engine {
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
   private devices: DevicePool;
+  private deviceFade = new DeviceFadePass();
 
   private generation = 0;
   private setDocumentCalls = 0;
@@ -230,6 +238,7 @@ export class Engine {
     this.targetB.setSize(renderW, renderH);
     this.compositeTarget.setSize(renderW, renderH);
     this.accumulation?.setSize(renderW, renderH);
+    this.deviceFade.setSize(renderW, renderH);
   }
 
   private rescaleScreens(): void {
@@ -297,6 +306,11 @@ export class Engine {
     this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
+    this.deviceFade.prepare(
+      this.renderer,
+      this.targetA,
+      doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
+    );
 
     // Warm-up compilation
     this.renderAt(0);
@@ -332,11 +346,12 @@ export class Engine {
 
     // 3. Update / compose devices (only this frame's devices are visible)
     this.devices.hideAll();
+    const draws: DeviceDraw[] = [];
 
     for (const node of frame.nodes) {
       const dev = this.devices.acquire(node, frame.style);
-      dev.object3d.visible = true;
       dev.object3d.userData.nodeId = node.id;
+      draws.push({ object3d: dev.object3d, opacity: node.opacity, depthOrder: node.depthOrder });
 
       let managed = null;
       if (node.assetId) {
@@ -361,12 +376,8 @@ export class Engine {
       dev.update(node, frame.style, frame.localT);
     }
 
-    // 4. Render 3D scene into MSAA target
-    const prevTarget = this.renderer.getRenderTarget();
-    this.renderer.setRenderTarget(target);
-    this.renderer.clearDepth();
-    this.renderer.render(this.scene, this.camera);
-    this.renderer.setRenderTarget(prevTarget);
+    // 4. Render the devices into the MSAA target with their entrance opacity
+    this.deviceFade.render(this.renderer, this.scene, this.camera, target, draws);
 
     // 5. Render screen-space text overlay into MSAA target
     const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
@@ -576,6 +587,7 @@ export class Engine {
 
     this.compositePass.dispose();
     this.finalPass.dispose();
+    this.deviceFade.dispose();
 
     this.renderer.dispose();
   }

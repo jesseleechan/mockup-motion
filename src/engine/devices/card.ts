@@ -60,7 +60,6 @@ export function buildCardDevice(
     group.scale.set(tf.scale, tf.scale, 1.0);
 
     shadowGroup.update(updatedStyle);
-    compositor.material.opacity = updatedNode.opacity;
 
     const dark = updatedStyle.frameAppearance === "dark";
     const borderRgba = dark ? [1, 1, 1, 0.08] : [0, 0, 0, 0.08];
