@@ -5,7 +5,12 @@ import { sanitizeDoc } from "../src/doc/validate";
 import { aspectRatioValue } from "../src/motion/camera";
 import { evaluate } from "../src/motion/evaluate";
 import { MARQUEE_MAX_FRAME_WIDTHS_PER_SECOND } from "../src/motion/layouts/marquee";
-import { framesDuration, type LayoutNode, resolveLayout } from "../src/motion/layouts";
+import {
+  framesAssetIds,
+  framesDuration,
+  type LayoutNode,
+  resolveLayout,
+} from "../src/motion/layouts";
 import { schedule } from "../src/motion/timeline";
 import { createEditorStore } from "../src/state/store";
 import {
@@ -368,5 +373,74 @@ describe("Frames in the editor store (presets P04)", () => {
     expect(layout.assetIds).toHaveLength(6);
     expect(after.duration).toBe(framesDuration(layout, "4:5"));
     expect(after.duration).toBeGreaterThan(before);
+  });
+});
+
+describe("Frames fits a 30 s shot (presets P05 follow-up)", () => {
+  // Quality bar §2.2: 10 screenshots with the 3-row cards, 8 with the 2-row cards.
+  const FIT: Record<Aspect, number> = { "16:9": 8, "4:3": 8, "9:16": 10, "1:1": 10, "4:5": 10 };
+  const ids = (count: number) => desktops(count).map((a) => a.id);
+  const pitch = (aspect: Aspect) => {
+    const layout = framesLayout(aspect, ids(2));
+    const nodes = resolveLayout(layout, aspect, [], 0, 1);
+    return nodes[1].transform.x - nodes[0].transform.x;
+  };
+
+  it("shows the first screenshots whose loop fits 30 s at 0.20 frame heights per second", () => {
+    for (const aspect of ASPECTS) {
+      const layout = framesLayout(aspect, ids(20));
+      expect(framesAssetIds(layout, aspect), aspect).toEqual(ids(FIT[aspect]));
+      expect(framesDuration(layout, aspect), aspect).toBeLessThanOrEqual(30);
+      // One more screenshot would need more than 30 s under the limit.
+      expect(((FIT[aspect] + 1) * pitch(aspect)) / FRAMES_LIMIT, aspect).toBeGreaterThan(30);
+      // Up to the fit, every screenshot shows.
+      const fitting = framesLayout(aspect, ids(FIT[aspect]));
+      expect(framesAssetIds(fitting, aspect), aspect).toEqual(ids(FIT[aspect]));
+    }
+  });
+
+  it("draws only the shown screenshots and still loops natively under the limit", () => {
+    for (const aspect of ASPECTS) {
+      const layout = framesLayout(aspect, ids(14));
+      const duration = framesDuration(layout, aspect);
+      const shown = new Set(ids(FIT[aspect]));
+      const at = (t: number) => resolveLayout(layout, aspect, desktops(14), t, duration);
+      expect(
+        at(0).filter((node) => !shown.has(node.assetId ?? "")),
+        aspect,
+      ).toEqual([]);
+      const key = (n: LayoutNode) =>
+        `${n.assetId}|${round4(n.transform.x)}|${round4(n.transform.y)}`;
+      expect(at(duration).map(key).sort(), aspect).toEqual(at(0).map(key).sort());
+      const speed = Math.max(
+        ...at(1)
+          .map((node, i) => Math.abs(at(2)[i].transform.x - node.transform.x))
+          .filter((v) => v < 0.5),
+      );
+      expect(speed, aspect).toBeLessThanOrEqual(FRAMES_LIMIT + 1e-9);
+    }
+  });
+
+  it("keeps a Frames shot at 30 s or less in the store when an 11th screenshot is added", () => {
+    const store = createEditorStore();
+    const doc = framesDoc("4:5", 6);
+    store
+      .getState()
+      .applyTemplateResult(
+        { style: doc.style, shots: doc.shots, loop: doc.loop },
+        framesTemplate.id,
+      );
+    store.getState().apply((draft) => {
+      draft.aspect = "4:5";
+      draft.assets = desktops(11);
+    });
+    for (const id of ["d7", "d8", "d9", "d10", "d11"]) {
+      store.getState().assignAssetToSlot(0, "add", id);
+    }
+    const shot = store.getState().doc.shots[0];
+    const layout = shot.layout as Parameters<typeof framesDuration>[0];
+    expect(layout.assetIds).toHaveLength(11);
+    expect(shot.duration).toBe(framesDuration(layout, "4:5"));
+    expect(shot.duration).toBeLessThanOrEqual(30);
   });
 });

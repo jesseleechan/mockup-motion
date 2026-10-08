@@ -63,7 +63,10 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
     <div className="space-y-4">
       <LayoutSection shot={shot} assets={doc.assets} />
       <AssetsSection shot={shot} assets={doc.assets} />
-      {shot.layout.kind !== "title" && <CameraSection shot={shot} />}
+      {/* A slider's camera is still (quality bar §4), so it has no camera controls. */}
+      {shot.layout.kind !== "title" && shot.layout.kind !== "slider" && (
+        <CameraSection shot={shot} />
+      )}
       <EntranceSection shot={shot} aspect={doc.aspect} />
       <TransitionSection shot={shot} />
       <ScrollSection shot={shot} assets={doc.assets} />

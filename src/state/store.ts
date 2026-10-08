@@ -15,6 +15,7 @@ import type {
 import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
 import {
   clampSliderStep,
+  fixedShotCamera,
   fixedShotDuration,
   minShotDuration,
   SLIDER_MAX_SCREENSHOTS,
@@ -99,14 +100,17 @@ const COALESCE_WINDOW_MS = 800;
 
 /**
  * Keeps every slider shot loop-safe after any edit: the step fits the screenshot count in a
- * 30 s shot, and the shot lasts one step per shown screenshot (contracts.md §5). Edits that
- * set a slider's duration directly (the timeline handle, the duration control) are undone here.
+ * 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
+ * (contracts.md §5). Edits that set a slider's duration or camera directly are undone here.
  */
 function fitSliderShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
     if (shot.layout.kind !== "slider") continue;
     shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
     shot.duration = sliderDuration(shot.layout);
+    // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
+    const camera = fixedShotCamera(shot.layout, shot.camera);
+    if (camera !== shot.camera) shot.camera = camera;
   }
 }
 

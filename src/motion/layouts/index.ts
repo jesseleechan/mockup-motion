@@ -14,9 +14,10 @@ export * from "./types";
 export { resolveSingleLayout } from "./single";
 export { resolvePairLayout } from "./pair";
 export { resolveTrioLayout } from "./trio";
-export { framesDuration, resolveRowsLayout, rowsGeometry } from "./rows";
+export { framesAssetIds, framesDuration, resolveRowsLayout, rowsGeometry } from "./rows";
 export {
   clampSliderStep,
+  fixedShotCamera,
   fixedShotDuration,
   MAX_SHOT_DURATION,
   minShotDuration,

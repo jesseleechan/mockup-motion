@@ -196,6 +196,48 @@ describe("Editing a slider keeps its loop seamless", () => {
     expect(shot().duration).toBe(8);
   });
 
+  it("keeps the camera still: a camera move is undone", () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const still = shot().camera;
+    expect(still).toEqual({ preset: "static", intensity: 0, easing: "smooth", float: 0 });
+    store.getState().apply((draft) => {
+      draft.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 };
+    });
+    expect(shot().camera).toEqual(still);
+  });
+
+  it("an edit that changes nothing stays a no-op on a still slider", () => {
+    const { store } = storeWith(sliderDoc(4));
+    const before = store.getState().doc;
+    store.getState().apply((draft) => {
+      draft.shots[0].transitionIn.kind = before.shots[0].transitionIn.kind;
+    });
+    expect(store.getState().doc).toBe(before);
+    expect(store.getState().past).toHaveLength(0);
+  });
+
+  it("a loaded slider with a camera move gets a still camera", () => {
+    const doc = sliderDoc(4);
+    doc.shots[0].camera = {
+      preset: "orbitLeft",
+      intensity: 0.8,
+      easing: "gentle",
+      float: 0.3,
+      progressRange: [0.2, 0.8],
+    };
+    const { doc: repaired } = sanitizeDoc(doc);
+    expect(repaired.shots[0].camera).toEqual({
+      preset: "static",
+      intensity: 0,
+      easing: "gentle",
+      float: 0,
+    });
+    // Other layouts keep their camera.
+    const single = createDoc();
+    single.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.2 };
+    expect(sanitizeDoc(single).doc.shots[0].camera).toEqual(single.shots[0].camera);
+  });
+
   it("the duration can't be set by hand", () => {
     const { store, shot } = storeWith(sliderDoc(4));
     store.getState().setShotDuration(0, 5);
