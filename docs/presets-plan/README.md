@@ -1,6 +1,6 @@
 # Presets plan: Mobile Slider, Desktop Slider, Frames
 
-**Status: in progress.** P00 and P01 are merged ([#22](https://github.com/jesseleechan/mockup-motion/pull/22), [#23](https://github.com/jesseleechan/mockup-motion/pull/23)) and P02 is done, in review ([#27](https://github.com/jesseleechan/mockup-motion/pull/27)); see "When to start" for which tasks can run now. Written 7 October 2026.
+**Status: in progress.** P00, P01, P02 and P04 are merged ([#22](https://github.com/jesseleechan/mockup-motion/pull/22), [#23](https://github.com/jesseleechan/mockup-motion/pull/23), [#27](https://github.com/jesseleechan/mockup-motion/pull/27), [#24](https://github.com/jesseleechan/mockup-motion/pull/24)) and P03 is done, in review ([#29](https://github.com/jesseleechan/mockup-motion/pull/29)); P05 is next. See "When to start" for which tasks can run now. Written 7 October 2026.
 
 The owner wants three new presets that will be used far more than the current twelve. Each one copies the motion of a Rico Supply Jitter template. [`reference.md`](reference.md) has the measurements; read it before any task.
 
@@ -45,7 +45,7 @@ The owner decided all eight on 8 October 2026: "D1. yes make them first", "D2. y
 | [P00](tasks/P00-decisions-and-rules.md)  | Record the decisions in the quality bar and contracts                                   | S    | —               | Done: [#22](https://github.com/jesseleechan/mockup-motion/pull/22) |
 | [P01](tasks/P01-slider-motion.md)        | `slide` easing and the `slider` layout (motion only)                                    | M    | P00             | Done: [#23](https://github.com/jesseleechan/mockup-motion/pull/23) |
 | [P02](tasks/P02-slider-rendering.md)     | Portrait cards, faded neighbours, slider lab fixtures                                   | M    | P01, #20 merged | Done: [#27](https://github.com/jesseleechan/mockup-motion/pull/27) |
-| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02             | Not started                                                        |
+| [P03](tasks/P03-slider-templates.md)     | Mobile Slider and Desktop Slider templates, document and editor support                 | M    | P02             | Done: [#29](https://github.com/jesseleechan/mockup-motion/pull/29) |
 | [P04](tasks/P04-frames.md)               | Frames: rows options, native loop, template                                             | M    | P00             | Done: [#24](https://github.com/jesseleechan/mockup-motion/pull/24) |
 | [P05](tasks/P05-review-and-baselines.md) | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | P03, P04        | Not started                                                        |
 
