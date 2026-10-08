@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { CURATED_FONT_PAIRS } from "../../src/assets/fonts";
+import { keepResourceTimings } from "../helpers/resource-timing";
+
+// The specs below find the app's Mediabunny module in the resource-timing entries.
+test.beforeEach(async ({ page }) => {
+  await keepResourceTimings(page);
+});
 
 test.describe("WP-10 Text & Typography E2E & Visual Verification", () => {
   test("renders text-title fixture in /lab and verifies text is visible on canvas", async ({
