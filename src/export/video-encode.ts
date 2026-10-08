@@ -11,12 +11,7 @@ import { type AssetProvider, Engine } from "../engine/Engine";
 import { schedule } from "../motion";
 import type { ExportProgress } from "./engine-export";
 import type { FromWorker, ToWorker } from "./engine-worker";
-import {
-  calculateBitrate,
-  keyframeIntervalFor,
-  MOTION_BLUR_SAMPLES,
-  motionBlurShutter,
-} from "./destinations";
+import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
 import { addAudioTrackToOutput, writeAudio } from "./audio-mux";
 
 // Video encoding for MP4/WebM exports: in a module worker where OffscreenCanvas exists,
@@ -131,7 +126,7 @@ async function encodeFrames(
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
 ): Promise<{ blob: Blob; mime: string }> {
-  const { settings, codec, container, width, height, audio } = start;
+  const { settings, codec, container, bitrate, audio } = start;
   await engine.setDocument(doc, provider);
 
   const { total: duration } = schedule(doc);
@@ -146,9 +141,7 @@ async function encodeFrames(
   const output = new Output({ format, target });
   const source = new CanvasSource(canvas, {
     codec,
-    quality: new Quality({
-      bitrate: calculateBitrate(settings.quality, codec, width, height, fps),
-    }),
+    quality: new Quality({ bitrate }),
     keyFrameInterval: keyframeIntervalFor(settings.quality),
   });
 

@@ -10,12 +10,7 @@ import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
 import { addAudioTrackToOutput, writeAudio, type ExportAudio } from "./audio-mux";
-import {
-  calculateBitrate,
-  keyframeIntervalFor,
-  MOTION_BLUR_SAMPLES,
-  motionBlurShutter,
-} from "./destinations";
+import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
 
 export type ToWorker =
   | {
@@ -28,6 +23,8 @@ export type ToWorker =
       container: "mp4" | "webm";
       width: number;
       height: number;
+      /** Video bitrate in bits per second. */
+      bitrate: number;
       audio?: ExportAudio;
     }
   | { type: "cancel" };
@@ -54,7 +51,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
 
     if (msg.type === "start") {
       isCancelled = false;
-      const { doc, images, settings, codec, container, width, height, audio } = msg;
+      const { doc, images, settings, codec, container, width, height, bitrate, audio } = msg;
 
       try {
         const post = (data: FromWorker) => self.postMessage(data);
@@ -99,9 +96,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         const output = new Output({ format, target });
         const source = new CanvasSource(canvas, {
           codec,
-          quality: new Quality({
-            bitrate: calculateBitrate(settings.quality, codec, width, height, fps),
-          }),
+          quality: new Quality({ bitrate }),
           keyFrameInterval: keyframeIntervalFor(settings.quality),
         });
 

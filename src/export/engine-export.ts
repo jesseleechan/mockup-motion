@@ -3,7 +3,7 @@ import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { chromeUrlRequests } from "../engine/text/chrome-url";
 import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
-import { gifOutput, outputDimensions } from "./destinations";
+import { calculateBitrate, gifOutput, outputDimensions } from "./destinations";
 import { createWebEmbedBundle } from "./bundle";
 import { encodeGif } from "./gif";
 import { probeVideoEncoders } from "./probe";
@@ -38,6 +38,15 @@ export interface ExportProgress {
 export interface ExportVerification {
   label: string;
   result: VerifyExportResult;
+}
+
+/** Options the editor never sets; scripts use them. */
+export interface ExportOptions {
+  /**
+   * MP4/WebM video bitrate in bits per second, in place of the quality's. The template previews
+   * use it to fit long loops into their byte budget (scripts/template-previews.ts).
+   */
+  videoBitrate?: number;
 }
 
 export interface ExportResult {
@@ -114,6 +123,7 @@ export async function exportWithEngine(
   settings: ExportSettings,
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
+  options: ExportOptions = {},
 ): Promise<ExportResult> {
   const { total } = schedule(doc);
 
@@ -198,6 +208,9 @@ export async function exportWithEngine(
     container,
     width,
     height,
+    bitrate:
+      options.videoBitrate ??
+      calculateBitrate(settings.quality, codec, width, height, settings.fps),
     audio,
   };
   const useWorker = typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined";

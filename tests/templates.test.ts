@@ -99,12 +99,16 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 14 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(14);
+  it("exports all 15 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(15);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(14);
+    expect(ids.size).toBe(15);
 
-    const expectedIds = [
+    // Gallery order: the presets lead (presets plan D1).
+    expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
+      "desktop-slider",
+      "mobile-slider",
+      "frames",
       "quiet-hero",
       "tilted-showcase",
       "responsive-pair",
@@ -117,13 +121,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "scroll-story",
       "launch-reel",
       "case-study-reel",
-      "mobile-slider",
-      "desktop-slider",
-    ];
-
-    for (const expectedId of expectedIds) {
-      expect(ids.has(expectedId)).toBe(true);
-    }
+    ]);
 
     for (const t of BUILTIN_TEMPLATES) {
       expect(t.name).toBeTruthy();
@@ -285,6 +283,8 @@ describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
   const MARQUEE_TEMPLATES = ["portfolio-rows", "phone-parade", "isometric-wall"];
   const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
+  // Frames loops natively with a cut: every row travels one whole asset period (contracts §5).
+  const NATIVE_MARQUEE_TEMPLATES = ["frames"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
@@ -300,6 +300,7 @@ describe("Template loop seam", () => {
         "phone-spotlight",
         "cascade-stack",
         ...MARQUEE_TEMPLATES,
+        ...NATIVE_MARQUEE_TEMPLATES,
         ...SLIDER_TEMPLATES,
       ].sort(),
     );
@@ -330,7 +331,7 @@ describe("Template loop seam", () => {
           );
         }
 
-        if (MARQUEE_TEMPLATES.includes(id)) {
+        if (MARQUEE_TEMPLATES.includes(id) || NATIVE_MARQUEE_TEMPLATES.includes(id)) {
           expectSameMarqueeCards(first.nodes, shown.frame.nodes, aspect, label);
         } else if (SLIDER_TEMPLATES.includes(id)) {
           expectSameSliderCards(first.nodes, shown.frame.nodes, label);

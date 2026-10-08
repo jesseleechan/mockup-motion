@@ -247,3 +247,83 @@ test("F06: first run → Responsive Pair → demo content fills it in one undo s
   await expect(page.getByText("Selected shot not found.")).toHaveCount(0);
   await expect(overlay).toBeVisible();
 });
+
+test("Presets D1: the gallery leads with the presets and starts on Desktop Slider", async ({
+  page,
+}) => {
+  await resetAndOpen(page);
+  await page.getByRole("button", { name: "Start with a template" }).click();
+  const gallery = page.getByRole("dialog");
+  await expect(gallery).toBeVisible();
+  const cards = gallery.locator('[data-testid="template-card"]');
+  await expect(cards).toHaveCount(15);
+  const order = await cards.evaluateAll((els) =>
+    els.map((el) => el.getAttribute("data-template-id")),
+  );
+  expect(order.slice(0, 3)).toEqual(["desktop-slider", "mobile-slider", "frames"]);
+
+  // Apply without picking a card: the initial selection is the first-run default.
+  await gallery.getByRole("button", { name: "Apply template" }).click();
+  await expect(gallery).toBeHidden();
+  const applied = await docState(page);
+  expect(applied.templateId).toBe("desktop-slider");
+  expect(applied.assetIds).toEqual([]);
+  expect(applied.layout?.kind).toBe("slider");
+  expect(applied.firstShotSelected).toBe(true);
+  await expect(page.getByTestId("fill-template-overlay")).toBeVisible();
+});
+
+test("Presets D1: first run → demo content builds Desktop Slider", async ({ page }) => {
+  test.setTimeout(90_000);
+  await resetAndOpen(page);
+  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
+  await page.getByRole("button", { name: "Try with demo content" }).click();
+  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeHidden();
+  await expect
+    .poll(async () => (await docState(page)).assetIds.length, { timeout: 20_000 })
+    .toBe(5);
+
+  const filled = await docState(page);
+  expect(filled.templateId).toBe("desktop-slider");
+  expect(filled.assetIds).toEqual([
+    "demo-northwind-desktop-hero",
+    "demo-aurelia-desktop-hero",
+    "demo-maison-oak-desktop-hero",
+    "demo-field-notes-desktop-hero",
+    "demo-studio-kova-desktop-hero",
+  ]);
+  if (filled.layout?.kind !== "slider") throw new Error("Expected a slider layout");
+  expect(filled.layout.axis).toBe("y");
+  expect(filled.layout.assetIds).toEqual(filled.assetIds);
+  await expect(page.getByTestId("fill-template-overlay")).toHaveCount(0);
+
+  // The active card shows a screenshot: at 3.9 s step 1 has settled on Maison Oak, whose hero
+  // (text, a photo) varies far more than the flat Ash background or an empty screen.
+  await waitForSettledDocument(page);
+  const centre = await page.evaluate(() => {
+    const engine = window.__editorEngine;
+    const canvas = document.querySelector<HTMLCanvasElement>("[data-testid='stage'] canvas");
+    if (!engine || !canvas) throw new Error(`Editor hooks: engine ${!!engine}, canvas ${!!canvas}`);
+    engine.renderAt(3.9);
+    const pixels = engine.readPixels();
+    const width = canvas.width;
+    const height = canvas.height;
+    const values: number[][] = [[], [], []];
+    for (let y = Math.round(height * 0.35); y < height * 0.65; y++) {
+      for (let x = Math.round(width * 0.3); x < width * 0.7; x++) {
+        const i = (y * width + x) * 4;
+        for (let c = 0; c < 3; c++) values[c].push(pixels[i + c]);
+      }
+    }
+    return values.map((channel) => {
+      const mean = channel.reduce((a, b) => a + b, 0) / channel.length;
+      const variance = channel.reduce((a, b) => a + (b - mean) ** 2, 0) / channel.length;
+      return { samples: channel.length, stdDev: Math.sqrt(variance) };
+    });
+  });
+  console.log(`D1 active card centre: ${JSON.stringify(centre)}`);
+  for (const channel of centre) {
+    expect(channel.samples).toBeGreaterThan(1000);
+    expect(channel.stdDev, "the active card shows screenshot content").toBeGreaterThan(20);
+  }
+});
