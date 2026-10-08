@@ -56,6 +56,7 @@ describe("e2e path filter", () => {
       "package-lock.json",
       ".github/workflows/ci.yml",
       "scripts/e2e-paths.ts",
+      "scripts/e2e-shards.ts",
     ];
     expect(e2eTriggers(changed)).toEqual(changed);
   });

@@ -34,9 +34,9 @@ npm run demo:capture       # recaptures the demo sites in demo-sites/ into publi
 CI (`.github/workflows/ci.yml`) has three required checks: `unit` (typecheck, lint, test, build), `e2e` and `visual`. All three must be green.
 
 - `unit` and `visual` run in full on every pull request.
-- `e2e` reports on every pull request, but runs Playwright only when the PR changes an e2e trigger path: `src/`, `public/`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/e2e/`, `tests/helpers/`, `playwright.config.ts`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml` or `scripts/e2e-paths.ts`. The list lives in `scripts/e2e-paths.ts`. A PR that touches none of them (docs, unit tests, `tests/visual`, `tests/perf`, other scripts) gets a green `e2e` within seconds that says the suite was not run.
+- `e2e` reports on every pull request, but runs Playwright only when the PR changes an e2e trigger path: `src/`, `public/`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/e2e/`, `tests/helpers/`, `playwright.config.ts`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/e2e-paths.ts` or `scripts/e2e-shards.ts`. The list lives in `scripts/e2e-paths.ts`. A PR that touches none of them (docs, unit tests, `tests/visual`, `tests/perf`, other scripts) gets a green `e2e` within seconds that says the suite was not run.
 - Pushes to `main`, the nightly run (06:00 UTC) and manual runs always run the full e2e suite.
-- The suite runs on four shards; the `e2e` check merges their reports, and uploads the HTML report as `e2e-results` when a test fails.
+- The suite runs on four shards, which are file groups in `scripts/e2e-shards.ts` balanced on measured durations. When you add a spec, add it to the group with the least time; a unit test fails until every spec is in exactly one group. The `e2e` check merges the shards' reports, and uploads the HTML report as `e2e-results` when a test fails.
 
 `perf` is not in CI, because the runner has no GPU.
 

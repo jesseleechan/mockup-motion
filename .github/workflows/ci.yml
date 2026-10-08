@@ -19,7 +19,8 @@ concurrency:
 # `unit` and `visual` run on every pull request. `e2e` always reports, but on a pull request it
 # runs Playwright only when the PR touches a path in `scripts/e2e-paths.ts` (src/, public/,
 # tests/e2e/, tests/helpers/, Vite, Playwright and npm config, this workflow). Pushes to main, the
-# nightly schedule and manual runs always run the full suite, split across four shards.
+# nightly schedule and manual runs always run the full suite, split across four shards (file
+# groups in `scripts/e2e-shards.ts`).
 # The `perf` project is not gated: it measures GPU throughput, which the runner's SwiftShader
 # cannot reach. Run `npm run test:perf` by hand on a machine with a real GPU.
 
@@ -129,9 +130,16 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      # The blob report is merged into one HTML report by the `e2e` job.
+      # Shards are file groups from scripts/e2e-shards.ts, balanced on measured durations;
+      # Playwright's --shard put every slow export spec on one shard. The blob report is merged
+      # into one HTML report by the `e2e` job.
       - name: End-to-end tests
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=list,blob
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
+        run: |
+          specs=$(node --experimental-strip-types --no-warnings scripts/e2e-shards.ts ${{ matrix.shard }})
+          echo "Shard ${{ matrix.shard }}: $specs"
+          npm run test:e2e -- --reporter=list,blob $specs
 
       - name: Upload blob report
         if: ${{ !cancelled() }}

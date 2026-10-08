@@ -32,6 +32,7 @@ export const E2E_TRIGGER_PATHS: readonly string[] = [
   "package-lock.json",
   ".github/workflows/ci.yml",
   "scripts/e2e-paths.ts",
+  "scripts/e2e-shards.ts",
 ];
 
 /** The changed paths that trigger e2e, in input order. */
