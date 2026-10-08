@@ -66,7 +66,13 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     // Click Shot 1 card in the timeline to select it
     await shot1Card.click();
 
-    // Verify inspector switched to shot inspector
+    // The demo is Desktop Slider (presets D1), whose camera is still: no Camera section. Switching
+    // the shot to a single device brings the camera controls back.
+    const layoutSelect = page.getByRole("combobox", { name: "Layout", exact: true });
+    await expect(layoutSelect).toBeVisible();
+    await expect(page.getByText("Camera", { exact: true })).toBeHidden();
+    await layoutSelect.click();
+    await page.getByRole("option", { name: "Single device" }).click();
     await expect(page.getByText("Camera", { exact: true })).toBeVisible();
     const heroTiltBtn = page.getByRole("button", { name: "Hero tilt" });
     await expect(heroTiltBtn).toBeVisible();
@@ -83,7 +89,6 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // 6. Test Contextual Inspector filtering
     // Switch to Title Card
-    const layoutSelect = page.getByRole("combobox", { name: "Layout", exact: true });
     await layoutSelect.click();
     await page.getByRole("option", { name: "Title card" }).click();
     // The device picker should NOT be visible for a title card

@@ -55,9 +55,11 @@ function cardSize(axis: SliderLayout["axis"], frameWidth: number, screenAspect: 
  * card is back where it started and the loop is native.
  *
  * When there are too few screenshots to fill every slot that can show during a step, only a
- * window of N consecutive slots is lit. Each step the window moves one slot: the card leaving
- * it fades out over the first half of the step and the card entering it (the same screenshot)
- * fades in over the second half, so a screenshot never appears twice in view.
+ * window of consecutive slots centred on the active card is lit: N slots, or N - 1 when N is
+ * even, so the frame is balanced (with 4 screenshots, one card each side rather than one and
+ * two). Each step the window moves one slot: the card leaving it fades out over the first half
+ * of the step and the card entering it (the same screenshot) fades in over the second half, so
+ * a screenshot never appears twice in view.
  */
 export function resolveSliderLayout(
   layout: SliderLayout,
@@ -130,7 +132,9 @@ export function resolveSliderLayout(
   // card only wraps from one end to the other while it is outside the frame.
   const ringCount = N * Math.ceil((2 * reach + 2) / N);
   const windowed = N <= 2 * reach + 1;
-  const left = Math.floor((N - 1) / 2); // lit slots left of the active one at rest
+  // An odd window is symmetric about the active card. Two screenshots keep both lit.
+  const lit = N % 2 === 0 && N > 2 ? N - 1 : N;
+  const left = Math.floor((lit - 1) / 2); // lit slots left of (or above) the active one at rest
 
   const { k, p } = sliderStep(shotT, step);
   const u = k + p;
@@ -142,8 +146,8 @@ export function resolveSliderLayout(
     if (windowed) {
       const m = Math.round(d + p); // slot relative to the step's start
       if (m === -left) factor = Math.max(0, 1 - 2 * p);
-      else if (m === N - left) factor = Math.max(0, 2 * p - 1);
-      else factor = m > -left && m < N - left ? 1 : 0;
+      else if (m === lit - left) factor = Math.max(0, 2 * p - 1);
+      else factor = m > -left && m < lit - left ? 1 : 0;
     }
     nodes.push(node(j, d, factor));
   }

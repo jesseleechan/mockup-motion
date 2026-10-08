@@ -125,6 +125,14 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
+    // The strips show transitions on Quiet Hero's single browser, as before presets D1 made
+    // Desktop Slider the demo. The slider renders 2-3x slower on SwiftShader (P05 evidence), which
+    // pushed these 25 screenshots past the timeout on CI.
+    await page.getByRole("button", { name: "Browse all templates" }).click();
+    const gallery = page.getByRole("dialog");
+    await gallery.getByRole("button", { name: "Select template Quiet Hero" }).click();
+    await gallery.getByRole("button", { name: "Apply template" }).click();
+    await expect(gallery).toBeHidden();
 
     const kinds = ["fade", "blur", "push", "zoom", "wipe"] as const;
     const progressSteps = [0, 0.25, 0.5, 0.75, 1.0];

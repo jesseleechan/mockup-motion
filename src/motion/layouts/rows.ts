@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { MAX_SHOT_DURATION } from "./limits";
 import { FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND, marqueeVelocity } from "./marquee";
 import { type LayoutNode, screenAspectFor } from "./types";
 
@@ -30,13 +31,28 @@ export function rowsGeometry(layout: RowsLayout, aspect: Aspect) {
 }
 
 /**
+ * The screenshots a Frames layout (rows with travel "period") shows: the first ones whose
+ * period fits a 30 s shot at 0.20 frame heights per second (quality-bar §2.2). That is 10 with
+ * the 3-row cards (4:5, 9:16, 1:1) and 8 with the 2-row cards (16:9, 4:3). Later ones are left
+ * out, as a slider leaves out screenshots past 18. Other rows layouts show every screenshot.
+ */
+export function framesAssetIds(layout: RowsLayout, aspect: Aspect): string[] {
+  if (layout.travel !== "period") return layout.assetIds;
+  const { stepX } = rowsGeometry(layout, aspect);
+  // The epsilon keeps an exact fit from rounding down.
+  const fit = Math.floor((MAX_SHOT_DURATION * FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND) / stepX + 1e-9);
+  return layout.assetIds.slice(0, Math.max(1, fit));
+}
+
+/**
  * The shortest shot, rounded up to 0.5 s, in which a Frames layout (rows with travel
  * "period") moves one asset period at no more than 0.20 frame heights per second
- * (quality-bar §2.5). Templates and the editor use it as the minimum shot duration.
+ * (quality-bar §2.5). Templates and the editor use it as the minimum shot duration. It is at
+ * most 30 s, because only `framesAssetIds` count.
  */
 export function framesDuration(layout: RowsLayout, aspect: Aspect): number {
   const { stepX } = rowsGeometry(layout, aspect);
-  const period = Math.max(1, layout.assetIds.length) * stepX;
+  const period = Math.max(1, framesAssetIds(layout, aspect).length) * stepX;
   // The epsilon keeps an exact half second from rounding up a step.
   return Math.ceil((period / FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND) * 2 - 1e-9) / 2;
 }
@@ -49,7 +65,9 @@ export function resolveRowsLayout(
   shotDuration: number,
   entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
-  const { assetIds, device = "browser", tilt = 12, speed = 0.25, travel = "steps" } = layout;
+  const { device = "browser", tilt = 12, speed = 0.25, travel = "steps" } = layout;
+  // Frames shows only the screenshots that fit a 30 s shot (framesAssetIds).
+  const assetIds = framesAssetIds(layout, aspect);
   const W = aspectRatioValue(aspect);
   const { numRows, itemW, itemH, stepX, stepY } = rowsGeometry(layout, aspect);
 

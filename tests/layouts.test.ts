@@ -578,6 +578,33 @@ describe("Slider layout (presets P01, quality bar §2.2 and §4)", () => {
     expect(failures.slice(0, 10), `${failures.length} repeats`).toEqual([]);
   });
 
+  it("is balanced at rest: as many cards in view before the active card as after it", () => {
+    // Presets P05 follow-up: with 4 screenshots at 16:9 and 4:3 the far slot on one side used
+    // to stay lit, so the frame was right-heavy (x) or bottom-heavy (y).
+    const failures: string[] = [];
+    for (const { axis, shape } of AXES) {
+      for (const aspect of ASPECTS) {
+        for (let n = 3; n <= 6; n++) {
+          const layout = slider(axis, shape, n);
+          // The start of every step and the end of its hold.
+          for (let k = 0; k < n; k++) {
+            for (const t of [k * STEP, (k + 1) * STEP - 0.05]) {
+              const shown = nodesAt(layout, aspect, t).filter(
+                (node) => node.opacity > 0.01 && inFrame(aspect, node),
+              );
+              const before = shown.filter((node) => along(axis, node) < -1e-9).length;
+              const after = shown.filter((node) => along(axis, node) > 1e-9).length;
+              if (before !== after) {
+                failures.push(`${axis} ${aspect} N=${n} t=${t.toFixed(2)}: ${before} | ${after}`);
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(failures.slice(0, 10), `${failures.length} unbalanced frames`).toEqual([]);
+  });
+
   it("keeps 7% of the shortest frame side clear around the active card", () => {
     for (const axis of ["x", "y"] as const) {
       for (const shape of ["mobile", "desktop"] as const) {

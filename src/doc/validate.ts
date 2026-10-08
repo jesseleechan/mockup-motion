@@ -1,7 +1,12 @@
 import { clampAudioTrack } from "../audio/mix";
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
-import { clampSliderStep, fixedShotDuration, MAX_SHOT_DURATION } from "../motion/layouts/duration";
+import {
+  clampSliderStep,
+  fixedShotCamera,
+  fixedShotDuration,
+  MAX_SHOT_DURATION,
+} from "../motion/layouts/duration";
 import type {
   Aspect,
   AssetRef,
@@ -403,7 +408,8 @@ function sanitizeShot(
       fixedShotDuration(layout) ??
       clamp(typeof s.duration === "number" ? s.duration : 5, 1, MAX_SHOT_DURATION),
     layout,
-    camera,
+    // A slider's camera is still, so its loop stays native (quality bar §4).
+    camera: fixedShotCamera(layout, camera),
     entrance,
     texts,
     transitionIn,

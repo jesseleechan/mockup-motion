@@ -1,10 +1,10 @@
-import type { Aspect, Layout } from "../../doc/types";
+import type { Aspect, CameraMove, Layout } from "../../doc/types";
+import { MAX_SHOT_DURATION } from "./limits";
 import { framesDuration } from "./rows";
 
-type SliderLayout = Extract<Layout, { kind: "slider" }>;
+export { MAX_SHOT_DURATION };
 
-/** The longest shot a document allows (`Shot.duration`, src/doc/validate.ts). */
-export const MAX_SHOT_DURATION = 30;
+type SliderLayout = Extract<Layout, { kind: "slider" }>;
 
 // Quality bar §2.2 (carousel steps): 1.6–4.0 s per screenshot.
 export const SLIDER_MIN_STEP = 1.6;
@@ -47,6 +47,24 @@ export function sliderDuration(layout: SliderLayout): number {
  */
 export function fixedShotDuration(layout: Layout): number | null {
   return layout.kind === "slider" ? sliderDuration(layout) : null;
+}
+
+/**
+ * The camera a layout allows. A slider's camera is still (quality bar §4): a camera move would
+ * end the shot on another pose, so the native loop would pop. Other layouts keep theirs.
+ */
+export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove {
+  if (layout.kind !== "slider" || isStillCamera(camera)) return camera;
+  return { preset: "static", intensity: 0, easing: camera.easing, float: 0 };
+}
+
+function isStillCamera(camera: CameraMove): boolean {
+  return (
+    camera.preset === "static" &&
+    camera.intensity === 0 &&
+    camera.float === 0 &&
+    camera.progressRange === undefined
+  );
 }
 
 /** The shortest shot a layout allows. Only Frames has one: its speed limit (quality-bar §2.5). */

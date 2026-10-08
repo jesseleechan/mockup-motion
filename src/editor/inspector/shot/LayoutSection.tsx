@@ -1,6 +1,7 @@
 import React from "react";
 import type { AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
-import { SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
+import { framesAssetIds, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
+import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
@@ -24,6 +25,7 @@ const percent = (value: number) => `${Math.round(value * 100)}%`;
 /** Layout kind plus the layout's own parameters (device, arrangement, tilt, speed). */
 export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
+  const aspect = useEditorStore((s) => s.doc.aspect);
   const { layout } = shot;
 
   const handleKindChange = (kind: Layout["kind"]) => {
@@ -147,6 +149,12 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
             {layout.travel === "period" ? (
               <Field label="Speed">
                 <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
+                {framesAssetIds(layout, aspect).length < layout.assetIds.length && (
+                  <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
+                    Shows the first {framesAssetIds(layout, aspect).length} screenshots, so the loop
+                    fits in 30 s.
+                  </p>
+                )}
               </Field>
             ) : (
               <Field label="Speed" value={percent(layout.speed)}>
