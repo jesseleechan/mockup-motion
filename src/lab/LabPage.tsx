@@ -19,6 +19,8 @@ import devicesPhoneFixture from "./fixtures/devices-phone.json";
 import devicesTabletFixture from "./fixtures/devices-tablet.json";
 import devicesLaptopFixture from "./fixtures/devices-laptop.json";
 import textTitleFixture from "./fixtures/text-title.json";
+import sliderXFixture from "./fixtures/slider-x.json";
+import sliderYFixture from "./fixtures/slider-y.json";
 
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc, framesTemplate } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
@@ -48,6 +50,8 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "devices-tablet": devicesTabletFixture as unknown as ProjectDoc,
   "devices-laptop": devicesLaptopFixture as unknown as ProjectDoc,
   "text-title": textTitleFixture as unknown as ProjectDoc,
+  "slider-x": sliderXFixture as unknown as ProjectDoc,
+  "slider-y": sliderYFixture as unknown as ProjectDoc,
 };
 
 // Register all 12 built-in templates into fixtures

@@ -6,6 +6,14 @@ import { DeviceShadowGroup } from "../shadows/DeviceShadow";
 import { createRoundedExtrudeGeometry } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
+/**
+ * Quality bar §3.4: 7.5% of width for a portrait (mobile) card, 1.6% for a landscape one.
+ * The hairline border (0.0009 stage units) is the same for both.
+ */
+export function cardCornerRadius(width: number, screenAspect: number): number {
+  return width * (screenAspect < 1 ? 0.075 : 0.016);
+}
+
 export function buildCardDevice(
   node: LayoutNode,
   style: Style,
@@ -14,8 +22,7 @@ export function buildCardDevice(
   const meshW = node.width;
   const meshH = node.height;
 
-  // Quality-bar §3.4: Card radius 1.6% of width, hairline border (0.0009 stage units)
-  const cornerRadius = meshW * 0.016;
+  const cornerRadius = cardCornerRadius(meshW, node.screenAspect);
   const depth = 0.002;
 
   const viewportWidthPx = Math.round(meshW * ctx.outputHeightPx * ctx.supersample);

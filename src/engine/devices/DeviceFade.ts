@@ -1,5 +1,10 @@
 import * as THREE from "three";
 
+const FULLSCREEN_VERTEX = /* glsl */ `
+  varying vec2 vUv;
+  void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
 /** One device to draw this frame, with its layout node's entrance opacity. */
 export interface DeviceDraw {
   object3d: THREE.Object3D;
@@ -7,6 +12,13 @@ export interface DeviceDraw {
   /** Back to front: a layout draws higher values over lower ones. */
   depthOrder: number;
 }
+
+/**
+ * How a faded layer mixes with what is behind it. `linear` blends in linear light, like every
+ * other pass. `srgb` mixes the encoded sRGB values, the way the slider reference fades its
+ * neighbours (docs/presets-plan/reference.md: a pixel of 15 at 65% over 223 shows 88).
+ */
+export type FadeBlend = "linear" | "srgb";
 
 // Opacities within half an 8-bit step of 0 or 1 draw as hidden or opaque.
 const OPACITY_EPSILON = 1 / 512;
@@ -27,13 +39,15 @@ export class DeviceFadePass {
   private material: THREE.ShaderMaterial;
   private mesh: THREE.Mesh;
   private clearColor = new THREE.Color();
+  // A copy of the shot target under an `srgb` layer, because a target can't be sampled while
+  // it is drawn to.
+  private backdrop: THREE.WebGLRenderTarget | null = null;
+  private srgbMaterial: THREE.ShaderMaterial;
+  private copyMaterial: THREE.ShaderMaterial;
 
   constructor() {
     this.material = new THREE.ShaderMaterial({
-      vertexShader: /* glsl */ `
-        varying vec2 vUv;
-        void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
-      `,
+      vertexShader: FULLSCREEN_VERTEX,
       // The layer holds premultiplied linear colour (normal blending over a transparent clear).
       fragmentShader: /* glsl */ `
         varying vec2 vUv;
@@ -57,6 +71,53 @@ export class DeviceFadePass {
       depthTest: false,
       depthWrite: false,
     });
+    this.srgbMaterial = new THREE.ShaderMaterial({
+      vertexShader: FULLSCREEN_VERTEX,
+      // The layer is premultiplied linear colour and the backdrop is the target before it. The
+      // devices are first put over the backdrop as if opaque, then the two are mixed as encoded
+      // sRGB values and written back as linear (the target encodes on store).
+      fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform sampler2D map;
+        uniform sampler2D backdrop;
+        uniform float uOpacity;
+        vec3 toSrgb(vec3 c) {
+          c = clamp(c, 0.0, 1.0);
+          return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+        }
+        vec3 toLinear(vec3 c) {
+          c = clamp(c, 0.0, 1.0);
+          return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+        }
+        void main() {
+          vec4 layer = texture2D(map, vUv);
+          vec4 back = texture2D(backdrop, vUv);
+          vec3 shown = layer.rgb + (1.0 - layer.a) * back.rgb;
+          vec3 mixed = mix(toSrgb(back.rgb), toSrgb(shown), uOpacity);
+          gl_FragColor = vec4(toLinear(mixed), back.a + uOpacity * layer.a * (1.0 - back.a));
+        }
+      `,
+      uniforms: {
+        map: { value: null },
+        backdrop: { value: null },
+        uOpacity: { value: 1.0 },
+      },
+      blending: THREE.NoBlending,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.copyMaterial = new THREE.ShaderMaterial({
+      vertexShader: FULLSCREEN_VERTEX,
+      fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform sampler2D map;
+        void main() { gl_FragColor = texture2D(map, vUv); }
+      `,
+      uniforms: { map: { value: null } },
+      blending: THREE.NoBlending,
+      depthTest: false,
+      depthWrite: false,
+    });
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material);
     this.scene.add(this.mesh);
   }
@@ -68,6 +129,7 @@ export class DeviceFadePass {
     camera: THREE.Camera,
     target: THREE.WebGLRenderTarget,
     draws: DeviceDraw[],
+    blend: FadeBlend = "linear",
   ): void {
     const shown = draws.filter((draw) => draw.opacity > OPACITY_EPSILON);
     for (const draw of draws) draw.object3d.visible = false;
@@ -89,7 +151,7 @@ export class DeviceFadePass {
         renderer.setRenderTarget(target);
         renderer.render(scene, camera);
       } else {
-        this.renderLayer(renderer, scene, camera, target, run.opacity);
+        this.renderLayer(renderer, scene, camera, target, run.opacity, blend);
       }
       for (const draw of run.draws) draw.object3d.visible = false;
     }
@@ -121,6 +183,7 @@ export class DeviceFadePass {
     camera: THREE.Camera,
     target: THREE.WebGLRenderTarget,
     opacity: number,
+    blend: FadeBlend,
   ): void {
     const layer = this.layerFor(target);
     const prevClearAlpha = renderer.getClearAlpha();
@@ -132,28 +195,54 @@ export class DeviceFadePass {
     renderer.render(scene, camera);
     renderer.setClearColor(this.clearColor, prevClearAlpha);
 
-    this.material.uniforms.map.value = layer.texture;
-    this.material.uniforms.uOpacity.value = opacity;
+    if (blend === "srgb") {
+      // Every render into the multisampled target resolves it, so its texture is current.
+      const backdrop = this.backdropFor(target);
+      this.mesh.material = this.copyMaterial;
+      this.copyMaterial.uniforms.map.value = target.texture;
+      renderer.setRenderTarget(backdrop);
+      renderer.render(this.scene, this.camera);
+
+      this.mesh.material = this.srgbMaterial;
+      this.srgbMaterial.uniforms.map.value = layer.texture;
+      this.srgbMaterial.uniforms.backdrop.value = backdrop.texture;
+      this.srgbMaterial.uniforms.uOpacity.value = opacity;
+    } else {
+      this.mesh.material = this.material;
+      this.material.uniforms.map.value = layer.texture;
+      this.material.uniforms.uOpacity.value = opacity;
+    }
     renderer.setRenderTarget(target);
     renderer.render(this.scene, this.camera);
   }
 
   /**
-   * Allocates the layer for a document whose devices can fade, or frees it for one whose
-   * devices never do, so rendering a frame never creates GPU objects.
+   * Allocates the targets for a document whose devices can fade (`srgb`: with that blend), or
+   * frees them for one whose devices never do, so rendering a frame never creates GPU objects.
    */
-  prepare(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget, needed: boolean): void {
-    if (!needed) {
+  prepare(
+    renderer: THREE.WebGLRenderer,
+    target: THREE.WebGLRenderTarget,
+    needs: { fade: boolean; srgb: boolean },
+  ): void {
+    if (needs.fade) {
+      renderer.initRenderTarget(this.layerFor(target));
+    } else {
       this.layer?.dispose();
       this.layer = null;
-      return;
     }
-    renderer.initRenderTarget(this.layerFor(target));
+    if (needs.fade && needs.srgb) {
+      renderer.initRenderTarget(this.backdropFor(target));
+    } else {
+      this.backdrop?.dispose();
+      this.backdrop = null;
+    }
   }
 
-  /** Follows the shot targets' size; the layer reallocates on its next use. */
+  /** Follows the shot targets' size; the targets reallocate on their next use. */
   setSize(width: number, height: number): void {
     this.layer?.setSize(width, height);
+    this.backdrop?.setSize(width, height);
   }
 
   /** A multisampled sRGB layer matching the shot targets. */
@@ -169,10 +258,27 @@ export class DeviceFadePass {
     return this.layer;
   }
 
+  /** A single-sample sRGB copy of the shot target. */
+  private backdropFor(target: THREE.WebGLRenderTarget): THREE.WebGLRenderTarget {
+    if (!this.backdrop) {
+      this.backdrop = new THREE.WebGLRenderTarget(target.width, target.height, {
+        colorSpace: THREE.SRGBColorSpace,
+        depthBuffer: false,
+      });
+    } else if (this.backdrop.width !== target.width || this.backdrop.height !== target.height) {
+      this.backdrop.setSize(target.width, target.height);
+    }
+    return this.backdrop;
+  }
+
   dispose(): void {
     this.layer?.dispose();
     this.layer = null;
+    this.backdrop?.dispose();
+    this.backdrop = null;
     this.mesh.geometry.dispose();
     this.material.dispose();
+    this.srgbMaterial.dispose();
+    this.copyMaterial.dispose();
   }
 }
