@@ -1,6 +1,6 @@
 import React from "react";
 import type { Aspect, Shot } from "../../../doc/types";
-import { minShotDuration } from "../../../motion";
+import { fixedShotDuration, minShotDuration } from "../../../motion";
 import { loopSkipsEntrance } from "../../../motion/evaluate";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
@@ -19,15 +19,24 @@ export const EntranceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
   const hintId = `entrance-hint-${shot.id}`;
   // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
   const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
+  // A slider lasts one step per screenshot, so its loop stays seamless (contracts.md §5).
+  const fixed = fixedShotDuration(shot.layout) !== null;
 
   return (
     <Section title="Entrance and duration">
       <div className="space-y-3">
-        <Field label="Duration" value={`${shot.duration.toFixed(1)} s`}>
+        <Field
+          label="Duration"
+          value={`${shot.duration.toFixed(1)} s`}
+          hint={fixed ? "Set by step length × screenshots" : undefined}
+          hintId={`duration-hint-${shot.id}`}
+        >
           <Slider
             aria-label="Duration"
+            aria-describedby={fixed ? `duration-hint-${shot.id}` : undefined}
+            disabled={fixed}
             min={shortest}
-            max={shortest > 1 ? 30 : 15}
+            max={shortest > 1 || fixed ? 30 : 15}
             step={0.5}
             value={shot.duration}
             onChange={(val) =>

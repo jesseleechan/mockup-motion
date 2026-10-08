@@ -41,11 +41,6 @@ export function framesDuration(layout: RowsLayout, aspect: Aspect): number {
   return Math.ceil((period / FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND) * 2 - 1e-9) / 2;
 }
 
-/** The shortest shot a layout allows. Only Frames has one: its speed limit (quality-bar §2.5). */
-export function minShotDuration(layout: Layout, aspect: Aspect): number {
-  return layout.kind === "rows" && layout.travel === "period" ? framesDuration(layout, aspect) : 1;
-}
-
 export function resolveRowsLayout(
   layout: RowsLayout,
   aspect: Aspect,

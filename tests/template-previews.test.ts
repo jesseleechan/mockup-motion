@@ -25,8 +25,8 @@ async function pixelStdDev(file: string): Promise<number> {
 }
 
 describe("F07: template previews", () => {
-  it("covers all 12 built-in templates", () => {
-    expect(BUILTIN_TEMPLATES).toHaveLength(12);
+  it("covers all 14 built-in templates", () => {
+    expect(BUILTIN_TEMPLATES).toHaveLength(14);
   });
 
   for (const template of BUILTIN_TEMPLATES) {

@@ -54,6 +54,23 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("studio-kova"),
     desktopHero("maison-oak"),
   ],
+  // Five per slider: the 16:9 preview fills the slots on both sides of the active card, and
+  // the 10 s loop puts the poster (35%) on a settled card.
+  "mobile-slider": [
+    mobileHero("aurelia"),
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("field-notes"),
+    mobileHero("studio-kova"),
+  ],
+  // The poster frame (3.5 s) shows the third screenshot settling: Maison Oak's photographic hero.
+  "desktop-slider": [
+    desktopHero("northwind"),
+    desktopHero("aurelia"),
+    desktopHero("maison-oak"),
+    desktopHero("field-notes"),
+    desktopHero("studio-kova"),
+  ],
   "scroll-story": [desktopFull("studio-kova")],
   "launch-reel": [desktopFull("aurelia"), mobileHero("aurelia")],
   "case-study-reel": [

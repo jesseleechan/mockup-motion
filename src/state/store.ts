@@ -13,7 +13,13 @@ import type {
   Transition,
 } from "../doc/types";
 import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
-import { minShotDuration } from "../motion";
+import {
+  clampSliderStep,
+  fixedShotDuration,
+  minShotDuration,
+  SLIDER_MAX_SCREENSHOTS,
+  sliderDuration,
+} from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 import type { BrandKit } from "../storage/brand-kits";
 
@@ -61,6 +67,10 @@ export interface EditorStoreState {
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
+  /** Adds a screenshot to a layout that shows a list of them (rows, columns, wall, stack, slider). */
+  addAssetToShot: (shotIndex: number, assetId: string) => void;
+  /** Takes a screenshot out of a list layout. */
+  removeAssetFromShot: (shotIndex: number, assetId: string) => void;
   applyBrandKit: (kit: BrandKit) => void;
 
   // Music track (WP-17)
@@ -87,6 +97,19 @@ export interface EditorStoreState {
 const MAX_HISTORY = 100;
 const COALESCE_WINDOW_MS = 800;
 
+/**
+ * Keeps every slider shot loop-safe after any edit: the step fits the screenshot count in a
+ * 30 s shot, and the shot lasts one step per shown screenshot (contracts.md §5). Edits that
+ * set a slider's duration directly (the timeline handle, the duration control) are undone here.
+ */
+function fitSliderShots(draft: ProjectDoc): void {
+  for (const shot of draft.shots) {
+    if (shot.layout.kind !== "slider") continue;
+    shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
+    shot.duration = sliderDuration(shot.layout);
+  }
+}
+
 export function createEditorStore(initialDoc?: ProjectDoc) {
   const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createDoc();
 
@@ -103,7 +126,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
     apply: (recipe, opts) => {
       const current = get().doc;
-      const next = produce(current, recipe);
+      const next = produce(current, (draft) => {
+        recipe(draft);
+        fitSliderShots(draft);
+      });
 
       // No-op if doc reference didn't change (no modifications)
       if (next === current) return;
@@ -427,6 +453,15 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
             } else {
               layout.desktopId = assetId;
             }
+          } else if (layout.kind === "slider") {
+            // A slider adds the screenshot after the card it was dropped on. Its nodes are a ring
+            // of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
+            if (!layout.assetIds.includes(assetId)) {
+              const shown = Math.min(layout.assetIds.length, SLIDER_MAX_SCREENSHOTS);
+              const match = slotKeyOrNodeId.match(/(\d+)/);
+              const at = match && shown > 0 ? (parseInt(match[1], 10) % shown) + 1 : shown;
+              layout.assetIds.splice(at, 0, assetId);
+            }
           } else if (
             layout.kind === "rows" ||
             layout.kind === "columns" ||
@@ -452,6 +487,33 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           );
         },
         { label: "Assign media to slot" },
+      );
+    },
+
+    addAssetToShot: (shotIndex: number, assetId: string) => {
+      get().apply(
+        (draft) => {
+          const shot = draft.shots[shotIndex];
+          if (!shot || !("assetIds" in shot.layout)) return;
+          if (shot.layout.assetIds.includes(assetId)) return;
+          shot.layout.assetIds.push(assetId);
+          shot.duration = Math.min(
+            30,
+            Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)),
+          );
+        },
+        { label: "Add screenshot to shot" },
+      );
+    },
+
+    removeAssetFromShot: (shotIndex: number, assetId: string) => {
+      get().apply(
+        (draft) => {
+          const shot = draft.shots[shotIndex];
+          if (!shot || !("assetIds" in shot.layout)) return;
+          shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
+        },
+        { label: "Remove screenshot from shot" },
       );
     },
 
@@ -561,6 +623,9 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     setShotDuration: (index: number, duration: number) => {
+      // A slider sets its own length; skip it so the edit leaves no empty undo step.
+      const current = get().doc.shots[index];
+      if (current && fixedShotDuration(current.layout) !== null) return;
       get().apply(
         (draft) => {
           const shot = draft.shots[index];

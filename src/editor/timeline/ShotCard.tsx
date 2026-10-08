@@ -25,6 +25,8 @@ import {
   Type,
   Maximize2,
   Columns,
+  GalleryHorizontal,
+  GalleryVertical,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
 import { LAYOUT_LABELS, shotSummary } from "../labels";
@@ -262,6 +264,8 @@ export const ShotCard: React.FC<ShotCardProps> = ({
       case "wall":
       case "stack":
         return <Icon icon={LayoutGrid} size={13} />;
+      case "slider":
+        return <Icon icon={layout.axis === "y" ? GalleryVertical : GalleryHorizontal} size={13} />;
       default:
         return <Icon icon={Monitor} size={13} />;
     }
@@ -393,20 +397,22 @@ export const ShotCard: React.FC<ShotCardProps> = ({
             </div>
           )}
 
-          {/* Right Duration Resize Handle */}
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Drag to change shot duration"
-            title="Drag to change shot duration"
-            onPointerDown={handleResizePointerDown}
-            onPointerMove={handleResizePointerMove}
-            onPointerUp={handleResizePointerUp}
-            onPointerCancel={handleResizePointerUp}
-            className="absolute top-0 bottom-0 right-0 w-2.5 hover:w-3 bg-transparent hover:bg-[var(--color-accent)]/30 active:bg-[var(--color-accent)]/50 cursor-ew-resize flex items-center justify-center transition-all z-20"
-          >
-            <div className="w-[2px] h-4 rounded-full bg-[var(--color-line-strong)] group-hover:bg-[var(--color-accent)]" />
-          </div>
+          {/* Right Duration Resize Handle. A slider's length is screenshots × step. */}
+          {layoutKind !== "slider" && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Drag to change shot duration"
+              title="Drag to change shot duration"
+              onPointerDown={handleResizePointerDown}
+              onPointerMove={handleResizePointerMove}
+              onPointerUp={handleResizePointerUp}
+              onPointerCancel={handleResizePointerUp}
+              className="absolute top-0 bottom-0 right-0 w-2.5 hover:w-3 bg-transparent hover:bg-[var(--color-accent)]/30 active:bg-[var(--color-accent)]/50 cursor-ew-resize flex items-center justify-center transition-all z-20"
+            >
+              <div className="w-[2px] h-4 rounded-full bg-[var(--color-line-strong)] group-hover:bg-[var(--color-accent)]" />
+            </div>
+          )}
 
           {/* Live duration tooltip while dragging */}
           {isResizing && dragDuration !== null && (

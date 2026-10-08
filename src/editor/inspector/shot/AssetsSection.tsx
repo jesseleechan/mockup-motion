@@ -1,6 +1,8 @@
 import React from "react";
 import type { AssetRef, Shot } from "../../../doc/types";
 import { Field, Section, Select } from "../../../ui";
+import { useEditorStore } from "../../../state/store";
+import { SliderScreenshots } from "./SliderScreenshots";
 import { assetDropProps, useShotUpdate } from "./useShotUpdate";
 
 interface AssetsSectionProps {
@@ -39,13 +41,24 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
   );
 };
 
-/** The screenshots a single, pair or trio layout shows. Other layouts fill from the project. */
+/**
+ * The screenshots a single, pair, trio or slider layout shows. Other layouts fill from the
+ * project.
+ */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
+  const shotIndex = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
   const { layout } = shot;
-  if (layout.kind !== "single" && layout.kind !== "pair" && layout.kind !== "trio") return null;
-
   const images = assets.filter((a) => a.kind === "image");
+
+  if (layout.kind === "slider") {
+    return (
+      <Section title="Screenshots">
+        <SliderScreenshots shotIndex={shotIndex} layout={layout} images={images} />
+      </Section>
+    );
+  }
+  if (layout.kind !== "single" && layout.kind !== "pair" && layout.kind !== "trio") return null;
 
   return (
     <Section title="Screenshots">

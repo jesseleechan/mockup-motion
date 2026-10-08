@@ -32,7 +32,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 - Transitions: 0.5–0.9 s (default 0.7 s, `quintInOut`). Loop wrap crossfade: 0.8 s.
 - Entrances: 0.7–1.0 s with `expoOut`. Stagger between sibling elements: 80–120 ms.
 - Text: 0.6–0.9 s per reveal, 60–90 ms per-word stagger. Hold text fully visible for at least 1.2 s before any exit.
-- Carousel steps (`slider` layout): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress.
+- Carousel steps (`slider` layout): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress. A slider shot lasts screenshots × step and must fit in 30 s, so the step is at most min(4.0, 30 / N) s, and a slider shows at most its first 18 screenshots (18 × 1.6 s = 28.8 s).
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
 
 ### 2.3 Camera presets at `intensity = 1` (`src/motion/camera.ts`)
