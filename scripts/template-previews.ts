@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { ALL_FORMATS, BufferSource, Input } from "mediabunny";
+import { calculateBitrate, outputDimensions } from "../src/export/destinations";
 import { schedule } from "../src/motion";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
 import { buildLab, launchSwiftShader, serveBuild } from "./lab-build";
@@ -22,6 +23,14 @@ const BUILD_DIR = path.join(os.tmpdir(), "mockupmotion-template-previews");
 // The encoder targets a fixed bitrate, so size follows length: the 11.3-11.4 s reels land at
 // 420-475 KB (launch-reel's ambient background uses the full bitrate since F11).
 const MAX_WEBM_BYTES = 500 * 1024;
+// A preview whose web bitrate would pass this (Frames: 18.5 s) gets the bitrate that fits it,
+// under the 450 KiB that tests/template-previews.test.ts allows. Shorter previews keep the web
+// bitrate, so their files do not change.
+const LONG_PREVIEW_BUDGET_BYTES = 440 * 1024;
+// VP9 overshoots its target on constant motion (Frames wrote 889 KB at a 700 KiB target), so a
+// long preview is re-encoded at a bitrate scaled by budget / written until it fits.
+const MAX_BUDGET_ATTEMPTS = 4;
+const BUDGET_HEADROOM = 0.97;
 const POSTER_TIME_FRACTION = 0.35;
 // Posters show until a card is hovered, so they are 2x the video (1280x720) for sharp cards.
 const POSTER_RESOLUTION = 720;
@@ -42,6 +51,7 @@ interface RenderedTemplate {
 
 interface Row {
   id: string;
+  kbps: number;
   duration: string;
   webmDuration: string;
   webmBytes: number;
@@ -101,60 +111,90 @@ async function main(): Promise<void> {
       const started = Date.now();
       process.stdout.write(`Rendering ${template.id} (${total.toFixed(2)} s)... `);
 
-      const rendered = await page.evaluate(
-        async ({ id, settings, posterTime, posterResolution }) => {
-          const fixture = window.__fixtures?.[id];
-          const exportVideo = window.__exportWithEngine;
-          const exportFrame = window.__exportCurrentFrame;
-          const createProvider = window.__createLabAssetProvider;
-          if (!fixture || !exportVideo || !exportFrame || !createProvider) {
-            throw new Error(`Lab hooks are missing for ${id}`);
-          }
-          const doc = structuredClone(fixture);
-          doc.export = { ...doc.export, ...settings };
-          // Grain is new noise every frame, which VP9 cannot compress: at 360p it more than
-          // quadruples the file (phone-spotlight: 633 KB with grain, 145 KB without) and is
-          // invisible at card size. The video drops it; the poster keeps the template's look.
-          const videoDoc = structuredClone(doc);
-          videoDoc.style.grain = 0;
-          for (const shot of videoDoc.shots) {
-            if (shot.styleOverrides?.grain !== undefined) shot.styleOverrides.grain = 0;
-          }
-          // The export transfers its bitmaps to the worker, so each render gets its own provider.
-          const video = await exportVideo(videoDoc, createProvider(), videoDoc.export);
-          if (video.mime !== "video/webm")
-            throw new Error(`Expected video/webm, got ${video.mime}`);
-          if (video.warnings && video.warnings.length > 0) {
-            throw new Error(`Export warnings: ${video.warnings.join("; ")}`);
-          }
-          const poster = await exportFrame(
-            doc,
-            createProvider(),
-            posterTime,
-            posterResolution,
-            "png",
-          );
-          // No named helpers in here: tsx wraps them in __name(), which the page lacks.
-          return {
-            webm: Array.from(new Uint8Array(await video.blob.arrayBuffer())),
-            png: Array.from(new Uint8Array(await poster.arrayBuffer())),
-          };
-        },
-        {
-          id: template.id,
-          settings: PREVIEW_SETTINGS,
-          posterTime: total * POSTER_TIME_FRACTION,
-          posterResolution: POSTER_RESOLUTION,
-        },
-      );
-      if (pageErrors.length > 0) {
-        throw new Error(`Page errors while rendering ${template.id}:\n${pageErrors.join("\n")}`);
-      }
-
-      const result: RenderedTemplate = {
-        webm: Buffer.from(rendered.webm),
-        png: Buffer.from(rendered.png),
+      const render = async (videoBitrate: number | null): Promise<RenderedTemplate> => {
+        const rendered = await page.evaluate(
+          async ({ id, settings, posterTime, posterResolution, videoBitrate }) => {
+            const fixture = window.__fixtures?.[id];
+            const exportVideo = window.__exportWithEngine;
+            const exportFrame = window.__exportCurrentFrame;
+            const createProvider = window.__createLabAssetProvider;
+            if (!fixture || !exportVideo || !exportFrame || !createProvider) {
+              throw new Error(`Lab hooks are missing for ${id}`);
+            }
+            const doc = structuredClone(fixture);
+            doc.export = { ...doc.export, ...settings };
+            // Grain is new noise every frame, which VP9 cannot compress: at 360p it more than
+            // quadruples the file (phone-spotlight: 633 KB with grain, 145 KB without) and is
+            // invisible at card size. The video drops it; the poster keeps the template's look.
+            const videoDoc = structuredClone(doc);
+            videoDoc.style.grain = 0;
+            for (const shot of videoDoc.shots) {
+              if (shot.styleOverrides?.grain !== undefined) shot.styleOverrides.grain = 0;
+            }
+            // The export transfers its bitmaps to the worker, so each render gets its own provider.
+            const video = await exportVideo(
+              videoDoc,
+              createProvider(),
+              videoDoc.export,
+              undefined,
+              undefined,
+              videoBitrate === null ? {} : { videoBitrate },
+            );
+            if (video.mime !== "video/webm")
+              throw new Error(`Expected video/webm, got ${video.mime}`);
+            if (video.warnings && video.warnings.length > 0) {
+              throw new Error(`Export warnings: ${video.warnings.join("; ")}`);
+            }
+            const poster = await exportFrame(
+              doc,
+              createProvider(),
+              posterTime,
+              posterResolution,
+              "png",
+            );
+            // No named helpers in here: tsx wraps them in __name(), which the page lacks.
+            return {
+              webm: Array.from(new Uint8Array(await video.blob.arrayBuffer())),
+              png: Array.from(new Uint8Array(await poster.arrayBuffer())),
+            };
+          },
+          {
+            id: template.id,
+            settings: PREVIEW_SETTINGS,
+            posterTime: total * POSTER_TIME_FRACTION,
+            posterResolution: POSTER_RESOLUTION,
+            videoBitrate,
+          },
+        );
+        if (pageErrors.length > 0) {
+          throw new Error(`Page errors while rendering ${template.id}:\n${pageErrors.join("\n")}`);
+        }
+        return { webm: Buffer.from(rendered.webm), png: Buffer.from(rendered.png) };
       };
+
+      const { width, height } = outputDimensions(doc.aspect, PREVIEW_SETTINGS.resolution);
+      const webBitrate = calculateBitrate(
+        PREVIEW_SETTINGS.quality,
+        "vp9",
+        width,
+        height,
+        PREVIEW_SETTINGS.fps,
+      );
+      const long = (webBitrate * total) / 8 > LONG_PREVIEW_BUDGET_BYTES;
+      let bitrate = long ? Math.floor((LONG_PREVIEW_BUDGET_BYTES * 8) / total) : webBitrate;
+      let result = await render(long ? bitrate : null);
+      for (let attempt = 1; long && result.webm.byteLength > LONG_PREVIEW_BUDGET_BYTES; attempt++) {
+        if (attempt >= MAX_BUDGET_ATTEMPTS) {
+          throw new Error(
+            `${template.id}.webm is ${result.webm.byteLength} bytes at ${bitrate} bps after ${attempt} attempts, over the ${LONG_PREVIEW_BUDGET_BYTES}-byte budget`,
+          );
+        }
+        bitrate = Math.floor(
+          (bitrate * LONG_PREVIEW_BUDGET_BYTES * BUDGET_HEADROOM) / result.webm.byteLength,
+        );
+        process.stdout.write(`${result.webm.byteLength} bytes, re-encoding at ${bitrate} bps... `);
+        result = await render(bitrate);
+      }
       if (result.webm.byteLength > MAX_WEBM_BYTES) {
         throw new Error(
           `${template.id}.webm is ${result.webm.byteLength} bytes, over the ${MAX_WEBM_BYTES}-byte limit`,
@@ -180,6 +220,7 @@ async function main(): Promise<void> {
 
       rows.push({
         id: template.id,
+        kbps: Math.round(bitrate / 1000),
         duration: total.toFixed(2),
         webmDuration: probe.duration.toFixed(3),
         webmBytes: result.webm.byteLength,
@@ -195,12 +236,12 @@ async function main(): Promise<void> {
 
   console.log("");
   console.log(
-    "| id | doc duration (s) | webm duration (s) | webm bytes | poster bytes | dimensions |",
+    "| id | doc duration (s) | webm duration (s) | video kbps | webm bytes | poster bytes | dimensions |",
   );
-  console.log("|---|---|---|---|---|---|");
+  console.log("|---|---|---|---|---|---|---|");
   for (const row of rows) {
     console.log(
-      `| ${row.id} | ${row.duration} | ${row.webmDuration} | ${row.webmBytes} | ${row.posterBytes} | ${row.dimensions} |`,
+      `| ${row.id} | ${row.duration} | ${row.webmDuration} | ${row.kbps} | ${row.webmBytes} | ${row.posterBytes} | ${row.dimensions} |`,
     );
   }
 }

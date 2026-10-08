@@ -77,6 +77,14 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
 
+    // Scroll and cursor are single-device controls, and the first-run demo is Desktop Slider
+    // (presets D1), so switch to Quiet Hero's single browser first.
+    await page.getByRole("button", { name: "Browse all templates" }).click();
+    const gallery = page.getByRole("dialog");
+    await gallery.getByRole("button", { name: "Select template Quiet Hero" }).click();
+    await gallery.getByRole("button", { name: "Apply template" }).click();
+    await expect(gallery).toBeHidden();
+
     // Select Shot 1 in the timeline to view ShotInspector
     const shot1Card = page.locator(".group", { hasText: "Shot 1" });
     await shot1Card.click();

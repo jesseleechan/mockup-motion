@@ -62,8 +62,8 @@ for (const t of BUILTIN_TEMPLATES) {
 }
 Object.assign(FIXTURES, VISUAL_FIXTURES);
 
-// Frames (presets P04) joins the gallery in P05; until then the lab builds it per aspect,
-// because its row count depends on the aspect: /lab?fixture=frames-4x5&aspect=4:5.
+// Frames also gets a fixture per aspect, because its row count depends on the aspect: the
+// `frames` fixture above is built at 16:9. Use /lab?fixture=frames-4x5&aspect=4:5.
 for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
   FIXTURES[`frames-${aspect.replace(":", "x")}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
 }

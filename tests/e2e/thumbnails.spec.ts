@@ -231,7 +231,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
   }) => {
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(14);
+    await expect(cards).toHaveCount(15);
 
     // Every card rests on its poster.
     const posters = await cards.evaluateAll((els) =>
@@ -264,18 +264,18 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(14);
+    await expect(cards).toHaveCount(15);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
     const posters = page.locator('[data-testid="template-card"] [data-testid="template-poster"]');
-    await expect(posters).toHaveCount(14);
+    await expect(posters).toHaveCount(15);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
 
   test("Library template cards show their posters", async ({ page }) => {
     const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(14);
-    for (let i = 0; i < 14; i++) {
+    await expect(cards).toHaveCount(15);
+    for (let i = 0; i < 15; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);

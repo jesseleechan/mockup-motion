@@ -15,8 +15,16 @@ import { launchReelTemplate } from "./launch-reel";
 import { caseStudyReelTemplate } from "./case-study-reel";
 import { mobileSliderTemplate } from "./mobile-slider";
 import { desktopSliderTemplate } from "./desktop-slider";
+import { framesTemplate } from "./frames";
 
+/**
+ * Gallery order. The presets lead (presets plan D1), and the first entry is also the first-run
+ * default and the gallery's initial selection.
+ */
 export const BUILTIN_TEMPLATES: Template[] = [
+  desktopSliderTemplate,
+  mobileSliderTemplate,
+  framesTemplate,
   quietHeroTemplate,
   tiltedShowcaseTemplate,
   responsivePairTemplate,
@@ -29,9 +37,6 @@ export const BUILTIN_TEMPLATES: Template[] = [
   scrollStoryTemplate,
   launchReelTemplate,
   caseStudyReelTemplate,
-  // Presets P03. P05 moves them to the front of the gallery (D1).
-  mobileSliderTemplate,
-  desktopSliderTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {

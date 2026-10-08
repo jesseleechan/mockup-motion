@@ -38,12 +38,31 @@ interface Still {
   t: number;
 }
 
+// The sliders step every 2.0 s: 1.9 s is the rest pose (step 0 has settled) and 2.5 s is
+// mid-step (step 1 started at 2.0 s), presets plan P05.
+const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider"];
+const SLIDER_TIMES = [1.9, 2.5];
+
 const STILLS: Still[] = [];
 for (const id of TEMPLATES) {
   for (const aspect of ["16:9", "9:16"]) {
     for (const t of [0.8, 2.4]) {
       STILLS.push({ name: `${id}-${aspect.replace(":", "x")}-t${t}`, fixture: id, aspect, t });
     }
+  }
+}
+for (const id of SLIDER_TEMPLATES) {
+  for (const aspect of ["16:9", "9:16"]) {
+    for (const t of SLIDER_TIMES) {
+      STILLS.push({ name: `${id}-${aspect.replace(":", "x")}-t${t}`, fixture: id, aspect, t });
+    }
+  }
+}
+// Frames' row count depends on the aspect, so each aspect has its own fixture (LabPage).
+for (const aspect of ["16:9", "9:16"]) {
+  const tag = aspect.replace(":", "x");
+  for (const t of [0.8, 2.4]) {
+    STILLS.push({ name: `frames-${tag}-t${t}`, fixture: `frames-${tag}`, aspect, t });
   }
 }
 for (const device of DEVICES) {

@@ -32,6 +32,14 @@ function templateToFill(doc: ProjectDoc): Template | undefined {
   return template && missingRequiredSlots(template, doc.assets).length > 0 ? template : undefined;
 }
 
+/**
+ * The template "Try with demo content" fills: the document's own, or on first run the gallery's
+ * first entry (presets plan D1: Desktop Slider).
+ */
+export function demoContentTemplate(doc: ProjectDoc): Template {
+  return currentTemplate(doc) ?? BUILTIN_TEMPLATES[0];
+}
+
 /** Template flows shared by the gallery, the library, the stage and the media tab. */
 export function useTemplateActions() {
   const setSelection = useUIStore((s) => s.setSelection);
@@ -71,7 +79,7 @@ export function useTemplateActions() {
   /** Demo screenshots for the empty required slots of the current (or default) template. */
   const fillWithDemoContent = useCallback(async () => {
     const { doc, addAssetsAndApplyTemplate } = useEditorStore.getState();
-    const template = currentTemplate(doc) ?? BUILTIN_TEMPLATES[0];
+    const template = demoContentTemplate(doc);
     await addAssetsAndApplyTemplate(demoAssetsToFill(template, doc.assets), template.id, (d) =>
       applyTemplate(template, d),
     );

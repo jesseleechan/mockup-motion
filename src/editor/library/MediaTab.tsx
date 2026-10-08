@@ -285,8 +285,14 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
           </span>
         </div>
       ) : (
-        /* 2-Column Media Grid */
-        <div className="flex-1 overflow-y-auto pr-1 pb-4">
+        /* 2-column media grid, focusable so keyboard users can scroll a long list (axe
+           scrollable-region-focusable) */
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Screenshots"
+          className="flex-1 overflow-y-auto pr-1 pb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        >
           <div className="grid grid-cols-2 gap-2">
             {doc.assets.map((asset) => {
               const thumb = assetThumbnails[asset.id];

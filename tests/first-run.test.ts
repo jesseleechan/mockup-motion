@@ -10,6 +10,9 @@ import {
 } from "../src/templates";
 import { demoAssetRef } from "../src/lab/demo-assets";
 import type { AssetRef } from "../src/doc/types";
+import { createDoc } from "../src/doc/defaults";
+import { schedule } from "../src/motion";
+import { demoContentTemplate } from "../src/editor/template-actions";
 
 function template(id: string): Template {
   const t = getTemplateById(id);
@@ -59,6 +62,9 @@ describe("F06: missing required slots", () => {
 describe("F06: template-aware demo content", () => {
   it("fills every required slot of each built-in template from an empty project", () => {
     for (const id of [
+      "desktop-slider",
+      "mobile-slider",
+      "frames",
       "quiet-hero",
       "responsive-pair",
       "phone-parade",
@@ -83,6 +89,48 @@ describe("F06: template-aware demo content", () => {
       demoAssetRef("demo-aurelia-mobile-hero"),
     ];
     expect(demoAssetsToFill(template("responsive-pair"), filled)).toEqual([]);
+  });
+});
+
+describe("Presets D1: first-run default", () => {
+  it("fills Desktop Slider on first run and keeps a project's own template", () => {
+    expect(demoContentTemplate(createDoc()).id).toBe("desktop-slider");
+    const doc = { ...createDoc(), templateId: "responsive-pair" };
+    expect(demoContentTemplate(doc).id).toBe("responsive-pair");
+  });
+
+  it("builds a vertical slider of the demo desktop screenshots in one undo step", async () => {
+    const store = createEditorStore();
+    const empty = store.getState().doc;
+    const pastBefore = store.getState().past.length;
+    const template = demoContentTemplate(empty);
+    const demo = demoAssetsToFill(template, empty.assets);
+    await store
+      .getState()
+      .addAssetsAndApplyTemplate(demo, template.id, (doc) => applyTemplate(template, doc));
+
+    const filled = store.getState().doc;
+    expect(store.getState().past.length).toBe(pastBefore + 1);
+    expect(filled.templateId).toBe("desktop-slider");
+    expect(filled.assets.map((a) => a.id)).toEqual([
+      "demo-northwind-desktop-hero",
+      "demo-aurelia-desktop-hero",
+      "demo-maison-oak-desktop-hero",
+      "demo-field-notes-desktop-hero",
+      "demo-studio-kova-desktop-hero",
+    ]);
+    expect(missingRequiredSlots(template, filled.assets)).toEqual([]);
+    expect(filled.shots).toHaveLength(1);
+    const layout = filled.shots[0].layout;
+    if (layout.kind !== "slider") throw new Error(`Expected a slider layout, got ${layout.kind}`);
+    expect(layout.axis).toBe("y");
+    expect(layout.assetIds).toEqual(filled.assets.map((a) => a.id));
+    expect(filled.loop).toBe(true);
+    // Five screenshots at the 2.0 s default step (D4).
+    expect(schedule(filled).total).toBeCloseTo(10, 9);
+
+    store.getState().undo();
+    expect(store.getState().doc).toBe(empty);
   });
 });
 
