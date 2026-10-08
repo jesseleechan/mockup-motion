@@ -23,14 +23,16 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 | `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1) | Transitions, decisive pushes |
 | `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only (cursor click). Overshoot 3% or less |
 | `spring` | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels |
+| `slide` | cubic-bezier(0.40, 0, 0.05, 1) | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
 | `linear` | — | Marquees only |
 
 ### 2.2 Durations
 
-- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Title cards: 2–3 s.
+- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Title cards: 2–3 s. Two layouts set their own length instead: a `slider` shot lasts screenshots × step (carousel steps, below), and a Frames shot lasts at least `framesDuration` (§2.5), 15 s by default.
 - Transitions: 0.5–0.9 s (default 0.7 s, `quintInOut`). Loop wrap crossfade: 0.8 s.
 - Entrances: 0.7–1.0 s with `expoOut`. Stagger between sibling elements: 80–120 ms.
 - Text: 0.6–0.9 s per reveal, 60–90 ms per-word stagger. Hold text fully visible for at least 1.2 s before any exit.
+- Carousel steps (`slider` layout): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress.
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
 
 ### 2.3 Camera presets at `intensity = 1` (`src/motion/camera.ts`)
@@ -59,8 +61,9 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - Never reverse direction within a shot. The v1 zoom-in-then-out "breathing" is banned.
 - Never use more than one dominant movement at once (for example, orbit plus push plus scroll). Scroll shots use a near-static camera (intensity ≤ 0.3).
-- Never let marquee speed exceed 0.12 frame widths per second. Never use a linear camera move.
-- Never let elements pop in without an entrance. Never animate opacity alone for large objects (pair it with 2–4% rise or scale 0.97 → 1).
+- Never let marquee speed exceed 0.12 frame widths per second. The one exception is Frames (a `rows` layout with `travel: "period"`): every row moves at the same speed, alternating direction, at no more than **0.20 frame heights per second**. At the 0.12 limit a 4-screenshot Frames loop at 9:16 would need more than 30 s.
+- Never use a linear camera move.
+- Never let elements pop in without an entrance. Never animate opacity alone for large objects (pair it with 2–4% rise or scale 0.97 → 1). Slider cards pair their fade with the 0.75 neighbour scale.
 
 ## 3. Screens and devices
 
@@ -68,6 +71,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - **Fit to width, always.** If the screenshot is taller than the viewport, crop the bottom (or scroll, if opted in). If it is shorter, then for desktop the viewport aspect adapts within `[1.25, 2.0]`, and for phones and tablets the content is top-aligned and the remainder filled with the screenshot's bottom-row average color. Never crop horizontally.
 - Unlit material, sRGB, no tone mapping. A screenshot pixel must be identical to the source within ΔE < 1 at a frontal camera.
+- **One exception: faded slider neighbours.** In the `slider` layout the active card is color-exact like any other screen. Its neighbours are a deliberate de-emphasis: scale 0.75 and 65% opacity over the background, faded as one object (screen, border and shadow together, so no body shows through). No other layout shows a screen faded or tinted once its entrance has finished.
 - Textures are pre-downscaled to about 1.5× the largest on-screen width (2× for `master` quality) with high-quality resampling, and use mipmaps plus max anisotropy. Text inside a screenshot must not shimmer during slow camera moves (WP-03 has a check for this).
 - Tall screenshots are tiled into strips of `min(maxTextureSize, 4096)` px.
 
@@ -89,7 +93,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - Tablet: screen aspect 0.75, bezel 4% of width, radius 6.5%.
 - Laptop: a browser-style screen in a thin aluminium lid (bezel 1.8%) plus a base at 6% of lid height, viewed at pitch 8° or more so the base reads. Only used when the camera has pitch.
-- Card: the screenshot alone with radius 1.6% of width and a hairline border. This is the "frameless" look.
+- Card: the screenshot alone with a hairline border. This is the "frameless" look. The corner radius is 1.6% of width for landscape cards and 7.5% of width for portrait (mobile) cards, which show a mobile screenshot at the phone screen aspect 0.4615.
 
 ## 4. Composition
 
@@ -97,6 +101,8 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 - **Primary subject size:** single desktop device spans 62–74% of frame width at 16:9 and 4:3, 84–90% at 9:16, 4:5, and 1:1. A single phone spans 70–78% of frame height.
 - **Responsive pair:** phone height is 78–86% of browser height, the phone overlaps the browser's right edge by 10–16% of browser width, and the phone sits 0.04 stage units in front.
 - **Marquee and wall:** at most 3 rows or 5 columns visible. No asset appears twice within the same row or column window. Adjacent rows are offset by half a period. With fewer than 3 distinct assets, use the `single` or `pair` layout instead (templates enforce this through slots).
+- **Slider:** cards on one axis, still camera, no tilt. The active card is centred at scale 1 and opacity 1; the others sit at scale 0.75 and opacity 0.65. Horizontal (`axis: "x"`, mobile cards): the active card is 0.63 of the frame height tall at the phone aspect 0.4615, capped at 0.52 of the frame width (the cap only comes close at 9:16). Vertical (`axis: "y"`, desktop cards): the active card is 0.84 of the frame width wide, capped at 0.50 of the frame height (binds at 16:9, 4:3 and 1:1). Centre-to-centre spacing is half the active size along the axis + gap + half the neighbour size, with a gap of 0.128 (x) or 0.115 (y) stage units at 4:5, scaled with the card at other aspects. At 4:5 this gives the reference: a 0.29 × 0.63 active card with 0.38 spacing (x), and 0.67 × 0.42 with 0.48 spacing (y). The safe margin applies to the active card; neighbours are cropped by the frame on purpose. Sliders need 3 screenshots and work best with 4–6. With fewer screenshots than visible slots, the far cards fade out instead of repeating: no screenshot appears twice in view.
+- **Frames** (`rows`, `device: "card"`, tilt 0, `travel: "period"`): at 4:5, 9:16 and 1:1, 3 rows of cards 0.315 tall with a 0.065 gap between cards and between rows (pitch 0.585 along a row); the middle row is centred and the outer rows are cropped by the frame edges. At 16:9 and 4:3, 2 rows of cards 0.42 tall with the same gap, so a row window shows at most 4 cards. Adjacent rows move in opposite directions at one shared speed (the outer rows of three move left), half a period apart. Frames needs 4 screenshots.
 - **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).
 
 ## 5. Light, shadow, and atmosphere
@@ -113,7 +119,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 ## 6. Color and backgrounds
 
 - Palettes are defined in OKLCH. Gradients and mesh interpolate in OKLab (using `culori`) to avoid muddy middles.
-- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Dusk** mesh `#1B1B2F #3A2F4F #6B4E71 #C3A6A0`; **Mist** mesh `#E9EEF5 #D7E0EE #EDE3F0 #F6EFE6`.
+- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Dusk** mesh `#1B1B2F #3A2F4F #6B4E71 #C3A6A0`; **Mist** mesh `#E9EEF5 #D7E0EE #EDE3F0 #F6EFE6`; **Ash** solid `#DFE1E3`, the flat light grey of the slider and Frames presets, used with grain 0 and vignette 0 (a flat fill cannot band).
 - **Auto palette:** extract 5 dominant colors from the primary screenshot, then derive a background that complements without matching (lower chroma by 40–60%, shift lightness away from the screenshot's average by at least 0.25 L).
 - Background chroma stays at or below 0.09 (OKLCH C) for light palettes and 0.12 for dark, unless the user picks a custom color. Elegance comes from low chroma.
 - Mesh drift: at most 6% of the frame per loop, using integer harmonics only (loop-safe).

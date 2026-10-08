@@ -39,7 +39,7 @@ Dependency direction: `editor → state, engine, templates, ui`; `engine → mot
 export type Aspect = "16:9" | "9:16" | "1:1" | "4:5" | "4:3";
 export type AssetRole = "desktop" | "mobile" | "tablet" | "logo" | "background" | "other";
 export type EasingId =
-  "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring";
+  "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring" | "slide";
 
 export interface AssetRef {
   id: string;
@@ -101,12 +101,29 @@ export type Layout =
       device: "browser" | "card";
       tilt: number;
       speed: number;
+      cardHeight?: number;
+      gap?: number;
+      travel?: "steps" | "period";
     }
   | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number }
   | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
   | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
+  | {
+      kind: "slider";
+      assetIds: string[];
+      axis: "x" | "y";
+      shape: "mobile" | "desktop";
+      step: number;
+    }
   | { kind: "title" };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
+// rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
+// cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
+// today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
+// shot duration and `speed` is ignored (§5).
+// slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
+// slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
+// slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
 
 export type CameraPresetId =
   | "static"
@@ -284,7 +301,7 @@ export function resolveLayout(
 ): LayoutNode[];
 ```
 
-Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`.
+Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` with `shape: "mobile"` emits `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 
@@ -292,7 +309,9 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 - `totalDuration = s_last + duration_last`. When `doc.loop` is true and the doc has more than one shot **or** `shots[0].transitionIn.kind !== "cut"`: `totalDuration −= shots[0].transitionIn.duration`, and in `[total − d0, total)` the last shot blends into shot 0 with shot-0 local time `t − total`, clamped to 0 (shot 0 holds its first pose while fading in). So frame(total) ≡ frame(0) for every loop.
 - A single looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade).
 - In a looping doc, shot 0 has no entrance (`evaluate` treats it as `"none"`). Its first frame is also the frame the loop wraps into, so an entrance there would dissolve the last shot into an empty canvas, or pop out at a cut wrap, on every loop. Later shots keep their entrances, and a doc that does not loop plays shot 0's entrance from t = 0. `loopSkipsEntrance(doc, index)` in `motion/evaluate.ts` is the rule; the editor uses it to say so under shot 0's Entrance select.
-- Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade. At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
+- Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade, except Frames (`rows` with `travel: "period"`, below). At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
+- **Frames** (`rows` with `travel: "period"`) loops natively. Every row travels exactly one asset period (N × pitch, pitch = card width + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction, adjacent rows half a period apart. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. `Layout.speed` is ignored: the speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 frame heights per second (`quality-bar.md` §2.5), rounded up to 0.5 s.
+- **Sliders** (`slider`) loop natively. Step `k` moves every card one slot over `[k × step, k × step + 1.85]` on the `slide` curve, then holds; after N steps (N = `assetIds.length`) the arrangement is back where it started. The shot lasts `sliderDuration(layout) = max(1, N) × step`, so a single looping slider shot with a `cut` wrap has frame(total) ≡ frame(0) with no crossfade.
 - Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts
