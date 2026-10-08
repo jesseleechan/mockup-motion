@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import { defaultStyle } from "../src/doc/defaults";
 import type { DeviceKind, LayoutNode } from "../src/motion";
 import { screenAspectFor } from "../src/motion";
+import { DeviceFadePass } from "../src/engine/devices/DeviceFade";
 import {
   buildBrowserDevice,
   buildCardDevice,
+  cardCornerRadius,
   buildDevice,
   buildLaptopDevice,
   buildPhoneDevice,
@@ -165,5 +167,75 @@ describe("Device frames proportions and geometry (quality-bar §3)", () => {
       expect(dev.compositor).toBeDefined();
       dev.dispose();
     }
+  });
+});
+
+describe("Portrait cards and slider fades (presets P02)", () => {
+  function portraitNode(): LayoutNode {
+    const height = 0.63;
+    return { ...makeMockNode("card", height * 0.4615, height), screenAspect: 0.4615 };
+  }
+
+  it("rounds portrait cards at 7.5% of their width and landscape cards at 1.6%", () => {
+    expect(cardCornerRadius(0.29, 0.4615)).toBeCloseTo(0.29 * 0.075, 6);
+    expect(cardCornerRadius(0.8, 1.6)).toBeCloseTo(0.8 * 0.016, 6);
+
+    const node = portraitNode();
+    const dev = buildCardDevice(node, defaultStyle(), mockCtx);
+    expect(dev.compositor.material.uniforms.uRadius.value).toBeCloseTo(node.width * 0.075, 6);
+    dev.dispose();
+  });
+
+  it("disposes every geometry, material and target of a portrait card", () => {
+    const dev = buildCardDevice(portraitNode(), defaultStyle(), mockCtx);
+    type Disposable = THREE.EventDispatcher<{ dispose: object }>;
+    const resources = new Set<Disposable>();
+    dev.object3d.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        resources.add(object.geometry);
+        for (const material of [object.material].flat()) resources.add(material);
+      }
+    });
+    resources.add(dev.compositor.renderTarget);
+    const disposed = new Set<unknown>();
+    for (const resource of resources) {
+      resource.addEventListener("dispose", () => disposed.add(resource));
+    }
+    expect(resources.size).toBeGreaterThanOrEqual(5);
+    dev.dispose();
+    const left = [...resources].filter((resource) => !disposed.has(resource));
+    expect(left.map((r) => r.constructor.name)).toEqual([]);
+  });
+
+  it("allocates the sRGB backdrop only for slider docs and frees it on dispose", () => {
+    const pass = new DeviceFadePass();
+    const initialised: THREE.WebGLRenderTarget[] = [];
+    const renderer = {
+      initRenderTarget: (target: THREE.WebGLRenderTarget) => initialised.push(target),
+    } as unknown as THREE.WebGLRenderer;
+    const target = new THREE.WebGLRenderTarget(64, 80, { samples: 4 });
+
+    pass.prepare(renderer, target, { fade: true, srgb: false });
+    expect(initialised).toHaveLength(1);
+    const [layer] = initialised;
+
+    pass.prepare(renderer, target, { fade: true, srgb: true });
+    expect(initialised).toHaveLength(3);
+    const backdrop = initialised[2];
+    expect(backdrop).not.toBe(layer);
+    expect([backdrop.width, backdrop.height, backdrop.samples]).toEqual([64, 80, 0]);
+
+    const disposed: string[] = [];
+    layer.addEventListener("dispose", () => disposed.push("layer"));
+    backdrop.addEventListener("dispose", () => disposed.push("backdrop"));
+    pass.prepare(renderer, target, { fade: true, srgb: false });
+    expect(disposed).toEqual(["backdrop"]);
+
+    pass.prepare(renderer, target, { fade: true, srgb: true });
+    const second = initialised[initialised.length - 1];
+    second.addEventListener("dispose", () => disposed.push("second backdrop"));
+    pass.dispose();
+    expect(disposed).toEqual(["backdrop", "layer", "second backdrop"]);
+    target.dispose();
   });
 });

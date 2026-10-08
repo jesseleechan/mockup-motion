@@ -1,0 +1,130 @@
+{
+  "version": 2,
+  "id": "fixture-slider-y",
+  "name": "Slider Y (Desktop)",
+  "createdAt": 1728000000000,
+  "updatedAt": 1728000000000,
+  "aspect": "4:5",
+  "loop": true,
+  "assets": [
+    {
+      "id": "demo-aurelia-desktop-hero",
+      "kind": "image",
+      "name": "aurelia-desktop-hero.webp",
+      "mime": "image/webp",
+      "bytes": 363882,
+      "width": 2880,
+      "height": 1800,
+      "role": "desktop",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-northwind-desktop-hero",
+      "kind": "image",
+      "name": "northwind-desktop-hero.webp",
+      "mime": "image/webp",
+      "bytes": 138828,
+      "width": 2880,
+      "height": 1800,
+      "role": "desktop",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-maison-oak-desktop-hero",
+      "kind": "image",
+      "name": "maison-oak-desktop-hero.webp",
+      "mime": "image/webp",
+      "bytes": 294534,
+      "width": 2880,
+      "height": 1800,
+      "role": "desktop",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-field-notes-desktop-hero",
+      "kind": "image",
+      "name": "field-notes-desktop-hero.webp",
+      "mime": "image/webp",
+      "bytes": 277710,
+      "width": 2880,
+      "height": 1800,
+      "role": "desktop",
+      "meta": {
+        "tall": false
+      }
+    }
+  ],
+  "style": {
+    "background": {
+      "kind": "solid",
+      "color": "#DFE1E3"
+    },
+    "frameAppearance": "light",
+    "deviceFinish": "graphite",
+    "browserChrome": "standard",
+    "browserUrl": "",
+    "shadow": "none",
+    "grain": 0,
+    "vignette": 0,
+    "fonts": {
+      "display": {
+        "source": "builtin",
+        "family": "Inter",
+        "weight": 600
+      },
+      "body": {
+        "source": "builtin",
+        "family": "Inter",
+        "weight": 400
+      }
+    },
+    "textColor": "",
+    "accent": "#000000"
+  },
+  "shots": [
+    {
+      "id": "shot-1",
+      "duration": 8,
+      "layout": {
+        "kind": "slider",
+        "assetIds": [
+          "demo-aurelia-desktop-hero",
+          "demo-northwind-desktop-hero",
+          "demo-maison-oak-desktop-hero",
+          "demo-field-notes-desktop-hero"
+        ],
+        "axis": "y",
+        "shape": "desktop",
+        "step": 2
+      },
+      "camera": {
+        "preset": "static",
+        "intensity": 0,
+        "easing": "linear",
+        "float": 0
+      },
+      "entrance": "none",
+      "texts": [],
+      "transitionIn": {
+        "kind": "cut",
+        "duration": 0,
+        "easing": "quintInOut"
+      }
+    }
+  ],
+  "export": {
+    "destination": "custom",
+    "resolution": 1080,
+    "fps": 30,
+    "quality": "high",
+    "format": "mp4",
+    "supersample": 1,
+    "motionBlur": false
+  }
+}

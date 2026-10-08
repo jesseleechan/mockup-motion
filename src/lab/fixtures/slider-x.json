@@ -1,0 +1,130 @@
+{
+  "version": 2,
+  "id": "fixture-slider-x",
+  "name": "Slider X (Mobile)",
+  "createdAt": 1728000000000,
+  "updatedAt": 1728000000000,
+  "aspect": "4:5",
+  "loop": true,
+  "assets": [
+    {
+      "id": "demo-aurelia-mobile-hero",
+      "kind": "image",
+      "name": "aurelia-mobile-hero.webp",
+      "mime": "image/webp",
+      "bytes": 148030,
+      "width": 780,
+      "height": 1688,
+      "role": "mobile",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-northwind-mobile-hero",
+      "kind": "image",
+      "name": "northwind-mobile-hero.webp",
+      "mime": "image/webp",
+      "bytes": 83148,
+      "width": 780,
+      "height": 1688,
+      "role": "mobile",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-maison-oak-mobile-hero",
+      "kind": "image",
+      "name": "maison-oak-mobile-hero.webp",
+      "mime": "image/webp",
+      "bytes": 125570,
+      "width": 780,
+      "height": 1688,
+      "role": "mobile",
+      "meta": {
+        "tall": false
+      }
+    },
+    {
+      "id": "demo-field-notes-mobile-hero",
+      "kind": "image",
+      "name": "field-notes-mobile-hero.webp",
+      "mime": "image/webp",
+      "bytes": 105354,
+      "width": 780,
+      "height": 1688,
+      "role": "mobile",
+      "meta": {
+        "tall": false
+      }
+    }
+  ],
+  "style": {
+    "background": {
+      "kind": "solid",
+      "color": "#DFE1E3"
+    },
+    "frameAppearance": "light",
+    "deviceFinish": "graphite",
+    "browserChrome": "standard",
+    "browserUrl": "",
+    "shadow": "none",
+    "grain": 0,
+    "vignette": 0,
+    "fonts": {
+      "display": {
+        "source": "builtin",
+        "family": "Inter",
+        "weight": 600
+      },
+      "body": {
+        "source": "builtin",
+        "family": "Inter",
+        "weight": 400
+      }
+    },
+    "textColor": "",
+    "accent": "#000000"
+  },
+  "shots": [
+    {
+      "id": "shot-1",
+      "duration": 8,
+      "layout": {
+        "kind": "slider",
+        "assetIds": [
+          "demo-aurelia-mobile-hero",
+          "demo-northwind-mobile-hero",
+          "demo-maison-oak-mobile-hero",
+          "demo-field-notes-mobile-hero"
+        ],
+        "axis": "x",
+        "shape": "mobile",
+        "step": 2
+      },
+      "camera": {
+        "preset": "static",
+        "intensity": 0,
+        "easing": "linear",
+        "float": 0
+      },
+      "entrance": "none",
+      "texts": [],
+      "transitionIn": {
+        "kind": "cut",
+        "duration": 0,
+        "easing": "quintInOut"
+      }
+    }
+  ],
+  "export": {
+    "destination": "custom",
+    "resolution": 1080,
+    "fps": 30,
+    "quality": "high",
+    "format": "mp4",
+    "supersample": 1,
+    "motionBlur": false
+  }
+}
