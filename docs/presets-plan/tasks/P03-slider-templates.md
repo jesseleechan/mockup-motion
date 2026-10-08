@@ -13,7 +13,7 @@ This turns the slider into two presets and makes it editable: users can add scre
 
 ## Required changes
 
-1. **Palette.** Add Ash (`#DFE1E3`, solid) to the palettes in `src/templates/looks.ts` and wherever the editor lists palettes (D7).
+1. **Palette.** Add Ash (`#DFE1E3`, solid) to the palettes in `src/templates/looks.ts` and wherever the editor lists palettes (D7). Done in P04, which needed it for Frames: Ash is in `BUILTIN_PALETTES` (`src/doc/palettes.ts`, so the Video inspector lists it) and in `PaletteId`.
 2. **Templates.** Add `src/templates/mobile-slider.ts` and `desktop-slider.ts`:
    - Mobile Slider: category `mobile`; slots `mobile1`–`mobile3` required and `mobile4`–`mobile6` optional; layout `{ kind: "slider", axis: "x", shape: "mobile", step: 2.0 }`.
    - Desktop Slider: category `portfolio`; slots `desktop1`–`desktop3` required and `desktop4`–`desktop6` optional; layout `{ kind: "slider", axis: "y", shape: "desktop", step: 2.0 }`.

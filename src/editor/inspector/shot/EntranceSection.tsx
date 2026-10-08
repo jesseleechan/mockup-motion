@@ -1,5 +1,6 @@
 import React from "react";
-import type { Shot } from "../../../doc/types";
+import type { Aspect, Shot } from "../../../doc/types";
+import { minShotDuration } from "../../../motion";
 import { loopSkipsEntrance } from "../../../motion/evaluate";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
@@ -7,7 +8,7 @@ import { ENTRANCE_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 /** Shot duration and how the layout's devices appear at the start of the shot. */
-export const EntranceSection: React.FC<{ shot: Shot }> = ({ shot }) => {
+export const EntranceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot, aspect }) => {
   const update = useShotUpdate(shot.id);
   const skipped = useEditorStore((s) =>
     loopSkipsEntrance(
@@ -16,6 +17,8 @@ export const EntranceSection: React.FC<{ shot: Shot }> = ({ shot }) => {
     ),
   );
   const hintId = `entrance-hint-${shot.id}`;
+  // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
+  const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
 
   return (
     <Section title="Entrance and duration">
@@ -23,14 +26,14 @@ export const EntranceSection: React.FC<{ shot: Shot }> = ({ shot }) => {
         <Field label="Duration" value={`${shot.duration.toFixed(1)} s`}>
           <Slider
             aria-label="Duration"
-            min={1}
-            max={15}
+            min={shortest}
+            max={shortest > 1 ? 30 : 15}
             step={0.5}
             value={shot.duration}
             onChange={(val) =>
               update(
                 (target) => {
-                  target.duration = val;
+                  target.duration = Math.max(shortest, val);
                 },
                 { coalesceKey: `shot-duration-${shot.id}` },
               )

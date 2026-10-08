@@ -1,7 +1,8 @@
 import type { Background, Transition } from "../doc/types";
 import { BUILTIN_PALETTES } from "../doc/palettes";
 
-export type PaletteId = "bone" | "fog" | "graphite" | "ink" | "sage" | "clay" | "dusk" | "mist";
+export type PaletteId =
+  "bone" | "fog" | "graphite" | "ink" | "sage" | "clay" | "dusk" | "mist" | "ash";
 
 function palette(id: PaletteId) {
   const found = BUILTIN_PALETTES.find((p) => p.id === id);

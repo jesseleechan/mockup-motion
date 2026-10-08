@@ -3,7 +3,7 @@ import type { SlotSpec, Template } from "./types";
 
 /**
  * Validates if the available assets satisfy the template requirements.
- * Slots require enough distinct assets for marquee and wall layouts (at least 3).
+ * Slots require enough distinct assets for marquee and wall layouts (at least 3; Frames 4).
  * With too few assets, returns valid: false with a user-facing explanation.
  */
 export function validateTemplateRequirements(
@@ -15,19 +15,19 @@ export function validateTemplateRequirements(
     template.id === "phone-parade" ||
     template.id === "portfolio-rows" ||
     template.id === "isometric-wall" ||
-    template.id === "cascade-stack";
+    template.id === "cascade-stack" ||
+    template.id === "frames";
 
   if (isMultiAsset) {
     const requiredRole: AssetRole = template.id === "phone-parade" ? "mobile" : "desktop";
     const distinctRoleAssets = assets.filter((a) => a.kind === "image" && a.role === requiredRole);
+    // Quality bar §4: Frames needs 4 screenshots.
+    const minimum = template.id === "frames" ? 4 : 3;
 
-    if (distinctRoleAssets.length < 3) {
+    if (distinctRoleAssets.length < minimum) {
       return {
         valid: false,
-        reason:
-          requiredRole === "mobile"
-            ? "Needs 3+ mobile screenshots"
-            : "Needs 3+ desktop screenshots",
+        reason: `Needs ${minimum}+ ${requiredRole} screenshots`,
       };
     }
   }

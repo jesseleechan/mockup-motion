@@ -14,3 +14,4 @@ export { cascadeStackTemplate } from "./cascade-stack";
 export { scrollStoryTemplate } from "./scroll-story";
 export { launchReelTemplate } from "./launch-reel";
 export { caseStudyReelTemplate } from "./case-study-reel";
+export { framesTemplate, framesLayout } from "./frames";

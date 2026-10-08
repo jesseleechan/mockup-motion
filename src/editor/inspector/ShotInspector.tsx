@@ -64,7 +64,7 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
       <LayoutSection shot={shot} assets={doc.assets} />
       <AssetsSection shot={shot} assets={doc.assets} />
       {shot.layout.kind !== "title" && <CameraSection shot={shot} />}
-      <EntranceSection shot={shot} />
+      <EntranceSection shot={shot} aspect={doc.aspect} />
       <TransitionSection shot={shot} />
       <ScrollSection shot={shot} assets={doc.assets} />
       <CursorSection shot={shot} />

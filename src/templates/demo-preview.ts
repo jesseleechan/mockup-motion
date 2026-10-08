@@ -47,6 +47,13 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("aurelia"),
     desktopHero("northwind"),
   ],
+  frames: [
+    desktopHero("northwind"),
+    desktopHero("aurelia"),
+    desktopHero("field-notes"),
+    desktopHero("studio-kova"),
+    desktopHero("maison-oak"),
+  ],
   "scroll-story": [desktopFull("studio-kova")],
   "launch-reel": [desktopFull("aurelia"), mobileHero("aurelia")],
   "case-study-reel": [

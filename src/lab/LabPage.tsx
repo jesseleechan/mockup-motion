@@ -20,7 +20,7 @@ import devicesTabletFixture from "./fixtures/devices-tablet.json";
 import devicesLaptopFixture from "./fixtures/devices-laptop.json";
 import textTitleFixture from "./fixtures/text-title.json";
 
-import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../templates";
+import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc, framesTemplate } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 
 declare global {
@@ -57,6 +57,12 @@ for (const t of BUILTIN_TEMPLATES) {
   FIXTURES[t.id] = pDoc;
 }
 Object.assign(FIXTURES, VISUAL_FIXTURES);
+
+// Frames (presets P04) joins the gallery in P05; until then the lab builds it per aspect,
+// because its row count depends on the aspect: /lab?fixture=frames-4x5&aspect=4:5.
+for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
+  FIXTURES[`frames-${aspect.replace(":", "x")}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
+}
 
 function aspectRatioOf(aspect: Aspect): number {
   switch (aspect) {

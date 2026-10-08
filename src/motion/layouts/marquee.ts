@@ -1,5 +1,8 @@
 // Quality-bar §2.5: a marquee never moves faster than 0.12 frame widths per second.
 export const MARQUEE_MAX_FRAME_WIDTHS_PER_SECOND = 0.12;
+// Quality-bar §2.5: Frames (rows with travel "period") has its own limit, in frame heights
+// (stage units) per second, so a whole asset period fits in one loop at every aspect.
+export const FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND = 0.2;
 
 /**
  * Marquee velocity in stage units per second, the same for any number of screenshots.
