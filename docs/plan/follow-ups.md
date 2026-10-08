@@ -18,7 +18,6 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | `Engine.pick()` returns the phone for much of the desktop screen in the responsive-pair overlap layout, and returns meaningless UVs for meshes other than screens.                                                                                    | F04, F06              |
 | The module-level cursor textures in `CursorSprites.ts` are never disposed (small and shared).                                                                                                                                                         | F01                   |
 | The screen material ignores device `material.opacity`.                                                                                                                                                                                                | F02                   |
-| Card screens z-fight with their body slab: the screen sits 0.0004 stage units in front of the slab's front face (`src/engine/devices/card.ts`, `body.ts` puts the front face at z = −0.0003, not 0), about one step of a 16-bit depth buffer at the default camera. At some positions a dotted diagonal of slab colour shows across the screen (`docs/presets-plan/evidence/P04/known-issue_card-zfight_4x5_t10_crop.webp`). Moving the screen to z = 0.002 removes it. It affects every card layout, and Frames and the sliders use cards only. A fix needs a pixel test and may change baselines. | P04                   |
 
 ## Templates and layouts
 

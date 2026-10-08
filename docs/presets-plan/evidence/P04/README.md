@@ -11,7 +11,7 @@ Stills are rendered from `/lab?still=1&fixture=frames-<aspect>&aspect=<aspect>&t
 | `frames_16x9_t0.webp` | Two rows of 0.42-tall cards, at most four cards per row window, rows half a period apart; the block is centred with an even margin above and below. |
 | `frames_4x3_t0.webp` | Two rows, three cards per row window; the block nearly fills the height (4.8% margin top and bottom) but stays inside the frame. |
 | `loop-seam_frame0-left_frame449-right.webp` | The first (0 s) and last (14.967 s) frames of a 1080 × 1350, 30 fps WebM export: the same cards, one frame of travel apart. |
-| `known-issue_card-zfight_4x5_t10_crop.webp` | A crop of the 4:5 still at t = 10 s: a dotted diagonal across a card screen. It is z-fighting between the card's screen and its body slab (0.0004 stage units apart), an existing engine bug in `src/engine/devices/card.ts` that P04 does not change. Moving the screen to z = 0.002 removes it. Logged in `docs/plan/follow-ups.md`. |
+| `known-issue_card-zfight_4x5_t10_crop.webp` | A crop of the 4:5 still at t = 10 s: a dotted diagonal across a card screen. It was first read as z-fighting between the screen and its body slab, but it is the screen shader discarding pixel quads on its rounded box's medial axis, where `fwidth` is 0 (`src/engine/materials/screen.ts`). Fixed on `fix/card-zfight`; see `docs/fix-plan/evidence/card-screen-seam/`. |
 
 ## Loop check (4:5 export)
 

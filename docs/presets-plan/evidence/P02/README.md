@@ -33,13 +33,13 @@ Both are within the task's 3%. Our gaps follow `reference.md` (0.128 and 0.115);
 | `slider-x_4x3_t0.webp`  | Three cards plus the edge of the fourth on the right; same empty slot on the left as 16:9, much less visible.                                                                                                                                           |
 | `slider-y_4x5_t0.webp`  | Active desktop card 0.67 × 0.42 with 1.6% corners; the neighbours above and below are cropped by the frame and faded.                                                                                                                                   |
 | `slider-y_9x16_t0.webp` | Full-width active card (0.84 of the frame width), both neighbours fully visible above and below.                                                                                                                                                        |
-| `slider-y_1x1_t0.webp`  | The height cap (0.50) holds. The active card shows the known card z-fight (below).                                                                                                                                                                      |
+| `slider-y_1x1_t0.webp`  | The height cap (0.50) holds. The active card shows the card screen seam (below).                                                                                                                                                                        |
 | `slider-y_16x9_t0.webp` | The height cap holds; neighbours are thin strips at the top and bottom edges.                                                                                                                                                                           |
 | `slider-y_4x3_t0.webp`  | The height cap holds; the card keeps a clear margin to the side edges.                                                                                                                                                                                  |
 
-## Known issue: card z-fight
+## Known issue: card screen seam (fixed)
 
-`known-issue_card-zfight_slider-y_1x1_t0_crop.webp` is a crop of the 1:1 still: a dotted diagonal across the active card. It is the card screen z-fighting with its body slab, already logged by P04 ([#24](https://github.com/jesseleechan/mockup-motion/pull/24)) as an engine bug in `src/engine/devices/card.ts`. P02 doesn't change the card's depth; it shows on opaque cards as well as faded ones. It needs fixing before the P05 contact sheet.
+`known-issue_card-zfight_slider-y_1x1_t0_crop.webp` is a crop of the 1:1 still: a dotted diagonal across the active card. It was first read as the card screen z-fighting with its body slab. The cause is the screen shader: on its rounded box's medial axis `fwidth` is 0 and the screen discarded those pixel quads, so the slab showed through. Fixed on `fix/card-zfight`; see `docs/fix-plan/evidence/card-screen-seam/`.
 
 ## Frame time at 1080p
 
