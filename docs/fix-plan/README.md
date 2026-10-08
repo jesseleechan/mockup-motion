@@ -75,7 +75,7 @@ The previous run failed mainly because work was marked done without being looked
    - The only allowed skip: an MP4/H.264 assertion when `canEncodeVideo("avc")` is false in that browser. It must be `test.skip(true, "H.264 encoder unavailable in this Chromium build")`, decided at runtime.
 4. **No silent fallbacks in scripts or tests.** No `.catch(() => {})`, no empty `catch {}`, no "fallback placeholder" assets. Scripts exit non-zero on any failure. (F00 adds a lint rule for this.)
 5. **No placeholder assets.** If a generated asset (preview video, poster, thumbnail) cannot be produced, the task is not done.
-6. **Run every gate before you say a task is done:** `npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e`. Paste the pass/fail counts. Once F13 is done, also run `npm run test:visual`.
+6. **Run every gate before you say a task is done:** `npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e`. Paste the pass/fail counts. Once F13 is done, also run `npm run test:visual`. Since the fix plan ended, `npm run test:e2e` and the CI `e2e` suite are needed only when a change touches an e2e trigger path (`src/`, `public/`, `tests/e2e/`, build and test config; the list is in `CLAUDE.md` and `scripts/e2e-paths.ts`). `main` and the nightly CI run always run the full suite.
 7. **Status is evidence-based.** Mark a task `Done` in the table below only after its acceptance criteria are met *and* the evidence is in the repo or PR.
 8. **Stay in scope.** List anything else you notice under "Follow-ups" in the task's PR.
 9. **One task per branch and PR**, named `fix/Fxx-<slug>`. Commit messages start with `Fxx:`.

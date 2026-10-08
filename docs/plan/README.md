@@ -179,7 +179,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 [f13]: https://github.com/jesseleechan/mockup-motion/pull/15
 [f14]: https://github.com/jesseleechan/mockup-motion/pull/17
 
-"Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI on every pull request, except the `perf` project (`tests/perf`), which needs a real GPU.
+"Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI: unit and visual tests on every pull request; e2e tests on every pull request that touches an e2e trigger path (`CLAUDE.md`, Commands), on every push to `main` and nightly. The `perf` project (`tests/perf`) needs a real GPU and isn't in CI.
 
 ### Evidence for work packages without a fix
 
