@@ -47,13 +47,22 @@ const fragmentShader = /* glsl */ `
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
+  // smoothstep(-w, w, x) with its ramp half-width w. fwidth gives w = 0 where the distance is
+  // flat across a pixel quad, which happens on the box's medial axis (the diagonals from the
+  // corners and the centre line). smoothstep(0, 0, x) is undefined: SwiftShader returns 1 there,
+  // which discarded whole quads of the screen and showed the card slab through it as a dotted
+  // diagonal or a line. A zero-width ramp is a step.
+  float aaStep(float w, float x) {
+    return w > 0.0 ? smoothstep(-w, w, x) : step(0.0, x);
+  }
+
   void main() {
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
     float d = sdRoundedBox(p, halfSize, uRadius);
 
     float delta = fwidth(d) * 0.7;
-    float alpha = 1.0 - smoothstep(-delta, delta, d);
+    float alpha = 1.0 - aaStep(delta, d);
     if (alpha <= 0.001) {
       discard;
     }
@@ -63,7 +72,7 @@ const fragmentShader = /* glsl */ `
     if (uBorderWidth > 0.0) {
       float borderD = d + uBorderWidth;
       float borderDelta = fwidth(borderD) * 0.7;
-      float borderAlpha = smoothstep(-borderDelta, borderDelta, borderD);
+      float borderAlpha = aaStep(borderDelta, borderD);
       color = mix(color, uBorderColor, borderAlpha * uBorderColor.a);
     }
 

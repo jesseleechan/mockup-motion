@@ -124,3 +124,92 @@ export function quadrantCentroids(pixels: PixelBuffer) {
   }
   return points;
 }
+
+/**
+ * Finds pixels inside flat-coloured card screens that are not the screen colour. Scans every row
+ * and every column for runs of screen-coloured pixels (a card screen is convex, so one run per
+ * card per line) and checks the pixels inside each run, `inset` px from its ends and from the
+ * card's edges. A run bridges gaps narrower than `inset`, so a dot or a line across the scan
+ * direction counts as a leak; a line along a row is caught by the column scan. The light slab is
+ * the only thing behind a screen, so a leak is the slab (or the hairline border) showing through.
+ * `screenPixels` counts the pixels the row scan checked.
+ */
+export function screenLeaks(
+  px: PixelBuffer,
+  screen: readonly [number, number, number],
+  inset = 24,
+): { screenPixels: number; samples: string[]; count: number } {
+  const diff = (i: number) =>
+    Math.max(
+      Math.abs(px.data[i] - screen[0]),
+      Math.abs(px.data[i + 1] - screen[1]),
+      Math.abs(px.data[i + 2] - screen[2]),
+    );
+  // A flat screenshot renders within dither (±1) of its colour. One threshold for both tests, so
+  // an anti-aliased edge pixel can neither start a run nor count as a leak inside one.
+  const tolerance = 4;
+  const isScreen = (x: number, y: number) => diff((y * px.width + x) * 4) <= tolerance;
+  const leaks = new Set<number>();
+  const rows = scanLines(px.height, px.width, (line, pos) => [pos, line], isScreen, inset);
+  const columns = scanLines(px.width, px.height, (line, pos) => [line, pos], isScreen, inset);
+  for (const [x, y] of [...rows.inside, ...columns.inside]) {
+    const i = (y * px.width + x) * 4;
+    if (diff(i) > tolerance) leaks.add(i);
+  }
+  const samples = [...leaks].slice(0, 8).map((i) => {
+    const x = (i / 4) % px.width;
+    const y = Math.floor(i / 4 / px.width);
+    return `(${x}, ${y}) = ${px.data[i]}, ${px.data[i + 1]}, ${px.data[i + 2]}`;
+  });
+  return { screenPixels: rows.inside.length, samples, count: leaks.size };
+}
+
+/** The pixels inside screen runs along one axis; `at` maps (line, position) to (x, y). */
+function scanLines(
+  lines: number,
+  length: number,
+  at: (line: number, pos: number) => [number, number],
+  isScreen: (x: number, y: number) => boolean,
+  inset: number,
+): { inside: [number, number][] } {
+  const screenAt = (line: number, pos: number) => isScreen(...at(line, pos));
+  const lineHasScreen: boolean[] = [];
+  for (let line = 0; line < lines; line++) {
+    let any = false;
+    for (let pos = 0; pos < length && !any; pos++) any = screenAt(line, pos);
+    lineHasScreen.push(any);
+  }
+  const inside: [number, number][] = [];
+  for (let line = 0; line < lines; line++) {
+    // Skip lines near a card's edge across the scan direction.
+    let near = false;
+    for (let d = -inset; d <= inset && !near; d++) {
+      const other = line + d;
+      near = other < 0 || other >= lines || !lineHasScreen[other];
+    }
+    if (near) continue;
+    let pos = 0;
+    while (pos < length) {
+      while (pos < length && !screenAt(line, pos)) pos++;
+      const start = pos;
+      // A run ends at a gap wider than any leak (a gap between cards).
+      let end = pos;
+      while (pos < length) {
+        if (screenAt(line, pos)) {
+          end = pos;
+          pos++;
+          continue;
+        }
+        let gap = pos;
+        while (gap < length && !screenAt(line, gap) && gap - pos < inset) gap++;
+        if (gap < length && gap - pos < inset && screenAt(line, gap)) {
+          pos = gap;
+          continue;
+        }
+        break;
+      }
+      for (let p = start + inset; p <= end - inset; p++) inside.push(at(line, p));
+    }
+  }
+  return { inside };
+}
