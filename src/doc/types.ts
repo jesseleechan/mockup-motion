@@ -59,7 +59,8 @@ export type Layout =
   | { kind: "trio"; desktopId: string; tabletId?: string; mobileId: string }
   | { kind: "rows"; assetIds: string[]; rows: 1 | 2 | 3; device: "browser" | "card"; tilt: number; speed: number;
       cardHeight?: number; gap?: number; travel?: "steps" | "period" }
-  | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number }
+  | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number;
+      device?: "phone" | "card"; cardWidth?: number; gap?: number; travel?: "steps" | "period" }
   | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
   | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number }
@@ -72,6 +73,11 @@ export type Layout =
 // cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
 // today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
 // shot duration and `speed` is ignored.
+// columns.device (default "phone") and columns.cardWidth, gap and travel mirror rows, turned 90°:
+// unset fields are today's tilted phone marquee. "card" draws portrait cards at the phone screen
+// aspect 0.4615, whatever the image's own aspect. cardWidth: stage units (card height =
+// cardWidth / 0.4615). gap: stage units between cards and columns. travel "period" is the Frames
+// loop on columns (Mobile Frames).
 
 export type CameraPresetId =
   | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
