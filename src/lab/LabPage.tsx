@@ -22,7 +22,12 @@ import textTitleFixture from "./fixtures/text-title.json";
 import sliderXFixture from "./fixtures/slider-x.json";
 import sliderYFixture from "./fixtures/slider-y.json";
 
-import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc, framesTemplate } from "../templates";
+import {
+  BUILTIN_TEMPLATES,
+  buildTemplatePreviewDoc,
+  framesTemplate,
+  mobileFramesTemplate,
+} from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
 
@@ -63,10 +68,13 @@ for (const t of BUILTIN_TEMPLATES) {
 }
 Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES);
 
-// Frames also gets a fixture per aspect, because its row count depends on the aspect: the
-// `frames` fixture above is built at 16:9. Use /lab?fixture=frames-4x5&aspect=4:5.
+// Both Frames presets also get a fixture per aspect, because their lane count depends on the
+// aspect: the `frames` and `mobile-frames` fixtures above are built at 16:9. Use
+// /lab?fixture=frames-4x5&aspect=4:5 or /lab?fixture=mobile-frames-4x5&aspect=4:5.
 for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
-  FIXTURES[`frames-${aspect.replace(":", "x")}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
+  const suffix = aspect.replace(":", "x");
+  FIXTURES[`frames-${suffix}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
+  FIXTURES[`mobile-frames-${suffix}`] = buildTemplatePreviewDoc(mobileFramesTemplate, aspect);
 }
 
 function aspectRatioOf(aspect: Aspect): number {

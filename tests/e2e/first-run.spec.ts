@@ -212,11 +212,11 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(5);
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  expect(order.slice(0, 3)).toEqual(["desktop-slider", "mobile-slider", "frames"]);
+  expect(order.slice(0, 4)).toEqual(["desktop-slider", "mobile-slider", "frames", "mobile-frames"]);
 
   // Apply without picking a card: the initial selection is the first-run default.
   await gallery.getByRole("button", { name: "Apply template" }).click();

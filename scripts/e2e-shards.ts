@@ -30,7 +30,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
   ],
   ["editor", "color", "ui-overflow", "polish", "text", "demo-assets", "library", "shadows-post"],
   ["audio", "export-dialog", "entrance", "thumbnails", "stage", "lab", "devices", "ui"],
-  ["export", "frames", "slider"],
+  ["export", "frames", "slider", "mobile-frames"],
 ];
 
 /** The spec paths of a 1-based shard, as Playwright file filters. */
