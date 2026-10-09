@@ -14,6 +14,7 @@ declare global {
   interface Window {
     __labReady?: boolean;
     __labEngine?: Engine;
+    __editorEngine?: Engine;
     __labTestImages?: {
       quadrants(w: number, h: number): Promise<ImageBitmap>;
       bands(w: number, h: number, colors: string[]): Promise<ImageBitmap>;
@@ -70,7 +71,7 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "all 7 built-in templates are lab fixtures").toBe(7);
+  expect(results.length, "all 4 built-in templates are lab fixtures").toBe(4);
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",
@@ -140,7 +141,7 @@ test("F03: a pair shows screenshots in both the browser and the phone", async ({
   }
 });
 
-test("F03: alternating a single browser and isometric-wall keeps GPU memory flat", async ({
+test("F03: alternating a single browser and the isometric wall keeps GPU memory flat", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -150,10 +151,10 @@ test("F03: alternating a single browser and isometric-wall keeps GPU memory flat
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
-    if (!fixtures?.["single-browser"] || !fixtures["isometric-wall"] || !engine || !setDoc)
+    if (!fixtures?.["single-browser"] || !fixtures["wall-isometric"] || !engine || !setDoc)
       throw new Error("F03 memory fixture hooks are unavailable");
     engine.resize(640, 360);
-    const docs = [fixtures["single-browser"], fixtures["isometric-wall"]];
+    const docs = [fixtures["single-browser"], fixtures["wall-isometric"]];
     const snapshots = [];
     for (let cycle = 1; cycle <= 20; cycle++) {
       await setDoc(docs[(cycle - 1) % 2]);
@@ -174,7 +175,7 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const createProvider = window.__createLabAssetProvider;
-    if (!fixtures?.["isometric-wall"] || !fixtures["single-browser"] || !engine || !createProvider)
+    if (!fixtures?.["wall-isometric"] || !fixtures["single-browser"] || !engine || !createProvider)
       throw new Error("F03 race fixture hooks are unavailable");
     engine.resize(640, 360);
     const provider = createProvider();
@@ -185,13 +186,13 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
       },
       getText: provider.getText.bind(provider),
     };
-    const older = engine.setDocument(fixtures["isometric-wall"], slow);
+    const older = engine.setDocument(fixtures["wall-isometric"], slow);
     const newer = engine.setDocument(fixtures["single-browser"], provider);
     await Promise.all([older, newer]);
     engine.renderAt(1);
     return engine.debugInfo().nodes.map((n) => n.id);
   });
-  expect(nodeIds, "the single browser, none of isometric-wall's tiles").toEqual(["single:0"]);
+  expect(nodeIds, "the single browser, none of the wall's tiles").toEqual(["single:0"]);
 });
 
 test("F03: pair layouts preload both screen assets", async ({ page }) => {
@@ -649,4 +650,94 @@ test("F03: devices whose key disappears are disposed", async ({ page }) => {
   expect(counts[19].built, "each cycle built a new browser").toBeGreaterThan(counts[1].built);
   expect(counts[19].geometries, JSON.stringify(counts)).toBe(counts[1].geometries);
   expect(counts[19].textures, JSON.stringify(counts)).toBe(counts[1].textures);
+});
+
+// Phone Parade, Portfolio Rows and Isometric Wall were removed (Frames plan PF01). A project saved
+// with one of them keeps its tilted columns, tilted rows or wall, and must still render.
+const SAVED_REMOVED = [
+  { fixture: "columns-phone-tilted", templateId: "phone-parade", node: "col" },
+  { fixture: "wall-isometric", templateId: "isometric-wall", node: "wall" },
+  { fixture: "rows-browser-tilted", templateId: "portfolio-rows", node: "row" },
+];
+
+test("PF01: saved projects of removed templates load a texture for every screen", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
+  await page.waitForFunction(() => window.__labReady === true);
+  const lab = await page.evaluate(async (saved) => {
+    const fixtures = window.__fixtures;
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    const scheduleDoc = window.__labSchedule;
+    if (!fixtures || !engine || !setDoc || !scheduleDoc)
+      throw new Error("PF01 lab hooks are unavailable");
+    engine.resize(640, 360);
+    const out = [];
+    for (const { fixture, templateId } of saved) {
+      const base = fixtures[fixture];
+      if (!base) throw new Error(`No lab fixture ${fixture}`);
+      // As IndexedDB returns it: plain JSON naming the removed template.
+      const doc = JSON.parse(JSON.stringify({ ...base, templateId }));
+      await setDoc(doc);
+      const total = scheduleDoc(doc).total;
+      for (const t of [0, total * 0.5, total]) {
+        engine.renderAt(t);
+        const nodes = engine.debugInfo().nodes;
+        out.push({
+          label: `${templateId} at ${t.toFixed(2)} s`,
+          ids: nodes.map((n) => n.id),
+          unloaded: nodes.filter((n) => !n.assetId || !n.textureLoaded).map((n) => n.id),
+        });
+      }
+    }
+    return {
+      out,
+      wall: JSON.stringify({ ...fixtures["wall-isometric"], templateId: "isometric-wall" }),
+    };
+  }, SAVED_REMOVED);
+
+  expect(lab.out).toHaveLength(SAVED_REMOVED.length * 3);
+  for (const [i, result] of lab.out.entries()) {
+    const { node } = SAVED_REMOVED[Math.floor(i / 3)];
+    expect(result.ids.length, `${result.label}: screens drawn`).toBeGreaterThan(3);
+    expect(
+      result.ids.filter((id) => !id.startsWith(node)),
+      `${result.label}: every node is a ${node} screen`,
+    ).toEqual([]);
+    expect(result.unloaded, `${result.label}: screens without a texture`).toEqual([]);
+  }
+
+  // The editor opens the saved wall, renders it, and the gallery starts on the first template.
+  // The stage mounts its engine once a document has shots, as after demo content.
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try with demo content" }).click();
+  await page.waitForFunction(() => Boolean(window.__editorEngine));
+  await page.evaluate((json) => {
+    const store = (
+      window as unknown as {
+        __editorStore?: { getState(): { loadDoc(doc: ProjectDoc): void } };
+      }
+    ).__editorStore;
+    if (!store) throw new Error("__editorStore is unavailable");
+    store.getState().loadDoc(JSON.parse(json) as ProjectDoc);
+  }, lab.wall);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const nodes = window.__editorEngine?.debugInfo().nodes ?? [];
+          return {
+            wall: nodes.length > 3 && nodes.every((n) => n.id.startsWith("wall")),
+            unloaded: nodes.filter((n) => !n.assetId || !n.textureLoaded).length,
+          };
+        }),
+      { timeout: 20_000, message: "the editor draws the saved wall with every texture" },
+    )
+    .toEqual({ wall: true, unloaded: 0 });
+  await page.getByRole("button", { name: "Browse all templates" }).click();
+  const gallery = page.getByRole("dialog");
+  await expect(gallery.getByText("Selected: Desktop Slider")).toBeVisible();
+  await expect(gallery.getByText("Active", { exact: true })).toHaveCount(0);
 });

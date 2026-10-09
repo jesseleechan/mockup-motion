@@ -98,13 +98,13 @@ Exact values go into `quality-bar.md` §4 in PF00. If the contact sheet in PF04 
 
 ## 4. Tasks
 
-| Task                                         | Title                                                                                   | Size | Depends on             | Status    |
-| -------------------------------------------- | --------------------------------------------------------------------------------------- | ---- | ---------------------- | --------- |
-| [PF00](tasks/PF00-decisions-and-rules.md)    | Record the decisions in the quality bar and contracts                                   | S    | —                      | In review |
-| [PF01](tasks/PF01-remove-templates.md)       | Remove Phone Parade, Portfolio Rows and Isometric Wall                                  | M    | PF00, PR #32 merged    | Proposed  |
-| [PF02](tasks/PF02-lanes-and-columns.md)      | Shared lane function and the columns period mode (motion only)                          | M    | PF00                   | Proposed  |
-| [PF03](tasks/PF03-mobile-frames-template.md) | Mobile Frames template, portrait cards in columns, editor, Desktop Frames rename        | M    | PF02                   | Proposed  |
-| [PF04](tasks/PF04-review-and-baselines.md)   | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | PF01, PF03, owner gate | Proposed  |
+| Task                                         | Title                                                                                   | Size | Depends on             | Status                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- | ---- | ---------------------- | ------------------------------------------------------------------------ |
+| [PF00](tasks/PF00-decisions-and-rules.md)    | Record the decisions in the quality bar and contracts                                   | S    | —                      | In review                                                                |
+| [PF01](tasks/PF01-remove-templates.md)       | Remove Phone Parade, Portfolio Rows and Isometric Wall                                  | M    | PF00, PR #32 merged    | In review ([#35](https://github.com/jesseleechan/mockup-motion/pull/35)) |
+| [PF02](tasks/PF02-lanes-and-columns.md)      | Shared lane function and the columns period mode (motion only)                          | M    | PF00                   | Proposed                                                                 |
+| [PF03](tasks/PF03-mobile-frames-template.md) | Mobile Frames template, portrait cards in columns, editor, Desktop Frames rename        | M    | PF02                   | Proposed                                                                 |
+| [PF04](tasks/PF04-review-and-baselines.md)   | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | PF01, PF03, owner gate | Proposed                                                                 |
 
 PF01 is one lane. PF02 → PF03 is another, and both lanes can run in parallel once PF00 has merged. They share `src/templates/registry.ts`, `src/templates/index.ts`, `src/templates/slots.ts`, `src/templates/demo-preview.ts`, `scripts/template-previews.ts` and `tests/templates.test.ts`. Keep each lane's edits to those files small; whichever lands second rebases. PF04 is where they meet.
 

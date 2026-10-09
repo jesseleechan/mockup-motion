@@ -1,27 +1,36 @@
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import type { SlotSpec, Template } from "./types";
 
+/** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames needs 4. */
+const MULTI_ASSET_MINIMUM: Record<string, number> = {
+  frames: 4,
+};
+
+/** The one role a multi-screen template's required slots share. */
+function multiAssetRole(template: Template): AssetRole {
+  const roles = new Set(template.slots.filter((s) => s.required).map((s) => s.role));
+  const [role] = roles;
+  if (roles.size !== 1 || !role) {
+    throw new Error(`${template.id}: required slots must share one role, got ${[...roles]}`);
+  }
+  return role;
+}
+
 /**
  * Validates if the available assets satisfy the template requirements.
- * Slots require enough distinct assets for marquee and wall layouts (at least 3; Frames 4).
+ * Multi-screen templates need enough distinct screenshots of their slots' role.
  * With too few assets, returns valid: false with a user-facing explanation.
  */
 export function validateTemplateRequirements(
   template: Template,
   assets: AssetRef[],
 ): { valid: boolean; reason?: string } {
-  // 1. Marquee and wall layouts require at least 3 distinct assets
-  const isMultiAsset =
-    template.id === "phone-parade" ||
-    template.id === "portfolio-rows" ||
-    template.id === "isometric-wall" ||
-    template.id === "frames";
+  // 1. Multi-screen layouts need several distinct screenshots
+  const minimum = MULTI_ASSET_MINIMUM[template.id];
 
-  if (isMultiAsset) {
-    const requiredRole: AssetRole = template.id === "phone-parade" ? "mobile" : "desktop";
+  if (minimum !== undefined) {
+    const requiredRole = multiAssetRole(template);
     const distinctRoleAssets = assets.filter((a) => a.kind === "image" && a.role === requiredRole);
-    // Quality bar §4: Frames needs 4 screenshots.
-    const minimum = template.id === "frames" ? 4 : 3;
 
     if (distinctRoleAssets.length < minimum) {
       return {

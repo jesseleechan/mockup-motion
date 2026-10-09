@@ -48,10 +48,10 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Clear search
     await searchInput.fill("");
 
-    // Click on "Isometric Wall" template card
-    const wallCard = modal.getByRole("button", { name: /Isometric Wall/i });
-    await expect(wallCard).toBeVisible();
-    await wallCard.click();
+    // Click on the "Frames" template card
+    const framesCard = modal.getByRole("button", { name: "Select template Frames" });
+    await expect(framesCard).toBeVisible();
+    await framesCard.click();
 
     // Apply template
     const applyBtn = modal.getByRole("button", { name: "Apply template" });

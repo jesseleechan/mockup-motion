@@ -40,12 +40,13 @@ function centresDiffer(a: ScreenSample, b: ScreenSample): boolean | null {
   return ma.some((value, c) => Math.abs(value - mb[c]) > 6);
 }
 
-test("F04: portfolio-rows shows different demo sites on its screens", async ({ page }) => {
+test("F04: Frames shows different demo sites on its screens", async ({ page }) => {
   // Start asset-free so the engine's texture cache cannot hold images from the first render.
   await page.goto("/lab?fixture=text-title&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const result = await page.evaluate(async () => {
-    const doc = structuredClone(window.__fixtures?.["portfolio-rows"]);
+    // Frames' rows of cards at 16:9.
+    const doc = structuredClone(window.__fixtures?.["frames-16x9"]);
     const engine = window.__labEngine;
     const createProvider = window.__createLabAssetProvider;
     const scheduleDoc = window.__labSchedule;
@@ -146,7 +147,8 @@ test("F04: portfolio-rows shows different demo sites on its screens", async ({ p
     visibleCells: s.cells.filter(Boolean).length,
   }));
   console.log(`F04 samples per full cell: ${result.fullCell}; screens: ${JSON.stringify(summary)}`);
-  expect(result.requested, "the provider must load every distinct demo capture").toHaveLength(4);
+  // Frames' preview holds five demo captures (src/templates/demo-preview.ts).
+  expect(result.requested, "the provider must load every distinct demo capture").toHaveLength(5);
   expect(result.unloaded, "every screen has its texture").toEqual([]);
 
   // Greedily collect screens that are comparable with, and differ from, every one already chosen.
