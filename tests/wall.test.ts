@@ -18,7 +18,8 @@ const WALL: Extract<Layout, { kind: "wall" }> = {
   speed: 0.3,
 };
 const DURATION = 8;
-// The isometric-wall template's camera.
+// The camera of the wall-isometric lab fixture (src/lab/layout-fixtures.ts), which was the
+// since-removed Isometric Wall template's.
 const ISO_DRIFT: CameraMove = { preset: "isoDrift", intensity: 0.5, easing: "smooth", float: 0 };
 const STATIC: CameraMove = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 

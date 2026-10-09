@@ -212,7 +212,7 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
-  await expect(cards).toHaveCount(7);
+  await expect(cards).toHaveCount(4);
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
