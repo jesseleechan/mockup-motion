@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { differenceCiede2000, type Rgb as CuloriRgb } from "culori";
-import type { Aspect, AssetRef, Layout, ProjectDoc } from "../../src/doc/types";
+import type { Aspect, AssetRef, Layout } from "../../src/doc/types";
 import { framesDuration, resolveLayout, type LayoutNode } from "../../src/motion";
 import { mobileFramesLayout } from "../../src/templates/frames-template";
 import { avgRegion, expectRgbNear, type PixelBuffer } from "../helpers/pixels";
