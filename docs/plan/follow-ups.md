@@ -52,6 +52,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | The UI overflow guard (`ui-overflow.spec.ts`) checks the panels only; the export, gallery and projects dialogs aren't covered.                                                                                                                                                                                                         | F08          |
 | The Rows and Columns selects of a Frames shot change the lane count but keep the card size, so Mobile Frames with 5 columns at 4:5 runs off both sides and 2 columns at 16:9 leave wide empty sides. They could re-fit the card size as the aspect change does (`refitFramesLayout`, Frames plan D13), or be hidden for a Frames shot. | PF03         |
 | A shot card's layout label clips at 1280 px when a reel has four equal shots ("Responsive pair · Orbit right" in a 4 × 10 s reel). `ui-overflow.spec.ts` uses Launch Reel's 2.5/4/4/2.5 s durations, where it fits.                                                                                                                    | Template cut |
+| The Video inspector's palette grid marks only gradient palettes as active, so the solid Ash and Onyx swatches never show as selected (`currentPalette` in `VideoInspector.tsx`). The presets' Light / Dark switch does show the tone.                                                                                                  | Dark option  |
 
 ## Export and audio
 
