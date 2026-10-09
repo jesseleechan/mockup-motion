@@ -30,7 +30,7 @@ const twoRoles: Template = {
   id: "test-two-roles",
   name: "Two roles",
   description: "A desktop and a phone.",
-  category: "single",
+  category: "desktop",
   slots: [
     { key: "desktop1", role: "desktop", required: true, prefer: "tall", label: "Desktop" },
     { key: "mobile1", role: "mobile", required: true, prefer: "any", label: "Mobile" },

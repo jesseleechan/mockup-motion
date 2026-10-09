@@ -4,6 +4,7 @@ import { framesAssetIds, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion"
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
+import { LoopLengthChips } from "./LoopLengthChips";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
@@ -24,21 +25,28 @@ const percent = (value: number) => `${Math.round(value * 100)}%`;
 
 type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
 
-/** Desktop Frames and Mobile Frames: the speed follows the shot length (travel "period"). */
-const FramesSpeedNote: React.FC<{ layout: FramesLayout; aspect: Aspect }> = ({
+/**
+ * Desktop Frames and Mobile Frames: the speed follows the shot length (travel "period"), so the
+ * loop length chips are the speed control.
+ */
+const FramesSpeedNote: React.FC<{ shot: Shot; layout: FramesLayout; aspect: Aspect }> = ({
+  shot,
   layout,
   aspect,
 }) => {
   const shown = framesAssetIds(layout, aspect).length;
   return (
-    <Field label="Speed">
-      <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
-      {shown < layout.assetIds.length && (
-        <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
-          Shows the first {shown} screenshots, so the loop fits in 30 s.
-        </p>
-      )}
-    </Field>
+    <>
+      <Field label="Speed">
+        <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
+        {shown < layout.assetIds.length && (
+          <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
+            Shows the first {shown} screenshots, so the loop fits in 30 s.
+          </p>
+        )}
+      </Field>
+      <LoopLengthChips shot={shot} layout={layout} aspect={aspect} />
+    </>
   );
 };
 
@@ -170,7 +178,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               </Field>
             )}
             {layout.travel === "period" ? (
-              <FramesSpeedNote layout={layout} aspect={aspect} />
+              <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
             ) : (
               <Field label="Speed" value={percent(layout.speed)}>
                 <Slider
@@ -288,7 +296,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               </Field>
             )}
             {layout.travel === "period" ? (
-              <FramesSpeedNote layout={layout} aspect={aspect} />
+              <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
             ) : (
               <Field label="Speed" value={percent(layout.speed)}>
                 <Slider
