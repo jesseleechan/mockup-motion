@@ -2,6 +2,15 @@ import { expect, test, type Page } from "@playwright/test";
 import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
 import { ciTimeout } from "../helpers/ci";
 
+/** A frame the playback loop published while playing (recorder in the loop-wrap test). */
+interface PublishedFrame {
+  playhead: number;
+  /** Music minus playhead after the preview's own handling of this frame. */
+  drift: number | null;
+  /** The playhead moved backwards: a loop wrap. */
+  wrap: boolean;
+}
+
 interface EditorWindow {
   __editorStore?: {
     getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
@@ -13,9 +22,16 @@ interface EditorWindow {
       setPlayhead: (time: number) => void;
       setPlaying: (playing: boolean) => void;
     };
+    subscribe: (
+      listener: (
+        state: { playhead: number; playing: boolean },
+        prev: { playhead: number; playing: boolean },
+      ) => void,
+    ) => () => void;
   };
   /** Every AudioContext the page created (init script below). */
   __audioContexts?: AudioContext[];
+  __frames?: PublishedFrame[];
 }
 
 /** 16-bit stereo PCM WAV of a constant-amplitude 440 Hz tone. */
@@ -118,6 +134,49 @@ async function addMusic(page: Page, seconds = 12) {
   await expect(page.getByTestId("audio-lane")).toBeVisible();
 }
 
+/**
+ * Records every frame the playback loop publishes while playing. The listener subscribes after
+ * the music preview's, so it reads each frame's drift after any re-anchor on that frame.
+ */
+async function recordFrames(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as EditorWindow;
+    const frames: PublishedFrame[] = [];
+    w.__frames = frames;
+    w.__uiStore!.subscribe((state, prev) => {
+      if (!state.playing || !prev.playing || state.playhead === prev.playhead) return;
+      frames.push({
+        playhead: state.playhead,
+        drift: window.__mmAudio?.drift() ?? null,
+        wrap: state.playhead < prev.playhead,
+      });
+    });
+  });
+}
+
+/** The drift on `count` published frames from frame index `start`, once they exist. */
+async function driftsFrom(page: Page, start: number, count: number) {
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as EditorWindow).__frames!.length), {
+      timeout: ciTimeout(5000),
+    })
+    .toBeGreaterThanOrEqual(start + count);
+  return page.evaluate(
+    ({ start, count }) =>
+      (window as unknown as EditorWindow)
+        .__frames!.slice(start, start + count)
+        .map((frame) => frame.drift),
+    { start, count },
+  );
+}
+
+function expectInSync(drifts: (number | null)[], when: string) {
+  for (const drift of drifts) {
+    expect(drift, `audio should be sounding ${when}`).not.toBeNull();
+    expect(Math.abs(drift as number), `drift ${when}`).toBeLessThan(0.04);
+  }
+}
+
 async function exportAs(page: Page, formatLabel: RegExp) {
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const dialog = page.getByRole("dialog");
@@ -202,10 +261,11 @@ test.describe("WP-17: Music track", () => {
     for (const fraction of [0.1, 0.55, 0.3, 0.8, 0.02]) {
       await page.mouse.click(rulerBox.x + rulerBox.width * fraction * 0.8, rulerBox.y + 8);
       await playButton.click();
-      // Music starts on the playback loop's first frame, which the CI runner draws later.
+      // Music starts on the playback loop's first frame, which can take over 400 ms locally
+      // after Play and about 5x longer on the CI runner.
       await expect
         .poll(() => page.evaluate(() => window.__mmAudio?.drift() ?? null), {
-          timeout: ciTimeout(400),
+          timeout: ciTimeout(2000),
           message: "audio should be sounding while playing",
         })
         .not.toBeNull();
@@ -242,7 +302,10 @@ test.describe("WP-17: Music track", () => {
       await page.evaluate(() => (window as unknown as EditorWindow).__audioContexts?.length),
     ).toBe(1);
 
-    // Loop wrap: play from 0.2 s before the end of the 2 s loop, then measure after the wrap.
+    await recordFrames(page);
+
+    // Loop wrap: play from 0.2 s before the end of the 2 s loop. The wrap frame and the two
+    // after it must be in sync; locally they come before the next drift check could fix them.
     await page.evaluate(() => {
       const ui = (window as unknown as EditorWindow).__uiStore!.getState();
       ui.setPlayhead(1.8);
@@ -251,16 +314,28 @@ test.describe("WP-17: Music track", () => {
     await expect
       .poll(
         () =>
-          page.evaluate(() => {
-            const t = window.__mmAudio?.playhead() ?? -1;
-            return t > 0.4 && t < 1.5;
-          }),
-        { timeout: 10_000 },
+          page.evaluate(() =>
+            (window as unknown as EditorWindow).__frames!.findIndex((frame) => frame.wrap),
+          ),
+        { timeout: ciTimeout(5000), message: "playback should wrap to the start" },
       )
-      .toBe(true);
-    const afterWrap = await page.evaluate(() => window.__mmAudio?.drift() ?? null);
-    expect(afterWrap, "audio should be sounding after the loop wrap").not.toBeNull();
-    expect(Math.abs(afterWrap as number), "drift after the loop wrap").toBeLessThan(0.04);
+      .toBeGreaterThanOrEqual(0);
+    const wrapIndex = await page.evaluate(() =>
+      (window as unknown as EditorWindow).__frames!.findIndex((frame) => frame.wrap),
+    );
+    expectInSync(await driftsFrom(page, wrapIndex, 3), "after the loop wrap");
+
+    // Main-thread stall (a long task, as on a busy CI runner): the next frame's callback runs
+    // about 150 ms after the frame's timestamp, under the 0.25 s jump that re-anchors at once.
+    const beforeBlock = await page.evaluate(() => {
+      const count = (window as unknown as EditorWindow).__frames!.length;
+      const end = performance.now() + 150;
+      while (performance.now() < end) {
+        // Keep the main thread busy.
+      }
+      return count;
+    });
+    expectInSync(await driftsFrom(page, beforeBlock, 3), "after a main-thread stall");
 
     // Audio clock stall (an audio device hiccup): the playhead keeps moving for 200 ms
     // while the audio clock stands still.
@@ -270,7 +345,8 @@ test.describe("WP-17: Music track", () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
       await ctx.resume();
     });
-    await page.waitForTimeout(600);
+    // The drift check runs on the audio clock, so the CI runner needs more frames to reach it.
+    await page.waitForTimeout(ciTimeout(600));
     const afterStall = await page.evaluate(() => window.__mmAudio?.drift() ?? null);
     expect(afterStall, "audio should be sounding after the stall").not.toBeNull();
     expect(Math.abs(afterStall as number), "drift after the audio clock stall").toBeLessThan(0.04);
