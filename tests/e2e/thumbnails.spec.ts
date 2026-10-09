@@ -200,14 +200,16 @@ test.describe("F07: shot and project thumbnails", () => {
 
   test("the project thumbnail is stored and shown in the Projects dialog", async ({ page }) => {
     test.setTimeout(90_000);
-    await applyTemplateWithDemo(page, "phone-parade");
+    await applyTemplateWithDemo(page, "mobile-slider");
     const docId = await page.evaluate(() => {
       const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
       if (!store) throw new Error("__editorStore is unavailable");
       return store.getState().doc.id;
     });
 
-    // Written by the editor itself, before the dialog ever opens.
+    // Written by the editor itself, before the dialog ever opens. The first write is the template
+    // before its demo screenshots arrive: Mobile Slider's empty cards on flat Ash compress to under
+    // 1000 bytes. The rewrite with the screenshots follows PROJECT_THUMBNAIL_INTERVAL_MS (30 s) later.
     await expect
       .poll(
         () =>
@@ -229,7 +231,7 @@ test.describe("F07: shot and project thumbnails", () => {
               }),
             docId,
           ),
-        { timeout: 20_000, message: "putThumb stored a thumbnail for the open project" },
+        { timeout: 50_000, message: "putThumb stored a thumbnail for the open project" },
       )
       .toBeGreaterThan(1000);
 
@@ -260,7 +262,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
   }) => {
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(4);
 
     // Every card rests on its poster.
     const posters = await cards.evaluateAll((els) =>
@@ -273,7 +275,13 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await expect
       .poll(() => videoState(frames), { timeout: 10_000 })
       .toEqual({ paused: false, time: expect.any(Number) });
-    await expect.poll(async () => (await videoState(frames)).time).toBeGreaterThan(0.2);
+    // Decoding competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
+    await expect
+      .poll(async () => (await videoState(frames)).time, {
+        timeout: ciTimeout(5000),
+        message: "the hovered card's preview plays past 0.2 s",
+      })
+      .toBeGreaterThan(0.2);
     const size = await frames
       .locator("video")
       .evaluate((v: HTMLVideoElement) => [v.videoWidth, v.videoHeight]);
@@ -293,18 +301,18 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(4);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
     const posters = page.locator('[data-testid="template-card"] [data-testid="template-poster"]');
-    await expect(posters).toHaveCount(7);
+    await expect(posters).toHaveCount(4);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
 
   test("Library template cards show their posters", async ({ page }) => {
     const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(7);
-    for (let i = 0; i < 7; i++) {
+    await expect(cards).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);
