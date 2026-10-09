@@ -1,0 +1,902 @@
+{
+  "16:9 N=4": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "16:9 N=5": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 18.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "16:9 N=6": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 22.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5", "d6"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "9:16 N=4": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "9:16 N=5": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "9:16 N=6": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 17.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5", "d6"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "1:1 N=4": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "1:1 N=5": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "1:1 N=6": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 17.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5", "d6"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:5 N=4": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:5 N=5": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:5 N=6": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 17.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5", "d6"],
+          "rows": 3,
+          "cardHeight": 0.32,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:3 N=4": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 15,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:3 N=5": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 18.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  },
+  "4:3 N=6": {
+    "style": {
+      "background": {
+        "kind": "solid",
+        "color": "#DFE1E3"
+      },
+      "frameAppearance": "light",
+      "deviceFinish": "silver",
+      "browserChrome": "standard",
+      "browserUrl": "",
+      "shadow": "none",
+      "grain": 0,
+      "vignette": 0,
+      "fonts": {
+        "display": {
+          "source": "builtin",
+          "family": "Inter Display",
+          "weight": 600
+        },
+        "body": {
+          "source": "builtin",
+          "family": "Inter",
+          "weight": 400
+        }
+      },
+      "textColor": "#18181B",
+      "accent": "#7C93FF"
+    },
+    "shots": [
+      {
+        "id": "shot",
+        "duration": 22.5,
+        "layout": {
+          "kind": "rows",
+          "assetIds": ["d1", "d2", "d3", "d4", "d5", "d6"],
+          "rows": 2,
+          "cardHeight": 0.42,
+          "device": "card",
+          "tilt": 0,
+          "speed": 0.35,
+          "gap": 0.065,
+          "travel": "period"
+        },
+        "camera": {
+          "preset": "static",
+          "intensity": 0,
+          "easing": "smooth",
+          "float": 0
+        },
+        "entrance": "none",
+        "texts": [],
+        "transitionIn": {
+          "kind": "cut",
+          "duration": 0,
+          "easing": "quintInOut"
+        }
+      }
+    ],
+    "loop": true
+  }
+}

@@ -71,7 +71,7 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "all 4 built-in templates are lab fixtures").toBe(4);
+  expect(results.length, "all 5 built-in templates are lab fixtures").toBe(5);
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",

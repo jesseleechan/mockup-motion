@@ -15,6 +15,7 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { duplicateProject } from "../../storage/projects";
 import type { Aspect } from "../../doc/types";
+import { changeAspect } from "../aspect";
 import {
   ChevronDown,
   Copy,
@@ -94,9 +95,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const handleAspectChange = (aspect: Aspect) => {
     apply(
-      (draft) => {
-        draft.aspect = aspect;
-      },
+      // Frames shots take their preset's lanes at the new aspect, in the same undo step (D13).
+      (draft) => changeAspect(draft, aspect),
       { label: `Change aspect to ${aspect}` },
     );
   };

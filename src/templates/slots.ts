@@ -4,6 +4,7 @@ import type { SlotSpec, Template } from "./types";
 /** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames needs 4. */
 const MULTI_ASSET_MINIMUM: Record<string, number> = {
   frames: 4,
+  "mobile-frames": 4,
 };
 
 /** The one role a multi-screen template's required slots share. */

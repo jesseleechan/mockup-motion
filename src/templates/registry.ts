@@ -5,6 +5,7 @@ import { scrollStoryTemplate } from "./scroll-story";
 import { mobileSliderTemplate } from "./mobile-slider";
 import { desktopSliderTemplate } from "./desktop-slider";
 import { framesTemplate } from "./frames";
+import { mobileFramesTemplate } from "./mobile-frames";
 
 /**
  * Gallery order. The presets lead (presets plan D1), and the first entry is also the first-run
@@ -14,6 +15,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
   mobileSliderTemplate,
   framesTemplate,
+  mobileFramesTemplate,
   scrollStoryTemplate,
 ];
 

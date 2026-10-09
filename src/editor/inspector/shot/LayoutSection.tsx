@@ -1,5 +1,5 @@
 import React from "react";
-import type { AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
+import type { Aspect, AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
 import { framesAssetIds, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
@@ -21,6 +21,26 @@ interface LayoutSectionProps {
 }
 
 const percent = (value: number) => `${Math.round(value * 100)}%`;
+
+type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
+
+/** Desktop Frames and Mobile Frames: the speed follows the shot length (travel "period"). */
+const FramesSpeedNote: React.FC<{ layout: FramesLayout; aspect: Aspect }> = ({
+  layout,
+  aspect,
+}) => {
+  const shown = framesAssetIds(layout, aspect).length;
+  return (
+    <Field label="Speed">
+      <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
+      {shown < layout.assetIds.length && (
+        <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
+          Shows the first {shown} screenshots, so the loop fits in 30 s.
+        </p>
+      )}
+    </Field>
+  );
+};
 
 /** Layout kind plus the layout's own parameters (device, arrangement, tilt, speed). */
 export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) => {
@@ -132,30 +152,25 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            <Field label="Tilt" value={`${layout.tilt}°`}>
-              <Slider
-                aria-label="Tilt"
-                min={-30}
-                max={30}
-                step={1}
-                value={layout.tilt}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "rows") target.layout.tilt = val;
-                  })
-                }
-              />
-            </Field>
-            {layout.travel === "period" ? (
-              <Field label="Speed">
-                <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
-                {framesAssetIds(layout, aspect).length < layout.assetIds.length && (
-                  <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
-                    Shows the first {framesAssetIds(layout, aspect).length} screenshots, so the loop
-                    fits in 30 s.
-                  </p>
-                )}
+            {/* Frames has no tilt by design (quality bar §4), so a period layout hides it. */}
+            {layout.travel !== "period" && (
+              <Field label="Tilt" value={`${layout.tilt}°`}>
+                <Slider
+                  aria-label="Tilt"
+                  min={-30}
+                  max={30}
+                  step={1}
+                  value={layout.tilt}
+                  onChange={(val) =>
+                    update((target) => {
+                      if (target.layout.kind === "rows") target.layout.tilt = val;
+                    })
+                  }
+                />
               </Field>
+            )}
+            {layout.travel === "period" ? (
+              <FramesSpeedNote layout={layout} aspect={aspect} />
             ) : (
               <Field label="Speed" value={percent(layout.speed)}>
                 <Slider
@@ -256,34 +271,40 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            <Field label="Tilt" value={`${layout.tilt}°`}>
-              <Slider
-                aria-label="Tilt"
-                min={-30}
-                max={30}
-                step={1}
-                value={layout.tilt}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "columns") target.layout.tilt = val;
-                  })
-                }
-              />
-            </Field>
-            <Field label="Speed" value={percent(layout.speed)}>
-              <Slider
-                aria-label="Speed"
-                min={0.05}
-                max={1.0}
-                step={0.05}
-                value={layout.speed}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "columns") target.layout.speed = val;
-                  })
-                }
-              />
-            </Field>
+            {layout.travel !== "period" && (
+              <Field label="Tilt" value={`${layout.tilt}°`}>
+                <Slider
+                  aria-label="Tilt"
+                  min={-30}
+                  max={30}
+                  step={1}
+                  value={layout.tilt}
+                  onChange={(val) =>
+                    update((target) => {
+                      if (target.layout.kind === "columns") target.layout.tilt = val;
+                    })
+                  }
+                />
+              </Field>
+            )}
+            {layout.travel === "period" ? (
+              <FramesSpeedNote layout={layout} aspect={aspect} />
+            ) : (
+              <Field label="Speed" value={percent(layout.speed)}>
+                <Slider
+                  aria-label="Speed"
+                  min={0.05}
+                  max={1.0}
+                  step={0.05}
+                  value={layout.speed}
+                  onChange={(val) =>
+                    update((target) => {
+                      if (target.layout.kind === "columns") target.layout.speed = val;
+                    })
+                  }
+                />
+              </Field>
+            )}
           </>
         )}
 

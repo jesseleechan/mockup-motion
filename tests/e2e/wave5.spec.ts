@@ -48,8 +48,8 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Clear search
     await searchInput.fill("");
 
-    // Click on the "Frames" template card
-    const framesCard = modal.getByRole("button", { name: "Select template Frames" });
+    // Click on the "Desktop Frames" template card (Frames plan D4)
+    const framesCard = modal.getByRole("button", { name: "Select template Desktop Frames" });
     await expect(framesCard).toBeVisible();
     await framesCard.click();
 
