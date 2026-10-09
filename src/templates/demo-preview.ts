@@ -40,7 +40,8 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("studio-kova"),
   ],
   // Five sites, ordered so the 16:9 poster (35% of the loop) shows Aurelia's photographic hero
-  // in the middle column.
+  // whole in the middle column. Each site shows there once whole and once as a half card, in
+  // two columns at most (tests/lane-order.test.ts).
   "mobile-frames": [
     mobileHero("northwind"),
     mobileHero("maison-oak"),

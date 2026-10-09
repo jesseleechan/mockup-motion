@@ -66,7 +66,9 @@ export function lanesDuration(count: number, pitch: number): number {
  * period per shot at one shared speed, so frame(total) equals frame(0) with a cut wrap.
  * Adjacent lanes move in opposite directions: the first row moves left, the first (leftmost)
  * column moves up. Lane r starts r / lanes of a period along, so lanes that move together never
- * line up the same screenshot (quality-bar §4). Node ids and sizes don't depend on time.
+ * line up the same screenshot (quality-bar §4). Odd lanes show the screenshots in reverse order,
+ * so neighbouring lanes, which pass each other, match one card at a time instead of whole lanes.
+ * Node ids and sizes don't depend on time.
  */
 export function resolveLanes(options: LaneOptions): LayoutNode[] {
   const { axis, geometry, device, assetIds, assets, frameWidth, tilt, shotT, shotDuration } =
@@ -106,7 +108,11 @@ export function resolveLanes(options: LaneOptions): LayoutNode[] {
     const shift = dir * velocity * shotT + laneOffset;
 
     for (let j = 0; j < totalCount; j++) {
-      const assetIdx = j % N;
+      // Odd lanes run the ring backwards from the second screenshot: 2, 1, N, N - 1, … Every
+      // start gives the same crossings over a loop (the lanes pass each other two periods per
+      // loop); this one shows each of the five demo sites in at most two columns on the 16:9
+      // gallery poster (35% of the loop), where starting from the first puts one in three.
+      const assetIdx = forward ? j % N : (((1 - j) % N) + N) % N;
       const assetId = distinctAssets[assetIdx];
       const asset = assets.find((a) => a.id === assetId);
       const scrAspect = options.screenAspect ?? screenAspectFor(device, asset);
