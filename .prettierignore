@@ -1,3 +1,5 @@
 dist
 node_modules
 src/doc/types.ts
+# Recorded node goldens (PF02): one frame per line, written by tests/fixtures/record-lane-goldens.ts
+tests/fixtures/lane-goldens.json
