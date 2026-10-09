@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { ProjectDoc } from "../../src/doc/types";
+import type { Layout, ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
 import {
   CAMERA_LABELS,
@@ -30,6 +30,33 @@ interface UIStoreHandle {
 type Theme = "dark" | "light";
 
 const PANELS = ["library", "inspector", "timeline"] as const;
+
+// Desktop Frames and Mobile Frames at 16:9 (src/templates/frames-template.ts), without assets.
+type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
+// Omit on each member of the union, so the list can hold either layout.
+type WithoutAssets<T> = T extends unknown ? Omit<T, "assetIds"> : never;
+const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
+  {
+    kind: "rows",
+    rows: 2,
+    device: "card",
+    tilt: 0,
+    speed: 0.35,
+    cardHeight: 0.42,
+    gap: 0.065,
+    travel: "period",
+  },
+  {
+    kind: "columns",
+    columns: 5,
+    device: "card",
+    tilt: 0,
+    speed: 0.35,
+    cardWidth: 0.269,
+    gap: 0.065,
+    travel: "period",
+  },
+];
 
 async function resetAndOpen(page: Page, theme: Theme) {
   await page.goto("/lab/ui");
@@ -166,7 +193,10 @@ interface PanelReport {
  * and user content that may truncate with an ellipsis ([data-truncate]). Screen-reader-only
  * text is clipped to 1 px on purpose and is skipped.
  */
-async function overflowReport(page: Page): Promise<PanelReport[]> {
+async function overflowReport(
+  page: Page,
+  panels: readonly (typeof PANELS)[number][],
+): Promise<PanelReport[]> {
   return page.evaluate((panels) => {
     return panels.map((name) => {
       const root = document.querySelector(`[data-panel="${name}"]`);
@@ -202,11 +232,15 @@ async function overflowReport(page: Page): Promise<PanelReport[]> {
       }
       return { panel: name, checked, offenders };
     });
-  }, PANELS);
+  }, panels);
 }
 
-async function expectNoOverflow(page: Page, context: string) {
-  const reports = await overflowReport(page);
+async function expectNoOverflow(
+  page: Page,
+  context: string,
+  panels: readonly (typeof PANELS)[number][] = PANELS,
+) {
+  const reports = await overflowReport(page, panels);
   for (const report of reports) {
     // A panel that renders almost nothing would pass trivially.
     expect(report.checked, `${context}: elements checked in ${report.panel}`).toBeGreaterThan(20);
@@ -262,6 +296,33 @@ test.describe("F08 overflow guard", () => {
         for (const tab of ["Media", "Brand"]) {
           await page.getByRole("tab", { name: tab }).click();
           await expectNoOverflow(page, `${tab} tab`);
+        }
+
+        // Both Frames presets, whose speed row holds the loop length chips: the single shot
+        // takes a Desktop Frames, then a Mobile Frames layout with six screenshots. Last, and
+        // the inspector only: a 30 s shot squeezes the other shot cards in the timeline.
+        for (const layout of FRAMES_LAYOUTS) {
+          await page.evaluate(
+            ({ id, layout }) => {
+              const store = (window as unknown as { __editorStore?: EditorStoreHandle })
+                .__editorStore;
+              if (!store) throw new Error("__editorStore is unavailable");
+              store.getState().apply((draft) => {
+                const shot = draft.shots.find((s) => s.id === id);
+                if (!shot || shot.layout.kind === "title") throw new Error("no single shot");
+                const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
+                shot.duration = 30;
+                shot.layout = {
+                  ...layout,
+                  assetIds: Array.from({ length: 6 }, () => assetId),
+                } as FramesLayout;
+              });
+            },
+            { id: singleShot.id, layout },
+          );
+          await select(page, { kind: "shot", id: singleShot.id });
+          await expect(inspector.getByRole("group", { name: "Loop length" })).toBeVisible();
+          await expectNoOverflow(page, `${layout.kind} Frames inspector`, ["inspector"]);
         }
       });
     }
