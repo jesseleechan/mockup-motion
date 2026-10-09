@@ -18,6 +18,7 @@ import type {
   TextLayer,
   Transition,
 } from "../doc/types";
+import type { TemplateCategory } from "../templates";
 
 export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   single: "Single device",
@@ -164,6 +165,12 @@ export const DESTINATION_LABELS: Record<DestinationId, string> = {
   x: "LinkedIn & X",
   "presentation-4k": "4K presentation",
   custom: "Custom",
+};
+
+/** The template tabs, which match the preset pairs' names (Frames plan §8). */
+export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+  desktop: "Desktop",
+  mobile: "Mobile",
 };
 
 /** Select options for the given values, labelled from one of the maps above. */

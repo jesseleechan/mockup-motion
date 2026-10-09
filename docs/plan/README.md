@@ -195,7 +195,7 @@ Every WP above is marked Done (decided 7 Oct 2026). These are the acceptance cri
 - **WP-08:** no one has reviewed a 1080p export for banding (WP-08 "Banding" criterion, quality bar §8).
 - **WP-09:** marquee rows, columns and the wall exceed quality bar §2.5's speed limit once 3 or more screenshots are used, and speed up with every screenshot added. No test checks the limit. Pair, trio and stack are small at 9:16. Tilted phone columns (the since-removed Phone Parade) are sparse at 16:9. Quiet-hero is under §4's 84–90% width at 1:1 and 9:16 until late in its push-in.
 - **WP-10:** custom font upload has no UI. The font menu lacks Geist / Geist. Logos are never drawn. Linux Chromium spaces tracked captions unevenly. Text anchors don't stack.
-- **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots. Gallery cards show the raw category id. Tilted browser rows (the since-removed Portfolio Rows) read busy.
+- **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots. Tilted browser rows (the since-removed Portfolio Rows) read busy.
 - **WP-12:** the Layout select only switches between a single device and a title card. The editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
 - **WP-13:** Media tab cards show an icon instead of the screenshot. Duplicating a project doesn't copy its thumbnail.
 - **WP-15:** section detection precision is about 25%. The mobile ground truth in `sections.test.ts` is loose.

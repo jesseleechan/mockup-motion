@@ -81,7 +81,6 @@ interface FramesTemplateSpec {
   id: string;
   name: string;
   description: string;
-  category: Template["category"];
   role: Extract<AssetRole, "mobile" | "desktop">;
 }
 
@@ -100,7 +99,8 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
     id: spec.id,
     name: spec.name,
     description: spec.description,
-    category: spec.category,
+    // A pair's gallery tab is the role of its screenshots.
+    category: spec.role,
     slots,
     defaultDuration: FRAMES_MIN_LOOP,
     build: (ctx: TemplateBuildContext) => {

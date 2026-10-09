@@ -24,6 +24,18 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
 
+    // The Library panel's chips are the same tabs
+    const library = page.locator('[data-panel="library"]');
+    const libraryIds = () =>
+      library
+        .getByTestId("library-template-card")
+        .evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
+    await library.getByRole("button", { name: "Mobile", exact: true }).click();
+    await expect.poll(libraryIds).toEqual(["mobile-slider", "mobile-frames"]);
+    await library.getByRole("button", { name: "Desktop", exact: true }).click();
+    await expect.poll(libraryIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
+    await library.getByRole("button", { name: "All", exact: true }).click();
+
     // Open Library panel Templates tab
     const browseTemplatesBtn = page.getByRole("button", { name: "Browse all templates" });
     await expect(browseTemplatesBtn).toBeVisible();
@@ -34,11 +46,29 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await expect(modal).toBeVisible();
     await expect(modal.getByText("Template gallery")).toBeVisible();
 
-    // Category tabs should be present, and none without templates
-    await expect(modal.getByRole("button", { name: "All", exact: true })).toBeVisible();
-    await expect(modal.getByRole("button", { name: "Portfolio", exact: true })).toBeVisible();
-    await expect(modal.getByRole("button", { name: "Reels", exact: true })).toHaveCount(0);
-    await expect(modal.getByRole("button", { name: "Responsive", exact: true })).toHaveCount(0);
+    // The tabs match the preset pairs: All · Desktop · Mobile (Frames plan §8)
+    for (const name of ["All", "Desktop", "Mobile"]) {
+      await expect(modal.getByRole("button", { name, exact: true })).toBeVisible();
+    }
+    for (const name of ["Single shot", "Portfolio", "Reels", "Responsive"]) {
+      await expect(modal.getByRole("button", { name, exact: true })).toHaveCount(0);
+    }
+    const cards = modal.getByTestId("template-card");
+    const cardIds = () =>
+      cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
+    await modal.getByRole("button", { name: "Mobile", exact: true }).click();
+    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames"]);
+    // Each card names its tab in words, never the raw id
+    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile"]);
+    await modal.getByRole("button", { name: "Desktop", exact: true }).click();
+    await expect.poll(cardIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
+    await expect(modal.getByTestId("template-category")).toHaveText([
+      "Desktop",
+      "Desktop",
+      "Desktop",
+    ]);
+    await modal.getByRole("button", { name: "All", exact: true }).click();
+    await expect(cards).toHaveCount(5);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
