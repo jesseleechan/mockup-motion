@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
+import type { Engine } from "../../src/engine/Engine";
 import {
   CAMERA_LABELS,
   EASING_LABELS,
@@ -328,31 +329,38 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   const assetId = (await currentDoc(page)).assets[0].id;
   const canvas = page.locator('[data-testid="stage"] canvas');
   await expect(canvas).toBeVisible();
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("stage canvas has no box");
   const hint = page.getByTestId("drop-hint");
   await expect
     .poll(async () => {
-      // Drag a Media item over the middle of the stage.
-      await canvas.evaluate(
-        (el, { assetId, x, y }) => {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.setData("application/x-mockup-asset-id", assetId);
-          el.dispatchEvent(
-            new DragEvent("dragover", {
-              bubbles: true,
-              cancelable: true,
-              clientX: x,
-              clientY: y,
-              dataTransfer,
-            }),
-          );
-        },
-        { assetId, x: box.x + box.width / 2, y: box.y + box.height / 2 },
-      );
-      return hint.isVisible();
+      // Drag a Media item over a Frames card. The stage centre can fall between cards (at 16:9
+      // it is the gap between the two rows), so ask the engine for a point on a row card.
+      return canvas.evaluate((el, assetId) => {
+        const engine = (window as unknown as { __editorEngine?: Engine }).__editorEngine;
+        if (!engine || !(el instanceof HTMLCanvasElement)) return false;
+        const rect = el.getBoundingClientRect();
+        let target: { x: number; y: number } | null = null;
+        for (let y = el.height * 0.1; y < el.height * 0.9 && !target; y += el.height / 20) {
+          for (let x = el.width * 0.1; x < el.width * 0.9 && !target; x += el.width / 20) {
+            if (engine.pick(x, y)?.nodeId.startsWith("row")) target = { x, y };
+          }
+        }
+        if (!target) return false;
+        const dataTransfer = new DataTransfer();
+        dataTransfer.setData("application/x-mockup-asset-id", assetId);
+        el.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            clientX: rect.left + (target.x * rect.width) / el.width,
+            clientY: rect.top + (target.y * rect.height) / el.height,
+            dataTransfer,
+          }),
+        );
+        return true;
+      }, assetId);
     })
     .toBe(true);
+  await expect(hint).toBeVisible();
   await expectNoRawIds(page, "Stage drop hint");
   await expect(hint).toHaveText("Drop to use this screenshot");
 });
