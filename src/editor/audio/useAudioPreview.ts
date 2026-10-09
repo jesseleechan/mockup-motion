@@ -18,7 +18,7 @@ declare global {
     __mmAudio?: {
       position: () => number | null;
       playhead: () => number;
-      /** Music minus playhead at the latest frame, or null when stopped. */
+      /** Music minus playhead at the latest frame, both at the same moment, or null when stopped. */
       drift: () => number | null;
       loaded: () => boolean;
     };
@@ -26,13 +26,28 @@ declare global {
 }
 
 /**
+ * Seconds since the current frame began. The playback loop advances the playhead by
+ * requestAnimationFrame timestamps, which mark the start of a frame, but the audio clock is
+ * read when the callback runs, which after a long task can be 100 ms or more later. Adding
+ * this lag compares the music with the playhead at the moment the audio clock is read. Outside
+ * a frame (a timeline seek) it is the time since the last frame, where the playback loop's next
+ * tick continues from. `document.timeline.currentTime` is the frame's rAF timestamp.
+ */
+function frameLag(): number {
+  const frameTime = document.timeline.currentTime;
+  if (typeof frameTime !== "number") return 0;
+  return Math.max(0, (performance.now() - frameTime) / 1000);
+}
+
+/**
  * Plays the project's music track in sync with the playhead. The playback
  * loop publishes the playhead once per frame, before rendering it; the music
  * starts on the first frame after Play (so a slow first frame cannot leave it
  * running ahead of a still picture), and every later frame is compared with
- * the audio clock: seeks and loop wraps re-anchor at once, and drift over
- * MAX_DRIFT_SEC re-anchors at the next SYNC_CHECK_SEC check. Audio only
- * sounds while `playing` is true; scrubbing pauses playback, so it is silent.
+ * the audio clock at the same moment (see frameLag): seeks and loop wraps
+ * re-anchor at once, and drift over MAX_DRIFT_SEC re-anchors at the next
+ * SYNC_CHECK_SEC check. Audio only sounds while `playing` is true; scrubbing
+ * pauses playback, so it is silent.
  */
 export function useAudioPreview(): void {
   const doc = useEditorStore((s) => s.doc);
@@ -100,25 +115,27 @@ export function useAudioPreview(): void {
       const current = useEditorStore.getState().doc;
       if (!current.audio) return;
       const currentTotal = schedule(current).total;
+      // The playhead now, when the audio clock is read, not when this frame began.
+      const playhead = state.playhead + frameLag();
 
       const position = preview.position();
       if (position === null) {
-        preview.start(current.audio, currentTotal, state.playhead);
+        preview.start(current.audio, currentTotal, playhead);
         nextCheckRef.current = preview.clock + SYNC_CHECK_SEC;
         driftRef.current = 0;
         return;
       }
       if (state.playhead === prev.playhead) return;
 
-      const gap = Math.abs(position - state.playhead);
+      const gap = Math.abs(position - playhead);
       const due = preview.clock >= nextCheckRef.current;
       if (gap > JUMP_SEC || (due && gap > MAX_DRIFT_SEC)) {
-        preview.start(current.audio, currentTotal, state.playhead);
+        preview.start(current.audio, currentTotal, playhead);
       }
       if (due || gap > JUMP_SEC) nextCheckRef.current = preview.clock + SYNC_CHECK_SEC;
 
       const after = preview.position();
-      driftRef.current = after === null ? null : after - state.playhead;
+      driftRef.current = after === null ? null : after - playhead;
     });
   }, []);
 
