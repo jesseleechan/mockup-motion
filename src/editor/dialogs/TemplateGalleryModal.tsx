@@ -2,7 +2,15 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, Button, Icon } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import { BUILTIN_TEMPLATES, validateTemplateRequirements, type Template } from "../../templates";
+import {
+  BUILTIN_TEMPLATES,
+  fittingTemplateId,
+  getTemplateById,
+  validateTemplateRequirements,
+  type Template,
+  type TemplateCategory,
+} from "../../templates";
+import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
 import { Check, Film, Monitor, Search, Smartphone, Sparkles, X } from "lucide-react";
@@ -17,10 +25,14 @@ export const TemplateGalleryModal: React.FC = () => {
     if (!next) closeTemplateGallery();
   };
 
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeCategory, setActiveCategory] = useState<TemplateCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   // A saved project may name a template that has since been removed; select the first one.
-  const initialTemplateId = () => currentTemplate(doc)?.id ?? BUILTIN_TEMPLATES[0].id;
+  // When every screenshot is the other size, start on that size's variant instead (Frames plan §8).
+  const initialTemplateId = () => {
+    const id = currentTemplate(doc)?.id ?? BUILTIN_TEMPLATES[0].id;
+    return fittingTemplateId(id, doc.assets) ?? id;
+  };
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId);
   const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
   const [focusedTemplateId, setFocusedTemplateId] = useState<string | null>(null);
@@ -34,10 +46,9 @@ export const TemplateGalleryModal: React.FC = () => {
 
   const categories = [
     { id: "all", label: "All", icon: Sparkles },
-    { id: "single", label: "Single shot", icon: Monitor },
-    { id: "mobile", label: "Mobile", icon: Smartphone },
-    { id: "portfolio", label: "Portfolio", icon: Film },
-  ];
+    { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop, icon: Monitor },
+    { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile, icon: Smartphone },
+  ] as const;
 
   const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {
     const matchesCategory = activeCategory === "all" || t.category === activeCategory;
@@ -52,6 +63,10 @@ export const TemplateGalleryModal: React.FC = () => {
   const selectedValidation = selectedTemplate
     ? validateTemplateRequirements(selectedTemplate, doc.assets)
     : { valid: true };
+  // The selected preset's other size, when that one matches the screenshots.
+  const fittingTemplate = selectedTemplate
+    ? getTemplateById(fittingTemplateId(selectedTemplate.id, doc.assets) ?? "")
+    : undefined;
 
   // Applying never waits for screenshots: the stage asks for any the template is missing.
   const handleApply = (template: Template) => {
@@ -111,6 +126,7 @@ export const TemplateGalleryModal: React.FC = () => {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
+                aria-pressed={isSelected}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
                   isSelected
                     ? "bg-[var(--color-raised)] text-[var(--color-text)] border border-[var(--color-line-strong)] shadow-sm"
@@ -197,8 +213,11 @@ export const TemplateGalleryModal: React.FC = () => {
                           <h4 className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
                             {template.name}
                           </h4>
-                          <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--color-text-3)]">
-                            {template.category}
+                          <span
+                            data-testid="template-category"
+                            className="text-[10px] font-medium text-[var(--color-text-3)]"
+                          >
+                            {TEMPLATE_CATEGORY_LABELS[template.category]}
                           </span>
                         </div>
 
@@ -237,10 +256,27 @@ export const TemplateGalleryModal: React.FC = () => {
                 <span className="text-xs font-medium text-[var(--color-text)]">
                   Selected: {selectedTemplate.name}
                 </span>
-                {!selectedValidation.valid && (
-                  <span className="text-xs text-[var(--color-accent)] font-medium">
-                    ({selectedValidation.reason})
+                {fittingTemplate ? (
+                  <span
+                    data-testid="template-size-hint"
+                    className="text-xs text-[var(--color-text-2)] flex items-center gap-1.5"
+                  >
+                    {fittingTemplate.name} fits your screenshots.
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateId(fittingTemplate.id)}
+                      aria-label={`Switch to ${fittingTemplate.name}`}
+                      className="font-medium text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:underline"
+                    >
+                      Switch
+                    </button>
                   </span>
+                ) : (
+                  !selectedValidation.valid && (
+                    <span className="text-xs text-[var(--color-accent)] font-medium">
+                      ({selectedValidation.reason})
+                    </span>
+                  )
                 )}
               </>
             )}

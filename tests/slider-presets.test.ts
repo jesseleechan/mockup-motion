@@ -115,7 +115,7 @@ describe("Mobile Slider and Desktop Slider templates", () => {
     expect(ids).toContain("mobile-slider");
     expect(ids).toContain("desktop-slider");
     expect(mobileSliderTemplate.category).toBe("mobile");
-    expect(desktopSliderTemplate.category).toBe("portfolio");
+    expect(desktopSliderTemplate.category).toBe("desktop");
     for (const [template, role] of [
       [mobileSliderTemplate, "mobile"],
       [desktopSliderTemplate, "desktop"],

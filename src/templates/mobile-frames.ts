@@ -9,7 +9,6 @@ export const mobileFramesTemplate = framesTemplate({
   id: "mobile-frames",
   name: "Mobile Frames",
   description: "Columns of mobile screens that glide up and down in alternating directions.",
-  category: "mobile",
   role: "mobile",
 });
 

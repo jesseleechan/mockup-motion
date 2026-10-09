@@ -7,8 +7,9 @@ import { buildTemplatePreviewDoc } from "./demo-preview";
 export const scrollStoryTemplate: Template = {
   id: "scroll-story",
   name: "Scroll Story",
-  description: "Reads the entire webpage section by section with smooth scrolling and comfortable pauses.",
-  category: "single",
+  description:
+    "Reads the entire webpage section by section with smooth scrolling and comfortable pauses.",
+  category: "desktop",
   slots: [
     {
       key: "desktop1",

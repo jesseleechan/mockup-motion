@@ -15,11 +15,14 @@ export interface TemplateBuildContext {
   style?: Partial<Style>;
 }
 
+/** The gallery tab a template sits under: the screenshots it presents. */
+export type TemplateCategory = "desktop" | "mobile";
+
 export interface Template {
   id: string;
   name: string;
   description: string;
-  category: "single" | "mobile" | "portfolio";
+  category: TemplateCategory;
   slots: SlotSpec[];
   defaultDuration: number;
   /** Shows the Light / Dark background switch (Ash or Onyx, `presetToneStyle`). */

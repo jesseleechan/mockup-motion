@@ -450,7 +450,7 @@ export interface Template {
   id: string;
   name: string;
   description: string; // one line, calm tone
-  category: "single" | "mobile" | "portfolio";
+  category: "desktop" | "mobile"; // the gallery tab; matches the screenshots' role
   slots: SlotSpec[];
   defaultDuration: number;
   toneSwitch?: boolean; // Light / Dark background switch in the Video inspector (Ash or Onyx)

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
 
@@ -225,6 +226,9 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
     "scroll-story",
   ]);
 
+  // With no screenshots the gallery suggests no other size.
+  await expect(gallery.getByTestId("template-size-hint")).toHaveCount(0);
+
   // Apply without picking a card: the initial selection is the first-run default.
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
@@ -289,4 +293,59 @@ test("Presets D1: first run → demo content builds Desktop Slider", async ({ pa
     expect(channel.samples).toBeGreaterThan(1000);
     expect(channel.stdDev, "the active card shows screenshot content").toBeGreaterThan(20);
   }
+});
+
+test("Frames plan §8: with only mobile screenshots the gallery suggests the mobile size", async ({
+  page,
+}) => {
+  await resetAndOpen(page);
+  await page.getByRole("tab", { name: "Media" }).click();
+  const files = await Promise.all(
+    ["#3366CC", "#8A1E3A"].map(async (background, i) => ({
+      name: `phone-${i + 1}.png`,
+      mimeType: "image/png",
+      buffer: await sharp({ create: { width: 780, height: 1688, channels: 3, background } })
+        .png()
+        .toBuffer(),
+    })),
+  );
+  await page.getByTestId("media-input").setInputFiles(files);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as unknown as { __editorStore?: StoreHandle }).__editorStore
+          ?.getState()
+          .doc.assets.map((a) => a.role),
+      ),
+    )
+    .toEqual(["mobile", "mobile"]);
+  expect((await docState(page)).templateId, "no template yet").toBeNull();
+
+  await page.getByRole("tab", { name: "Templates" }).click();
+  await page.getByRole("button", { name: "Browse all templates" }).click();
+  const gallery = page.getByRole("dialog");
+  await expect(gallery).toBeVisible();
+  // The first-run default is Desktop Slider; its mobile size is selected instead.
+  await expect(gallery.getByText("Selected: Mobile Slider")).toBeVisible();
+  const hint = gallery.getByTestId("template-size-hint");
+  await expect(hint).toHaveCount(0);
+
+  // Picking a desktop preset offers its mobile size instead of "Needs 4+ desktop screenshots".
+  await gallery.getByRole("button", { name: "Select template Desktop Frames" }).click();
+  await expect(gallery.getByText("Selected: Desktop Frames")).toBeVisible();
+  await expect(hint).toHaveText("Mobile Frames fits your screenshots.Switch");
+  await expect(gallery.getByText("(Needs 4+ desktop screenshots)")).toHaveCount(0);
+
+  await hint.getByRole("button", { name: "Switch to Mobile Frames" }).click();
+  await expect(gallery.getByText("Selected: Mobile Frames")).toBeVisible();
+  await expect(hint).toHaveCount(0);
+
+  // Scroll Story has no mobile size, so it keeps its own message.
+  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+  await expect(hint).toHaveCount(0);
+  await gallery.getByRole("button", { name: "Select template Mobile Frames" }).click();
+
+  await gallery.getByRole("button", { name: "Apply template" }).click();
+  await expect(gallery).toBeHidden();
+  expect((await docState(page)).templateId).toBe("mobile-frames");
 });

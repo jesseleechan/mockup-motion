@@ -36,6 +36,7 @@ describe("editor labels (F08)", () => {
       "ENTRANCE_LABELS",
       "LAYOUT_LABELS",
       "SHADOW_LABELS",
+      "TEMPLATE_CATEGORY_LABELS",
       "TEXT_ANIMATION_LABELS",
       "TEXT_ROLE_LABELS",
       "TRANSITION_LABELS",

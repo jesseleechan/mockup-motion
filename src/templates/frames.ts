@@ -10,7 +10,6 @@ export const framesTemplate = framesTemplateFor({
   id: "frames",
   name: "Desktop Frames",
   description: "Rows of desktop screens that glide past in alternating directions.",
-  category: "portfolio",
   role: "desktop",
 });
 

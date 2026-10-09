@@ -6,7 +6,6 @@ export const desktopSliderTemplate = sliderTemplate({
   id: "desktop-slider",
   name: "Desktop Slider",
   description: "A vertical carousel of desktop screens that steps up from one to the next.",
-  category: "portfolio",
   role: "desktop",
   axis: "y",
 });
