@@ -3,9 +3,11 @@ import { useEditorStore } from "../../state/store";
 import { BUILTIN_PALETTES } from "../../doc/palettes";
 import { CURATED_FONT_PAIRS } from "../../assets/fonts";
 import { schedule } from "../../motion";
-import { ColorField, Field, Section, Select, Slider, Switch } from "../../ui";
+import { ColorField, Field, Section, SegmentedControl, Select, Slider, Switch } from "../../ui";
 import type { BrowserChrome, DeviceFinish, ShadowPreset } from "../../doc/types";
 import { BROWSER_CHROME_LABELS, DEVICE_FINISH_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
+import { presetToneOf, setPresetTone, type PresetTone } from "../../templates/looks";
+import { currentTemplate } from "../template-actions";
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -43,6 +45,20 @@ export const VideoInspector: React.FC = () => {
         draft.style.textColor = p.textColor;
       },
       { label: `Apply ${p.name} palette` },
+    );
+  };
+
+  // The slider and Frames presets switch between their flat light and dark fills in one click
+  // (Ash or Onyx). Other documents keep the palette grid only.
+  const hasToneSwitch = currentTemplate(doc)?.toneSwitch === true;
+  const tone = presetToneOf(doc.style);
+
+  const handleTone = (next: PresetTone) => {
+    apply(
+      (draft) => {
+        setPresetTone(draft.style, next);
+      },
+      { label: next === "dark" ? "Use dark background" : "Use light background" },
     );
   };
 
@@ -109,6 +125,26 @@ export const VideoInspector: React.FC = () => {
 
       <Section title="Background">
         <div className="space-y-3">
+          {hasToneSwitch && (
+            <Field label="Tone">
+              <div className="flex justify-end">
+                <SegmentedControl<PresetTone | "">
+                  aria-label="Background tone"
+                  size="sm"
+                  // Any other background selects neither, until one is picked.
+                  value={tone ?? ""}
+                  onChange={(next) => {
+                    if (next) handleTone(next);
+                  }}
+                  options={[
+                    { value: "light", label: "Light" },
+                    { value: "dark", label: "Dark" },
+                  ]}
+                />
+              </div>
+            </Field>
+          )}
+
           <Field label="Palette" stacked>
             <div className="grid grid-cols-4 gap-2">
               {BUILTIN_PALETTES.map((p) => {

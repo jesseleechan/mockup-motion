@@ -2,7 +2,7 @@ import type { Aspect, AssetRole, Layout, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import { framesDuration } from "../motion/layouts/rows";
 import type { SlotSpec, Template, TemplateBuildContext } from "./types";
-import { paletteBackground, paletteTextColor } from "./looks";
+import { presetToneStyle } from "./looks";
 
 type RowsLayout = Extract<Layout, { kind: "rows" }>;
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
@@ -102,6 +102,7 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
     description: spec.description,
     category: spec.category,
     slots,
+    toneSwitch: true,
     defaultDuration: FRAMES_MIN_LOOP,
     build: (ctx: TemplateBuildContext) => {
       // fillSlots reuses an asset when a slot has no distinct one; a lane must not show the
@@ -115,9 +116,7 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
       const style: Style = {
         ...defaultStyle(),
         ...ctx.style,
-        background: paletteBackground("ash"),
-        textColor: paletteTextColor("ash"),
-        frameAppearance: "light",
+        ...presetToneStyle("light"),
         shadow: "none",
         // A flat light fill cannot band, so it needs no grain (quality-bar §5, §6).
         grain: 0,

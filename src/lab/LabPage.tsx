@@ -30,6 +30,7 @@ import {
 } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
+import { presetToneStyle } from "../templates/looks";
 
 declare global {
   interface Window {
@@ -75,6 +76,18 @@ for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
   const suffix = aspect.replace(":", "x");
   FIXTURES[`frames-${suffix}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
   FIXTURES[`mobile-frames-${suffix}`] = buildTemplatePreviewDoc(mobileFramesTemplate, aspect);
+}
+
+// The dark option of the slider and Frames presets: `<id>-dark-<aspect>`, e.g.
+// /lab?fixture=mobile-frames-dark-16x9&aspect=16:9.
+for (const t of BUILTIN_TEMPLATES.filter((template) => template.toneSwitch)) {
+  for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
+    const doc = buildTemplatePreviewDoc(t, aspect);
+    FIXTURES[`${t.id}-dark-${aspect.replace(":", "x")}`] = {
+      ...doc,
+      style: { ...doc.style, ...presetToneStyle("dark") },
+    };
+  }
 }
 
 function aspectRatioOf(aspect: Aspect): number {

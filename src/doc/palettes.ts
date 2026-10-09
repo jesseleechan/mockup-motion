@@ -50,7 +50,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 9 Built-in curated palettes from quality-bar §6.
+ * 10 Built-in curated palettes from quality-bar §6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [
@@ -174,5 +174,15 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     frameAppearance: "light",
     textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#DFE1E3" }),
+  },
+  // 10. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
+  // slider and Frames presets - OKLCH C ~0.005
+  {
+    id: "onyx",
+    name: "Onyx",
+    background: { kind: "solid", color: "#141417" },
+    frameAppearance: "dark",
+    textColor: "#F4F4F5",
+    shadowTint: shadowTintFor({ kind: "solid", color: "#141417" }),
   },
 ];

@@ -52,6 +52,17 @@ for (const aspect of ["16:9", "9:16"]) {
     STILLS.push({ name: `frames-${tag}-t${t}`, fixture: `frames-${tag}`, aspect, t });
   }
 }
+// The dark option of the four presets, at 16:9 only: Frames mid-travel, the sliders mid-step, where
+// the neighbour fade (an sRGB blend) shows against the near-black fill.
+const DARK_STILLS: Record<string, number> = {
+  frames: 2.4,
+  "mobile-frames": 2.4,
+  "desktop-slider": 2.5,
+  "mobile-slider": 2.5,
+};
+for (const [id, t] of Object.entries(DARK_STILLS)) {
+  STILLS.push({ name: `${id}-dark-16x9-t${t}`, fixture: `${id}-dark-16x9`, aspect: "16:9", t });
+}
 for (const device of DEVICES) {
   STILLS.push({
     name: `device-${device}-frontal`,
