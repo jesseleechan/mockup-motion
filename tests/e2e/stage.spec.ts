@@ -218,12 +218,12 @@ test.describe("F05 stage sizing on a 3× display", () => {
 // small preview: 1280×800 with Stage zoom at 50%.
 async function openSmallPreview(page: Page) {
   await resetAndOpen(page);
-  // These tests check the playback loop on the document they were written for: Quiet Hero's
-  // single browser. The first-run demo is now Desktop Slider (presets D1), which plays at
-  // 60 fps on a GPU but renders 2-3x slower than Quiet Hero on SwiftShader (P05 evidence).
+  // These tests check the playback loop on a single browser: Scroll Story's. The first-run
+  // demo is Desktop Slider (presets D1), which plays at 60 fps on a GPU but renders 2-3x slower
+  // than a single browser on SwiftShader (P05 evidence).
   await page.getByRole("button", { name: "Browse all templates" }).click();
   const gallery = page.getByRole("dialog");
-  await gallery.getByRole("button", { name: "Select template Quiet Hero" }).click();
+  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
   // Applying selects the first shot; the loop switch lives in the Video inspector.

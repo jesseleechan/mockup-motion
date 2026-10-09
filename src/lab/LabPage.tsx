@@ -24,6 +24,7 @@ import sliderYFixture from "./fixtures/slider-y.json";
 
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc, framesTemplate } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
+import { LAYOUT_FIXTURES } from "./layout-fixtures";
 
 declare global {
   interface Window {
@@ -54,13 +55,13 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "slider-y": sliderYFixture as unknown as ProjectDoc,
 };
 
-// Register all 12 built-in templates into fixtures
+// Every built-in template is a fixture, under its id and as `template-<id>`.
 for (const t of BUILTIN_TEMPLATES) {
   const pDoc = buildTemplatePreviewDoc(t);
   FIXTURES[`template-${t.id}`] = pDoc;
   FIXTURES[t.id] = pDoc;
 }
-Object.assign(FIXTURES, VISUAL_FIXTURES);
+Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES);
 
 // Frames also gets a fixture per aspect, because its row count depends on the aspect: the
 // `frames` fixture above is built at 16:9. Use /lab?fixture=frames-4x5&aspect=4:5.

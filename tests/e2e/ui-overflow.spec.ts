@@ -12,7 +12,7 @@ interface StoreHandle {
 }
 
 interface EditorStoreHandle {
-  getState: () => { apply: (recipe: (draft: ProjectDoc) => void) => void };
+  getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
 }
 
 interface UIStoreHandle {
@@ -68,6 +68,68 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
     .toBeGreaterThan(0);
 }
 
+/**
+ * A four-shot reel with every inspector layout: a title card with a label and a title, a single
+ * browser, a browser-and-phone pair and a closing title card. No built-in template has more
+ * than one shot, so it is built on Scroll Story's demo screenshot through the store.
+ */
+async function openReel(page: Page) {
+  await applyTemplateWithDemo(page, "scroll-story");
+  await page.evaluate(() => {
+    const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
+    if (!store) throw new Error("__editorStore is unavailable");
+    // Cloned from the committed doc: structuredClone cannot copy an Immer draft.
+    const single = structuredClone(store.getState().doc.shots[0]);
+    if (single.layout.kind !== "single") throw new Error("Scroll Story has no single shot");
+    const assetId = single.layout.assetId;
+    delete single.scroll;
+    const text = (id: string, role: "title" | "subtitle" | "label", value: string) => ({
+      id,
+      role,
+      text: value,
+      color: "",
+      font: role === "subtitle" ? ("body" as const) : ("display" as const),
+      size: role === "title" ? 6 : 2.2,
+      anchor: "center" as const,
+      align: "center" as const,
+      animation: "fadeUp" as const,
+      delay: 0.2,
+    });
+    const opening = {
+      ...structuredClone(single),
+      id: "shot-title",
+      layout: { kind: "title" as const },
+      texts: [text("txt-intro", "label", "INTRODUCING"), text("txt-title", "title", "Studio")],
+    };
+    const pair = {
+      ...structuredClone(single),
+      id: "shot-pair",
+      layout: {
+        kind: "pair" as const,
+        desktopId: assetId,
+        mobileId: assetId,
+        arrangement: "overlap" as const,
+      },
+    };
+    pair.camera.preset = "orbitRight";
+    const closing = {
+      ...structuredClone(single),
+      id: "shot-outro",
+      layout: { kind: "title" as const },
+      texts: [text("txt-end", "title", "Studio"), text("txt-sub", "subtitle", "studio.example")],
+    };
+    closing.camera.preset = "pullBack";
+    // Launch Reel's durations. With four equal shots the pair card's layout label clips at
+    // 1280 px (docs/plan/follow-ups.md).
+    single.duration = 4;
+    pair.duration = 4;
+    opening.duration = 2.5;
+    closing.duration = 2.5;
+    store.getState().apply((draft) => {
+      draft.shots = [opening, single, pair, closing];
+    });
+  });
+}
 async function currentDoc(page: Page): Promise<ProjectDoc> {
   return page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
@@ -166,7 +228,7 @@ test.describe("F08 overflow guard", () => {
         test.setTimeout(90000);
         await page.setViewportSize(viewport);
         await resetAndOpen(page, theme);
-        await applyTemplateWithDemo(page, "launch-reel");
+        await openReel(page);
         const inspector = page.locator('[data-panel="inspector"]');
 
         await select(page, { kind: "video" });
@@ -176,7 +238,7 @@ test.describe("F08 overflow guard", () => {
         // Every section of a single-device shot: turn on scroll and the cursor.
         const doc = await currentDoc(page);
         const singleShot = doc.shots.find((s) => s.layout.kind === "single");
-        if (!singleShot) throw new Error("launch-reel has no single-device shot");
+        if (!singleShot) throw new Error("the reel has no single-device shot");
         await select(page, { kind: "shot", id: singleShot.id });
         await inspector.getByRole("switch", { name: "Scroll through page" }).click();
         await inspector.getByRole("switch", { name: "Show cursor" }).click();
@@ -190,7 +252,7 @@ test.describe("F08 overflow guard", () => {
         }
 
         const textShot = doc.shots.find((s) => s.texts.length > 0);
-        if (!textShot) throw new Error("launch-reel has no text layer");
+        if (!textShot) throw new Error("the reel has no text layer");
         await select(page, { kind: "text", shotId: textShot.id, id: textShot.texts[0].id });
         await expect(inspector.getByText("Text layer", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Text inspector");
@@ -224,9 +286,9 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   test.setTimeout(90000);
   await page.setViewportSize({ width: 1600, height: 1000 });
   await resetAndOpen(page, "dark");
-  await applyTemplateWithDemo(page, "launch-reel");
+  await openReel(page);
 
-  // Shots on Hero tilt and Isometric drift, beside launch-reel's Push in, Orbit right, Pull back.
+  // Shots on Hero tilt and Isometric drift, beside the reel's Push in, Orbit right, Pull back.
   // Set through the store, so the checks below don't depend on finding the labels first.
   await page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
@@ -248,7 +310,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
     await expectNoRawIds(page, `Shot ${index + 1} inspector`);
   }
   const textShot = doc.shots.find((s) => s.texts.length > 0);
-  if (!textShot) throw new Error("launch-reel has no text layer");
+  if (!textShot) throw new Error("the reel has no text layer");
   await select(page, { kind: "text", shotId: textShot.id, id: textShot.texts[0].id });
   await expectNoRawIds(page, "Text inspector");
 

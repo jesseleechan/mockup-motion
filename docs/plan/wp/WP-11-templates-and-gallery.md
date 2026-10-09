@@ -20,7 +20,7 @@ Create 12 curated templates that produce Jitter-quality results with zero tweaki
    - `fillSlots` per `contracts.md` §8.
    - `applyTemplate(template, doc) → { style, shots, loop }`: fill slots from `doc.assets`, preferring the previous assignments. Keep brand style (fonts, text color, accent) when `ctx.style` is provided.
    - Each template file exports a `Template` and a `previewDoc()` built from the demo manifest.
-2. **The 12 templates** (one file each; the defaults below are starting points to tune by eye against the quality bar):
+2. **The 12 templates** (one file each; the defaults below are starting points to tune by eye against the quality bar). *On 2026-10-08 the owner cut the gallery to Desktop Slider, Mobile Slider, Frames, Phone Parade, Portfolio Rows, Isometric Wall and Scroll Story; the other rows below are history.*
 
    | Id | Name | Shots | Layout and camera | Look |
    |---|---|---|---|---|

@@ -3,7 +3,7 @@ import type { ProjectDoc } from "../../src/doc/types";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
-  getState: () => { doc: ProjectDoc };
+  getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
 }
 
 async function resetAndOpen(page: Page) {
@@ -115,9 +115,38 @@ test.describe("F07: shot and project thumbnails", () => {
 
   test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    await applyTemplateWithDemo(page, "launch-reel");
+    // Every built-in template has one shot, so add a second layout and a title card.
+    await applyTemplateWithDemo(page, "scroll-story");
+    for (const item of ["Same layout", "Title card"]) {
+      await page.getByRole("button", { name: "Add shot" }).click();
+      await page.getByRole("menuitem", { name: item }).click();
+    }
+    // A title card from the menu has no text, so its thumbnail is a flat background. Give it
+    // a title, as the reel templates did.
+    await page.evaluate(() => {
+      const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
+      if (!store) throw new Error("__editorStore is unavailable");
+      store.getState().apply((draft) => {
+        const title = draft.shots.find((s) => s.layout.kind === "title");
+        if (!title) throw new Error("No title card was added");
+        title.texts = [
+          {
+            id: "txt-title",
+            role: "title",
+            text: "Studio Kova",
+            color: "",
+            font: "display",
+            size: 8,
+            anchor: "center",
+            align: "center",
+            animation: "fadeUp",
+            delay: 0,
+          },
+        ];
+      });
+    });
     const shots = await shotCount(page);
-    expect(shots).toBeGreaterThan(1);
+    expect(shots).toBe(3);
 
     const cards = page.locator('[data-testid="shot-card"]');
     await expect(cards).toHaveCount(shots);
@@ -141,7 +170,7 @@ test.describe("F07: shot and project thumbnails", () => {
 
   test("changing the shot's camera updates its thumbnail within 1.5 s", async ({ page }) => {
     test.setTimeout(90_000);
-    await applyTemplateWithDemo(page, "quiet-hero");
+    await applyTemplateWithDemo(page, "scroll-story");
     const thumb = page.locator('[data-testid="shot-card"]').first().locator("img");
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => el.naturalWidth), { timeout: 20_000 })
@@ -171,7 +200,7 @@ test.describe("F07: shot and project thumbnails", () => {
 
   test("the project thumbnail is stored and shown in the Projects dialog", async ({ page }) => {
     test.setTimeout(90_000);
-    await applyTemplateWithDemo(page, "responsive-pair");
+    await applyTemplateWithDemo(page, "phone-parade");
     const docId = await page.evaluate(() => {
       const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
       if (!store) throw new Error("__editorStore is unavailable");
@@ -231,7 +260,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
   }) => {
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(15);
+    await expect(cards).toHaveCount(7);
 
     // Every card rests on its poster.
     const posters = await cards.evaluateAll((els) =>
@@ -239,43 +268,49 @@ test.describe("F07: template previews in the gallery and Library", () => {
     );
     for (const poster of posters) expect(poster).toMatch(/^\/templates\/[a-z-]+\.webp$/);
 
-    const pair = page.locator('[data-testid="template-card"][data-template-id="responsive-pair"]');
-    await pair.hover();
+    const frames = page.locator('[data-testid="template-card"][data-template-id="frames"]');
+    await frames.hover();
     await expect
-      .poll(() => videoState(pair), { timeout: 10_000 })
+      .poll(() => videoState(frames), { timeout: 10_000 })
       .toEqual({ paused: false, time: expect.any(Number) });
-    await expect.poll(async () => (await videoState(pair)).time).toBeGreaterThan(0.2);
-    const size = await pair
+    // Decoding competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
+    await expect
+      .poll(async () => (await videoState(frames)).time, {
+        timeout: ciTimeout(5000),
+        message: "the hovered card's preview plays past 0.2 s",
+      })
+      .toBeGreaterThan(0.2);
+    const size = await frames
       .locator("video")
       .evaluate((v: HTMLVideoElement) => [v.videoWidth, v.videoHeight]);
     expect(size).toEqual([640, 360]);
 
     await page.getByRole("heading", { name: /Template gallery/ }).hover();
-    await expect.poll(() => videoState(pair)).toEqual({ paused: true, time: 0 });
+    await expect.poll(() => videoState(frames)).toEqual({ paused: true, time: 0 });
 
-    const hero = page.locator('[data-testid="template-card"][data-template-id="quiet-hero"]');
-    await hero.focus();
-    await expect.poll(async () => (await videoState(hero)).paused).toBe(false);
-    await hero.blur();
-    await expect.poll(() => videoState(hero)).toEqual({ paused: true, time: 0 });
+    const story = page.locator('[data-testid="template-card"][data-template-id="scroll-story"]');
+    await story.focus();
+    await expect.poll(async () => (await videoState(story)).paused).toBe(false);
+    await story.blur();
+    await expect.poll(() => videoState(story)).toEqual({ paused: true, time: 0 });
   });
 
   test("reduced motion shows posters only", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(15);
+    await expect(cards).toHaveCount(7);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
     const posters = page.locator('[data-testid="template-card"] [data-testid="template-poster"]');
-    await expect(posters).toHaveCount(15);
+    await expect(posters).toHaveCount(7);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
 
   test("Library template cards show their posters", async ({ page }) => {
     const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(15);
-    for (let i = 0; i < 15; i++) {
+    await expect(cards).toHaveCount(7);
+    for (let i = 0; i < 7; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);

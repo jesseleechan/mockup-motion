@@ -15,7 +15,6 @@ export function validateTemplateRequirements(
     template.id === "phone-parade" ||
     template.id === "portfolio-rows" ||
     template.id === "isometric-wall" ||
-    template.id === "cascade-stack" ||
     template.id === "frames";
 
   if (isMultiAsset) {

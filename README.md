@@ -30,7 +30,7 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 ## Choose a template
 
-Start with a template, or try the demo content. Twelve templates cover a quiet hero, tilted showcase, responsive pair and trio, phone spotlight and parade, portfolio rows, an isometric wall, a cascade stack, Scroll Story, and two reels.
+Start with a template, or try the demo content. Seven templates: Desktop Slider, Mobile Slider, Frames, Phone Parade, Portfolio Rows, Isometric Wall and Scroll Story.
 
 Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
 
@@ -132,7 +132,7 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Section                 | Evidence                                                                                                                                                                                                                                                  |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Capture                 | Ran `npm run capture -- <local demo site> --unstick --out <dir>`: 2880 px desktop and 780 px mobile PNGs, viewport and full page, plus JSON. Recapture: [PR #14](https://github.com/jesseleechan/mockup-motion/pull/14)                                   |
-| Templates, demo content | The gallery lists the 12 templates; `tests/e2e/polish.spec.ts` "first run opens the template gallery, then demo content"                                                                                                                                  |
+| Templates, demo content | The gallery lists the templates (12 then; 7 since 2026-10-08); `tests/e2e/polish.spec.ts` "first run opens the template gallery, then demo content"                                                                                                       |
 | Uploads and assigning   | A PNG uploaded after demo content went to the library only; dragging it onto the stage device moved slot 1 to it. A WebP dropped on the window was added. `polish.spec.ts` "rejects corrupt and oversized screenshots"; types from `src/assets/decode.ts` |
 | Scroll Story            | "Scroll through page" is off on a new shot with a tall screenshot; turning it on shows stops, hold and easing. `tests/e2e/wave5.spec.ts` "WP-15: Scroll Story…"                                                                                           |
 | Reels                   | The transition picker lists Cut, Fade, Blur, Push, Zoom and Wipe, and the timeline has a "Loop wrap transition" chip. `tests/timeline.test.ts`, `tests/motion.test.ts` loop seams                                                                         |

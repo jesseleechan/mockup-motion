@@ -5,20 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
  * still and the others still run. Baselines are Linux-only and generated in CI; see README.md.
  */
 
-const TEMPLATES = [
-  "quiet-hero",
-  "tilted-showcase",
-  "responsive-pair",
-  "responsive-trio",
-  "phone-spotlight",
-  "phone-parade",
-  "portfolio-rows",
-  "isometric-wall",
-  "cascade-stack",
-  "scroll-story",
-  "launch-reel",
-  "case-study-reel",
-];
+const TEMPLATES = ["phone-parade", "portfolio-rows", "isometric-wall", "scroll-story"];
 
 const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
 const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];

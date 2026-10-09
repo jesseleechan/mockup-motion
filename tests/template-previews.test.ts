@@ -25,8 +25,13 @@ async function pixelStdDev(file: string): Promise<number> {
 }
 
 describe("F07: template previews", () => {
-  it("covers all 15 built-in templates", () => {
-    expect(BUILTIN_TEMPLATES).toHaveLength(15);
+  it("covers all 7 built-in templates", () => {
+    expect(BUILTIN_TEMPLATES).toHaveLength(7);
+  });
+
+  it("ships no preview for a template that is not built in", () => {
+    const expected = BUILTIN_TEMPLATES.flatMap((t) => [`${t.id}.webm`, `${t.id}.webp`]);
+    expect(fs.readdirSync(TEMPLATES_DIR).sort()).toEqual(expected.sort());
   });
 
   for (const template of BUILTIN_TEMPLATES) {

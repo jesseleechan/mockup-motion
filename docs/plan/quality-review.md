@@ -1,6 +1,6 @@
 # Quality-bar review
 
-The [`quality-bar.md`](quality-bar.md) §8 checklist, applied to the 12 built-in templates. This review replaces the WP-18 version, which ticked every item without evidence.
+The [`quality-bar.md`](quality-bar.md) §8 checklist, applied to the 12 built-in templates. *On 2026-10-08 the gallery was cut to 7; the sections for Quiet Hero, Tilted Showcase, Responsive Pair, Responsive Trio, Phone Spotlight, Cascade Stack, Launch Reel and Case Study Reel are kept as a record.* This review replaces the WP-18 version, which ticked every item without evidence.
 
 **Source:** the F11 contact sheet, [`docs/fix-plan/evidence/F11/contact-sheet/`](../fix-plan/evidence/F11/contact-sheet/index.html), which you signed off on 2026-10-06 ([PR #13](https://github.com/jesseleechan/mockup-motion/pull/13)). It shows 12 templates × 16:9, 1:1 and 9:16 × 15%, 50% and 85% of each template's length: 108 stills, 960 px wide, WebP q80, rendered by `npm run contact-sheet` in Chrome on SwiftShader. F12 recaptured the demo sites after the sheet was made; the [F13 baselines](../fix-plan/evidence/F13/baselines-templates.png) show the same looks with the new captures.
 

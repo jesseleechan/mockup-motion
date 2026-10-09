@@ -101,15 +101,16 @@ export interface V1Project {
   exportSettings: V1ExportSettings;
 }
 
+/**
+ * The built-in template each v1 preset became. Presets whose template was removed (clean-hero,
+ * soft-studio, phone-spotlight, responsive-pair) migrate without a template: their shots come
+ * from the v1 composition either way, and `templateId` is informational.
+ */
 export const LEGACY_PRESET_TO_TEMPLATE: Record<string, string> = {
-  "clean-hero": "quiet-hero",
-  "soft-studio": "quiet-hero",
   "midnight-rows": "portfolio-rows",
   "gallery-wall": "isometric-wall",
   "angled-gallery": "portfolio-rows",
   "phone-columns": "phone-parade",
-  "phone-spotlight": "phone-spotlight",
-  "responsive-pair": "responsive-pair",
 };
 
 export function migrateV1Project(v1: V1Project): ProjectDoc {
@@ -337,7 +338,7 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     format: v1.exportSettings?.format === "webm" ? "webm" : "mp4",
   };
 
-  const templateId = LEGACY_PRESET_TO_TEMPLATE[v1.presetId] || "quiet-hero";
+  const templateId: string | undefined = LEGACY_PRESET_TO_TEMPLATE[v1.presetId];
 
   const rawDoc: ProjectDoc = {
     version: 2,

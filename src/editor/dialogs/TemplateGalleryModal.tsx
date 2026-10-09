@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, Button, Icon } f
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { BUILTIN_TEMPLATES, validateTemplateRequirements, type Template } from "../../templates";
-import { useTemplateActions } from "../template-actions";
+import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
-import { Check, Film, Layers, Monitor, Play, Search, Smartphone, Sparkles, X } from "lucide-react";
+import { Check, Film, Monitor, Search, Smartphone, Sparkles, X } from "lucide-react";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
@@ -19,9 +19,9 @@ export const TemplateGalleryModal: React.FC = () => {
 
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
-    doc.templateId || BUILTIN_TEMPLATES[0].id,
-  );
+  // A saved project may name a template that has since been removed; select the first one.
+  const initialTemplateId = () => currentTemplate(doc)?.id ?? BUILTIN_TEMPLATES[0].id;
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId);
   const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
   const [focusedTemplateId, setFocusedTemplateId] = useState<string | null>(null);
 
@@ -29,16 +29,14 @@ export const TemplateGalleryModal: React.FC = () => {
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) setSelectedTemplateId(doc.templateId || BUILTIN_TEMPLATES[0].id);
+    if (open) setSelectedTemplateId(initialTemplateId());
   }
 
   const categories = [
     { id: "all", label: "All", icon: Sparkles },
     { id: "single", label: "Single shot", icon: Monitor },
-    { id: "responsive", label: "Responsive", icon: Layers },
     { id: "mobile", label: "Mobile", icon: Smartphone },
     { id: "portfolio", label: "Portfolio", icon: Film },
-    { id: "reel", label: "Reels", icon: Play },
   ];
 
   const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {

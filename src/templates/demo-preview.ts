@@ -11,17 +11,10 @@ const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
 
 /**
  * Demo captures per template, in slot order (fillSlots is greedy by role).
- * Multi-screen layouts use a different site per screen; responsive layouts show one
- * site across devices. Templates not listed use DEFAULT_DEMO_IDS.
+ * Multi-screen layouts use a different site per screen. Templates not listed use
+ * DEFAULT_DEMO_IDS.
  */
 const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
-  "quiet-hero": [desktopFull("aurelia")],
-  "tilted-showcase": [desktopHero("northwind")],
-  // A light site: Northwind's dark navy hero is close to the empty-screen fill.
-  "responsive-pair": [desktopFull("maison-oak"), mobileHero("maison-oak")],
-  // No second desktop capture, so the tablet reuses the full page rather than a 16:10 hero.
-  "responsive-trio": [desktopFull("field-notes"), mobileHero("field-notes")],
-  "phone-spotlight": [mobileHero("studio-kova")],
   "phone-parade": [
     mobileHero("aurelia"),
     mobileHero("northwind"),
@@ -40,12 +33,6 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("field-notes"),
     desktopHero("northwind"),
     desktopHero("aurelia"),
-  ],
-  "cascade-stack": [
-    desktopHero("maison-oak"),
-    desktopHero("studio-kova"),
-    desktopHero("aurelia"),
-    desktopHero("northwind"),
   ],
   frames: [
     desktopHero("northwind"),
@@ -72,12 +59,6 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("studio-kova"),
   ],
   "scroll-story": [desktopFull("studio-kova")],
-  "launch-reel": [desktopFull("aurelia"), mobileHero("aurelia")],
-  "case-study-reel": [
-    desktopFull("maison-oak"),
-    desktopHero("field-notes"),
-    desktopHero("northwind"),
-  ],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];

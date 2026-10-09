@@ -3,6 +3,7 @@ import { createDoc, defaultShot } from "../src/doc/defaults";
 import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
 import { V1_PRESETS, createV1Project } from "./fixtures/v1-presets";
+import { getTemplateById } from "../src/templates";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -179,6 +180,12 @@ describe("WP-01: Document Defaults and Validation", () => {
   });
 
   describe("v1 to v2 migration produces valid docs for all 8 presets", () => {
+    it("maps v1 presets only to built-in templates", () => {
+      for (const id of Object.values(LEGACY_PRESET_TO_TEMPLATE)) {
+        expect(getTemplateById(id), id).toBeDefined();
+      }
+    });
+
     for (const preset of V1_PRESETS) {
       it(`migrates preset: ${preset.id} (${preset.name})`, () => {
         const v1Project: V1Project = {

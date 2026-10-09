@@ -1,10 +1,4 @@
-import type {
-  Aspect,
-  AssetRef,
-  AssetRole,
-  Shot,
-  Style,
-} from "../doc/types";
+import type { Aspect, AssetRef, AssetRole, Shot, Style } from "../doc/types";
 
 export interface SlotSpec {
   key: string; // "desktop1", "mobile1", "logo"
@@ -25,7 +19,7 @@ export interface Template {
   id: string;
   name: string;
   description: string;
-  category: "single" | "responsive" | "mobile" | "portfolio" | "reel";
+  category: "single" | "mobile" | "portfolio";
   slots: SlotSpec[];
   defaultDuration: number;
   build: (ctx: TemplateBuildContext) => {
