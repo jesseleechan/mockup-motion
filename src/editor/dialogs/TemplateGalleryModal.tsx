@@ -4,6 +4,8 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import {
   BUILTIN_TEMPLATES,
+  fittingTemplateId,
+  getTemplateById,
   validateTemplateRequirements,
   type Template,
   type TemplateCategory,
@@ -26,7 +28,11 @@ export const TemplateGalleryModal: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<TemplateCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   // A saved project may name a template that has since been removed; select the first one.
-  const initialTemplateId = () => currentTemplate(doc)?.id ?? BUILTIN_TEMPLATES[0].id;
+  // When every screenshot is the other size, start on that size's variant instead (Frames plan §8).
+  const initialTemplateId = () => {
+    const id = currentTemplate(doc)?.id ?? BUILTIN_TEMPLATES[0].id;
+    return fittingTemplateId(id, doc.assets) ?? id;
+  };
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(initialTemplateId);
   const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
   const [focusedTemplateId, setFocusedTemplateId] = useState<string | null>(null);
@@ -57,6 +63,10 @@ export const TemplateGalleryModal: React.FC = () => {
   const selectedValidation = selectedTemplate
     ? validateTemplateRequirements(selectedTemplate, doc.assets)
     : { valid: true };
+  // The selected preset's other size, when that one matches the screenshots.
+  const fittingTemplate = selectedTemplate
+    ? getTemplateById(fittingTemplateId(selectedTemplate.id, doc.assets) ?? "")
+    : undefined;
 
   // Applying never waits for screenshots: the stage asks for any the template is missing.
   const handleApply = (template: Template) => {
@@ -246,10 +256,27 @@ export const TemplateGalleryModal: React.FC = () => {
                 <span className="text-xs font-medium text-[var(--color-text)]">
                   Selected: {selectedTemplate.name}
                 </span>
-                {!selectedValidation.valid && (
-                  <span className="text-xs text-[var(--color-accent)] font-medium">
-                    ({selectedValidation.reason})
+                {fittingTemplate ? (
+                  <span
+                    data-testid="template-size-hint"
+                    className="text-xs text-[var(--color-text-2)] flex items-center gap-1.5"
+                  >
+                    {fittingTemplate.name} fits your screenshots.
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateId(fittingTemplate.id)}
+                      aria-label={`Switch to ${fittingTemplate.name}`}
+                      className="font-medium text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:underline"
+                    >
+                      Switch
+                    </button>
                   </span>
+                ) : (
+                  !selectedValidation.valid && (
+                    <span className="text-xs text-[var(--color-accent)] font-medium">
+                      ({selectedValidation.reason})
+                    </span>
+                  )
                 )}
               </>
             )}
