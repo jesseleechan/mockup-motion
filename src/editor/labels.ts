@@ -178,7 +178,13 @@ export function optionsFor<T extends string>(
 export function shotSummary(shot: Shot): string {
   const { layout } = shot;
   if (layout.kind === "title") return LAYOUT_LABELS.title;
-  const subject =
-    layout.kind === "single" ? DEVICE_LABELS[layout.device] : LAYOUT_LABELS[layout.kind];
-  return `${subject} · ${CAMERA_LABELS[shot.camera.preset]}`;
+  return `${shotSubject(layout)} · ${CAMERA_LABELS[shot.camera.preset]}`;
+}
+
+/** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
+function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
+  if (layout.kind === "single") return DEVICE_LABELS[layout.device];
+  if (layout.kind === "rows" && layout.travel === "period") return "Desktop frames";
+  if (layout.kind === "columns" && layout.device === "card") return "Mobile frames";
+  return LAYOUT_LABELS[layout.kind];
 }

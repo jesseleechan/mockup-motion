@@ -74,6 +74,34 @@ describe("editor labels (F08)", () => {
     expect(labels.shotSummary(shot({ kind: "title" }, "heroTilt"))).toBe("Title card");
   });
 
+  it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {
+    const ids = ["a", "b", "c", "d"];
+    const mobile = { kind: "columns" as const, assetIds: ids, columns: 3 as const, tilt: 0 };
+    expect(
+      labels.shotSummary(
+        shot({ ...mobile, speed: 0.35, device: "card", travel: "period" }, "static"),
+      ),
+    ).toBe("Mobile frames · Static");
+    // Phone Parade's tilted phones keep the layout's own name.
+    expect(labels.shotSummary(shot({ ...mobile, tilt: 12, speed: 0.4 }, "static"))).toBe(
+      "Phone columns · Static",
+    );
+    const desktop = {
+      kind: "rows" as const,
+      assetIds: ids,
+      rows: 3 as const,
+      device: "card" as const,
+      tilt: 0,
+      speed: 0.35,
+    };
+    expect(labels.shotSummary(shot({ ...desktop, travel: "period" }, "static"))).toBe(
+      "Desktop frames · Static",
+    );
+    expect(labels.shotSummary(shot({ ...desktop, device: "browser", tilt: 8 }, "static"))).toBe(
+      "Marquee rows · Static",
+    );
+  });
+
   it("builds select options in the given order", () => {
     expect(labels.optionsFor(labels.SHADOW_LABELS, ["soft", "none"])).toEqual([
       { value: "soft", label: "Soft" },

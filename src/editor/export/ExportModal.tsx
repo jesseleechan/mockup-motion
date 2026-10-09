@@ -6,6 +6,7 @@ import { createEditorAssetProvider } from "../asset-provider";
 import { exportWithEngine, type ExportProgress as Progress } from "../../export/engine-export";
 import { DESTINATION_PRESETS } from "../../export/destinations";
 import { exportFilename } from "../../export/plan";
+import { changeAspect } from "../aspect";
 import { schedule } from "../../motion";
 import type { DestinationId, ExportSettings } from "../../doc/types";
 import { DestinationPicker } from "./DestinationPicker";
@@ -152,12 +153,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 aspect={doc.aspect}
                 onSelect={(id) => setSettings(presetSettings(id))}
                 onSwitchAspect={(aspect) =>
-                  apply(
-                    (draft) => {
-                      draft.aspect = aspect;
-                    },
-                    { label: `Change aspect to ${aspect}` },
-                  )
+                  apply((draft) => changeAspect(draft, aspect), {
+                    label: `Change aspect to ${aspect}`,
+                  })
                 }
               />
               <EncodingSettings settings={settings} onChange={updateSettings} />
