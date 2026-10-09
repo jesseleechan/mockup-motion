@@ -16,7 +16,6 @@ interface SliderTemplateSpec {
   id: string;
   name: string;
   description: string;
-  category: Template["category"];
   role: Extract<AssetRole, "mobile" | "desktop">;
   axis: SliderLayout["axis"];
 }
@@ -36,7 +35,8 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
     id: spec.id,
     name: spec.name,
     description: spec.description,
-    category: spec.category,
+    // A pair's gallery tab is the role of its screenshots.
+    category: spec.role,
     slots,
     // The gallery badge: the five demo screenshots its preview and demo content use.
     defaultDuration: 5 * SLIDER_STEP,

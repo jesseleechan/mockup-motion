@@ -100,7 +100,7 @@ describe("Desktop Frames is unchanged by the factory (Frames plan PF03, D4)", ()
       id: "frames",
       name: "Desktop Frames",
       description: "Rows of desktop screens that glide past in alternating directions.",
-      category: "portfolio",
+      category: "desktop",
     });
   });
 });

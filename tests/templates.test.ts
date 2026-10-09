@@ -119,8 +119,21 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       expect(t.name).toBeTruthy();
       expect(t.description).toBeTruthy();
       expect(t.defaultDuration).toBeGreaterThan(0);
-      expect(["single", "mobile", "portfolio"]).toContain(t.category);
+      expect(["desktop", "mobile"]).toContain(t.category);
       expect(t.slots.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("sorts each template under the tab of the screenshots it presents (Frames plan §8)", () => {
+    expect(Object.fromEntries(BUILTIN_TEMPLATES.map((t) => [t.id, t.category]))).toEqual({
+      "desktop-slider": "desktop",
+      "mobile-slider": "mobile",
+      frames: "desktop",
+      "mobile-frames": "mobile",
+      "scroll-story": "desktop",
+    });
+    for (const t of BUILTIN_TEMPLATES) {
+      for (const slot of t.slots) expect(slot.role).toBe(t.category);
     }
   });
 

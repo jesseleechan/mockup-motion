@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { Tabs, TabsList, TabsContent, Button, Icon, Tooltip } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import { BUILTIN_TEMPLATES, validateTemplateRequirements } from "../../templates";
+import {
+  BUILTIN_TEMPLATES,
+  validateTemplateRequirements,
+  type TemplateCategory,
+} from "../../templates";
+import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { useTemplateActions } from "../template-actions";
 import { MediaTab } from "./MediaTab";
 import { BrandTab } from "./BrandTab";
@@ -27,11 +32,15 @@ export const LibraryPanel: React.FC = () => {
   const { applyTemplateById } = useTemplateActions();
 
   const [activeTab, setActiveTab] = useState<string>("templates");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | "all">("all");
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
   const [saveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
 
-  const categories = ["all", "single", "mobile", "portfolio"];
+  const categories = [
+    { id: "all", label: "All" },
+    { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop },
+    { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile },
+  ] as const;
   const filteredTemplates = BUILTIN_TEMPLATES.filter(
     (t) => selectedCategory === "all" || t.category === selectedCategory,
   );
@@ -125,16 +134,17 @@ export const LibraryPanel: React.FC = () => {
             <div data-scroll-x className="flex items-center gap-1 overflow-x-auto pb-2 shrink-0">
               {categories.map((cat) => (
                 <button
-                  key={cat}
+                  key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium capitalize transition-colors ${
-                    selectedCategory === cat
+                  onClick={() => setSelectedCategory(cat.id)}
+                  aria-pressed={selectedCategory === cat.id}
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
+                    selectedCategory === cat.id
                       ? "bg-[var(--color-raised)] text-[var(--color-text)] border border-[var(--color-line-strong)]"
                       : "text-[var(--color-text-3)] hover:text-[var(--color-text-2)]"
                   }`}
                 >
-                  {cat}
+                  {cat.label}
                 </button>
               ))}
             </div>
@@ -155,6 +165,7 @@ export const LibraryPanel: React.FC = () => {
                     // Like the gallery, applying never waits for screenshots (F06).
                     onClick={() => applyTemplateById(template.id)}
                     data-testid="library-template-card"
+                    data-template-id={template.id}
                     className="p-3 rounded-lg border transition-all border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] cursor-pointer group"
                   >
                     <img
