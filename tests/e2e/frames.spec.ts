@@ -225,3 +225,83 @@ test("changing the aspect re-fits both Frames presets, and one undo restores the
   await page.getByRole("button", { name: "Undo" }).click();
   expect(await state()).toEqual(before);
 });
+
+test("loop length chips set a Frames shot's duration in one undo step and explain a disabled chip", async ({
+  page,
+}) => {
+  await openEditorWithDemo(page);
+  // Mobile Frames at 16:9 with six screenshots: the shortest loop is 19.5 s, so "15 s" is
+  // disabled (docs/phone-frames-plan/README.md §8, suggestion 4).
+  await page.evaluate(() => {
+    const store = (window as unknown as EditorWindow).__editorStore;
+    if (!store) throw new Error("__editorStore is unavailable");
+    store.getState().apply((draft) => {
+      const ids = draft.assets.filter((a) => a.kind === "image").map((a) => a.id);
+      draft.aspect = "16:9";
+      draft.shots = draft.shots.slice(0, 1);
+      draft.shots[0].duration = 30;
+      draft.shots[0].layout = {
+        kind: "columns",
+        assetIds: Array.from({ length: 6 }, (_, i) => ids[i % ids.length]),
+        columns: 5,
+        device: "card",
+        tilt: 0,
+        speed: 0.35,
+        cardWidth: 0.269,
+        gap: 0.065,
+        travel: "period",
+      };
+    });
+  });
+  const duration = () =>
+    page.evaluate(
+      () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].duration,
+    );
+
+  await page.locator(".group", { hasText: "Shot 1" }).click();
+  const chips = page.getByRole("group", { name: "Loop length" });
+  const chip = (label: string) => chips.getByRole("button", { name: label, exact: true });
+  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "true");
+  await expect(chip("20 s")).toHaveAttribute("aria-pressed", "false");
+  await expect(chip("15 s")).toHaveAttribute("aria-pressed", "false");
+
+  // The disabled chip stays focusable, so its reason shows on focus and reaches screen readers.
+  const reason = "6 screenshots need at least 19.5 s";
+  await expect(chip("15 s")).toHaveAttribute("aria-disabled", "true");
+  await expect(chip("15 s")).toHaveAccessibleDescription(reason);
+  await chip("15 s").focus();
+  await expect(page.getByRole("tooltip")).toHaveText(reason);
+  await page.keyboard.press("Enter");
+  expect(await duration()).toBe(30);
+  await page.keyboard.press("Escape");
+  await chip("20 s").hover();
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await chip("15 s").hover();
+  await expect(page.getByRole("tooltip")).toHaveText(reason);
+
+  // A click sets the loop length; the duration field follows; one undo restores it.
+  await chip("20 s").click();
+  await expect.poll(duration).toBe(20);
+  await expect(chip("20 s")).toHaveAttribute("aria-pressed", "true");
+  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
+    "aria-valuenow",
+    "20",
+  );
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect.poll(duration).toBe(30);
+  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "true");
+
+  // From the keyboard: Tab reaches the next chip with a visible focus ring, Enter sets it.
+  // (Space plays the video everywhere in the editor, docs/plan/follow-ups.md.)
+  await chip("15 s").focus();
+  await page.keyboard.press("Tab");
+  await expect(chip("20 s")).toBeFocused();
+  expect(
+    await chip("20 s").evaluate(
+      (el) => el.matches(":focus-visible") && getComputedStyle(el).boxShadow !== "none",
+    ),
+  ).toBe(true);
+  await page.keyboard.press("Enter");
+  await expect.poll(duration).toBe(20);
+});
