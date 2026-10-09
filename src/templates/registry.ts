@@ -1,9 +1,6 @@
 import type { AssetRef, Style } from "../doc/types";
 import type { Template, TemplateBuildContext } from "./types";
 import { fillSlots } from "./slots";
-import { phoneParadeTemplate } from "./phone-parade";
-import { portfolioRowsTemplate } from "./portfolio-rows";
-import { isometricWallTemplate } from "./isometric-wall";
 import { scrollStoryTemplate } from "./scroll-story";
 import { mobileSliderTemplate } from "./mobile-slider";
 import { desktopSliderTemplate } from "./desktop-slider";
@@ -17,9 +14,6 @@ export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
   mobileSliderTemplate,
   framesTemplate,
-  phoneParadeTemplate,
-  portfolioRowsTemplate,
-  isometricWallTemplate,
   scrollStoryTemplate,
 ];
 

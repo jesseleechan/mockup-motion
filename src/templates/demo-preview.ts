@@ -15,25 +15,6 @@ const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
  * DEFAULT_DEMO_IDS.
  */
 const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
-  "phone-parade": [
-    mobileHero("aurelia"),
-    mobileHero("northwind"),
-    mobileHero("maison-oak"),
-    mobileHero("field-notes"),
-    mobileHero("studio-kova"),
-  ],
-  "portfolio-rows": [
-    desktopHero("aurelia"),
-    desktopHero("northwind"),
-    desktopHero("maison-oak"),
-    desktopHero("field-notes"),
-  ],
-  "isometric-wall": [
-    desktopHero("studio-kova"),
-    desktopHero("field-notes"),
-    desktopHero("northwind"),
-    desktopHero("aurelia"),
-  ],
   frames: [
     desktopHero("northwind"),
     desktopHero("aurelia"),

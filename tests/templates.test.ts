@@ -17,7 +17,8 @@ import { aspectRatioValue } from "../src/motion/camera";
 import type { ShotFrame } from "../src/motion/evaluate";
 import { computeCameraBasis, projectPointToNDC } from "../src/motion/framing";
 import type { LayoutNode } from "../src/motion/layouts";
-import { LAYOUT_FIXTURES } from "../src/lab/layout-fixtures";
+import type { Template } from "../src/templates";
+import { layoutFixture } from "../src/lab/layout-fixtures";
 
 describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   const sampleAssets: AssetRef[] = [
@@ -100,19 +101,16 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 7 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(7);
+  it("exports all 4 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(4);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(7);
+    expect(ids.size).toBe(4);
 
     // Gallery order: the presets lead (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
-      "phone-parade",
-      "portfolio-rows",
-      "isometric-wall",
       "scroll-story",
     ]);
 
@@ -128,11 +126,14 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   describe("fillSlots & validateTemplateRequirements", () => {
     it("fillSlots enforces role correctness with no cross-role assignment", () => {
       const onlyDesktop = sampleAssets.filter((a) => a.role === "desktop");
-      const phoneParade = BUILTIN_TEMPLATES.find((t) => t.id === "phone-parade")!;
+      const mobileSlider = BUILTIN_TEMPLATES.find((t) => t.id === "mobile-slider")!;
 
-      // Phone parade needs mobile assets; desktop assets must not fill it
-      const slots = fillSlots(phoneParade, onlyDesktop);
+      // Mobile Slider needs mobile assets; desktop assets must not fill it
+      const slots = fillSlots(mobileSlider, onlyDesktop);
       expect(slots.mobile1).toBeUndefined();
+      expect(mobileSlider.slots.map((slot) => slots[slot.key])).toEqual(
+        mobileSlider.slots.map(() => undefined),
+      );
 
       // Desktop template should not be filled by mobile assets
       const onlyMobile = sampleAssets.filter((a) => a.role === "mobile");
@@ -157,29 +158,41 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       expect(slots.desktop1?.id).toBe("desktop-hero");
     });
 
-    it("validateTemplateRequirements enforces at least 3 distinct assets for marquee/wall layouts", () => {
-      const wallTemplate = BUILTIN_TEMPLATES.find((t) => t.id === "isometric-wall")!;
-      const paradeTemplate = BUILTIN_TEMPLATES.find((t) => t.id === "phone-parade")!;
+    it("validateTemplateRequirements enforces the minimum distinct screenshots for multi-screen layouts", () => {
+      const framesTemplate = BUILTIN_TEMPLATES.find((t) => t.id === "frames")!;
+      const desktop = sampleAssets.filter((a) => a.role === "desktop");
 
-      // 1 desktop asset: not enough for wall
-      const tooFewDesktop = [sampleAssets[0]];
-      const wallValidation = validateTemplateRequirements(wallTemplate, tooFewDesktop);
-      expect(wallValidation.valid).toBe(false);
-      expect(wallValidation.reason).toBe("Needs 3+ desktop screenshots");
+      // 3 desktop assets: not enough for Frames (quality bar §4)
+      const tooFewDesktop = desktop.slice(0, 3);
+      const framesValidation = validateTemplateRequirements(framesTemplate, tooFewDesktop);
+      expect(framesValidation.valid).toBe(false);
+      expect(framesValidation.reason).toBe("Needs 4+ desktop screenshots");
 
-      // 4 desktop assets: satisfies wall
-      const enoughDesktop = sampleAssets.filter((a) => a.role === "desktop");
-      expect(validateTemplateRequirements(wallTemplate, enoughDesktop).valid).toBe(true);
+      // Mobile screenshots don't count towards a desktop minimum
+      const mixed = [...tooFewDesktop, ...sampleAssets.filter((a) => a.role === "mobile")];
+      expect(validateTemplateRequirements(framesTemplate, mixed).reason).toBe(
+        "Needs 4+ desktop screenshots",
+      );
 
-      // 1 mobile asset: not enough for phone-parade
-      const tooFewMobile = [sampleAssets[4]];
-      const paradeValidation = validateTemplateRequirements(paradeTemplate, tooFewMobile);
-      expect(paradeValidation.valid).toBe(false);
-      expect(paradeValidation.reason).toBe("Needs 3+ mobile screenshots");
+      // 4 desktop assets: satisfies Frames
+      expect(desktop).toHaveLength(4);
+      expect(validateTemplateRequirements(framesTemplate, desktop).valid).toBe(true);
+    });
 
-      // 3 mobile assets: satisfies phone-parade
-      const enoughMobile = sampleAssets.filter((a) => a.role === "mobile");
-      expect(validateTemplateRequirements(paradeTemplate, enoughMobile).valid).toBe(true);
+    it("validateTemplateRequirements takes the role from the template's required slots", () => {
+      // Frames' rule on mobile slots, the shape Mobile Frames will have (PF03).
+      const frames = BUILTIN_TEMPLATES.find((t) => t.id === "frames")!;
+      const mobileFrames: Template = {
+        ...frames,
+        slots: frames.slots.map((slot, i) => ({ ...slot, key: `mobile${i + 1}`, role: "mobile" })),
+      };
+      const mobile = sampleAssets.filter((a) => a.role === "mobile");
+      expect(mobile).toHaveLength(3);
+      const validation = validateTemplateRequirements(mobileFrames, sampleAssets);
+      expect(validation.valid).toBe(false);
+      expect(validation.reason).toBe("Needs 4+ mobile screenshots");
+      const fourth: AssetRef = { ...mobile[0], id: "mobile-fourth" };
+      expect(validateTemplateRequirements(mobileFrames, [...mobile, fourth]).valid).toBe(true);
     });
 
     it("applyTemplate preserves user's brand styling", () => {
@@ -274,7 +287,6 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-  const MARQUEE_TEMPLATES = ["portfolio-rows", "phone-parade", "isometric-wall"];
   const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
   // Frames loops natively with a cut: every row travels one whole asset period (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames"];
@@ -284,19 +296,18 @@ describe("Template loop seam", () => {
   }).map((template) => template.id);
   // Camera-move loops (pushIn, orbits): no built-in template builds one, but saved projects can.
   const CAMERA_LOOP_FIXTURES = ["single-browser", "pair"];
+  // Tilted marquees and the wall loop with a wrap crossfade. No built-in template builds one
+  // since Portfolio Rows, Phone Parade and Isometric Wall were removed, but saved projects can.
+  const MARQUEE_FIXTURES = ["rows-browser-tilted", "columns-phone-tilted", "wall-isometric"];
 
   function loopDoc(id: string, aspect: Aspect): ProjectDoc {
-    const fixture = LAYOUT_FIXTURES[id];
-    if (fixture) return { ...structuredClone(fixture), aspect };
-    return buildTemplatePreviewDoc(
-      BUILTIN_TEMPLATES.find((t) => t.id === id)!,
-      aspect,
-    );
+    const template = BUILTIN_TEMPLATES.find((t) => t.id === id);
+    return template ? buildTemplatePreviewDoc(template, aspect) : layoutFixture(id, aspect);
   }
 
   it("covers every looping single-shot template", () => {
     expect([...LOOPING_SINGLE_SHOT].sort()).toEqual(
-      [...MARQUEE_TEMPLATES, ...NATIVE_MARQUEE_TEMPLATES, ...SLIDER_TEMPLATES].sort(),
+      [...NATIVE_MARQUEE_TEMPLATES, ...SLIDER_TEMPLATES].sort(),
     );
   });
 
@@ -304,7 +315,7 @@ describe("Template loop seam", () => {
   // cut back to t = 0 would pop. The frame just before the loop point must already be
   // the first frame: the wrap crossfade has finished (contracts.md §5).
   it("the frame just before the loop point is the first frame", () => {
-    for (const id of [...LOOPING_SINGLE_SHOT, ...CAMERA_LOOP_FIXTURES]) {
+    for (const id of [...LOOPING_SINGLE_SHOT, ...CAMERA_LOOP_FIXTURES, ...MARQUEE_FIXTURES]) {
       for (const aspect of ASPECTS) {
         const doc = loopDoc(id, aspect);
         const label = `${id} ${aspect}`;
@@ -324,7 +335,7 @@ describe("Template loop seam", () => {
           );
         }
 
-        if (MARQUEE_TEMPLATES.includes(id) || NATIVE_MARQUEE_TEMPLATES.includes(id)) {
+        if (MARQUEE_FIXTURES.includes(id) || NATIVE_MARQUEE_TEMPLATES.includes(id)) {
           expectSameMarqueeCards(first.nodes, shown.frame.nodes, aspect, label);
         } else if (SLIDER_TEMPLATES.includes(id)) {
           expectSameSliderCards(first.nodes, shown.frame.nodes, label);
@@ -416,22 +427,21 @@ describe("Template loop seam", () => {
 
   // Where a whole card step fits under the speed limit in one loop, the strip travels
   // whole steps, so halfway through the wrap crossfade both layers show cards in the same
-  // places on screen and only the screens dissolve. The exceptions: portfolio-rows 9:16
-  // and phone-parade 9:16 and 4:5 would need more than 0.12 frame widths per second to
-  // move one card per loop, and isometric-wall's isoDrift camera ends away from its start
-  // pose, so its cards line up on the plane but not on screen.
+  // places on screen and only the screens dissolve. The exceptions: tilted browser rows at 9:16
+  // and tilted phone columns at 9:16 and 4:5 would need more than 0.12 frame widths per second
+  // to move one card per loop, and the wall's isoDrift camera ends away from its start pose,
+  // so its cards line up on the plane but not on screen.
   const UNREGISTERED = new Set([
-    "portfolio-rows 9:16",
-    "phone-parade 9:16",
-    "phone-parade 4:5",
-    ...ASPECTS.map((aspect) => `isometric-wall ${aspect}`),
+    "rows-browser-tilted 9:16",
+    "columns-phone-tilted 9:16",
+    "columns-phone-tilted 4:5",
+    ...ASPECTS.map((aspect) => `wall-isometric ${aspect}`),
   ]);
 
   it("cards stay in place during the wrap crossfade wherever a whole card step fits", () => {
-    for (const id of MARQUEE_TEMPLATES) {
-      const template = BUILTIN_TEMPLATES.find((t) => t.id === id)!;
+    for (const id of MARQUEE_FIXTURES) {
       for (const aspect of ASPECTS) {
-        const doc = buildTemplatePreviewDoc(template, aspect);
+        const doc = layoutFixture(id, aspect);
         const label = `${id} ${aspect}`;
         const { total } = schedule(doc);
         const fade = doc.shots[0].transitionIn.duration;
