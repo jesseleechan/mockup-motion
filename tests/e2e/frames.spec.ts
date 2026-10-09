@@ -157,3 +157,71 @@ for (const c of CASES) {
     );
   });
 }
+
+test("changing the aspect re-fits both Frames presets, and one undo restores them", async ({
+  page,
+}) => {
+  await openEditorWithDemo(page);
+  // Mobile Frames made at 9:16 (2 columns, 16.5 s for six screenshots) and Desktop Frames made
+  // at 9:16 (3 rows). At 16:9 they take 5 columns, 19.5 s, and 2 rows (Frames plan D13).
+  await page.evaluate(() => {
+    const store = (window as unknown as EditorWindow).__editorStore;
+    if (!store) throw new Error("__editorStore is unavailable");
+    store.getState().apply((draft) => {
+      const ids = draft.assets.filter((a) => a.kind === "image").map((a) => a.id);
+      const six = Array.from({ length: 6 }, (_, i) => ids[i % ids.length]);
+      // A JSON copy: structuredClone cannot clone an Immer draft.
+      const mobile = JSON.parse(JSON.stringify(draft.shots[0])) as (typeof draft.shots)[0];
+      mobile.duration = 16.5;
+      mobile.layout = {
+        kind: "columns",
+        assetIds: six,
+        columns: 2,
+        device: "card",
+        tilt: 0,
+        speed: 0.35,
+        cardWidth: 0.222,
+        gap: 0.065,
+        travel: "period",
+      };
+      const desktop = JSON.parse(JSON.stringify(mobile)) as typeof mobile;
+      desktop.id = `${mobile.id}-desktop`;
+      desktop.duration = 15;
+      desktop.layout = {
+        kind: "rows",
+        assetIds: six.slice(0, 4),
+        rows: 3,
+        device: "card",
+        tilt: 0,
+        speed: 0.35,
+        cardHeight: 0.32,
+        gap: 0.065,
+        travel: "period",
+      };
+      draft.aspect = "9:16";
+      draft.shots = [mobile, desktop];
+    });
+  });
+  const state = () =>
+    page.evaluate(() => {
+      const doc = (window as unknown as EditorWindow).__editorStore?.getState().doc;
+      if (!doc) throw new Error("__editorStore is unavailable");
+      return {
+        aspect: doc.aspect,
+        shots: doc.shots.map((s) => ({ ...s.layout, duration: s.duration })),
+      };
+    });
+  const before = await state();
+
+  await page
+    .getByRole("radiogroup", { name: "Aspect ratio" })
+    .getByRole("radio", { name: "16:9", exact: true })
+    .click();
+  await expect.poll(async () => (await state()).aspect).toBe("16:9");
+  const after = await state();
+  expect(after.shots[0]).toMatchObject({ columns: 5, cardWidth: 0.269, duration: 19.5 });
+  expect(after.shots[1]).toMatchObject({ rows: 2, cardHeight: 0.42, duration: 15 });
+
+  await page.getByRole("button", { name: "Undo" }).click();
+  expect(await state()).toEqual(before);
+});
