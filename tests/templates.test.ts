@@ -17,7 +17,6 @@ import { aspectRatioValue } from "../src/motion/camera";
 import type { ShotFrame } from "../src/motion/evaluate";
 import { computeCameraBasis, projectPointToNDC } from "../src/motion/framing";
 import type { LayoutNode } from "../src/motion/layouts";
-import type { Template } from "../src/templates";
 import { layoutFixture } from "../src/lab/layout-fixtures";
 
 describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
@@ -101,16 +100,18 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 4 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(4);
+  it("exports all 5 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(5);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(4);
+    expect(ids.size).toBe(5);
 
-    // Gallery order: the presets lead (presets plan D1).
+    // Gallery order: the presets lead (presets plan D1), Mobile Frames after Desktop Frames
+    // (Frames plan PF03; PF04 settles the final order, D12).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
+      "mobile-frames",
       "scroll-story",
     ]);
 
@@ -180,12 +181,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     });
 
     it("validateTemplateRequirements takes the role from the template's required slots", () => {
-      // Frames' rule on mobile slots, the shape Mobile Frames will have (PF03).
-      const frames = BUILTIN_TEMPLATES.find((t) => t.id === "frames")!;
-      const mobileFrames: Template = {
-        ...frames,
-        slots: frames.slots.map((slot, i) => ({ ...slot, key: `mobile${i + 1}`, role: "mobile" })),
-      };
+      const mobileFrames = BUILTIN_TEMPLATES.find((t) => t.id === "mobile-frames")!;
       const mobile = sampleAssets.filter((a) => a.role === "mobile");
       expect(mobile).toHaveLength(3);
       const validation = validateTemplateRequirements(mobileFrames, sampleAssets);
@@ -288,8 +284,9 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
   const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
-  // Frames loops natively with a cut: every row travels one whole asset period (contracts §5).
-  const NATIVE_MARQUEE_TEMPLATES = ["frames"];
+  // Both Frames presets loop natively with a cut: every lane travels one whole asset period
+  // (contracts §5).
+  const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;

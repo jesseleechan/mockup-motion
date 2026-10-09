@@ -39,6 +39,15 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     desktopHero("field-notes"),
     desktopHero("studio-kova"),
   ],
+  // Five sites, ordered so the 16:9 poster (35% of the loop) shows Aurelia's photographic hero
+  // in the middle column.
+  "mobile-frames": [
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("studio-kova"),
+    mobileHero("field-notes"),
+    mobileHero("aurelia"),
+  ],
   "scroll-story": [desktopFull("studio-kova")],
 };
 

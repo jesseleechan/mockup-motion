@@ -161,6 +161,11 @@ describe("F04 template previews use varied demo sites", () => {
     expect(sites("mobile-slider").size).toBeGreaterThanOrEqual(4);
   });
 
+  it("mobile-frames shows 4+ different mobile sites", () => {
+    expect(screens("mobile-frames").every((a) => a.role === "mobile")).toBe(true);
+    expect(sites("mobile-frames").size).toBeGreaterThanOrEqual(4);
+  });
+
   it("scroll-story scrolls a full-page desktop capture", () => {
     const [screen] = screens("scroll-story");
     expect(screen).toMatchObject({ role: "desktop", capture: "full", tall: true });
