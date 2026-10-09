@@ -52,6 +52,24 @@ for (const aspect of ["16:9", "9:16"]) {
     STILLS.push({ name: `frames-${tag}-t${t}`, fixture: `frames-${tag}`, aspect, t });
   }
 }
+// Mobile Frames the same way (column count per aspect), plus 4:5, the one aspect that crops its
+// outer columns (Frames plan D11).
+const MOBILE_FRAMES_STILLS: [string, number[]][] = [
+  ["16:9", [0.8, 2.4]],
+  ["9:16", [0.8, 2.4]],
+  ["4:5", [0.8]],
+];
+for (const [aspect, times] of MOBILE_FRAMES_STILLS) {
+  const tag = aspect.replace(":", "x");
+  for (const t of times) {
+    STILLS.push({
+      name: `mobile-frames-${tag}-t${t}`,
+      fixture: `mobile-frames-${tag}`,
+      aspect,
+      t,
+    });
+  }
+}
 // The dark option of the four presets, at 16:9 only: Frames mid-travel, the sliders mid-step, where
 // the neighbour fade (an sRGB blend) shows against the near-black fill.
 const DARK_STILLS: Record<string, number> = {

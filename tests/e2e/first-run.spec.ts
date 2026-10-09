@@ -216,7 +216,14 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  expect(order.slice(0, 4)).toEqual(["desktop-slider", "mobile-slider", "frames", "mobile-frames"]);
+  // Frames plan D12: the two pairs (Slider, then Frames; desktop before mobile), then Scroll Story.
+  expect(order).toEqual([
+    "desktop-slider",
+    "mobile-slider",
+    "frames",
+    "mobile-frames",
+    "scroll-story",
+  ]);
 
   // Apply without picking a card: the initial selection is the first-run default.
   await gallery.getByRole("button", { name: "Apply template" }).click();
