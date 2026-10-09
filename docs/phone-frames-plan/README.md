@@ -102,7 +102,7 @@ Exact values go into `quality-bar.md` §4 in PF00. If the contact sheet in PF04 
 | -------------------------------------------- | --------------------------------------------------------------------------------------- | ---- | ---------------------- | --------- |
 | [PF00](tasks/PF00-decisions-and-rules.md)    | Record the decisions in the quality bar and contracts                                   | S    | —                      | In review |
 | [PF01](tasks/PF01-remove-templates.md)       | Remove Phone Parade, Portfolio Rows and Isometric Wall                                  | M    | PF00, PR #32 merged    | Proposed  |
-| [PF02](tasks/PF02-lanes-and-columns.md)      | Shared lane function and the columns period mode (motion only)                          | M    | PF00                   | Proposed  |
+| [PF02](tasks/PF02-lanes-and-columns.md)      | Shared lane function and the columns period mode (motion only)                          | M    | PF00                   | In review ([#36](https://github.com/jesseleechan/mockup-motion/pull/36)) |
 | [PF03](tasks/PF03-mobile-frames-template.md) | Mobile Frames template, portrait cards in columns, editor, Desktop Frames rename        | M    | PF02                   | Proposed  |
 | [PF04](tasks/PF04-review-and-baselines.md)   | Gallery order, previews, contact sheet review, visual baselines (**owner review gate**) | S    | PF01, PF03, owner gate | Proposed  |
 
