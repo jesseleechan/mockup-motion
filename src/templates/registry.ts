@@ -8,8 +8,8 @@ import { framesTemplate } from "./frames";
 import { mobileFramesTemplate } from "./mobile-frames";
 
 /**
- * Gallery order. The presets lead (presets plan D1), and the first entry is also the first-run
- * default and the gallery's initial selection.
+ * Gallery order (Frames plan D12): the Slider pair, the Frames pair, each desktop first, then
+ * Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
