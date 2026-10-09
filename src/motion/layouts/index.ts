@@ -28,7 +28,9 @@ export {
   sliderDuration,
   sliderStepMax,
 } from "./duration";
-export { resolveColumnsLayout } from "./columns";
+export { columnsGeometry, resolveColumnsLayout } from "./columns";
+export { lanesAssetIds, lanesDuration, resolveLanes } from "./lanes";
+export type { LaneAxis, LaneGeometry, LaneOptions } from "./lanes";
 export { resolveWallLayout } from "./wall";
 export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";

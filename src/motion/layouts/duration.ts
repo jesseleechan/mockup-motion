@@ -67,7 +67,11 @@ function isStillCamera(camera: CameraMove): boolean {
   );
 }
 
-/** The shortest shot a layout allows. Only Frames has one: its speed limit (quality-bar §2.5). */
+/**
+ * The shortest shot a layout allows. Only Frames (rows or columns with travel "period") has
+ * one: its speed limit (quality-bar §2.5).
+ */
 export function minShotDuration(layout: Layout, aspect: Aspect): number {
-  return layout.kind === "rows" && layout.travel === "period" ? framesDuration(layout, aspect) : 1;
+  const frames = layout.kind === "rows" || layout.kind === "columns";
+  return frames && layout.travel === "period" ? framesDuration(layout, aspect) : 1;
 }
