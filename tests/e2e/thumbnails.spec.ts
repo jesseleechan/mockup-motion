@@ -273,7 +273,13 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await expect
       .poll(() => videoState(frames), { timeout: 10_000 })
       .toEqual({ paused: false, time: expect.any(Number) });
-    await expect.poll(async () => (await videoState(frames)).time).toBeGreaterThan(0.2);
+    // Decoding competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
+    await expect
+      .poll(async () => (await videoState(frames)).time, {
+        timeout: ciTimeout(5000),
+        message: "the hovered card's preview plays past 0.2 s",
+      })
+      .toBeGreaterThan(0.2);
     const size = await frames
       .locator("video")
       .evaluate((v: HTMLVideoElement) => [v.videoWidth, v.videoHeight]);
