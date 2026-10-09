@@ -186,6 +186,12 @@ describe("WP-01: Document Defaults and Validation", () => {
       }
     });
 
+    // Every v1 preset's template has been removed (PF01, D9). The map and its lookup stay so a
+    // future template can claim a preset again.
+    it("maps no v1 preset to a template", () => {
+      expect(LEGACY_PRESET_TO_TEMPLATE).toEqual({});
+    });
+
     for (const preset of V1_PRESETS) {
       it(`migrates preset: ${preset.id} (${preset.name})`, () => {
         const v1Project: V1Project = {
@@ -227,7 +233,8 @@ describe("WP-01: Document Defaults and Validation", () => {
         expect(doc.version).toBe(2);
         expect(doc.name).toBe(v1Project.name);
         expect(doc.shots.length).toBeGreaterThanOrEqual(1);
-        expect(doc.templateId).toBe(LEGACY_PRESET_TO_TEMPLATE[preset.id]);
+        // No v1 preset has a template any more; the shots come from the v1 composition.
+        expect(doc.templateId).toBeUndefined();
 
         // Layout verification
         if (preset.id === "clean-hero" || preset.id === "soft-studio") {

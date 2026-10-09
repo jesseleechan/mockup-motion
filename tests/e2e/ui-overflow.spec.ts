@@ -322,9 +322,9 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
     page.locator('[data-panel="inspector"]').getByRole("button", { name: "Isometric drift" }),
   ).toHaveAttribute("aria-pressed", "true");
 
-  // The drop hint over a marquee row, whose nodes are "row1:item0" and so on.
+  // The drop hint over a Frames row, whose nodes are "row1:item0" and so on.
   await resetAndOpen(page, "dark");
-  await applyTemplateWithDemo(page, "portfolio-rows");
+  await applyTemplateWithDemo(page, "frames");
   const assetId = (await currentDoc(page)).assets[0].id;
   const canvas = page.locator('[data-testid="stage"] canvas');
   await expect(canvas).toBeVisible();
@@ -348,7 +348,9 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
             }),
           );
         },
-        { assetId, x: box.x + box.width / 2, y: box.y + box.height / 2 },
+        // Frames' two rows at 16:9 leave a gap across the middle of the frame. This point is on
+        // a card of either row at t = 0: 0.2 stage units right of centre, 0.25 above it.
+        { assetId, x: box.x + box.width * 0.6125, y: box.y + box.height * 0.25 },
       );
       return hint.isVisible();
     })

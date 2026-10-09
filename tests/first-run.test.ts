@@ -153,22 +153,22 @@ describe("Presets D1: first-run default", () => {
 describe("F06: add assets and apply a template in one undo step", () => {
   it("fills the slots from the added assets and undoes in one step", async () => {
     const store = createEditorStore();
-    const parade = template("phone-parade");
-    store.getState().applyTemplateResult(applyTemplate(parade, store.getState().doc), parade.id);
+    const frames = template("frames");
+    store.getState().applyTemplateResult(applyTemplate(frames, store.getState().doc), frames.id);
     const afterApply = store.getState().doc;
     const pastBefore = store.getState().past.length;
 
-    const demo = demoAssetsToFill(parade, afterApply.assets);
+    const demo = demoAssetsToFill(frames, afterApply.assets);
     await store
       .getState()
-      .addAssetsAndApplyTemplate(demo, parade.id, (doc) => applyTemplate(parade, doc));
+      .addAssetsAndApplyTemplate(demo, frames.id, (doc) => applyTemplate(frames, doc));
 
     const filled = store.getState().doc;
     expect(store.getState().past.length).toBe(pastBefore + 1);
     expect(filled.assets.map((a) => a.id)).toEqual(demo.map((a) => a.id));
     const layout = filled.shots[0].layout;
-    expect(layout.kind).toBe("columns");
-    if (layout.kind !== "columns") throw new Error("Expected a columns layout");
+    expect(layout.kind).toBe("rows");
+    if (layout.kind !== "rows") throw new Error("Expected a rows layout");
     expect(layout.assetIds).toEqual(demo.map((a) => a.id));
 
     store.getState().undo();

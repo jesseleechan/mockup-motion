@@ -102,16 +102,13 @@ export interface V1Project {
 }
 
 /**
- * The built-in template each v1 preset became. Presets whose template was removed (clean-hero,
- * soft-studio, phone-spotlight, responsive-pair) migrate without a template: their shots come
- * from the v1 composition either way, and `templateId` is informational.
+ * The built-in template each v1 preset became. Every v1 preset's template has since been
+ * removed (clean-hero, soft-studio, phone-spotlight, responsive-pair, midnight-rows,
+ * angled-gallery, phone-columns, gallery-wall), so all of them migrate without a template:
+ * their shots come from the v1 composition either way, and `templateId` is informational.
+ * The map stays so a future template can claim a preset again.
  */
-export const LEGACY_PRESET_TO_TEMPLATE: Record<string, string> = {
-  "midnight-rows": "portfolio-rows",
-  "gallery-wall": "isometric-wall",
-  "angled-gallery": "portfolio-rows",
-  "phone-columns": "phone-parade",
-};
+export const LEGACY_PRESET_TO_TEMPLATE: Record<string, string> = {};
 
 export function migrateV1Project(v1: V1Project): ProjectDoc {
   const assets: AssetRef[] = (v1.images || []).map((img) => ({
