@@ -5,7 +5,7 @@ import { BUILTIN_PALETTES, shadowTintFor } from "../src/doc/palettes";
 
 describe("Palettes & Color atmosphere (quality-bar §6)", () => {
   it("Built-in palettes satisfy low-chroma quality-bar limits (C <= 0.09 light, C <= 0.12 dark)", () => {
-    expect(BUILTIN_PALETTES.length).toBe(9);
+    expect(BUILTIN_PALETTES.length).toBe(10);
 
     for (const p of BUILTIN_PALETTES) {
       expect(p.id).toBeDefined();

@@ -2,7 +2,7 @@ import type { AssetRole, Layout, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import { sliderDuration } from "../motion";
 import type { SlotSpec, Template, TemplateBuildContext } from "./types";
-import { paletteBackground, paletteTextColor } from "./looks";
+import { presetToneStyle } from "./looks";
 
 type SliderLayout = Extract<Layout, { kind: "slider" }>;
 
@@ -38,6 +38,7 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
     // A pair's gallery tab is the role of its screenshots.
     category: spec.role,
     slots,
+    toneSwitch: true,
     // The gallery badge: the five demo screenshots its preview and demo content use.
     defaultDuration: 5 * SLIDER_STEP,
     build: (ctx: TemplateBuildContext) => {
@@ -52,9 +53,7 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
       const style: Style = {
         ...defaultStyle(),
         ...ctx.style,
-        background: paletteBackground("ash"),
-        textColor: paletteTextColor("ash"),
-        frameAppearance: "light",
+        ...presetToneStyle("light"),
         shadow: "none",
         // A flat light fill cannot band, so it needs no grain (quality bar §5, §6; D7).
         grain: 0,

@@ -53,6 +53,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | A shot card's layout label clips at 1280 px when a reel has four equal shots ("Responsive pair · Orbit right" in a 4 × 10 s reel). `ui-overflow.spec.ts` uses Launch Reel's 2.5/4/4/2.5 s durations, where it fits.                                                                                                                    | Template cut      |
 | The Library panel's template cards apply on click, so they don't offer the other size the way the gallery does (Frames plan §8, suggestion 2). With only mobile screenshots, a click on Desktop Frames there still leads to "Needs 4+ desktop screenshots".                                                                            | Gallery size hint |
 | Space always plays or pauses the video, even when a button has focus, so Space can't press a focused button (Enter still works). `EditorShell.tsx` could leave Space to focused buttons, switches and chips.                                                                                                                           | Loop chips        |
+| The Video inspector's palette grid marks only gradient palettes as active, so the solid Ash and Onyx swatches never show as selected (`currentPalette` in `VideoInspector.tsx`). The presets' Light / Dark switch does show the tone.                                                                                                  | Dark option       |
 
 ## Export and audio
 

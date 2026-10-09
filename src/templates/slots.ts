@@ -1,5 +1,6 @@
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import type { SlotSpec, Template } from "./types";
+import { presetToneOf, setPresetTone } from "./looks";
 
 /** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames needs 4. */
 const MULTI_ASSET_MINIMUM: Record<string, number> = {
@@ -152,10 +153,16 @@ export function applyTemplate(
     browserChrome: doc.style.browserChrome,
   };
 
-  return template.build({
+  const result = template.build({
     aspect: doc.aspect,
     slots,
     projectName: doc.name,
     style: brandStyle,
   });
+  // A preset with the Light / Dark switch keeps a dark document dark when it is applied again
+  // (say Desktop Frames to Mobile Frames) or rebuilt to fill its slots.
+  if (template.toneSwitch && presetToneOf(doc.style) === "dark") {
+    setPresetTone(result.style, "dark");
+  }
+  return result;
 }

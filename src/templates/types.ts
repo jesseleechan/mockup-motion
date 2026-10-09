@@ -25,6 +25,8 @@ export interface Template {
   category: TemplateCategory;
   slots: SlotSpec[];
   defaultDuration: number;
+  /** Shows the Light / Dark background switch (Ash or Onyx, `presetToneStyle`). */
+  toneSwitch?: boolean;
   build: (ctx: TemplateBuildContext) => {
     style: Style;
     shots: Shot[];

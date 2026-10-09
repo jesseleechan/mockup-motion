@@ -453,6 +453,7 @@ export interface Template {
   category: "desktop" | "mobile"; // the gallery tab; matches the screenshots' role
   slots: SlotSpec[];
   defaultDuration: number;
+  toneSwitch?: boolean; // Light / Dark background switch in the Video inspector (Ash or Onyx)
   build(ctx: TemplateBuildContext): { style: Style; shots: Shot[]; loop: boolean };
 }
 export function fillSlots(t: Template, assets: AssetRef[]): Record<string, string | undefined>;
@@ -461,6 +462,8 @@ export function fillSlots(t: Template, assets: AssetRef[]): Record<string, strin
 `fillSlots` is greedy by role and `prefer`. It never puts a `mobile`-role asset in a desktop slot or the reverse, and only reuses an asset when there are not enough distinct ones.
 
 The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`) and Scroll Story (`scroll-story`). The two sliders are one effect in two sizes, and so are the two Frames presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
+
+The four slider and Frames presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
 
