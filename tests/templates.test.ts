@@ -105,8 +105,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
     expect(ids.size).toBe(5);
 
-    // Gallery order: the presets lead (presets plan D1), Mobile Frames after Desktop Frames
-    // (Frames plan PF03; PF04 settles the final order, D12).
+    // Gallery order (Frames plan D12): Desktop Slider, Mobile Slider, Desktop Frames, Mobile
+    // Frames, Scroll Story. The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",

@@ -217,7 +217,14 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  expect(order.slice(0, 4)).toEqual(["desktop-slider", "mobile-slider", "frames", "mobile-frames"]);
+  // Frames plan D12: the two pairs (Slider, then Frames; desktop before mobile), then Scroll Story.
+  expect(order).toEqual([
+    "desktop-slider",
+    "mobile-slider",
+    "frames",
+    "mobile-frames",
+    "scroll-story",
+  ]);
 
   // With no screenshots the gallery suggests no other size.
   await expect(gallery.getByTestId("template-size-hint")).toHaveCount(0);
