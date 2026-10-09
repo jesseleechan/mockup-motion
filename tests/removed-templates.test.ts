@@ -36,6 +36,23 @@ describe("PF01: saved projects of removed templates", () => {
     }
   });
 
+  // The composition each template chose per aspect: rows 3 and columns 2 at 9:16 and 4:5.
+  it("each fixture keeps its template's composition at every aspect", () => {
+    for (const aspect of ASPECTS) {
+      const portrait = aspect === "9:16" || aspect === "4:5";
+      const rows = layoutFixture("rows-browser-tilted", aspect).shots[0].layout;
+      const columns = layoutFixture("columns-phone-tilted", aspect).shots[0].layout;
+      const wall = layoutFixture("wall-isometric", aspect).shots[0].layout;
+      expect(rows, aspect).toMatchObject({ kind: "rows", rows: portrait ? 3 : 2, tilt: 8 });
+      expect(columns, aspect).toMatchObject({
+        kind: "columns",
+        columns: portrait ? 2 : 3,
+        tilt: 12,
+      });
+      expect(wall, aspect).toMatchObject({ kind: "wall", columns: 4 });
+    }
+  });
+
   for (const { templateId, fixture, kind } of REMOVED) {
     for (const aspect of ASPECTS) {
       it(`${templateId} at ${aspect} sanitizes cleanly and shows an asset on every screen`, () => {

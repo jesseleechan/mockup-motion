@@ -207,7 +207,9 @@ test.describe("F07: shot and project thumbnails", () => {
       return store.getState().doc.id;
     });
 
-    // Written by the editor itself, before the dialog ever opens.
+    // Written by the editor itself, before the dialog ever opens. The first write is the template
+    // before its demo screenshots arrive: Mobile Slider's empty cards on flat Ash compress to under
+    // 1000 bytes. The rewrite with the screenshots follows PROJECT_THUMBNAIL_INTERVAL_MS (30 s) later.
     await expect
       .poll(
         () =>
@@ -229,7 +231,7 @@ test.describe("F07: shot and project thumbnails", () => {
               }),
             docId,
           ),
-        { timeout: 20_000, message: "putThumb stored a thumbnail for the open project" },
+        { timeout: 50_000, message: "putThumb stored a thumbnail for the open project" },
       )
       .toBeGreaterThan(1000);
 

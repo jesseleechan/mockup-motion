@@ -348,9 +348,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
             }),
           );
         },
-        // Frames' two rows at 16:9 leave a gap across the middle of the frame. This point is on
-        // a card of either row at t = 0: 0.2 stage units right of centre, 0.25 above it.
-        { assetId, x: box.x + box.width * 0.6125, y: box.y + box.height * 0.25 },
+        { assetId, x: box.x + box.width / 2, y: box.y + box.height / 2 },
       );
       return hint.isVisible();
     })
