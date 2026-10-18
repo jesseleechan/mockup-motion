@@ -7,6 +7,8 @@ import {
   releaseTopLeftQuad,
   retainTopLeftQuad,
 } from "../geometry/quads";
+import { PHONE_STATUS_BAR } from "../../motion/phone-spec";
+import { createStatusBarTexture, statusBarTone } from "../devices/status-bar";
 
 export interface ScreenCursorData {
   x: number;
@@ -96,6 +98,10 @@ export class ScreenCompositor {
   private cursorMesh: THREE.Mesh | null = null;
   private rippleMesh: THREE.Mesh | null = null;
   private statusBarMesh: THREE.Mesh | null = null;
+  // A phone's own status bar for screenshots without one: the page's top colour and the glyphs.
+  private statusFillMesh: THREE.Mesh;
+  private statusGlyphMesh: THREE.Mesh;
+  private statusGlyphKey = "";
 
   private lastScroll = -1;
   // Identity, not asset id: a wider reload of the same asset must recompose.
@@ -142,6 +148,16 @@ export class ScreenCompositor {
     this.statusBarMesh = new THREE.Mesh(sbGeo, sbMat);
     this.statusBarMesh.visible = false;
     this.orthoScene.add(this.statusBarMesh);
+
+    this.statusFillMesh = new THREE.Mesh(createTopLeftQuad(), new THREE.MeshBasicMaterial());
+    this.statusFillMesh.visible = false;
+    this.orthoScene.add(this.statusFillMesh);
+    this.statusGlyphMesh = new THREE.Mesh(
+      createTopLeftQuad(),
+      new THREE.MeshBasicMaterial({ transparent: true }),
+    );
+    this.statusGlyphMesh.visible = false;
+    this.orthoScene.add(this.statusGlyphMesh);
 
     // Cursor mesh
     const curGeo = createTopLeftQuad();
@@ -242,18 +258,21 @@ export class ScreenCompositor {
       ? `${cursor.x.toFixed(3)},${cursor.y.toFixed(3)},${(cursor.scale ?? 1).toFixed(2)},${(cursor.rippleOpacity ?? 0).toFixed(2)},${cursor.style}`
       : "none";
 
-    // Only skip render if scroll, texture, and cursor have not changed
+    const optionsKey = `${options?.isPhone ? 1 : 0}${options?.hasStatusBar ? 1 : 0}`;
+    const composeKey = `${cursorKey}|${optionsKey}`;
+
+    // Only skip render if scroll, texture, cursor and status bar have not changed
     if (
       this.lastScroll === scroll &&
       this.lastManaged === managed &&
-      this.lastCursorKey === cursorKey
+      this.lastCursorKey === composeKey
     ) {
       return;
     }
 
     this.lastScroll = scroll;
     this.lastManaged = managed;
-    this.lastCursorKey = cursorKey;
+    this.lastCursorKey = composeKey;
 
     if (!managed || managed.strips.length === 0) {
       for (const mesh of this.stripMeshes) mesh.visible = false;
@@ -263,6 +282,8 @@ export class ScreenCompositor {
       this.fillMesh.position.set(0, 0, 0);
       (this.fillMesh.material as THREE.MeshBasicMaterial).color.set(0x18181b);
       if (this.statusBarMesh) this.statusBarMesh.visible = false;
+      this.statusFillMesh.visible = false;
+      this.statusGlyphMesh.visible = false;
       if (this.cursorMesh) this.cursorMesh.visible = false;
       if (this.rippleMesh) this.rippleMesh.visible = false;
 
@@ -275,7 +296,11 @@ export class ScreenCompositor {
 
     const scaleFactor = this.widthPx / managed.width;
     const totalRenderedHeight = managed.height * scaleFactor;
-    const scrollablePx = Math.max(0, totalRenderedHeight - this.heightPx);
+    // Quality-bar §3.3: on a phone, a screenshot without a status bar starts below the phone's own.
+    const statusBarPx = options?.isPhone ? Math.round(this.heightPx * PHONE_STATUS_BAR) : 0;
+    const insetPx = options?.isPhone && !options.hasStatusBar ? statusBarPx : 0;
+    const viewportPx = this.heightPx - insetPx;
+    const scrollablePx = Math.max(0, totalRenderedHeight - viewportPx);
     const scrollY = scroll * scrollablePx;
 
     // Keep one mesh and material per texture strip; scrolling only changes transforms.
@@ -294,7 +319,7 @@ export class ScreenCompositor {
       }
       const strip = managed.strips[index];
       (mesh.material as THREE.MeshBasicMaterial).map = strip.texture;
-      const stripY = strip.yOffset * scaleFactor - scrollY;
+      const stripY = insetPx + strip.yOffset * scaleFactor - scrollY;
       const stripH = strip.height * scaleFactor;
 
       // Check visibility within viewport [0, heightPx]
@@ -309,9 +334,9 @@ export class ScreenCompositor {
     }
 
     // Fill bottom if screenshot is shorter than viewport
-    if (totalRenderedHeight < this.heightPx) {
+    if (totalRenderedHeight < viewportPx) {
       this.fillMesh.visible = true;
-      const fillHeight = this.heightPx - totalRenderedHeight;
+      const fillHeight = viewportPx - totalRenderedHeight;
       this.fillMesh.scale.set(this.widthPx, fillHeight, 1);
       this.fillMesh.position.set(0, 0, 0);
 
@@ -330,7 +355,9 @@ export class ScreenCompositor {
       this.fillMesh.visible = false;
     }
 
-    // Phone status bar safe zone pinning while scrolling
+    this.composeStatusBar(managed, insetPx);
+
+    // A screenshot's own status bar stays pinned while the page scrolls
     if (
       options?.isPhone &&
       options?.hasStatusBar &&
@@ -338,7 +365,7 @@ export class ScreenCompositor {
       managed.strips.length > 0 &&
       this.statusBarMesh
     ) {
-      const sbHeight = Math.round(this.heightPx * 0.055);
+      const sbHeight = statusBarPx;
       const firstStrip = managed.strips[0];
       const sbSourcePx = sbHeight / scaleFactor;
       const vMax = Math.min(1, sbSourcePx / firstStrip.height);
@@ -411,6 +438,34 @@ export class ScreenCompositor {
     renderer.setRenderTarget(prevTarget);
   }
 
+  /** The phone's status bar over the top `heightPx` of the screen: the page's top colour and glyphs. */
+  private composeStatusBar(managed: ManagedTexture, heightPx: number): void {
+    if (heightPx <= 0) {
+      this.statusFillMesh.visible = false;
+      this.statusGlyphMesh.visible = false;
+      return;
+    }
+    const top = managed.topRowColor ?? [1, 1, 1, 1];
+    const fill = this.statusFillMesh.material as THREE.MeshBasicMaterial;
+    fill.color.setRGB(top[0], top[1], top[2], THREE.SRGBColorSpace);
+    this.statusFillMesh.visible = true;
+    this.statusFillMesh.scale.set(this.widthPx, heightPx, 1);
+    this.statusFillMesh.position.set(0, this.heightPx - heightPx, 0.15);
+
+    const tone = statusBarTone([top[0], top[1], top[2]]);
+    const key = `${this.widthPx}x${heightPx}:${tone}`;
+    const glyphs = this.statusGlyphMesh.material as THREE.MeshBasicMaterial;
+    if (key !== this.statusGlyphKey) {
+      glyphs.map?.dispose();
+      glyphs.map = createStatusBarTexture(this.widthPx, heightPx, tone);
+      glyphs.needsUpdate = true;
+      this.statusGlyphKey = key;
+    }
+    this.statusGlyphMesh.visible = glyphs.map !== null;
+    this.statusGlyphMesh.scale.set(this.widthPx, heightPx, 1);
+    this.statusGlyphMesh.position.set(0, this.heightPx - heightPx, 0.2);
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -423,6 +478,10 @@ export class ScreenCompositor {
       this.statusBarMesh.geometry.dispose();
       (this.statusBarMesh.material as THREE.Material).dispose();
     }
+    (this.statusFillMesh.material as THREE.Material).dispose();
+    const glyphs = this.statusGlyphMesh.material as THREE.MeshBasicMaterial;
+    glyphs.map?.dispose();
+    glyphs.dispose();
     if (this.cursorMesh) {
       (this.cursorMesh.material as THREE.Material).dispose();
     }
