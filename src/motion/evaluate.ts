@@ -11,6 +11,7 @@ import { cameraPose } from "./camera";
 import { frameDistance } from "./framing";
 import { type LayoutNode, resolveLayout } from "./layouts";
 import { scrollPosition } from "./scroll";
+import { responsiveScreens, responsiveScrollAt } from "./responsive-scroll";
 import { textFrame, type TextFrame } from "./text-anim";
 import { activeLayers, schedule } from "./timeline";
 import { evaluateCursorMotion } from "./cursor";
@@ -97,6 +98,16 @@ function evaluateNodes(
         scrollableFrames = Math.max(0, base.screenAspect / imgAspect - 1);
       }
       base.scroll = scrollPosition(shot.scroll, localT, shot.duration, scrollableFrames);
+    }
+  }
+
+  // Responsive Scroll: both screens stop on the same sections (contracts.md §5)
+  if (shot.scroll?.enabled && shot.layout.kind === "responsive" && nodes.length === 2) {
+    const screens = responsiveScreens(shot.layout, assets);
+    if (screens) {
+      const [desktop, mobile] = responsiveScrollAt(shot.scroll, screens, localT);
+      nodes[0].scroll = desktop;
+      nodes[1].scroll = mobile;
     }
   }
 

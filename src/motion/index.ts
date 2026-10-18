@@ -9,3 +9,4 @@ export * from "./framing";
 export * from "./cursor";
 export * from "./evaluate";
 export type { DeviceKind } from "../doc";
+export * from "./responsive-scroll";

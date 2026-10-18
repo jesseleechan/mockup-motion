@@ -6,6 +6,7 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "single":
       return [layout.assetId];
     case "pair":
+    case "responsive":
       return [layout.desktopId, layout.mobileId];
     case "trio":
       return [layout.desktopId, layout.tabletId ?? "", layout.mobileId];
