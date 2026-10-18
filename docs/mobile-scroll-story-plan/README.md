@@ -25,4 +25,5 @@
 ## 3. Evidence
 
 - `evidence/contact-sheet/`: both Scroll Story sizes at all five aspects, at 15%, 50% and 85% of the shot (`npm run contact-sheet -- --templates scroll-story,mobile-scroll-story --aspects 16:9,9:16,1:1,4:5,4:3`).
+- `evidence/baselines-for-approval.png`: the four new Linux baselines as the Visual baselines workflow rendered them (16:9 and 9:16 at 0.8 s and 2.4 s), for the owner's approval (MS4).
 - `evidence/pill-at-holds-9x16.png`: the top of the phone at 0.4 s, 3.4 s, 6.4 s and 9.6 s at 9:16, which are the four holds (MS3).
