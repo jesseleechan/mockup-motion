@@ -92,8 +92,8 @@ Smaller choices this plan makes unless the owner says otherwise:
 | ---- | -------------------------------------------------------------------------------------------- | ---- | ---------------- | ----------------------------------------------------------------------- |
 | R00  | This plan; decisions recorded in `quality-bar.md` and `contracts.md` once answered           | S    | —                | Done: [#45](https://github.com/jesseleechan/mockup-motion/pull/45)      |
 | R01  | Demo section data: `sections-mobile.json` for the five demo sites, `demo:capture` writes it  | S    | —                | In review: [#47](https://github.com/jesseleechan/mockup-motion/pull/47) |
-| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | Not started                                                             |
-| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | Not started                                                             |
+| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | In review: [#52](https://github.com/jesseleechan/mockup-motion/pull/52) |
+| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | In review: [#54](https://github.com/jesseleechan/mockup-motion/pull/54) |
 | R04  | Rendering: lab fixtures and stills at five aspects                                           | S    | R03              | Not started                                                             |
 | R05  | Template, gallery placement, slot pairing, inspector                                         | M    | R02, R03, R04    | Not started                                                             |
 | R06  | Previews, contact sheet, owner review, visual baselines (**owner review gate**)              | S    | R05              | Not started                                                             |
