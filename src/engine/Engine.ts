@@ -9,7 +9,7 @@ import {
   type ShotFrame,
 } from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
-import { DeviceFadePass, type DeviceDraw } from "./devices/DeviceFade";
+import { DeviceFadePass, type DeviceDraw, fadeBlendFor } from "./devices/DeviceFade";
 import { DevicePool } from "./devices/DevicePool";
 import { applyCameraPose } from "./stage";
 import { textureWidths } from "./textures/sizing";
@@ -306,11 +306,12 @@ export class Engine {
     this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
-    // Slider neighbours are faded cards (quality bar §3.1), mixed in sRGB like the reference.
+    // Slider neighbours and a deck's entering card are faded cards (quality bar §3.1); the
+    // carousel's neighbours mix in sRGB like the reference.
     const hasSlider = doc.shots.some((shot) => shot.layout.kind === "slider");
     this.deviceFade.prepare(this.renderer, this.targetA, {
       fade: hasSlider || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
-      srgb: hasSlider,
+      srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) === "srgb"),
     });
 
     // Warm-up compilation
@@ -379,7 +380,7 @@ export class Engine {
 
     // 4. Render the devices into the MSAA target with their opacity
     const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
-    const blend = shot?.layout.kind === "slider" ? "srgb" : "linear";
+    const blend = shot ? fadeBlendFor(shot.layout) : "linear";
     this.deviceFade.render(this.renderer, this.scene, this.camera, target, draws, blend);
 
     // 5. Render screen-space text overlay into MSAA target

@@ -52,13 +52,13 @@ The Orbit session also builds on the slider's step timing. If it adds an arrange
 
 ## 4. Tasks
 
-| Task                                     | Title                                                                                      | Size | Depends on | Status      |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ---------- | ----------- |
-| [S00](tasks/S00-decisions-and-rules.md)  | Plan, reference, decisions; record them in the quality bar, contracts and follow-ups       | S    | —          | In progress |
-| [S01](tasks/S01-deck-motion.md)          | The deck arrangement (motion only, unit-tested)                                            | M    | S00        | To do       |
-| [S02](tasks/S02-deck-rendering.md)       | Rendering, the entering-card fade, lab fixtures, stills                                    | S    | S01        | To do       |
-| [S03](tasks/S03-stack-templates.md)      | Desktop Stack and Mobile Stack templates, gallery, editor support                          | M    | S02        | To do       |
-| [S04](tasks/S04-review-and-baselines.md) | Previews, contact sheet at all five aspects, loop check, baselines (**owner review gate**) | S    | S03        | To do       |
+| Task                                     | Title                                                                                      | Size | Depends on | Status                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ---------- | ------------------------------------------------------------------------------------------------- |
+| [S00](tasks/S00-decisions-and-rules.md)  | Plan, reference, decisions; record them in the quality bar, contracts and follow-ups       | S    | —          | In progress                                                                                       |
+| [S01](tasks/S01-deck-motion.md)          | The deck arrangement (motion only, unit-tested)                                            | M    | S00        | In review: [#51](https://github.com/jesseleechan/mockup-motion/pull/51), [evidence](evidence/S01) |
+| [S02](tasks/S02-deck-rendering.md)       | Rendering, the entering-card fade, lab fixtures, stills                                    | S    | S01        | In review, [evidence](evidence/S02)                                                               |
+| [S03](tasks/S03-stack-templates.md)      | Desktop Stack and Mobile Stack templates, gallery, editor support                          | M    | S02        | To do                                                                                             |
+| [S04](tasks/S04-review-and-baselines.md) | Previews, contact sheet at all five aspects, loop check, baselines (**owner review gate**) | S    | S03        | To do                                                                                             |
 
 Three other sessions add presets at the same time and touch the same shared files (`registry.ts`, `pairs.ts`, `templates/index.ts`, `tests/templates.test.ts`, `tests/visual/stills.spec.ts`, `scripts/e2e-shards.ts`, `scripts/template-previews.ts`, `public/templates/`, `quality-bar.md`, `contracts.md`, `docs/plan/README.md`, `README.md`). Edits there stay small and additive; merge `main` before each push and keep both sides of a conflict.
 

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { Layout } from "../../doc/types";
 
 const FULLSCREEN_VERTEX = /* glsl */ `
   varying vec2 vUv;
@@ -19,6 +20,14 @@ export interface DeviceDraw {
  * neighbours (docs/presets-plan/reference.md: a pixel of 15 at 65% over 223 shows 88).
  */
 export type FadeBlend = "linear" | "srgb";
+
+/**
+ * The blend a shot's fades use. Only the carousel's faded neighbours mix in sRGB (quality bar
+ * §3.1); a deck's entering card and every entrance blend in linear light.
+ */
+export function fadeBlendFor(layout: Layout): FadeBlend {
+  return layout.kind === "slider" && layout.arrangement !== "deck" ? "srgb" : "linear";
+}
 
 // Opacities within half an 8-bit step of 0 or 1 draw as hidden or opaque.
 const OPACITY_EPSILON = 1 / 512;
