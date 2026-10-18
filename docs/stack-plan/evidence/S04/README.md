@@ -8,7 +8,7 @@ Rendered 18 October 2026 on Linux (Playwright Chromium 1194, SwiftShader).
 
 - §3.1: no card is cropped sideways; tall screenshots are cropped at the bottom only. Settled cards are colour-exact (S02 e2e, ΔE < 1).
 - §2.5: one move per step, the front card leaving and the deck following on `slide`; nothing reverses (S01 unit test).
-- §4: the deck at rest is centred with at least 7% of the shortest side clear at every aspect (unit test). **One open point for the owner:** at 16:9 the Desktop Stack front card spans 58% of the frame width, under the 62–74% a single desktop device gets, because the deck height cap (0.8) binds. Raising the cap to 0.86 would give 62% and leave 7% top and bottom. The numbers are unchanged until the owner decides.
+- §4: the deck at rest is centred with at least 7% of the shortest side clear at every aspect (unit test). **One open point for the owner:** at 16:9 the Desktop Stack front card spans 58% of the frame width, under the 62–74% a single desktop device gets, because the deck height cap (0.8) binds. Raising the cap to 0.86 would give 62% and still leave 9% of the frame height clear above and below the deck. The numbers are unchanged until the owner decides.
 - §5: shadow none, grain 0, vignette 0.
 
 ## Loop seam
