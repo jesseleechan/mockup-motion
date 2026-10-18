@@ -31,7 +31,9 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
         .getByTestId("library-template-card")
         .evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await library.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(["mobile-slider", "mobile-frames"]);
+    await expect
+      .poll(libraryIds)
+      .toEqual(["mobile-slider", "mobile-frames", "mobile-scroll-story"]);
     await library.getByRole("button", { name: "Desktop", exact: true }).click();
     await expect.poll(libraryIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
     await library.getByRole("button", { name: "All", exact: true }).click();
@@ -57,9 +59,9 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const cardIds = () =>
       cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await modal.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames"]);
+    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames", "mobile-scroll-story"]);
     // Each card names its tab in words, never the raw id
-    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile"]);
+    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile", "Mobile"]);
     await modal.getByRole("button", { name: "Desktop", exact: true }).click();
     await expect.poll(cardIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
     await expect(modal.getByTestId("template-category")).toHaveText([
@@ -68,12 +70,13 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
       "Desktop",
     ]);
     await modal.getByRole("button", { name: "All", exact: true }).click();
-    await expect(cards).toHaveCount(5);
+    await expect(cards).toHaveCount(6);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
     await searchInput.fill("Scroll");
-    await expect(modal.getByRole("heading", { name: "Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Desktop Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Mobile Scroll Story" })).toBeVisible();
 
     // Clear search
     await searchInput.fill("");
@@ -113,7 +116,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // (presets D1), so switch to Scroll Story's single browser first.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
-    await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+    await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 

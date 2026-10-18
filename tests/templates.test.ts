@@ -100,19 +100,21 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 5 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(5);
+  it("exports all 6 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(6);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(6);
 
     // Gallery order (Frames plan D12): Desktop Slider, Mobile Slider, Desktop Frames, Mobile
-    // Frames, Scroll Story. The first entry is the first-run default (presets plan D1).
+    // Frames, Desktop Scroll Story, Mobile Scroll Story. The first entry is the first-run default
+    // (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
       "mobile-frames",
       "scroll-story",
+      "mobile-scroll-story",
     ]);
 
     for (const t of BUILTIN_TEMPLATES) {
@@ -131,6 +133,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       frames: "desktop",
       "mobile-frames": "mobile",
       "scroll-story": "desktop",
+      "mobile-scroll-story": "mobile",
     });
     for (const t of BUILTIN_TEMPLATES) {
       for (const slot of t.slots) expect(slot.role).toBe(t.category);

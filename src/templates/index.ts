@@ -4,6 +4,8 @@ export * from "./registry";
 export * from "./pairs";
 export * from "./demo-preview";
 export { scrollStoryTemplate } from "./scroll-story";
+export { mobileScrollStoryTemplate } from "./mobile-scroll-story";
+export { scrollStoryDuration } from "./scroll-story-template";
 export { framesTemplate, framesLayout } from "./frames";
 export { mobileFramesTemplate, mobileFramesLayout } from "./mobile-frames";
 export { refitFramesLayout } from "./frames-template";

@@ -15,16 +15,16 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 ### 2.1 Easing vocabulary (`src/motion/easing.ts`)
 
-| Id | Curve | Use |
-|---|---|---|
-| `gentle` | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out) | Long camera drifts, background, float |
-| `smooth` | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out) | Default camera moves, scroll segments |
-| `expoOut` | cubic-bezier(0.16, 1, 0.3, 1) | Entrances, text reveals |
-| `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1) | Transitions, decisive pushes |
-| `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only (cursor click). Overshoot 3% or less |
-| `spring` | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels |
-| `slide` | cubic-bezier(0.40, 0, 0.05, 1) | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
-| `linear` | — | Marquees only |
+| Id           | Curve                                              | Use                                                                                          |
+| ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `gentle`     | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out)       | Long camera drifts, background, float                                                        |
+| `smooth`     | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out)      | Default camera moves, scroll segments                                                        |
+| `expoOut`    | cubic-bezier(0.16, 1, 0.3, 1)                      | Entrances, text reveals                                                                      |
+| `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1)                     | Transitions, decisive pushes                                                                 |
+| `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only (cursor click). Overshoot 3% or less                                 |
+| `spring`     | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels                                                                    |
+| `slide`      | cubic-bezier(0.40, 0, 0.05, 1)                     | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
+| `linear`     | —                                                  | Marquees only                                                                                |
 
 ### 2.2 Durations
 
@@ -39,17 +39,17 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 Default lens: **fov 22°**. Long lenses look like product photography; wide lenses distort the screenshots. Allowed range is 15–35°.
 
-| Preset | From → To |
-|---|---|
-| `static` | No change (float only) |
-| `pushIn` | distance 1.10 → 0.98 (about 12% scale change) |
-| `pullBack` | distance 0.92 → 1.06 |
-| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05 |
-| `tiltUp` / `tiltDown` | pitch 14° → 4° (or reverse), distance 1.04 |
-| `riseUp` | panY −0.06 → 0.02, pitch 8° → 3° |
-| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6° |
-| `isoDrift` | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal |
-| `heroTilt` | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
+| Preset                     | From → To                                                           |
+| -------------------------- | ------------------------------------------------------------------- |
+| `static`                   | No change (float only)                                              |
+| `pushIn`                   | distance 1.10 → 0.98 (about 12% scale change)                       |
+| `pullBack`                 | distance 0.92 → 1.06                                                |
+| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05                             |
+| `tiltUp` / `tiltDown`      | pitch 14° → 4° (or reverse), distance 1.04                          |
+| `riseUp`                   | panY −0.06 → 0.02, pitch 8° → 3°                                    |
+| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6°                       |
+| `isoDrift`                 | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal    |
+| `heroTilt`                 | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
 
 `intensity` scales the delta between from and to around the midpoint pose. Every preset must keep all screen content inside the frame at `intensity = 1` for every aspect (WP-09 adds a framing test).
 
@@ -111,6 +111,8 @@ Float is optional ambient sway layered on top of the main move, the only allowed
   - 4:5: 3 columns, 0.246 wide.
 
   At 16:9, 4:3, 1:1 and 9:16 every column is fully visible, with side margins of 4.8% of the frame width, the margins Desktop Frames' two rows leave at 16:9. At 4:5 the middle column is centred and the outer columns are cropped by 14% of their width, as the reference crops its outer rows. Cards are 0.48–0.58 of the frame height tall, so a column shows 1.5–1.8 cards. Adjacent columns move in opposite directions at one shared speed, and the left column moves up. Column c starts c/columns of a period along, so columns that move together never line up the same screenshot. Odd columns show the screenshots in reverse order, as odd rows do, and the passing-lanes exception above applies to adjacent columns too. Mobile Frames needs 4 screenshots. The PF04 contact sheet review may change a card width by at most ±10%; any change is recorded here (`docs/phone-frames-plan/README.md` §3).
+
+- **Scroll Story** (`single`, one tall screenshot, scroll stops `[0, 0.33, 0.66, 1]` with 0.8 s holds, `pushIn` at intensity 0.2, Fog, no loop): Desktop Scroll Story uses the browser window, Mobile Scroll Story the phone (§3.3), at the single-device sizes above. The shot lasts 10 s, or longer when the page needs it to stay under the §2.2 scroll limit, rounded up to 0.5 s.
 
 - **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).
 
