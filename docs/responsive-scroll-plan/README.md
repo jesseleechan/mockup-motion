@@ -40,7 +40,7 @@ A desktop screen shows 1440 / 1.6 = 900 CSS px of page; a phone screen 390 / 0.4
 | works → materials     | 745 px (0.83)            | 1431 px (1.69)          | 1.88 s                |
 | materials → monograph | 679 px (0.75)            | 1056 px (1.25)          | 1.39 s                |
 
-Moves 5.38 s + four 1.0 s holds = **9.4 s** shot, a 8.6 s loop after the 0.8 s wrap crossfade.
+Moves 5.38 s + four 1.0 s holds = a **9.4 s** loop. The shot itself lasts 10.2 s: a looping single shot shows `duration − 0.8` s and its wrap crossfade covers the 0.8 s before the loop point, so the extra 0.8 s puts the fade inside the last hold instead of the last move (R03).
 
 Mobile sections of the five demo sites (CSS px, same measurement; R01 commits them as `public/demo/<site>/sections-mobile.json`):
 
@@ -82,7 +82,7 @@ Smaller choices this plan makes unless the owner says otherwise:
 - **Default stops**: the top plus three sections, chosen so the stops are spread out. Candidates are the sections both pages share, minus `header` and `footer`, whose top the screen can still reach. The next stop is always the candidate farthest from every stop chosen so far, where distance is the larger of the two screens' travel in screen heights. For Aurelia this picks works, materials and monograph, the stops of the preview.
 - **Section matching**: by `id`; a section without an id is matched by its tag and class (`section.works-section`). Sections that only one page has are not offered as stops.
 - **A stop beyond the end**: a screen whose page can't scroll a section to its top stops at the bottom of the page instead.
-- **Duration**: set by the layout, like the slider (`fixedShotDuration`): holds plus moves. The inspector offers the hold (0.6–1.2 s, quality bar §2.2) and which sections to stop at, not the duration. A shot fits in 30 s: stops past that are left out and the inspector says so.
+- **Duration**: set by the layout, like the slider (`fixedShotDuration`): holds plus moves plus the 0.8 s wrap crossfade overlap. The inspector offers the hold (0.6–1.2 s, quality bar §2.2) and which sections to stop at, not the duration. A shot fits in 30 s: stops past that are left out and the inspector says so.
 - **Camera**: still (`fixedShotCamera`), as on the sliders.
 - **Name and id**: "Responsive Scroll", `responsive-scroll`. Gallery order: last, after Mobile Scroll Story.
 
