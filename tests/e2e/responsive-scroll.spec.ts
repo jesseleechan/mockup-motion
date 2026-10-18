@@ -1,7 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import sharp from "sharp";
 import type { AssetRef, ProjectDoc } from "../../src/doc/types";
+
+declare global {
+  interface Window {
+    __labReady?: boolean;
+  }
+}
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc };
@@ -102,4 +109,59 @@ test.describe("Responsive Scroll: capture sections on assets (R02)", () => {
     ).toBeVisible();
     expect(await storedAssets(page)).toHaveLength(0);
   });
+});
+
+test.describe("Responsive Scroll: rendering (R04)", () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  /** The lab still's pixels, and each card's centre region from the layout geometry. */
+  async function still(page: Page, aspect: string, t: number) {
+    await page.goto(
+      `/lab?still=1&fixture=responsive-scroll&aspect=${encodeURIComponent(aspect)}&t=${t}&w=640`,
+    );
+    await page.waitForFunction(() => window.__labReady === true, { timeout: 60_000 });
+    const png = await page.locator("[data-testid='lab-still'] canvas").screenshot();
+    return sharp(png).raw().toBuffer({ resolveWithObject: true });
+  }
+
+  /** Mean and spread of luminance in a box given in frame fractions. */
+  function region(
+    img: { data: Buffer; info: { width: number; height: number; channels: number } },
+    box: [number, number, number, number],
+  ) {
+    const { width, height, channels } = img.info;
+    const values: number[] = [];
+    for (let y = Math.round(box[1] * height); y < box[3] * height; y++) {
+      for (let x = Math.round(box[0] * width); x < box[2] * width; x++) {
+        const i = (y * width + x) * channels;
+        values.push(0.2126 * img.data[i] + 0.7152 * img.data[i + 1] + 0.0722 * img.data[i + 2]);
+      }
+    }
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const sd = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
+    return { values, sd };
+  }
+
+  for (const [aspect, desktopBox, mobileBox] of [
+    // Card interiors from responsiveGeometry, in frame fractions (x0, y0, x1, y1).
+    ["16:9", [0.15, 0.25, 0.65, 0.75], [0.74, 0.25, 0.88, 0.75]],
+    ["4:5", [0.12, 0.1, 0.88, 0.45], [0.42, 0.58, 0.58, 0.9]],
+  ] as const) {
+    test(`${aspect}: both screens show the page and scroll to the works section`, async ({
+      page,
+    }) => {
+      const top = await still(page, aspect, 0.5);
+      const works = await still(page, aspect, 3.6);
+      for (const box of [desktopBox, mobileBox]) {
+        const a = region(top, [...box]);
+        const b = region(works, [...box]);
+        // Screenshot content, not the empty-screen fill.
+        expect(a.sd).toBeGreaterThan(8);
+        expect(b.sd).toBeGreaterThan(8);
+        // The screen scrolled: most pixels changed between the top and the works hold.
+        const changed = a.values.filter((v, i) => Math.abs(v - b.values[i]) > 12).length;
+        expect(changed / a.values.length).toBeGreaterThan(0.1);
+      }
+    });
+  }
 });
