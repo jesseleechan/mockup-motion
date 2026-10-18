@@ -240,7 +240,7 @@ test("Mobile Scroll Story: demo content scrolls a full mobile page on a phone", 
   expect(shot.layout).toMatchObject({ kind: "single", device: "phone" });
   expect(shot.asset).toMatchObject({ role: "mobile", meta: { tall: true } });
   expect(shot.scroll?.enabled).toBe(true);
-  expect(shot.duration).toBe(10);
+  expect(shot.duration).toBe(10.5);
 
   // The phone screen shows the page, not the flat empty-screen fill.
   await waitForSettledDocument(page);

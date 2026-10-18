@@ -51,7 +51,7 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("aurelia"),
   ],
   "scroll-story": [desktopFull("studio-kova")],
-  // Aurelia's mobile page fits the 10 s shot (9.6 s at 0.9 screen heights per second).
+  // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],
 };
 

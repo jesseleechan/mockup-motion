@@ -13,8 +13,10 @@ import {
 } from "../src/templates";
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-// The phone's screen aspect (quality bar §3.3), as `screenAspectFor("phone")` returns it.
+// The phone's screen aspect and the part of it below the status bar (quality bar §3.3), written
+// out so a change to the phone fails here.
 const PHONE_SCREEN_ASPECT = 0.4615;
+const PHONE_VIEWPORT = 1 - 62 / 874;
 
 const mobileFull = (site: Parameters<typeof demoAssetId>[0]) =>
   demoAssetRef(demoAssetId(site, "mobile", "full"));
@@ -83,10 +85,12 @@ describe("Mobile Scroll Story", () => {
   });
 
   it("lasts 10 s, or longer when the page needs it", () => {
-    // Aurelia needs 9.6 s at 0.9 screen heights per second, Northwind 10.6 s.
-    expect(build([mobileFull("aurelia")]).shots[0].duration).toBe(10);
-    expect(build([mobileFull("northwind")]).shots[0].duration).toBe(11);
-    expect(build([mobileFull("field-notes")]).shots[0].duration).toBe(10.5);
+    // Below the status bar, at 0.9 viewport heights per second: Aurelia needs 10.2 s, Northwind
+    // 11.3 s, Field Notes 11.0 s, Maison Oak 9.2 s.
+    expect(build([mobileFull("aurelia")]).shots[0].duration).toBe(10.5);
+    expect(build([mobileFull("northwind")]).shots[0].duration).toBe(11.5);
+    expect(build([mobileFull("field-notes")]).shots[0].duration).toBe(11.5);
+    expect(build([mobileFull("maison-oak")]).shots[0].duration).toBe(10);
     expect(scrollStoryDuration("phone", mobileHero)).toBe(10);
     expect(scrollStoryDuration("phone", undefined)).toBe(10);
   });
@@ -101,8 +105,9 @@ describe("Mobile Scroll Story", () => {
     it(`reaches the bottom of the ${site} page within the speed limit`, () => {
       const asset = mobileFull(site);
       const [shot] = build([asset]).shots;
-      const scrollableFrames = PHONE_SCREEN_ASPECT / (asset.width! / asset.height!) - 1;
-      // Quality bar §2.2: never faster than 0.9 screen heights per second on average.
+      const scrollableFrames =
+        PHONE_SCREEN_ASPECT / (asset.width! / asset.height!) / PHONE_VIEWPORT - 1;
+      // Quality bar §2.2: never faster than 0.9 viewport heights per second on average.
       expect(shot.duration).toBeGreaterThanOrEqual(minDurationFor(shot.scroll!, scrollableFrames));
       // A shot shorter than the scroll would end before the bottom of the page.
       const end = scrollPosition(

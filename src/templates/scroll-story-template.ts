@@ -1,6 +1,6 @@
 import type { AssetRef, AssetRole, ScrollSpec, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
-import { minDurationFor } from "../motion/scroll";
+import { minDurationFor, scrollableFramesFor } from "../motion/scroll";
 import { screenAspectFor } from "../motion/layouts/types";
 import type { Template, TemplateBuildContext, TemplateCategory } from "./types";
 import { paletteBackground } from "./looks";
@@ -25,17 +25,14 @@ interface ScrollStoryOptions {
 
 /**
  * The shot length for a scroll through `asset` on `device`: 10 s, or longer when the page needs
- * it to stay under 0.9 screen heights per second (quality-bar §2.2), rounded up to 0.5 s.
+ * it to stay under 0.9 viewport heights per second (quality-bar §2.2), rounded up to 0.5 s. On a
+ * phone the viewport is the screen below the status bar (§3.3).
  */
 export function scrollStoryDuration(
   device: "browser" | "phone",
   asset: AssetRef | undefined,
 ): number {
-  if (!asset?.width || !asset.height) return SCROLL_STORY_DURATION;
-  const scrollableFrames = Math.max(
-    0,
-    screenAspectFor(device, asset) / (asset.width / asset.height) - 1,
-  );
+  const scrollableFrames = scrollableFramesFor(device, screenAspectFor(device, asset), asset);
   const needed = Math.ceil(minDurationFor(SCROLL_STORY_SCROLL, scrollableFrames) * 2) / 2;
   return Math.max(SCROLL_STORY_DURATION, needed);
 }
