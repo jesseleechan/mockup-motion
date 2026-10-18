@@ -150,12 +150,16 @@ export class ScreenCompositor {
     this.orthoScene.add(this.statusBarMesh);
 
     this.statusFillMesh = new THREE.Mesh(createTopLeftQuad(), new THREE.MeshBasicMaterial());
+    // The target has no depth buffer and three.js draws opaque meshes front to back, so the
+    // page strips would paint over the bar; renderOrder draws it after them.
+    this.statusFillMesh.renderOrder = 1;
     this.statusFillMesh.visible = false;
     this.orthoScene.add(this.statusFillMesh);
     this.statusGlyphMesh = new THREE.Mesh(
       createTopLeftQuad(),
       new THREE.MeshBasicMaterial({ transparent: true }),
     );
+    this.statusGlyphMesh.renderOrder = 2;
     this.statusGlyphMesh.visible = false;
     this.orthoScene.add(this.statusGlyphMesh);
 
