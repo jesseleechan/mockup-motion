@@ -51,7 +51,13 @@ export interface AssetRef {
   height?: number; // image px
   role?: AssetRole; // auto-detected (assets/roles.ts), user-editable
   palette?: string[]; // image: 5 dominant colours, hex, most-to-least prominent
-  meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
+  meta?: {
+    tall?: boolean;
+    hasStatusBar?: boolean;
+    bottomColor?: string; // image analysis (WP-13, WP-06)
+    sections?: { id: string; top: number }[]; // from the capture's JSON: top in image px, ascending (Responsive Scroll)
+    page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
+  };
   family?: string; // font: CSS family name registered via FontFace
   durationSec?: number; // audio
   peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
@@ -125,6 +131,7 @@ export type Layout =
       shape: "mobile" | "desktop";
       step: number;
     }
+  | { kind: "responsive"; desktopId: string; mobileId: string }
   | { kind: "title" };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
@@ -139,6 +146,9 @@ export type Layout =
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
+// responsive: a landscape card (desktop, 1.6) and a portrait card (mobile, 0.4615) of one page that
+// scroll together (Responsive Scroll, quality-bar §4). Side by side at 16:9, 4:3 and 1:1, stacked
+// at 4:5 and 9:16.
 
 export type CameraPresetId =
   | "static"
@@ -174,6 +184,7 @@ export interface CameraPose {
 export interface ScrollSpec {
   enabled: boolean; // opt-in; never auto-enabled
   stops: number[]; // 0..1 positions in scrollable range, ascending, first is 0
+  sections?: string[]; // responsive: section ids to stop at after the top, in page order (§5); `stops` is the fallback
   hold: number; // seconds held at each stop
   easing: EasingId;
 }
@@ -229,7 +240,7 @@ export interface Shot {
   layout: Layout;
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
-  scroll?: ScrollSpec; // honoured only for single-device layouts
+  scroll?: ScrollSpec; // honoured for single-device and responsive layouts
   cursor?: CursorSpec; // honoured only for single-device layouts
   texts: TextLayer[];
   transitionIn: Transition; // for shots[0], used as the loop wrap transition when doc.loop
@@ -316,7 +327,7 @@ export function resolveLayout(
 ): LayoutNode[];
 ```
 
-Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule.
+Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule. A `responsive` layout emits a desktop card at `1.6` and a mobile card at `0.4615`, whatever the images' aspects, so tall pages scroll.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 
@@ -327,6 +338,7 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 - Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade, except Frames (`rows` or `columns` with `travel: "period"`, below). At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
 - **Frames** (`rows` or `columns` with `travel: "period"`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. `Layout.speed` is ignored: the speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
 - **Sliders** (`slider`) loop natively. Step `k` moves every card one slot over `[k × step, k × step + 1.85]` on the `slide` curve, then holds; after N steps (N = `assetIds.length`) the arrangement is back where it started. The shot lasts `sliderDuration(layout) = max(1, N) × step`, so a single looping slider shot with a `cut` wrap has frame(total) ≡ frame(0) with no crossfade. A shot fits in 30 s: N counts at most the first 18 screenshots (`SLIDER_MAX_SCREENSHOTS`; later ones are not shown) and the step is at most `sliderStepMax(N)` = min(4.0, 30 / N) in 0.1 s steps. `src/motion/layouts/duration.ts` holds these rules beside `minShotDuration`; `sanitizeDoc` and the editor store apply them after every edit, so a slider's `Shot.duration` always equals `sliderDuration`. A slider's camera is still: `fixedShotCamera` sets `preset: "static"`, `intensity: 0` and `float: 0` in the same places, and the Shot inspector shows no Camera section for a slider. When fewer screenshots than visible slots are lit, the lit window is centred on the active card: N slots, or N − 1 when N is even (N > 2).
+- **Responsive Scroll** (`responsive`) loops by the 0.8 s wrap crossfade: a scroll never reverses. Both screens stop together. With section data on both assets (`AssetRef.meta.sections`) and `ScrollSpec.sections` naming sections both pages have, stop k puts that section's top at the top of both screens (a page that can't scroll that far stops at its bottom); the first stop is the top of both pages. Otherwise both screens use the same `stops` fractions of their own scrollable range. Each move takes the time the screen that travels further needs at 0.9 screen heights per second on average, eased `smooth`; each stop holds `ScrollSpec.hold`. The layout sets the shot length (`fixedShotDuration`: holds plus moves, at most 30 s; later stops are left out) and keeps the camera still (`fixedShotCamera`). The wrap crossfade falls inside the last hold.
 - Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts

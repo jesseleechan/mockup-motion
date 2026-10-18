@@ -1,6 +1,6 @@
 # Responsive Scroll plan
 
-**Status: planning.** Written 18 October 2026. The decisions in §3 are open and go to the owner before any document-model change (R02 onwards).
+**Status: in progress.** Written 18 October 2026. The owner decided D1–D6 the same day: "go with your recommendations" (§3). The plan is [#45](https://github.com/jesseleechan/mockup-motion/pull/45); R01 is [#47](https://github.com/jesseleechan/mockup-motion/pull/47).
 
 On 18 October 2026 the owner approved four preset proposals from a shortlist with live previews. Each one is built in its own session. This plan covers **Responsive Scroll** only: the desktop and mobile versions of one page scroll together, section by section, and stop on the same sections.
 
@@ -64,9 +64,11 @@ The engine already scrolls any screen: `LayoutNode.scroll` (0..1 of the scrollab
 4. **Slot pairing**: both screenshots must be of the same page.
 5. **The template**, gallery placement, inspector controls, lab fixtures, previews, contact sheet and baselines.
 
-## 3. Decisions (open; owner to answer)
+## 3. Decisions (decided 18 October 2026)
 
-| #   | Decision                           | Recommendation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+The owner answered "go with your recommendations", so every row below is decided as written, and so are the smaller choices after the table. R00 records them in `quality-bar.md` and `contracts.md`.
+
+| #   | Decision                           | Decided                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | D1  | Gallery home                       | **Both the Desktop and the Mobile tab** (and All), last in the gallery order. A third tab with one preset in it is a lot of chrome for one card, and a designer filtering by either size should find it. The card's chip reads "Desktop + mobile". It joins no size pair, so the "fits your screenshots" hint (`fittingTemplateId`) leaves it alone.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | D2  | Flat cards or devices              | **Flat cards, as previewed.** They match the other flat presets and give the screenshots more room. Scroll Story stays the preset with a browser and a phone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -86,15 +88,15 @@ Smaller choices this plan makes unless the owner says otherwise:
 
 ## 4. Tasks
 
-| Task | Title                                                                                        | Size | Depends on       | Status      |
-| ---- | -------------------------------------------------------------------------------------------- | ---- | ---------------- | ----------- |
-| R00  | This plan; decisions recorded in `quality-bar.md` and `contracts.md` once answered           | S    | —                | In progress |
-| R01  | Demo section data: `sections-mobile.json` for the five demo sites, `demo:capture` writes it  | S    | —                | Not started |
-| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | Not started |
-| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | Not started |
-| R04  | Rendering: lab fixtures and stills at five aspects                                           | S    | R03              | Not started |
-| R05  | Template, gallery placement, slot pairing, inspector                                         | M    | R02, R03, R04    | Not started |
-| R06  | Previews, contact sheet, owner review, visual baselines (**owner review gate**)              | S    | R05              | Not started |
+| Task | Title                                                                                        | Size | Depends on       | Status                                                                  |
+| ---- | -------------------------------------------------------------------------------------------- | ---- | ---------------- | ----------------------------------------------------------------------- |
+| R00  | This plan; decisions recorded in `quality-bar.md` and `contracts.md` once answered           | S    | —                | Done: [#45](https://github.com/jesseleechan/mockup-motion/pull/45)      |
+| R01  | Demo section data: `sections-mobile.json` for the five demo sites, `demo:capture` writes it  | S    | —                | In review: [#47](https://github.com/jesseleechan/mockup-motion/pull/47) |
+| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | Not started                                                             |
+| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | Not started                                                             |
+| R04  | Rendering: lab fixtures and stills at five aspects                                           | S    | R03              | Not started                                                             |
+| R05  | Template, gallery placement, slot pairing, inspector                                         | M    | R02, R03, R04    | Not started                                                             |
+| R06  | Previews, contact sheet, owner review, visual baselines (**owner review gate**)              | S    | R05              | Not started                                                             |
 
 R01 needs no decision and runs while the owner answers. R02 and R03 can run side by side once the decisions are in.
 

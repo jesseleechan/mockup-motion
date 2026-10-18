@@ -34,6 +34,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 - Text: 0.6–0.9 s per reveal, 60–90 ms per-word stagger. Hold text fully visible for at least 1.2 s before any exit.
 - Carousel steps (`slider` layout): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress. A slider shot lasts screenshots × step and must fit in 30 s, so the step is at most min(4.0, 30 / N) s, and a slider shows at most its first 18 screenshots (18 × 1.6 s = 28.8 s).
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
+- Responsive Scroll: two screens scroll together, so each segment takes the time the screen that travels further needs at 0.9 screen heights per second, and both hold together (1.0 s by default). Defaults stop at the top and three sections both pages share (not the header or footer), each the farthest from the stops already chosen. The shot lasts holds plus moves and fits in 30 s.
 
 ### 2.3 Camera presets at `intensity = 1` (`src/motion/camera.ts`)
 
@@ -111,6 +112,8 @@ Float is optional ambient sway layered on top of the main move, the only allowed
   - 4:5: 3 columns, 0.246 wide.
 
   At 16:9, 4:3, 1:1 and 9:16 every column is fully visible, with side margins of 4.8% of the frame width, the margins Desktop Frames' two rows leave at 16:9. At 4:5 the middle column is centred and the outer columns are cropped by 14% of their width, as the reference crops its outer rows. Cards are 0.48–0.58 of the frame height tall, so a column shows 1.5–1.8 cards. Adjacent columns move in opposite directions at one shared speed, and the left column moves up. Column c starts c/columns of a period along, so columns that move together never line up the same screenshot. Odd columns show the screenshots in reverse order, as odd rows do, and the passing-lanes exception above applies to adjacent columns too. Mobile Frames needs 4 screenshots. The PF04 contact sheet review may change a card width by at most ±10%; any change is recorded here (`docs/phone-frames-plan/README.md` §3).
+
+- **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
 
 - **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).
 
