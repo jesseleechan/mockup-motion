@@ -1,6 +1,6 @@
 # iPhone plan: a realistic phone device
 
-**Status: in review.** Written 18 October 2026. One PR.
+**Status: in review.** Written 18 October 2026. One PR. The owner approved the 8 new baselines on 18 October 2026 ("Approved").
 
 The owner reviewed Mobile Scroll Story (PR #48) and asked for a more realistic phone: "We need to use a more realistic model of the iPhone if we go for the phone instead of the flat card." A search for premade assets found no fit: Apple's bezels may only market your own App Store apps and may not be animated, tilted, shadowed or rendered in 3D, and free 3D iPhones are fan-made (CC BY at best, Apple's design either way). The owner chose to rebuild our own phone and, since MockupMotion is for presenting their own work, to make it look exactly like an iPhone: "This is just for my own personal use to show off my work, so let's just go with 1 but make it look exactly like it."
 
@@ -29,7 +29,7 @@ This also fixes Mobile Scroll Story decision MS3: the island no longer covers pa
 
 ## 3. Visual baselines
 
-Every still with a phone changes. **The new baselines land only with the owner's written approval of the rendered stills** (`tests/visual/README.md`).
+Eight stills change, all because of the phone: `device-phone-frontal`, `device-phone-tilted`, `orient-phone` and the five `transition-*` stills (their scene has a phone over a browser). The other 48 are unchanged. The owner approved the rendered stills (`evidence/baselines-before-after.png`) in writing on 18 October 2026, and they are committed as the Visual baselines workflow wrote them.
 
 ## 4. Evidence
 
