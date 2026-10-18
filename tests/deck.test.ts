@@ -183,7 +183,9 @@ describe("Deck arrangement (stack plan S01)", () => {
         const half = axis === "x" ? aspectRatioValue(aspect) / 2 : 0.5;
         const label = `${axis} ${aspect}`;
         expect(along(axis, gone) + halfAlong(axis, gone), label).toBeCloseTo(-half - 0.03, 9);
-        expect(gone.opacity, label).toBe(1);
+        // Out of the frame, it is no longer drawn.
+        expect(gone.opacity, label).toBe(0);
+        expect(nodesAt(layout, aspect, 1).find((n) => n.id === gone.id)!.opacity, label).toBe(1);
         expect(gone.transform.scale, label).toBe(1);
       }
     }

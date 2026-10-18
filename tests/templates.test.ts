@@ -100,10 +100,10 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 5 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(5);
+  it("exports all 7 built-in templates with unique IDs, categories, and slots", () => {
+    expect(BUILTIN_TEMPLATES.length).toBe(7);
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(7);
 
     // Gallery order (Frames plan D12): Desktop Slider, Mobile Slider, Desktop Frames, Mobile
     // Frames, Scroll Story. The first entry is the first-run default (presets plan D1).
@@ -112,6 +112,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-slider",
       "frames",
       "mobile-frames",
+      "desktop-stack",
+      "mobile-stack",
       "scroll-story",
     ]);
 
@@ -130,6 +132,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-slider": "mobile",
       frames: "desktop",
       "mobile-frames": "mobile",
+      "desktop-stack": "desktop",
+      "mobile-stack": "mobile",
       "scroll-story": "desktop",
     });
     for (const t of BUILTIN_TEMPLATES) {
@@ -296,7 +300,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
+  // The Stack presets are slider decks (stack plan D4): the same seam check applies.
+  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider", "desktop-stack", "mobile-stack"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];

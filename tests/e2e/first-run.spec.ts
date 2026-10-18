@@ -213,16 +213,19 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
-  await expect(cards).toHaveCount(5);
+  await expect(cards).toHaveCount(7);
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  // Frames plan D12: the two pairs (Slider, then Frames; desktop before mobile), then Scroll Story.
+  // Frames plan D12, stack plan D5: the pairs (Slider, Frames, Stack; desktop before mobile),
+  // then Scroll Story.
   expect(order).toEqual([
     "desktop-slider",
     "mobile-slider",
     "frames",
     "mobile-frames",
+    "desktop-stack",
+    "mobile-stack",
     "scroll-story",
   ]);
 

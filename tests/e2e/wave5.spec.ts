@@ -31,9 +31,11 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
         .getByTestId("library-template-card")
         .evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await library.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(["mobile-slider", "mobile-frames"]);
+    await expect.poll(libraryIds).toEqual(["mobile-slider", "mobile-frames", "mobile-stack"]);
     await library.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
+    await expect
+      .poll(libraryIds)
+      .toEqual(["desktop-slider", "frames", "desktop-stack", "scroll-story"]);
     await library.getByRole("button", { name: "All", exact: true }).click();
 
     // Open Library panel Templates tab
@@ -57,18 +59,21 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const cardIds = () =>
       cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await modal.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames"]);
+    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames", "mobile-stack"]);
     // Each card names its tab in words, never the raw id
-    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile"]);
+    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile", "Mobile"]);
     await modal.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect.poll(cardIds).toEqual(["desktop-slider", "frames", "scroll-story"]);
+    await expect
+      .poll(cardIds)
+      .toEqual(["desktop-slider", "frames", "desktop-stack", "scroll-story"]);
     await expect(modal.getByTestId("template-category")).toHaveText([
+      "Desktop",
       "Desktop",
       "Desktop",
       "Desktop",
     ]);
     await modal.getByRole("button", { name: "All", exact: true }).click();
-    await expect(cards).toHaveCount(5);
+    await expect(cards).toHaveCount(7);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);

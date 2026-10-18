@@ -24,6 +24,11 @@ describe("pairedTemplateId", () => {
     expect(pairedTemplateId("mobile-frames")).toBe("frames");
   });
 
+  it("pairs Desktop Stack with Mobile Stack (stack plan D5)", () => {
+    expect(pairedTemplateId("desktop-stack")).toBe("mobile-stack");
+    expect(pairedTemplateId("mobile-stack")).toBe("desktop-stack");
+  });
+
   it("gives Scroll Story and unknown ids no pair", () => {
     expect(pairedTemplateId("scroll-story")).toBeUndefined();
     expect(pairedTemplateId("removed-template")).toBeUndefined();

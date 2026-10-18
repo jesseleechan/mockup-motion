@@ -96,7 +96,10 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
             value={layout.kind}
             onChange={handleKindChange}
             options={optionsFor(
-              LAYOUT_LABELS,
+              // A deck is a slider arrangement (stack plan D4); it reads as a stack.
+              layout.kind === "slider" && layout.arrangement === "deck"
+                ? { ...LAYOUT_LABELS, slider: "Stack" }
+                : LAYOUT_LABELS,
               layout.kind === "slider" ? [...PICKER_LAYOUTS, "slider"] : PICKER_LAYOUTS,
             )}
           />

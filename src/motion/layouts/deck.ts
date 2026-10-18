@@ -110,6 +110,9 @@ export function resolveDeckLayout(
       r = 0;
       const exit = -halfFrame - EXIT_MARGIN - along(size) / 2;
       position = front + (exit - front) * p;
+      // Once it has left the frame it is not drawn, so the frame before the loop point draws
+      // the same cards as the first frame.
+      if (position + along(size) / 2 < -halfFrame) opacity = 0;
     } else if (s <= depth) {
       r = s - p;
       position = front + r * peek;

@@ -170,3 +170,90 @@ test("the card entering the deck fades in linear light, like an entrance", async
     `entering ${colour.map((c) => c.toFixed(1))} vs ${expected.map((c) => c.toFixed(1))}`,
   ).toBeLessThan(2);
 });
+
+interface EditorWindow {
+  __editorStore?: { getState: () => { doc: import("../../src/doc/types").ProjectDoc } };
+}
+
+// Stack plan S03: the gallery applies Desktop Stack and Mobile Stack as one looping deck shot
+// with the slider's step controls and no camera controls.
+for (const preset of [
+  {
+    id: "desktop-stack",
+    name: "Desktop Stack",
+    axis: "y",
+    shape: "desktop",
+    label: "Desktop stack",
+  },
+  { id: "mobile-stack", name: "Mobile Stack", axis: "x", shape: "mobile", label: "Mobile stack" },
+] as const) {
+  test(`${preset.name} applies one looping deck shot with step controls`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/lab/ui");
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.deleteDatabase("mockupmotion-v2");
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error("deleteDatabase blocked"));
+      });
+    });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start with a template" }).click();
+    await page.locator(`[data-testid="template-card"][data-template-id="${preset.id}"]`).click();
+    await page.getByRole("button", { name: "Apply template" }).click();
+    await page.getByRole("button", { name: "Use demo content" }).click();
+
+    const state = () =>
+      page.evaluate(() => {
+        const doc = (window as unknown as EditorWindow).__editorStore?.getState().doc;
+        if (!doc) throw new Error("__editorStore is unavailable");
+        return {
+          templateId: doc.templateId,
+          loop: doc.loop,
+          shots: doc.shots.length,
+          layout: doc.shots[0].layout,
+          duration: doc.shots[0].duration,
+          camera: doc.shots[0].camera,
+          wrap: doc.shots[0].transitionIn.kind,
+        };
+      });
+    await expect
+      .poll(
+        async () => {
+          const { layout } = await state();
+          return layout.kind === "slider" ? layout.assetIds.length : 0;
+        },
+        { timeout: 20_000 },
+      )
+      .toBeGreaterThanOrEqual(3);
+    const applied = await state();
+    expect(applied).toMatchObject({
+      templateId: preset.id,
+      loop: true,
+      shots: 1,
+      layout: {
+        kind: "slider",
+        axis: preset.axis,
+        shape: preset.shape,
+        step: 2,
+        arrangement: "deck",
+      },
+      camera: { preset: "static", intensity: 0, float: 0 },
+      wrap: "cut",
+    });
+    if (applied.layout.kind !== "slider") throw new Error("not a slider");
+    expect(applied.duration).toBe(applied.layout.assetIds.length * 2);
+
+    const card = page.locator('[data-testid="shot-card"]').first();
+    await expect(card).toContainText(preset.label);
+    await card.click({ position: { x: 6, y: 6 } });
+    await expect(page.getByRole("slider", { name: "Step length" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Layout", exact: true })).toContainText(
+      "Stack",
+    );
+    await expect(page.getByRole("group", { name: "Camera move" })).toHaveCount(0);
+  });
+}

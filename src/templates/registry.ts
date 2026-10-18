@@ -6,16 +6,20 @@ import { mobileSliderTemplate } from "./mobile-slider";
 import { desktopSliderTemplate } from "./desktop-slider";
 import { framesTemplate } from "./frames";
 import { mobileFramesTemplate } from "./mobile-frames";
+import { desktopStackTemplate } from "./desktop-stack";
+import { mobileStackTemplate } from "./mobile-stack";
 
 /**
- * Gallery order (Frames plan D12): the Slider pair, the Frames pair, each desktop first, then
- * Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
+ * Gallery order (Frames plan D12, stack plan D5): the Slider pair, the Frames pair, the Stack
+ * pair, each desktop first, then Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
   mobileSliderTemplate,
   framesTemplate,
   mobileFramesTemplate,
+  desktopStackTemplate,
+  mobileStackTemplate,
   scrollStoryTemplate,
 ];
 
