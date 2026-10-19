@@ -6,7 +6,7 @@ Each item is its own PR, with before and after screenshots of the dialog at 1440
 
 | 1. Advanced section          | #80     | Merged      |
 | 2. Remember the last choice  | #81     | Merged      |
-| 3. Destinations              | #83     | In review   |
+| 3. Destinations              | #83     | Merged      |
 | 4. Export every size at once | #87     | In review   |
 
 ## 1. An Advanced section
