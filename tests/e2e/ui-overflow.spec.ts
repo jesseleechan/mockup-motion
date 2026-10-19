@@ -92,8 +92,8 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
 }
 
 /**
- * A four-shot reel with every inspector layout: an opening browser, a single browser, a
- * browser-and-phone pair and a closing browser. No built-in template has more than one shot, so
+ * A three-shot reel with every inspector layout: an opening browser, a single browser and a
+ * browser-and-phone pair. No built-in template has more than one shot, so
  * it is built on Scroll Story's demo screenshot through the store.
  */
 async function openReel(page: Page) {
@@ -118,16 +118,11 @@ async function openReel(page: Page) {
       },
     };
     pair.camera.preset = "orbitRight";
-    const closing = { ...structuredClone(single), id: "shot-outro" };
-    closing.camera.preset = "pullBack";
-    // Launch Reel's durations. With four equal shots the pair card's layout label clips at
-    // 1280 px (docs/plan/follow-ups.md).
+    opening.duration = 4;
     single.duration = 4;
     pair.duration = 4;
-    opening.duration = 2.5;
-    closing.duration = 2.5;
     store.getState().apply((draft) => {
-      draft.shots = [opening, single, pair, closing];
+      draft.shots = [opening, single, pair];
     });
   });
 }
@@ -312,7 +307,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await resetAndOpen(page, "dark");
   await openReel(page);
 
-  // Shots on Hero tilt and Isometric drift, beside the reel's Push in, Orbit right, Pull back.
+  // Shots on Hero tilt and Isometric drift, beside the reel's Push in.
   // Set through the store, so the checks below don't depend on finding the labels first.
   await page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
