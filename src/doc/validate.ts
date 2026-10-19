@@ -75,8 +75,6 @@ const VALID_DESTINATIONS: readonly DestinationId[] = [
   "web-embed",
   "custom",
 ];
-/** LinkedIn & X was one card with the Video card's settings (export polish §3). */
-const MERGED_DESTINATIONS: readonly string[] = ["linkedin", "x"];
 const VALID_TRANSITIONS: readonly Transition["kind"][] = [
   "cut",
   "fade",
@@ -132,12 +130,7 @@ function sameEncoding(a: ExportSettings, b: ExportSettings): boolean {
 export function sanitizeExport(raw: unknown): ExportSettings {
   const fallback = defaultExport();
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const settings: ExportSettings = {
-    destination: includesValue(VALID_DESTINATIONS, r.destination)
-      ? r.destination
-      : MERGED_DESTINATIONS.includes(r.destination as string)
-        ? "video"
-        : fallback.destination,
+  const encoding = {
     resolution: includesValue(VALID_RESOLUTIONS, r.resolution) ? r.resolution : fallback.resolution,
     fps: includesValue(VALID_FPS, r.fps) ? r.fps : fallback.fps,
     quality: includesValue(VALID_QUALITIES, r.quality) ? r.quality : fallback.quality,
@@ -146,16 +139,13 @@ export function sanitizeExport(raw: unknown): ExportSettings {
       ? r.supersample
       : fallback.supersample,
   };
-  // Before October 2026 nothing wrote doc.export, so a saved project holds the old default,
-  // Custom with 1.5× supersampling, which nobody chose: it opens on Video. Custom settings that
-  // equal Video's are Video too.
-  if (
-    settings.destination === "custom" &&
-    (sameEncoding(settings, fallback) || sameEncoding(settings, { ...fallback, supersample: 1.5 }))
-  ) {
-    return fallback;
+  if (includesValue(VALID_DESTINATIONS, r.destination)) {
+    return { destination: r.destination, ...encoding };
   }
-  return settings;
+  // A destination that no longer exists (LinkedIn & X, merged into Video) is Video when its
+  // settings are Video's, and Custom otherwise, so no setting is lost.
+  const settings: ExportSettings = { destination: "custom", ...encoding };
+  return sameEncoding(settings, fallback) ? fallback : settings;
 }
 
 export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[] } {
