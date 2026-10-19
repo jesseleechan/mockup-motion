@@ -13,6 +13,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | `Engine.dispose()` doesn't call `renderer.forceContextLoss()`, so a disposed engine's WebGL context lives until garbage collection. | F07      |
 | `Engine.pick()` returns meaningless UVs for meshes other than screens.                                                              | F04, F06 |
 | The screen material ignores device `material.opacity`.                                                                              | F02      |
+| The inspector can't narrow below 304 px (`panel-layout.ts`): its selects ("Single device") clip below it.                           | Windows  |
 
 ## Templates and layouts
 
