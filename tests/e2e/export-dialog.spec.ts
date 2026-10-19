@@ -6,7 +6,11 @@ import { BLANK_PAGE } from "../helpers/blank-page";
 
 interface EditorWindow {
   __editorStore?: {
-    getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
+    getState: () => {
+      doc: ProjectDoc;
+      apply: (recipe: (draft: ProjectDoc) => void) => void;
+      newDoc: () => void;
+    };
   };
   __liveExportWorkers?: () => number;
   __releaseProbe?: () => void;
@@ -241,7 +245,9 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByTestId("export-verification")).toContainText("1280 × 720");
   });
 
-  test("cancel stops the worker and returns to the settings", async ({ page }) => {
+  test("cancel stops the worker and returns to the settings, which are remembered", async ({
+    page,
+  }) => {
     test.setTimeout(300_000);
     await openEditorWithDemo(page);
     const dialog = await openExportDialog(page);
@@ -257,5 +263,18 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByRole("button", { name: "Start export" })).toBeEnabled();
     await expect(dialog.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
     await expect.poll(workers, { message: "no export worker left after cancel" }).toBe(0);
+
+    // A started export's settings are remembered: by this project when the dialog reopens,
+    // and by this browser for a new project.
+    await dialog.getByRole("button", { name: "Close" }).first().click();
+    await expect(dialog).toBeHidden();
+    const reopened = await openExportDialog(page);
+    await expect(reopened.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
+    await reopened.getByRole("button", { name: "Close" }).first().click();
+    await page.evaluate(() =>
+      (window as unknown as EditorWindow).__editorStore?.getState().newDoc(),
+    );
+    const fresh = await openExportDialog(page);
+    await expect(fresh.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
   });
 });

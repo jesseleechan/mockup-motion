@@ -6,8 +6,8 @@ Each item is its own PR, with before and after screenshots of the dialog at 1440
 
 | Item                         | PR      | Status      |
 | ---------------------------- | ------- | ----------- |
-| 1. Advanced section          | pending | In review   |
-| 2. Remember the last choice  |         | Not started |
+| 1. Advanced section          | #80     | Merged      |
+| 2. Remember the last choice  | #81     | In review   |
 | 3. Destinations              |         | Not started |
 | 4. Export every size at once |         | Not started |
 
@@ -28,7 +28,8 @@ Today `doc.export` is sanitised on load (`validate.ts`) but the dialog never rea
 - **Save on export.** Starting an export writes the settings to `doc.export` without an undo step (it is not an edit of the video), and to `localStorage` (`mockupmotion.lastExport`) as this browser's last choice. Changing a setting without exporting does not save it.
 - **New projects** take the browser's last choice if there is one, else the MP4 default from #67. This lives in the store's new-project path, so `src/doc/defaults.ts` stays pure. Storage reads and writes are wrapped so a blocked `localStorage` falls back to the default; they do not swallow other errors.
 - **Old documents keep loading.** `sanitizeDoc` already fills missing fields. It also maps values that no longer exist: `gif` (#65) to `mp4`, `motionBlur` dropped (#65), an unknown destination to `custom`, and any destination §3 removes to its replacement.
-- Tests (unit): sanitising old export settings (GIF, motion blur, removed destinations, missing fields); the new-project default with and without a stored choice; the dialog's initial settings come from `doc.export`. One e2e at most, only if the store test can't show the round trip through a reload.
+- **Built:** `sanitizeExport` in `validate.ts` now keeps every value the dialog offers (web bundle, PNG, 15 fps were dropped before) and validates the destination. `defaultExport()` matches the Custom preset (supersample 1, was 1.5). Undo and redo keep the remembered settings.
+- Tests: `tests/export-memory.test.ts` (sanitising, the browser store, the store's new-project path and `rememberExport`). The dialog's side, which needs a browser, is three assertions added to the existing cancel test in `export-dialog.spec.ts`, not a new test.
 
 ## 3. Destinations
 
