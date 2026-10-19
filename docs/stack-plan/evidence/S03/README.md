@@ -10,7 +10,7 @@ Gallery previews from `npm run template-previews -- desktop-stack mobile-stack` 
 ## Tests
 
 - Unit: `npm test` 42 files, 549 tests passed. New or changed: gallery order and categories (`templates.test.ts`), the loop seam for both Stack presets at all five aspects (the frame just before the loop point draws the same cards as the first), the pair (`template-pairs.test.ts`), the tone switch (`preset-tone.test.ts`), demo sites (`demo-assets.test.ts`), shot labels (`labels.test.ts`) and previews (`template-previews.test.ts`).
-- e2e (local, Linux Chromium 1194): `stack.spec.ts` 4/4, `first-run.spec.ts` 4/4, `thumbnails.spec.ts` 6/6, `wave5.spec.ts` 3/3. The two new tests apply each preset from the gallery with demo content and check one looping deck shot (`arrangement: "deck"`, step 2.0 s, duration N × 2 s, still camera, cut wrap), the shot card's "Desktop stack" / "Mobile stack" label, the Step length control, the Layout select reading "Stack" and no Camera section.
+- e2e (local, Linux Chromium 1194): `first-run`, `wave5`, `assets`, `thumbnails` and `stack` pass (27 tests). Following the test rules added to CLAUDE.md in #60 (19 October 2026), this PR adds no e2e test for the presets: the stills and the specs that cover every built-in template exercise them, and those specs now read the template count and tab lists from the registry instead of literals.
 
 ## Failing when reverted
 
