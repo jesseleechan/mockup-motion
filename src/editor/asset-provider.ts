@@ -102,9 +102,5 @@ export function createEditorAssetProvider(): AssetProvider {
     async getText(line, frameHeightPx): Promise<TextRaster> {
       return rasterizeText(line, frameHeightPx);
     },
-
-    async getAudio(assetId: string): Promise<Blob | null> {
-      return assetId ? getBlob(assetId) : null;
-    },
   };
 }

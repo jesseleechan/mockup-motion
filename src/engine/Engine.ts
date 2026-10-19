@@ -34,8 +34,6 @@ export interface AssetProvider {
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
   /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
   getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
-  /** Raw bytes of an audio asset (music track); absent where audio is unsupported (worker). */
-  getAudio?(assetId: string): Promise<Blob | null>;
 }
 
 export interface EngineDebugInfo {
@@ -49,7 +47,6 @@ export interface EngineDebugInfo {
   devicesBuilt: number;
 }
 
-import { AccumulationPass } from "./post/accumulate";
 import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
 import { loadChromeUrlRasters, type LoadedChromeUrl } from "./text/chrome-url";
@@ -72,8 +69,6 @@ export class Engine {
   private compositeTarget: THREE.WebGLRenderTarget;
   private compositePass: CompositePass;
   private finalPass: FinalPass;
-  // Motion blur accumulation, created on first use (export only)
-  private accumulation: AccumulationPass | null = null;
 
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
@@ -230,7 +225,6 @@ export class Engine {
     this.targetA.setSize(renderW, renderH);
     this.targetB.setSize(renderW, renderH);
     this.compositeTarget.setSize(renderW, renderH);
-    this.accumulation?.setSize(renderW, renderH);
     this.deviceFade.setSize(renderW, renderH);
   }
 
@@ -285,12 +279,12 @@ export class Engine {
     this.backgroundRenderer.prepareDocument(this.renderer, doc, this.textureManager);
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
-    // Slider neighbours and orbit cards are faded cards (quality bar §3.1), mixed in sRGB like
-    // the slider reference.
+    // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
+    // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference.
     const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
     this.deviceFade.prepare(this.renderer, this.targetA, {
       fade: hasStepped || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
-      srgb: hasStepped,
+      srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) !== "linear"),
     });
 
     // Warm-up compilation
@@ -340,18 +334,13 @@ export class Engine {
         managed = this.textureManager.getLoadedTexture(node.assetId);
       }
 
-      let cursorData = undefined;
-      if (frame.cursor && (frame.cursor.nodeId === node.id || frame.nodes.length === 1)) {
-        cursorData = frame.cursor;
-      }
-
       const asset = node.assetId
         ? this.currentDoc?.assets.find((a) => a.id === node.assetId)
         : null;
       const hasStatusBar = Boolean(asset?.meta?.hasStatusBar);
       const isPhone = node.device === "phone";
 
-      dev.compositor.compose(this.renderer, managed, node.scroll, cursorData, {
+      dev.compositor.compose(this.renderer, managed, node.scroll, {
         hasStatusBar,
         isPhone,
       });
@@ -412,47 +401,6 @@ export class Engine {
     const frameState = this.renderComposite(t, this.compositeTarget);
     if (!frameState) return;
     this.finalPass.render(this.renderer, this.compositeTarget, frameState.layers[0].frame.style, t);
-  }
-
-  /**
-   * Motion blur: averages `samples` composites spread over the shutter interval centred
-   * on t (transitions included), then runs the final pass once.
-   */
-  renderAccumulated(t: number, shutter: number, samples: number): void {
-    if (samples <= 1 || shutter <= 0) {
-      this.renderAt(t);
-      return;
-    }
-
-    if (!this.currentDoc) return;
-    this.renderCalls++;
-
-    if (!this.accumulation) {
-      const ss = this.opts.supersample ?? 1;
-      this.accumulation = new AccumulationPass(
-        Math.round(this.opts.width * ss),
-        Math.round(this.opts.height * ss),
-      );
-    }
-    const accumulation = this.accumulation;
-    accumulation.clear(this.renderer);
-
-    const halfShutter = shutter * 0.5;
-    const dt = shutter / (samples - 1);
-    const startT = Math.max(0, t - halfShutter);
-
-    for (let i = 0; i < samples; i++) {
-      if (!this.renderComposite(startT + i * dt, this.compositeTarget)) continue;
-      accumulation.add(this.renderer, this.compositeTarget, 1.0 / samples);
-    }
-
-    const frameState = evaluate(this.currentDoc, t);
-    this.finalPass.render(
-      this.renderer,
-      accumulation.target,
-      frameState.layers[0]?.frame.style ?? this.currentDoc.style,
-      t,
-    );
   }
 
   /**
@@ -547,7 +495,6 @@ export class Engine {
     this.targetA.dispose();
     this.targetB.dispose();
     this.compositeTarget.dispose();
-    this.accumulation?.dispose();
 
     this.compositePass.dispose();
     this.finalPass.dispose();

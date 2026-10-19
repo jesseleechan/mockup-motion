@@ -19,7 +19,7 @@ export interface AssetMeta {
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font";
   name: string;
   mime: string;
   bytes: number;
@@ -29,8 +29,6 @@ export interface AssetRef {
   palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
   meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
-  durationSec?: number;    // audio
-  peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
 }
 
 export type Background =
@@ -54,7 +52,7 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  accent: string;          // cursor, highlights
+  accent: string;          // highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
@@ -133,9 +131,6 @@ export interface Transition {
   direction?: "left" | "right" | "up" | "down";
 }
 
-export interface CursorKey { t: number; x: number; y: number; click?: boolean } // x,y 0..1 of device screen
-export interface CursorSpec { enabled: boolean; style: "arrow" | "pointer" | "dot"; keys: CursorKey[] }
-
 export interface Shot {
   id: string;
   duration: number;        // seconds, 1..30
@@ -143,18 +138,15 @@ export interface Shot {
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
-  cursor?: CursorSpec;     // honoured only for single-device layouts
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
-
-export interface AudioTrack { assetId: string; volume: number; fadeIn: number; fadeOut: number; offset: number }
 
 export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
   | "linkedin" | "x" | "presentation-4k";
 
 export type ExportQuality = "web" | "high" | "master";
-export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "png";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -163,7 +155,6 @@ export interface ExportSettings {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -177,7 +168,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[];           // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }

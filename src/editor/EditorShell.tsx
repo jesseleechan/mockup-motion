@@ -12,7 +12,6 @@ import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
-import { useAudioPreview } from "./audio/useAudioPreview";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
@@ -43,7 +42,6 @@ export const EditorShell: React.FC = () => {
   const setSelection = useUIStore((s) => s.setSelection);
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
-  useAudioPreview();
   const togglePanel = useUIStore((s) => s.togglePanel);
   const setTheme = useUIStore((s) => s.setTheme);
 

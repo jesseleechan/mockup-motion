@@ -98,6 +98,24 @@ describe("editor labels (F08)", () => {
     );
   });
 
+  it("names a deck slider as the Stack preset of its card shape (stack plan S03)", () => {
+    const deck = {
+      kind: "slider" as const,
+      assetIds: ["a", "b", "c"],
+      axis: "y" as const,
+      shape: "desktop" as const,
+      step: 2,
+      arrangement: "deck" as const,
+    };
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Static");
+    expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
+      "Mobile stack · Static",
+    );
+    expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
+      "Slider · Static",
+    );
+  });
+
   it("builds select options in the given order", () => {
     expect(labels.optionsFor(labels.SHADOW_LABELS, ["soft", "none"])).toEqual([
       { value: "soft", label: "Soft" },

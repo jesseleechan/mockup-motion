@@ -230,13 +230,12 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll and the cursor.
+        // Every section of a single-device shot: turn on scroll.
         const doc = await currentDoc(page);
         const singleShot = doc.shots[1];
         await select(page, { kind: "shot", id: singleShot.id });
         await inspector.getByRole("switch", { name: "Scroll through page" }).click();
-        await inspector.getByRole("switch", { name: "Show cursor" }).click();
-        await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
+        await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
 
         // Each shot in turn: single and pair layouts show different sections.
         for (const [index, shot] of doc.shots.entries()) {
@@ -343,11 +342,12 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await expect
     .poll(
       async () => {
-        // Drag a Media item over a Frames card. The stage centre can fall between cards (at 16:9
-        // it is the gap between the two rows), so ask the engine for a point on a row card.
+        // Drag a Media item over a Frames card. The stage centre can fall between cards (at
+        // 16:9 it is the gap between the two rows), so ask the engine for a point on a row card.
+        // The result names what the poll is still waiting for, so a timeout says which.
         return canvas.evaluate((el, assetId) => {
           const engine = (window as unknown as { __editorEngine?: Engine }).__editorEngine;
-          if (!engine || !(el instanceof HTMLCanvasElement)) return false;
+          if (!engine || !(el instanceof HTMLCanvasElement)) return "the stage engine is not ready";
           const rect = el.getBoundingClientRect();
           let target: { x: number; y: number } | null = null;
           for (let y = el.height * 0.1; y < el.height * 0.9 && !target; y += el.height / 20) {
@@ -355,7 +355,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
               if (engine.pick(x, y)?.nodeId.startsWith("row")) target = { x, y };
             }
           }
-          if (!target) return false;
+          if (!target) return "no Frames card on the stage yet";
           const dataTransfer = new DataTransfer();
           dataTransfer.setData("application/x-mockup-asset-id", assetId);
           el.dispatchEvent(
@@ -367,7 +367,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
               dataTransfer,
             }),
           );
-          return true;
+          return "dragged over a Frames card";
         }, assetId);
       },
       {
@@ -377,7 +377,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
         message: "the engine finds a Frames row card to drag over",
       },
     )
-    .toBe(true);
+    .toBe("dragged over a Frames card");
   await expect(hint).toBeVisible();
   await expectNoRawIds(page, "Stage drop hint");
   await expect(hint).toHaveText("Drop to use this screenshot");

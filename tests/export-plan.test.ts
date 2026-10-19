@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ExportSettings } from "../src/doc/types";
-import {
-  calculateBitrate,
-  estimateFileSize,
-  MOTION_BLUR_SAMPLES,
-  motionBlurShutter,
-} from "../src/export/destinations";
+import { calculateBitrate, estimateFileSize } from "../src/export/destinations";
 import { exportFilename, planExport, type ExportPlan } from "../src/export/plan";
 
 const settings = (patch: Partial<ExportSettings> = {}): ExportSettings => ({
@@ -15,7 +10,6 @@ const settings = (patch: Partial<ExportSettings> = {}): ExportSettings => ({
   quality: "high",
   format: "mp4",
   supersample: 1,
-  motionBlur: false,
   ...patch,
 });
 
@@ -87,11 +81,7 @@ describe("F09: export plan matches what is written", () => {
     expect(estimateFileSize(bundle, "16:9", 6)).toBe(Math.round(mp4 + webm + 400_000));
   });
 
-  it("plans GIFs at their capped size and frame rate, and stills without timing", () => {
-    const gif = planned(settings({ format: "gif", fps: 30 }), "16:9", 4, NONE);
-    expect([gif.width, gif.height, gif.fps]).toEqual([1708, 960, 20]);
-    expect(gif.extension).toBe("gif");
-
+  it("plans stills without timing", () => {
     const png = planned(settings({ format: "png" }), "4:5", 4, NONE);
     expect([png.width, png.height, png.fps, png.duration]).toEqual([1080, 1350, null, null]);
     expect(png.extension).toBe("png");
@@ -102,11 +92,5 @@ describe("F09: export plan matches what is written", () => {
     expect(exportFilename("Aurelia Launch!", "4:3", plan.extension)).toBe(
       "aurelia-launch-4x3.webm",
     );
-  });
-
-  it("motion blur uses 8 samples over a 180° shutter", () => {
-    expect(MOTION_BLUR_SAMPLES).toBe(8);
-    expect(motionBlurShutter(30)).toBeCloseTo(1 / 60, 10);
-    expect(motionBlurShutter(60)).toBeCloseTo(1 / 120, 10);
   });
 });

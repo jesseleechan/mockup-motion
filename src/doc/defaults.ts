@@ -27,7 +27,6 @@ export function defaultExport(): ExportSettings {
     quality: "high",
     format: "mp4",
     supersample: 1.5,
-    motionBlur: false,
   };
 }
 
