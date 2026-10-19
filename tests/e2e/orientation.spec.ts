@@ -195,45 +195,6 @@ test("F01 tall screenshot scroll preserves top-down color bands at both endpoint
   expect(frames.geometriesAfterScroll).toBe(frames.geometriesBeforeScroll);
 });
 
-test("F01 image background maps its top edge to the source top row", async ({ page }) => {
-  // The lab draws the background alone, without the fixture's card.
-  await ready(page, "&devices=0");
-  const pixels = await page.evaluate(async () => {
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const images = window.__labTestImages;
-    const base = structuredClone(window.__fixtures?.["device-card-frontal"]);
-    if (!base || !engine || !setDoc || !images)
-      throw new Error("F01 background hooks are unavailable");
-    engine.resize(1280, 720);
-    const assetId = "f01-background-quadrants";
-    base.assets.push({
-      id: assetId,
-      kind: "image",
-      name: assetId,
-      mime: "image/png",
-      bytes: 1,
-      width: 1600,
-      height: 1000,
-    });
-    const layout = base.shots[0].layout;
-    if (layout.kind !== "single")
-      throw new Error("Expected a card screen to warm the image texture");
-    layout.assetId = assetId;
-    await setDoc(base, { [assetId]: await images.quadrants(1600, 1000) });
-    const backgroundDoc = structuredClone(base);
-    backgroundDoc.style.background = { kind: "image", assetId, dim: 0 };
-    await setDoc(backgroundDoc);
-    engine.renderAt(0);
-    return Array.from(engine.readPixels());
-  });
-  const frame: PixelBuffer = { width: 1280, height: 720, data: new Uint8Array(pixels) };
-  expectRgbNear(avgRegion(frame, 280, 150, 286, 156), colors.red, 40);
-  expectRgbNear(avgRegion(frame, 990, 150, 996, 156), colors.green, 40);
-  expectRgbNear(avgRegion(frame, 280, 565, 286, 571), colors.blue, 40);
-  expectRgbNear(avgRegion(frame, 990, 565, 996, 571), colors.yellow, 40);
-});
-
 test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page }) => {
   await ready(page);
   await page.evaluate(async () => {

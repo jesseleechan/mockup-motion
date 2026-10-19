@@ -62,10 +62,7 @@ export interface AssetRef {
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // 2-3 stops, OKLCH-interpolated
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number } // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number } // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // 2-3 stops, OKLCH-interpolated
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
@@ -239,6 +236,8 @@ export interface ProjectDoc {
 
 Gradient angles use CSS direction in normalized frame coordinates: 0° runs bottom to top, 90° left to right, 180° top to bottom. New gradients carry `angleConvention: "css"`; unmarked persisted v2 gradients retain their legacy direction through a one-time angle migration at load.
 
+Mesh, ambient and image backgrounds were removed on 19 October 2026. `sanitizeDoc` loads a saved mesh as a gradient from its first to its last colour (315°, CSS), and a saved ambient or image background as the Ash solid `#DFE1E3`. The v1 migration turns a v1 image background into Ash too.
+
 ## 3. Stage, units and camera
 
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
@@ -285,7 +284,6 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 - **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light like an entrance; only the carousel's faded neighbours mix in sRGB.
 - **Orbits** (`orbit`, the Desktop Orbit and Mobile Orbit presets, `docs/orbit-plan/README.md`) loop natively on the slider's step timing. Card i sits at ring angle θ = 2π(i − φ)/N, where the phase φ = (k mod N) + p comes from `sliderStep`, so after N steps the ring is back where it started and frame(N × step) is exactly frame(0). An orbit is a stepped layout (`isSteppedLayout` in `duration.ts`) and shares the slider's rules: `sliderDuration` (N × step, N counting at most the first 6 screenshots, `ORBIT_MAX_SCREENSHOTS`), the step clamp, `fixedShotCamera` (still) and no Camera section. One node per shown screenshot (`orbit:<i>`), so no screenshot appears twice. Its nodes' `opacity` is a strength that the engine mixes with the shot's background, not with the cards behind (`fadeBlendFor(layout) === "background"` in `src/engine/devices/DeviceFade.ts`): the cards overlap, so each card is drawn on its own, back to front, and covers what is behind it.
 - **Responsive Scroll** (`responsive`) loops by the 0.8 s wrap crossfade: a scroll never reverses. Both screens stop together. With section data on both assets (`AssetRef.meta.sections`) and `ScrollSpec.sections` naming sections both pages have, stop k puts that section's top at the top of both screens (a page that can't scroll that far stops at its bottom); the first stop is the top of both pages. Otherwise both screens use the same `stops` fractions of their own scrollable range. Each move takes the time the screen that travels further needs at 0.9 screen heights per second on average, eased `smooth`; each stop holds `ScrollSpec.hold`. The layout sets the shot length (`fixedShotDuration`: holds plus moves plus the 0.8 s the wrap crossfade overlaps, at most 30 s; later stops are left out) and keeps the camera still (`fixedShotCamera`). A loop therefore lasts holds plus moves, and the wrap crossfade falls inside the last hold.
-- Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts
 export interface ScheduledShot {
@@ -309,7 +307,6 @@ export interface ShotFrame {
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number; // 0..1, loop-safe
   layers: { frame: ShotFrame; weight: number }[]; // 1 entry, or 2 during a transition
   transition?: { kind: Transition["kind"]; progress: number; direction?: Transition["direction"] };
 }
@@ -377,7 +374,7 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, and ambient and image backgrounds in the style and shot overrides) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 

@@ -32,10 +32,7 @@ export interface AssetRef {
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number }    // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number }   // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type FrameAppearance = "light" | "dark";
