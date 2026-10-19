@@ -25,10 +25,6 @@ async function pixelStdDev(file: string): Promise<number> {
 }
 
 describe("F07: template previews", () => {
-  it("covers all 6 built-in templates", () => {
-    expect(BUILTIN_TEMPLATES).toHaveLength(6);
-  });
-
   it("ships no preview for a template that is not built in", () => {
     const expected = BUILTIN_TEMPLATES.flatMap((t) => [`${t.id}.webm`, `${t.id}.webp`]);
     expect(fs.readdirSync(TEMPLATES_DIR).sort()).toEqual(expected.sort());

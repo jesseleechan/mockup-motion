@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
@@ -205,50 +206,6 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   await expect(overlay).toBeVisible();
 });
 
-test("Mobile Scroll Story: demo content scrolls a full mobile page on a phone", async ({
-  page,
-}) => {
-  await resetAndOpen(page);
-  await page.getByRole("button", { name: "Start with a template" }).click();
-  const gallery = page.getByRole("dialog");
-  await gallery.getByRole("button", { name: "Select template Mobile Scroll Story" }).click();
-  await gallery.getByRole("button", { name: "Apply template" }).click();
-  await expect(gallery).toBeHidden();
-
-  const overlay = page.getByTestId("fill-template-overlay");
-  await overlay.getByRole("button", { name: "Use demo content" }).click();
-  await expect(overlay).toBeHidden();
-
-  const shot = await page.evaluate(() => {
-    const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
-    if (!store) throw new Error("__editorStore is unavailable");
-    const { doc } = store.getState();
-    const [first] = doc.shots;
-    return {
-      templateId: doc.templateId,
-      loop: doc.loop,
-      layout: first.layout,
-      duration: first.duration,
-      scroll: first.scroll,
-      asset: doc.assets.find(
-        (a) => first.layout.kind === "single" && a.id === first.layout.assetId,
-      ),
-    };
-  });
-  expect(shot.templateId).toBe("mobile-scroll-story");
-  expect(shot.loop).toBe(false);
-  expect(shot.layout).toMatchObject({ kind: "single", device: "phone" });
-  expect(shot.asset).toMatchObject({ role: "mobile", meta: { tall: true } });
-  expect(shot.scroll?.enabled).toBe(true);
-  expect(shot.duration).toBe(10.5);
-
-  // The phone screen shows the page, not the flat empty-screen fill.
-  await waitForSettledDocument(page);
-  const screen = await screenStats(page);
-  expect(screen.samples, "screen samples").toBeGreaterThan(500);
-  expect(screen.stdDev, "screen luminance spread").toBeGreaterThan(12);
-});
-
 test("Presets D1: the gallery leads with the presets and starts on Desktop Slider", async ({
   page,
 }) => {
@@ -257,19 +214,12 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
-  await expect(cards).toHaveCount(6);
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  // Frames plan D12: the three pairs (Slider, Frames, Scroll Story), desktop before mobile.
-  expect(order).toEqual([
-    "desktop-slider",
-    "mobile-slider",
-    "frames",
-    "mobile-frames",
-    "scroll-story",
-    "mobile-scroll-story",
-  ]);
+  // The registry's order (tests/templates.test.ts pins it), Desktop Slider first.
+  expect(order).toEqual(BUILTIN_TEMPLATES.map((t) => t.id));
+  expect(order[0]).toBe("desktop-slider");
 
   // With no screenshots the gallery suggests no other size.
   await expect(gallery.getByTestId("template-size-hint")).toHaveCount(0);

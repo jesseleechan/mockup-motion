@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
@@ -70,7 +71,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
       "Desktop",
     ]);
     await modal.getByRole("button", { name: "All", exact: true }).click();
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);

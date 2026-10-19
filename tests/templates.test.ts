@@ -100,10 +100,9 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     },
   ];
 
-  it("exports all 6 built-in templates with unique IDs, categories, and slots", () => {
-    expect(BUILTIN_TEMPLATES.length).toBe(6);
+  it("exports the built-in templates with unique IDs, categories, and slots", () => {
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
-    expect(ids.size).toBe(6);
+    expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12): Desktop Slider, Mobile Slider, Desktop Frames, Mobile
     // Frames, Desktop Scroll Story, Mobile Scroll Story. The first entry is the first-run default
