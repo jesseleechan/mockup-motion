@@ -7,7 +7,7 @@ Each item is its own PR, with before and after screenshots of the dialog at 1440
 | Item                         | PR      | Status      |
 | ---------------------------- | ------- | ----------- |
 | 1. Advanced section          | #80     | Merged      |
-| 2. Remember the last choice  | pending | In review   |
+| 2. Remember the last choice  | #81     | In review   |
 | 3. Destinations              |         | Not started |
 | 4. Export every size at once |         | Not started |
 
