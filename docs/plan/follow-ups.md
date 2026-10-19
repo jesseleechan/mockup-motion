@@ -41,7 +41,6 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | Space always plays or pauses the video, even when a button has focus, so Space can't press a focused button (Enter still works). `EditorShell.tsx` could leave Space to focused buttons, switches and chips.                                                                                                                            | Loop chips         |
 | The stage preview shows screenshots soft: a 2880 px desktop capture on a ~540 px browser screen looks blurred next to the same capture downscaled with Lanczos. `main` renders the same pixels (checked on #77).                                                                                                                        | First run (polish) |
 | The gallery dialog has an empty band above its header: `DialogContent` (`src/ui/Dialog.tsx`) always renders its title row with the close button, and the gallery draws its own header below it.                                                                                                                                         | First run (polish) |
-| The Video inspector's palette grid marks only gradient palettes as active, so the solid Ash and Onyx swatches never show as selected (`currentPalette` in `VideoInspector.tsx`). The presets' Light / Dark switch does show the tone.                                                                                                   | Dark option        |
 
 ## Export
 

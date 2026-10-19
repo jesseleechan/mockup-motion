@@ -59,10 +59,12 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(shot1Card).toBeVisible();
 
     // 3. Change Background Palette in Inspector
-    // Click on "Ink" palette swatch
-    const inkPalette = page.getByRole("button", { name: "Ink" });
-    await expect(inkPalette).toBeVisible();
-    await inkPalette.click();
+    // Switch the background to the preset's dark fill
+    const darkTone = page
+      .getByRole("radiogroup", { name: "Background tone" })
+      .getByRole("radio", { name: "Dark" });
+    await darkTone.click();
+    await expect(darkTone).toHaveAttribute("aria-checked", "true");
 
     // 4. Change Camera Preset in Inspector
     // Click Shot 1 card in the timeline to select it
