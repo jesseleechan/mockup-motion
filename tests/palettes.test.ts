@@ -9,7 +9,6 @@ describe("Palettes & Color atmosphere (quality-bar §6)", () => {
     for (const p of BUILTIN_PALETTES) {
       expect(p.id).toBeDefined();
       expect(p.name).toBeDefined();
-      expect(p.textColor).toBeDefined();
       expect(p.shadowTint).toBeDefined();
 
       if (p.background.kind === "gradient") {

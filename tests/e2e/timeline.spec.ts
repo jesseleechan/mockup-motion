@@ -40,11 +40,10 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     // Verify Shot 2 appeared
     await expect(page.locator(".group", { hasText: "Shot 2" })).toBeVisible();
 
-    // Add Shot 3 (Title card)
+    // Add Shot 3
     await addShotBtn.click();
-    const titleCardItem = page.getByRole("menuitem", { name: /Title card/i });
-    await expect(titleCardItem).toBeVisible();
-    await titleCardItem.click();
+    await expect(sameLayoutItem).toBeVisible();
+    await sameLayoutItem.click();
 
     // Verify Shot 3 appeared
     await expect(page.locator(".group", { hasText: "Shot 3" })).toBeVisible();

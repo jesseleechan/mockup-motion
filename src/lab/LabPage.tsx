@@ -18,7 +18,6 @@ import devicesBrowserFixture from "./fixtures/devices-browser.json";
 import devicesPhoneFixture from "./fixtures/devices-phone.json";
 import devicesTabletFixture from "./fixtures/devices-tablet.json";
 import devicesLaptopFixture from "./fixtures/devices-laptop.json";
-import textTitleFixture from "./fixtures/text-title.json";
 import sliderXFixture from "./fixtures/slider-x.json";
 import sliderYFixture from "./fixtures/slider-y.json";
 
@@ -57,7 +56,6 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "devices-phone": devicesPhoneFixture as unknown as ProjectDoc,
   "devices-tablet": devicesTabletFixture as unknown as ProjectDoc,
   "devices-laptop": devicesLaptopFixture as unknown as ProjectDoc,
-  "text-title": textTitleFixture as unknown as ProjectDoc,
   "slider-x": sliderXFixture as unknown as ProjectDoc,
   "slider-y": sliderYFixture as unknown as ProjectDoc,
 };
@@ -290,6 +288,8 @@ export const LabPage: React.FC = () => {
   }, [aspect]);
 
   const still = urlParams.get("still") === "1";
+  // `devices=0` draws the background alone, for tests of backgrounds, transitions and grain.
+  const hideDevices = import.meta.env.DEV && urlParams.get("devices") === "0";
   const stillW = Number(urlParams.get("w")) || 640;
   const stillH = Math.max(1, Math.round(stillW / aspectRatioOf(aspect)));
 
@@ -307,6 +307,7 @@ export const LabPage: React.FC = () => {
               ? Number(urlParams.get("cameraDistance"))
               : undefined
           }
+          hideDevices={hideDevices}
           onEngineReady={handleEngineReady}
           className="w-full h-full"
         />
@@ -389,6 +390,7 @@ export const LabPage: React.FC = () => {
             doc={doc}
             assets={provider}
             time={playing ? undefined : time}
+            hideDevices={hideDevices}
             onEngineReady={handleEngineReady}
             className="w-full h-full"
           />

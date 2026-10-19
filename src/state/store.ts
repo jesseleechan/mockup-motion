@@ -84,7 +84,6 @@ export interface EditorStoreState {
   setShotDuration: (index: number, duration: number) => void;
   setTransition: (shotIndex: number, transition: Transition) => void;
   splitShot: (index: number, splitLocalT: number) => void;
-  setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
@@ -317,7 +316,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
-          // Sanitize references to removed asset across layouts/texts
+          // Sanitize references to the removed asset across layouts and backgrounds
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
           draft.shots = doc.shots;
@@ -489,33 +488,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     applyBrandKit: (kit: BrandKit) => {
       get().apply(
         (draft) => {
-          if (kit.colors[0]) {
-            draft.style.textColor = kit.colors[0];
-          }
           if (kit.colors[1]) {
             draft.style.accent = kit.colors[1];
           }
           if (kit.browserUrl !== undefined) {
             draft.style.browserUrl = kit.browserUrl;
-          }
-          if (kit.fontDisplay) {
-            draft.style.fonts.display.family = kit.fontDisplay;
-          }
-          if (kit.fontBody) {
-            draft.style.fonts.body.family = kit.fontBody;
-          }
-          // Update logo on text layers if kit defines one
-          const logoId = kit.logoDarkAssetId || kit.logoLightAssetId;
-          if (logoId) {
-            for (const shot of draft.shots) {
-              if (shot.texts) {
-                for (const text of shot.texts) {
-                  if (text.role === "title" || text.logoAssetId) {
-                    text.logoAssetId = logoId;
-                  }
-                }
-              }
-            }
           }
         },
         { label: `Apply brand kit "${kit.name}"` },
@@ -648,20 +625,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           draft.shots.splice(index + 1, 0, shotB);
         },
         { label: "Split shot" },
-      );
-    },
-
-    setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot) return;
-          const text = shot.texts.find((t) => t.id === textLayerId);
-          if (text) {
-            text.delay = Math.max(0, Math.min(shot.duration, delay));
-          }
-        },
-        { label: "Change text delay" },
       );
     },
 

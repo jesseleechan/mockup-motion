@@ -64,7 +64,6 @@ export const responsiveScrollTemplate: Template = {
     shot.transitionIn = loopWrapCrossfade();
     shot.entrance = "none";
     shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-    shot.texts = [];
 
     return { style, shots: [shot], loop: true };
   },

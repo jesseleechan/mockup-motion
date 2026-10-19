@@ -15,11 +15,6 @@ export function defaultStyle(): Style {
     shadow: "soft",
     grain: 0.25,
     vignette: 0.06,
-    fonts: {
-      display: { source: "builtin", family: "Inter Display", weight: 600 },
-      body: { source: "builtin", family: "Inter", weight: 400 },
-    },
-    textColor: "",
     accent: "#7C93FF",
   };
 }
@@ -55,7 +50,6 @@ export function defaultShot(layout?: Layout): Shot {
     },
     camera: defaultCameraMove(),
     entrance: "none",
-    texts: [],
     transitionIn: {
       kind: "cut",
       duration: 0,

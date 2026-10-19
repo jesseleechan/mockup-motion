@@ -17,8 +17,6 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "slider":
     case "orbit":
       return [...layout.assetIds];
-    case "title":
-      return [];
   }
 }
 
@@ -39,8 +37,8 @@ export function resolveShotStyle(doc: ProjectDoc, shotIndex: number): Style {
 
 /**
  * Every image asset the document can draw: device screens in every layout kind,
- * ambient and image backgrounds (document style and every shot override), and
- * text-layer logos: the set to decode as images.
+ * and ambient and image backgrounds (document style and every shot override): the set to decode
+ * as images.
  */
 export function collectAssetIds(doc: ProjectDoc): Set<string> {
   const ids = new Set<string>();
@@ -52,7 +50,6 @@ export function collectAssetIds(doc: ProjectDoc): Set<string> {
   for (const shot of doc.shots) {
     for (const id of layoutAssetIds(shot.layout)) add(id);
     add(backgroundAssetId(shot.styleOverrides?.background));
-    for (const layer of shot.texts ?? []) add(layer.logoAssetId);
   }
   return ids;
 }

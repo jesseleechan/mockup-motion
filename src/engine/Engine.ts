@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { collectAssetIds, resolveShotStyle } from "../doc/assets";
-import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
+import { collectAssetIds } from "../doc/assets";
+import type { DeviceKind, ProjectDoc } from "../doc/types";
+import type { TextLine, TextRaster } from "../text/rasterize";
 import {
   evaluate,
   isSteppedLayout,
@@ -23,21 +24,16 @@ export interface EngineOptions {
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
   cameraDistanceOverride?: number; // isolated lab/test fixture; not serialized
+  hideDevices?: boolean; // lab/test fixture: draw the background only; not serialized
 }
 
-export interface TextRaster {
-  bitmap: ImageBitmap;
-  words: { x: number; y: number; w: number; h: number }[];
-  width: number;
-  height: number;
-  color?: string;
-}
+export type { TextLine, TextRaster };
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
 }
 
 export interface EngineDebugInfo {
@@ -55,7 +51,6 @@ import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
 import { loadChromeUrlRasters, type LoadedChromeUrl } from "./text/chrome-url";
 import { ChromeUrlTextures } from "./text/ChromeUrlTextures";
-import { TextPass } from "./text/TextPass";
 
 export class Engine {
   private renderer: THREE.WebGLRenderer;
@@ -66,8 +61,6 @@ export class Engine {
   private camera: THREE.PerspectiveCamera;
   private textureManager: TextureManager;
   private backgroundRenderer: BackgroundRenderer;
-  private textPass: TextPass;
-  private textRasters = new Map<string, TextRaster>();
   private chromeUrls = new ChromeUrlTextures();
 
   private targetA: THREE.WebGLRenderTarget;
@@ -103,7 +96,6 @@ export class Engine {
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
     this.textureManager = new TextureManager(maxTex, maxAniso);
     this.backgroundRenderer = new BackgroundRenderer();
-    this.textPass = new TextPass();
 
     this.scene = new THREE.Scene();
     this.devices = new DevicePool(
@@ -267,22 +259,11 @@ export class Engine {
       cameraDistanceOverride: this.opts.cameraDistanceOverride,
     });
     const frameHeightPx = Math.round(this.opts.height * ss);
-    const rasters = new Map<string, TextRaster>();
 
     const loads: Promise<unknown>[] = [];
     for (const [assetId, widthPx] of widths) {
       loads.push(this.textureManager.getTexture(assetId, widthPx, assets));
     }
-    doc.shots.forEach((shot, shotIndex) => {
-      const style = resolveShotStyle(doc, shotIndex);
-      for (const layer of shot.texts ?? []) {
-        loads.push(
-          assets.getText(layer, style, frameHeightPx).then((raster) => {
-            rasters.set(layer.id, raster);
-          }),
-        );
-      }
-    });
     let chromeUrls = new Map<string, LoadedChromeUrl>();
     loads.push(
       loadChromeUrlRasters(doc, assets, frameHeightPx).then((loaded) => {
@@ -296,9 +277,6 @@ export class Engine {
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
     this.backgroundRenderer.prepareDocument(this.renderer, doc, this.textureManager);
-    this.textRasters = rasters;
-    for (const [layerId, raster] of rasters) this.textPass.setTextRaster(layerId, raster);
-    this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
@@ -345,7 +323,8 @@ export class Engine {
     this.devices.hideAll();
     const draws: DeviceDraw[] = [];
 
-    for (const node of frame.nodes) {
+    const nodes = this.opts.hideDevices ? [] : frame.nodes;
+    for (const node of nodes) {
       const dev = this.devices.acquire(node, frame.style);
       dev.object3d.userData.nodeId = node.id;
       draws.push({ object3d: dev.object3d, opacity: node.opacity, depthOrder: node.depthOrder });
@@ -372,23 +351,6 @@ export class Engine {
     const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
     const blend = fadeBlendFor(shot?.layout);
     this.deviceFade.render(this.renderer, this.scene, this.camera, target, draws, blend);
-
-    // 5. Render screen-space text overlay into MSAA target
-    if (shot && shot.texts && shot.texts.length > 0) {
-      const ss = this.opts.supersample ?? 1;
-      const renderW = Math.round(this.opts.width * ss);
-      const renderH = Math.round(this.opts.height * ss);
-      this.textPass.render(
-        this.renderer,
-        target,
-        frame,
-        shot.texts,
-        this.textRasters,
-        this.currentDoc?.aspect ?? "16:9",
-        renderW,
-        renderH,
-      );
-    }
   }
 
   /**
@@ -528,9 +490,7 @@ export class Engine {
 
     this.textureManager.dispose();
     this.backgroundRenderer.dispose();
-    this.textPass.dispose();
     this.chromeUrls.dispose();
-    this.textRasters.clear();
 
     this.targetA.dispose();
     this.targetB.dispose();

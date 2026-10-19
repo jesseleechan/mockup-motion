@@ -87,21 +87,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(redoBtn).toBeEnabled();
     await redoBtn.click(); // Redoes heroTilt
 
-    // 6. Test Contextual Inspector filtering
-    // Switch to Title Card
-    await layoutSelect.click();
-    await page.getByRole("option", { name: "Title card" }).click();
-    // The device picker should NOT be visible for a title card
-    await expect(page.getByText("Device", { exact: true })).not.toBeVisible();
-    await expect(page.getByText("Camera", { exact: true })).not.toBeVisible();
-
-    // Switch back to Single Device
-    await layoutSelect.click();
-    await page.getByRole("option", { name: "Single device" }).click();
-    await expect(page.getByText("Device", { exact: true })).toBeVisible();
-    await expect(page.getByText("Camera", { exact: true })).toBeVisible();
-
-    // 7. Test 1080p Video Export
+    // 6. Test 1080p Video Export
     const exportBtn = page.getByRole("button", { name: "Export", exact: true });
     await exportBtn.click();
 

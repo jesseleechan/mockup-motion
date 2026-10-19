@@ -12,7 +12,6 @@ import { frameDistance } from "./framing";
 import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
 import { scrollableFramesFor, scrollPosition } from "./scroll";
 import { responsiveScreens, responsiveScrollAt } from "./responsive-scroll";
-import { textFrame, type TextFrame } from "./text-anim";
 import { activeLayers, schedule } from "./timeline";
 
 export interface ShotFrame {
@@ -20,7 +19,6 @@ export interface ShotFrame {
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
   style: Style;
 }
 
@@ -99,16 +97,6 @@ function evaluateNodes(
   return nodes;
 }
 
-function evaluateTexts(shot: Shot, localT: number): TextFrame[] {
-  if (!shot.texts || shot.texts.length === 0) {
-    return [];
-  }
-  return shot.texts.map((layer) => {
-    const wordCount = layer.text ? layer.text.trim().split(/\s+/).filter(Boolean).length : 0;
-    return textFrame(layer, wordCount, localT);
-  });
-}
-
 /**
  * Pure evaluation function converting document model and time into FrameState.
  * Memoizes base layouts per (shot.id, aspect, assetsSignature).
@@ -163,7 +151,7 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar
     // §4), so they are full bleed.
     let camera = baseCamera;
-    const isFullBleed = marquee || shot.layout.kind === "title" || isSteppedLayout(shot.layout);
+    const isFullBleed = marquee || isSteppedLayout(shot.layout);
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {
@@ -174,9 +162,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       }
     }
 
-    // Text frames
-    const texts = evaluateTexts(shot, localT);
-
     // Resolved style
     const style: Style = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
 
@@ -185,7 +170,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       localT,
       camera,
       nodes,
-      texts,
       style,
     };
 

@@ -10,13 +10,6 @@ const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
 const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
 const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
-const TEXT_ANIMS: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
 
 interface Still {
   name: string;
@@ -134,9 +127,6 @@ for (const kind of TRANSITIONS) {
     aspect: "16:9",
     t: 3.6,
   });
-}
-for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
-  STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });
 }
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
