@@ -1,6 +1,6 @@
 # iPhone plan: a realistic phone device
 
-**Status: in review.** Written 18 October 2026. One PR. The owner approved the 8 new baselines on 18 October 2026 ("Approved").
+**Status: done.** Written 18 October 2026. One PR. The owner approved the 8 new baselines on 18 October 2026 ("Approved").
 
 The owner reviewed Mobile Scroll Story (PR #48) and asked for a more realistic phone: "We need to use a more realistic model of the iPhone if we go for the phone instead of the flat card." A search for premade assets found no fit: Apple's bezels may only market your own App Store apps and may not be animated, tilted, shadowed or rendered in 3D, and free 3D iPhones are fan-made (CC BY at best, Apple's design either way). The owner chose to rebuild our own phone and, since MockupMotion is for presenting their own work, to make it look exactly like an iPhone: "This is just for my own personal use to show off my work, so let's just go with 1 but make it look exactly like it."
 
@@ -31,6 +31,11 @@ This also fixes Mobile Scroll Story decision MS3: the island no longer covers pa
 
 Eight stills change, all because of the phone: `device-phone-frontal`, `device-phone-tilted`, `orient-phone` and the five `transition-*` stills (their scene has a phone over a browser). The other 48 are unchanged. The owner approved the rendered stills (`evidence/baselines-before-after.png`) in writing on 18 October 2026, and they are committed as the Visual baselines workflow wrote them.
 
-## 4. Evidence
+## 4. After review
+
+- A scrolled page drew over the status bar: the screen target has no depth buffer and three.js draws opaque meshes front to back. The bar now has a higher `renderOrder`, and `tests/e2e/color.spec.ts` checks its colour at the end of a scroll (it failed before the fix).
+- `thumbnails.spec.ts` "a card plays its preview on hover…" failed twice on this PR's CI with the Desktop Frames preview still paused after a fixed 10 s wait, while the same code passed on #48. The owner chose the recommendation: the first wait now scales with `ciTimeout` like the test's next one, and a rejected `play()` fails the test with its error instead of a timeout.
+
+## 5. Evidence
 
 `evidence/`: before and after at 16:9 for the frontal and tilted phone, the F01 orientation quadrants, the browser-and-phone pair and the tilted phone columns.
