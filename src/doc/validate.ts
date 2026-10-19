@@ -51,14 +51,13 @@ const VALID_QUALITIES = ["web", "high", "master"] as const;
 const VALID_FORMATS = ["mp4", "webm", "bundle", "png"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
 const VALID_DESTINATIONS: readonly DestinationId[] = [
-  "custom",
-  "web-embed",
+  "video",
   "dribbble",
   "instagram-feed",
   "instagram-story",
-  "linkedin",
-  "x",
   "presentation-4k",
+  "web-embed",
+  "custom",
 ];
 
 // Saved blur, push, zoom and wipe transitions (cut with reels on 19 Oct 2026) load as fades.
@@ -75,15 +74,22 @@ function includesValue<T>(list: readonly T[], val: unknown): val is T {
 /**
  * Export settings from a saved project or this browser's last export. Every value the dialog
  * offers is kept; anything else (a removed format such as GIF, motion blur, an unknown
- * destination) falls back to the default MP4 export.
+ * destination) falls back to the default Video export.
  */
+function sameEncoding(a: ExportSettings, b: ExportSettings): boolean {
+  return (
+    a.resolution === b.resolution &&
+    a.fps === b.fps &&
+    a.quality === b.quality &&
+    a.format === b.format &&
+    a.supersample === b.supersample
+  );
+}
+
 export function sanitizeExport(raw: unknown): ExportSettings {
   const fallback = defaultExport();
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  return {
-    destination: includesValue(VALID_DESTINATIONS, r.destination)
-      ? r.destination
-      : fallback.destination,
+  const encoding = {
     resolution: includesValue(VALID_RESOLUTIONS, r.resolution) ? r.resolution : fallback.resolution,
     fps: includesValue(VALID_FPS, r.fps) ? r.fps : fallback.fps,
     quality: includesValue(VALID_QUALITIES, r.quality) ? r.quality : fallback.quality,
@@ -92,6 +98,13 @@ export function sanitizeExport(raw: unknown): ExportSettings {
       ? r.supersample
       : fallback.supersample,
   };
+  if (includesValue(VALID_DESTINATIONS, r.destination)) {
+    return { destination: r.destination, ...encoding };
+  }
+  // A destination that no longer exists (LinkedIn & X, merged into Video) is Video when its
+  // settings are Video's, and Custom otherwise, so no setting is lost.
+  const settings: ExportSettings = { destination: "custom", ...encoding };
+  return sameEncoding(settings, fallback) ? fallback : settings;
 }
 
 export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[] } {

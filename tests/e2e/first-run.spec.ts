@@ -158,10 +158,8 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   test.setTimeout(90_000);
   await resetAndOpen(page);
 
-  // First run: pick a template before there are any screenshots.
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
-  await page.getByRole("button", { name: "Start with a template" }).click();
-  const gallery = page.getByRole("dialog");
+  // First run opens on the gallery: pick a template before there are any screenshots.
+  const gallery = page.getByRole("dialog", { name: /Template gallery/ });
   await expect(gallery).toBeVisible();
   await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
@@ -170,7 +168,7 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   // Applied with empty slots: the overlay asks for screenshots.
   const overlay = page.getByTestId("fill-template-overlay");
   await expect(overlay).toBeVisible();
-  await expect(overlay).toContainText("Add screenshots to fill this template");
+  await expect(overlay).toContainText("Needs a full-page desktop screenshot");
   const applied = await docState(page);
   expect(applied.templateId).toBe("scroll-story");
   expect(applied.assetIds).toEqual([]);

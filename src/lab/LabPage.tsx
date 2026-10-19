@@ -28,7 +28,7 @@ import {
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
 import { RESPONSIVE_FIXTURES } from "./responsive-fixtures";
-import { presetToneStyle } from "../templates/looks";
+import { presetToneStyle, templateTones } from "../templates/looks";
 
 declare global {
   interface Window {
@@ -91,14 +91,14 @@ for (const axis of ["x", "y"] as const) {
   };
 }
 
-// The dark option of the slider and Frames presets: `<id>-dark-<aspect>`, e.g.
+// Each preset's dark option: `<id>-dark-<aspect>`, e.g.
 // /lab?fixture=mobile-frames-dark-16x9&aspect=16:9.
-for (const t of BUILTIN_TEMPLATES.filter((template) => template.toneSwitch)) {
+for (const t of BUILTIN_TEMPLATES) {
   for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
     const doc = buildTemplatePreviewDoc(t, aspect);
     FIXTURES[`${t.id}-dark-${aspect.replace(":", "x")}`] = {
       ...doc,
-      style: { ...doc.style, ...presetToneStyle("dark") },
+      style: { ...doc.style, ...presetToneStyle("dark", templateTones(t)) },
     };
   }
 }
