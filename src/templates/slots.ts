@@ -2,61 +2,59 @@ import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types"
 import type { SlotSpec, Template } from "./types";
 import { presetToneOf, setPresetTone } from "./looks";
 
-/** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames and Orbit need 4. */
-const MULTI_ASSET_MINIMUM: Record<string, number> = {
-  frames: 4,
-  "mobile-frames": 4,
-  "desktop-orbit": 4,
-  "mobile-orbit": 4,
-};
+interface RoleNeed {
+  role: AssetRole;
+  /** Distinct screenshots of the role: one per required slot (quality bar §4: Frames needs 4). */
+  count: number;
+  /** A required slot prefers a full-page screenshot (Scroll Story, Responsive Scroll). */
+  tall: boolean;
+}
 
-/** The one role a multi-screen template's required slots share. */
-function multiAssetRole(template: Template): AssetRole {
-  const roles = new Set(template.slots.filter((s) => s.required).map((s) => s.role));
-  const [role] = roles;
-  if (roles.size !== 1 || !role) {
-    throw new Error(`${template.id}: required slots must share one role, got ${[...roles]}`);
+/** The screenshots a template's required slots ask for, by role, in slot order. */
+function roleNeeds(template: Template): RoleNeed[] {
+  const needs = new Map<AssetRole, RoleNeed>();
+  for (const slot of template.slots) {
+    if (!slot.required) continue;
+    const need = needs.get(slot.role) ?? { role: slot.role, count: 0, tall: false };
+    need.count += 1;
+    need.tall ||= slot.prefer === "tall";
+    needs.set(slot.role, need);
   }
-  return role;
+  return [...needs.values()];
+}
+
+function describeNeed({ role, count, tall }: RoleNeed): string {
+  const kind = tall ? `full-page ${role}` : role;
+  return count > 1 ? `${count}+ ${kind} screenshots` : `a ${kind} screenshot`;
 }
 
 /**
- * Validates if the available assets satisfy the template requirements.
- * Multi-screen templates need enough distinct screenshots of their slots' role.
- * With too few assets, returns valid: false with a user-facing explanation.
+ * What a template needs, said the same way on every card: "Needs 3+ desktop screenshots",
+ * "Needs a full-page mobile screenshot", "Needs a desktop and a mobile full-page screenshot".
+ */
+export function templateNeeds(template: Template): string {
+  const needs = roleNeeds(template);
+  if (needs.length === 0) return "No screenshots needed";
+  // One full-page screenshot of each size reads better as one phrase.
+  if (needs.length > 1 && needs.every((n) => n.count === 1 && n.tall)) {
+    return `Needs a ${needs.map((n) => n.role).join(" and a ")} full-page screenshot`;
+  }
+  return `Needs ${needs.map(describeNeed).join(" and ")}`;
+}
+
+/**
+ * Whether the library has enough distinct screenshots of each role the template's required
+ * slots ask for. When it doesn't, `reason` is the template's `templateNeeds` text.
  */
 export function validateTemplateRequirements(
   template: Template,
   assets: AssetRef[],
 ): { valid: boolean; reason?: string } {
-  // 1. Multi-screen layouts need several distinct screenshots
-  const minimum = MULTI_ASSET_MINIMUM[template.id];
-
-  if (minimum !== undefined) {
-    const requiredRole = multiAssetRole(template);
-    const distinctRoleAssets = assets.filter((a) => a.kind === "image" && a.role === requiredRole);
-
-    if (distinctRoleAssets.length < minimum) {
-      return {
-        valid: false,
-        reason: `Needs ${minimum}+ ${requiredRole} screenshots`,
-      };
-    }
-  }
-
-  // 2. Check required slots
-  const requiredSlots = template.slots.filter((s) => s.required);
-  for (const slot of requiredSlots) {
-    const hasRoleMatch = assets.some((a) => a.kind === "image" && a.role === slot.role);
-    if (!hasRoleMatch) {
-      return {
-        valid: false,
-        reason: slot.role === "logo" ? "Needs a logo" : `Needs a ${slot.role} screenshot`,
-      };
-    }
-  }
-
-  return { valid: true };
+  const met = roleNeeds(template).every(
+    ({ role, count }) =>
+      assets.filter((a) => a.kind === "image" && a.role === role).length >= count,
+  );
+  return met ? { valid: true } : { valid: false, reason: templateNeeds(template) };
 }
 
 /**
