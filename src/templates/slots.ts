@@ -138,7 +138,7 @@ export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[
 }
 
 /**
- * Applies a template to a project document, filling slots and preserving brand style.
+ * Applies a template to a project document, filling slots and keeping the browser chrome.
  */
 export function applyTemplate(
   template: Template,
@@ -147,9 +147,8 @@ export function applyTemplate(
 ): { style: Style; shots: Shot[]; loop: boolean } {
   const slots = fillSlots(template, doc.assets, previousAssignments);
 
-  // Preserve the user's accent and browser chrome
+  // Preserve the user's browser chrome
   const brandStyle: Partial<Style> = {
-    accent: doc.style.accent,
     browserChrome: doc.style.browserChrome,
   };
 

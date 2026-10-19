@@ -8,7 +8,7 @@ This file is the source of truth for shared types and module APIs. WP-00 copies 
 src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
-  storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
+  storage/     db.ts (idb) · projects.ts · blobs.ts · user-templates.ts
   assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
@@ -24,7 +24,7 @@ src/
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
                verify.ts · bundle.ts · gif.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
-  editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
+  editor/      Shell · TopBar · Library/ (Templates, Media) · Stage/ · Timeline/
                Inspector/ (VideoPanel, ShotPanel) · dialogs/
   lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
@@ -83,7 +83,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
-  accent: string; // cursor, highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
@@ -430,7 +429,7 @@ export interface TemplateBuildContext {
   aspect: Aspect;
   slots: Record<string, AssetRef | undefined>;
   projectName: string;
-  style?: Partial<Style>; // keep user's brand style when re-applying
+  style?: Partial<Style>; // keep the user's browser chrome when re-applying
 }
 export interface Template {
   id: string;

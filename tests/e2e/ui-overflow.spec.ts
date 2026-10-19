@@ -249,11 +249,9 @@ test.describe("F08 overflow guard", () => {
           await expectNoOverflow(page, `Shot ${index + 1} inspector`);
         }
 
-        // The other library tabs.
-        for (const tab of ["Media", "Brand"]) {
-          await page.getByRole("tab", { name: tab }).click();
-          await expectNoOverflow(page, `${tab} tab`);
-        }
+        // The other library tab.
+        await page.getByRole("tab", { name: "Media" }).click();
+        await expectNoOverflow(page, "Media tab");
 
         // Both Frames presets, whose speed row holds the loop length chips: the single shot
         // takes a Desktop Frames, then a Mobile Frames layout with six screenshots. Last, and

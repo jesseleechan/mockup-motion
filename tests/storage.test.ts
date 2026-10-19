@@ -16,12 +16,6 @@ import type { V1Project } from "../src/doc/migrate";
 import type { AssetRef } from "../src/doc/types";
 import { V1_PRESETS } from "./fixtures/v1-presets";
 import {
-  saveBrandKit,
-  loadBrandKit,
-  getDefaultBrandKit,
-  type BrandKit,
-} from "../src/storage/brand-kits";
-import {
   convertDocToUserTemplate,
   fillUserTemplateSlots,
   saveUserTemplate,
@@ -29,7 +23,6 @@ import {
   deleteUserTemplate,
   renameUserTemplate,
 } from "../src/storage/user-templates";
-import { useEditorStore } from "../src/state/store";
 
 describe("WP-01: Storage with fake-indexeddb", () => {
   beforeEach(async () => {
@@ -204,48 +197,7 @@ describe("WP-01: Storage with fake-indexeddb", () => {
     expect(projects.length).toBe(2);
   });
 
-  describe("WP-13: Brand Kit & User Templates Storage", () => {
-    it("brand kit persists across reloads, applies in one undo step, and default kit applies", async () => {
-      const kit1: BrandKit = {
-        id: "kit-1",
-        name: "Acme Corp",
-        colors: ["#111111", "#FF5500", "#FFFFFF"],
-        fontDisplay: "Fraunces",
-        fontBody: "Inter",
-        browserUrl: "acme.io",
-        isDefault: true,
-        updatedAt: Date.now(),
-      };
-      await saveBrandKit(kit1);
-
-      const loadedKit = await loadBrandKit("kit-1");
-      expect(loadedKit).not.toBeNull();
-      expect(loadedKit?.name).toBe("Acme Corp");
-      expect(loadedKit?.browserUrl).toBe("acme.io");
-
-      const defaultKit = await getDefaultBrandKit();
-      expect(defaultKit?.id).toBe("kit-1");
-
-      // Verify applying kit to editor store in one undo step
-      const store = useEditorStore;
-      const initialDoc = createDoc({ name: "Brand Test Doc" });
-      store.getState().loadDoc(initialDoc);
-
-      const beforeAccent = store.getState().doc.style.accent;
-
-      store.getState().applyBrandKit(kit1);
-      expect(store.getState().doc.style.accent).toBe("#FF5500");
-      expect(store.getState().doc.style.browserUrl).toBe("acme.io");
-
-      // Undo restores the previous state in one step
-      store.getState().undo();
-      expect(store.getState().doc.style.accent).toBe(beforeAccent);
-
-      // Redo reapplies
-      store.getState().redo();
-      expect(store.getState().doc.style.accent).toBe("#FF5500");
-    });
-
+  describe("WP-13: User Templates Storage", () => {
     it("user template replaces asset IDs with slot keys, re-applies to new assets, and persists", async () => {
       const doc = createDoc({ name: "Responsive Template Doc" });
       const desktopAsset: AssetRef = {
