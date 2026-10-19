@@ -36,7 +36,7 @@ Saved projects (`sanitizeLayout`, `src/doc/legacy-layouts.ts`):
 | `columns` without `travel: "period"`      | Mobile Frames (`mobileFramesLayout`)                                                      |
 | `single` on a laptop or tablet            | a single browser (validation maps unknown devices to `browser`)                           |
 
-A shot mapped to Frames or the deck also takes its preset's still camera, no entrance and a cut wrap, and its duration follows the preset (Frames at least 15 s; the deck N × step). The document's style is left alone. The V1 migration in `src/doc/migrate.ts` builds the same layouts directly. Unit tests load a saved document of each kind.
+A shot mapped to Frames or the deck also takes its preset's still camera and a cut wrap, and its duration follows the preset (Frames at least 15 s; the deck N × step). The document's style is left alone. The V1 migration in `src/doc/migrate.ts` builds the same layouts directly. Unit tests load a saved document of each kind.
 
 Tests removed with the features (approved): `tests/e2e/layouts.spec.ts`, the pair and wall tests in `assets.spec`, the pair export in `export.spec`, `tests/wall.test.ts`, the removed layouts' parts of `layouts.test`, `removed-templates.test`, and the laptop and tablet stills. `scripts/e2e-shards.ts` and `tests/visual/stills.spec.ts` follow.
 

@@ -10,15 +10,11 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
   Icon,
-  Tooltip,
 } from "../../ui";
 import {
-  Copy,
   LayoutGrid,
   Monitor,
-  Scissors,
   Smartphone,
-  Trash2,
   Type,
   Maximize2,
   GalleryHorizontal,
@@ -33,22 +29,12 @@ export interface ShotCardProps {
   index: number;
   isSelected: boolean;
   widthPx: number;
-  startSec: number;
-  endSec: number;
   pxPerSecond: number;
-  playhead: number;
-  canDelete: boolean;
   onSelect: () => void;
   onDurationChange: (newDuration: number) => void;
-  onReorder: (fromIndex: number, toIndex: number) => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onSplit: (splitLocalT: number) => void;
   onChangeLayout: (layout: Layout) => void;
   onSelectText: (textId: string) => void;
   onTextDelayChange: (textId: string, delay: number) => void;
-  onNavigateLeft?: () => void;
-  onNavigateRight?: () => void;
 }
 
 const TEXT_LANE_ROW_PX = 12;
@@ -60,26 +46,15 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   index,
   isSelected,
   widthPx,
-  startSec,
-  endSec,
   pxPerSecond,
-  playhead,
-  canDelete,
   onSelect,
   onDurationChange,
-  onReorder,
-  onDuplicate,
-  onDelete,
-  onSplit,
   onChangeLayout,
   onSelectText,
   onTextDelayChange,
-  onNavigateLeft,
-  onNavigateRight,
 }) => {
   const [isResizing, setIsResizing] = useState(false);
   const [dragDuration, setDragDuration] = useState<number | null>(null);
-  const [dragOverSide, setDragOverSide] = useState<"left" | "right" | null>(null);
 
   const resizeStartXRef = useRef(0);
   const initialDurationRef = useRef(shot.duration);
@@ -98,10 +73,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   // Active duration (either while dragging or committed)
   const currentDuration = dragDuration ?? shot.duration;
   const cardWidth = dragDuration !== null ? dragDuration * pxPerSecond : widthPx;
-
-  // Split eligibility
-  const isPlayheadInShot = playhead >= startSec + 0.49 && playhead <= endSec - 0.49;
-  const splitLocalT = playhead - startSec;
 
   // --- Duration resize handle handlers ---
   const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -187,56 +158,9 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     }
   };
 
-  // --- Drag and Drop Reordering ---
-  const handleDragStart = (e: React.DragEvent) => {
-    if (isResizing) {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.setData("application/x-mockupmotion-shot-index", index.toString());
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("application/x-mockupmotion-shot-index")) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const midX = rect.left + rect.width / 2;
-    setDragOverSide(e.clientX < midX ? "left" : "right");
-  };
-
-  const handleDragLeave = () => {
-    setDragOverSide(null);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverSide(null);
-    const fromIndexStr = e.dataTransfer.getData("application/x-mockupmotion-shot-index");
-    if (!fromIndexStr) return;
-    const fromIndex = parseInt(fromIndexStr, 10);
-    if (isNaN(fromIndex) || fromIndex === index) return;
-
-    let targetIndex = index;
-    if (dragOverSide === "right" && fromIndex < index) {
-      targetIndex = index;
-    } else if (dragOverSide === "left" && fromIndex > index) {
-      targetIndex = index;
-    }
-    onReorder(fromIndex, targetIndex);
-  };
-
-  // --- Keyboard navigation ---
+  // --- Keyboard selection ---
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      onNavigateLeft?.();
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      onNavigateRight?.();
-    } else if (e.key === "Enter" || e.key === " ") {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSelect();
     }
@@ -275,22 +199,11 @@ export const ShotCard: React.FC<ShotCardProps> = ({
           aria-label={`Shot ${index + 1}: ${subLabel}, duration ${currentDuration.toFixed(1)} seconds`}
           onClick={onSelect}
           onKeyDown={handleKeyDown}
-          draggable={!isResizing}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
           style={{ width: `${Math.max(120, cardWidth)}px` }}
           className={`group relative h-full shrink-0 flex flex-col justify-between rounded-lg border transition-all cursor-pointer select-none outline-none overflow-hidden ${
             isSelected
               ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/20 shadow-xs ring-1 ring-[var(--color-accent)]/50"
               : "border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)]"
-          } ${
-            dragOverSide === "left"
-              ? "border-l-4 border-l-[var(--color-accent)]"
-              : dragOverSide === "right"
-                ? "border-r-4 border-r-[var(--color-accent)]"
-                : ""
           }`}
         >
           {/* Main Card Body: the shot at its local midpoint (F07), details beside it */}
@@ -301,7 +214,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
             />
 
             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-              {/* Top row: Shot title, device icon, quick actions */}
+              {/* Top row: Shot title, device icon, duration */}
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-[11px] font-semibold text-[var(--color-text)] truncate">
@@ -311,39 +224,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                   <span className="text-[10px] font-mono text-[var(--color-text-3)] shrink-0">
                     {currentDuration.toFixed(1)}s
                   </span>
-                </div>
-
-                {/* Quick actions hover */}
-                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
-                  <Tooltip content="Duplicate shot">
-                    <button
-                      type="button"
-                      aria-label="Duplicate shot"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicate();
-                      }}
-                      className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] rounded hover:bg-[var(--color-hover)]"
-                    >
-                      <Icon icon={Copy} size={11} />
-                    </button>
-                  </Tooltip>
-                  {canDelete && (
-                    <Tooltip content="Delete shot">
-                      <button
-                        type="button"
-                        aria-label="Delete shot"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete();
-                        }}
-                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-danger)] rounded hover:bg-[var(--color-hover)]"
-                      >
-                        <Icon icon={Trash2} size={11} />
-                      </button>
-                    </Tooltip>
-                  )}
-                </div>
+                </div>{" "}
               </div>
 
               {/* Footer: device or layout, and camera move. Two lines in all, so the card
@@ -416,18 +297,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
 
       {/* Context Menu */}
       <ContextMenuContent>
-        <ContextMenuItem icon={<Icon icon={Copy} size={13} />} onClick={onDuplicate}>
-          Duplicate
-        </ContextMenuItem>
-
-        {canDelete && (
-          <ContextMenuItem danger icon={<Icon icon={Trash2} size={13} />} onClick={onDelete}>
-            Delete
-          </ContextMenuItem>
-        )}
-
-        <ContextMenuSeparator />
-
         {/* Change layout submenu */}
         <ContextMenuSub>
           <ContextMenuSubTrigger icon={<Icon icon={LayoutGrid} size={13} />}>
@@ -461,16 +330,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
-
-        <ContextMenuSeparator />
-
-        <ContextMenuItem
-          disabled={!isPlayheadInShot}
-          icon={<Icon icon={Scissors} size={13} />}
-          onClick={() => onSplit(splitLocalT)}
-        >
-          Split here
-        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

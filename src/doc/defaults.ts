@@ -55,7 +55,6 @@ export function defaultShot(layout?: Layout): Shot {
       assetId: "",
     },
     camera: defaultCameraMove(),
-    entrance: "none",
     texts: [],
     transitionIn: {
       kind: "cut",

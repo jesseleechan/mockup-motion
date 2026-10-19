@@ -1,4 +1,4 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
+import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
 import { resolveRowsLayout } from "./rows";
@@ -44,15 +44,14 @@ export function resolveLayout(
   assets: AssetRef[],
   shotT: number,
   shotDuration: number,
-  entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
   switch (layout.kind) {
     case "single":
-      return resolveSingleLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveSingleLayout(layout, aspect, assets);
     case "rows":
-      return resolveRowsLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveRowsLayout(layout, aspect, assets, shotT, shotDuration);
     case "columns":
-      return resolveColumnsLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveColumnsLayout(layout, aspect, assets, shotT, shotDuration);
     case "slider":
       return layout.arrangement === "deck"
         ? resolveDeckLayout(layout, aspect, assets, shotT)

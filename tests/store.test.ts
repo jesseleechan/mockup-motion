@@ -169,7 +169,14 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
       draft.shots = [
         {
           ...defaultShot(),
-          layout: { kind: "single", device: "browser", assetId },
+          layout: {
+            kind: "rows",
+            assetIds: [assetId, keptAssetId],
+            rows: 2,
+            device: "card",
+            tilt: 0,
+            travel: "period",
+          },
           texts: [
             {
               id: "t1",
@@ -186,18 +193,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
             },
           ],
         },
-        {
-          ...defaultShot(),
-          layout: {
-            kind: "rows",
-            assetIds: [assetId, keptAssetId],
-            rows: 2,
-            device: "card",
-            tilt: 0,
-            travel: "period",
-          },
-          texts: [],
-        },
       ];
     });
 
@@ -207,13 +202,10 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
 
     const doc = store.getState().doc;
     expect(doc.assets.map((a) => a.id)).toEqual([keptAssetId]);
-    // Layout reference in single layout cleared to ""
-    const l0 = doc.shots[0].layout as { assetId?: string };
-    expect(l0.assetId).toBe("");
+    // The removed asset leaves the rows layout's list, the kept one stays
+    const l0 = doc.shots[0].layout as { assetIds?: string[] };
+    expect(l0.assetIds).toEqual([keptAssetId]);
     // Text logoAssetId cleared
     expect(doc.shots[0].texts[0].logoAssetId).toBeUndefined();
-    // The removed asset leaves the rows layout's list, the kept one stays
-    const l1 = doc.shots[1].layout as { assetIds?: string[] };
-    expect(l1.assetIds).toEqual([keptAssetId]);
   });
 });

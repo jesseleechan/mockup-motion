@@ -269,67 +269,39 @@ describe("Camera (src/motion/camera.ts)", () => {
 });
 
 describe("Timeline (src/motion/timeline.ts)", () => {
-  it("schedule matches contracts.md §5 for cut, fade, and mixed sequences with/without loop", () => {
+  it("schedule matches contracts.md §5 for a cut and a fade wrap, with and without loop", () => {
     const doc = createDoc();
     doc.loop = false;
-    doc.shots = [
-      {
-        ...defaultShot(),
-        id: "s0",
-        duration: 4,
-        transitionIn: { kind: "cut", duration: 0, easing: "quintInOut" },
-      },
-      {
-        ...defaultShot(),
-        id: "s1",
-        duration: 5,
-        transitionIn: { kind: "cut", duration: 0, easing: "quintInOut" },
-      },
-    ];
+    doc.shots[0].duration = 4;
+    doc.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
 
-    // Cut sequence without loop
     const sched1 = schedule(doc);
-    expect(sched1.shots[0].start).toBe(0);
-    expect(sched1.shots[0].end).toBe(4);
-    expect(sched1.shots[1].start).toBe(4);
-    expect(sched1.shots[1].end).toBe(9);
-    expect(sched1.total).toBe(9);
+    expect(sched1.shots).toEqual([{ index: 0, start: 0, end: 4 }]);
+    expect(sched1.total).toBe(4);
 
-    // Fade sequence without loop
-    doc.shots[1].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
-    const sched2 = schedule(doc);
-    expect(sched2.shots[1].start).toBe(3.2);
-    expect(sched2.shots[1].end).toBe(8.2);
-    expect(sched2.total).toBe(8.2);
-
-    // With loop: d0 wraps
-    doc.loop = true;
+    // A fade only matters when the doc loops.
     doc.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
-    const sched3 = schedule(doc);
-    expect(sched3.total).toBeCloseTo(8.2 - 0.8);
+    expect(schedule(doc).total).toBe(4);
+
+    // With loop: the wrap fade overlaps the end of the shot
+    doc.loop = true;
+    expect(schedule(doc).total).toBeCloseTo(4 - 0.8);
+
+    // A cut wrap loops after the whole shot
+    doc.shots[0].transitionIn = { kind: "cut", duration: 0.8, easing: "quintInOut" };
+    expect(schedule(doc).total).toBe(4);
   });
 
-  it("activeLayers handles empty doc, negative t, single shot, transition blends, and wrap", () => {
+  it("activeLayers handles empty doc, a single shot and the wrap", () => {
     const emptyDoc = { ...createDoc(), shots: [] };
     expect(activeLayers(emptyDoc, 0).layers).toEqual([]);
 
     const doc = createDoc();
-    doc.shots = [
-      {
-        ...defaultShot(),
-        id: "s0",
-        duration: 4,
-        transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
-      },
-      {
-        ...defaultShot(),
-        id: "s1",
-        duration: 4,
-        transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
-      },
-    ];
+    doc.shots[0].duration = 4;
+    doc.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
     doc.loop = true;
     const { total } = schedule(doc);
+    expect(total).toBeCloseTo(3.2);
 
     // t = 0
     const a0 = activeLayers(doc, 0);
@@ -338,19 +310,19 @@ describe("Timeline (src/motion/timeline.ts)", () => {
     expect(a0.layers[0].localT).toBe(0);
     expect(a0.layers[0].weight).toBe(1.0);
 
-    // during transition between s0 and s1 (s1 starts at 4 - 0.8 = 3.2)
-    const aTrans = activeLayers(doc, 3.6);
-    expect(aTrans.layers.length).toBe(2);
-    expect(aTrans.layers[0].index).toBe(0);
-    expect(aTrans.layers[1].index).toBe(1);
-    expect(aTrans.transition?.kind).toBe("fade");
+    // before the wrap
+    const aMid = activeLayers(doc, 2);
+    expect(aMid.layers).toHaveLength(1);
+    expect(aMid.layers[0].localT).toBe(2);
+    expect(aMid.transition).toBeUndefined();
 
-    // during loop wrap (total = 4 + 4 - 0.8 - 0.8 = 6.4, wrap is [6.4 - 0.8, 6.4) = [5.6, 6.4))
-    const aWrap = activeLayers(doc, 6.0);
+    // during the loop wrap: [3.2 - 0.8, 3.2) = [2.4, 3.2)
+    const aWrap = activeLayers(doc, 2.8);
     expect(aWrap.layers.length).toBe(2);
-    expect(aWrap.layers[0].index).toBe(1);
-    expect(aWrap.layers[1].index).toBe(0);
+    expect(aWrap.layers[0].localT).toBeCloseTo(2.8);
     expect(aWrap.layers[1].localT).toBe(0); // clamped to 0
+    expect(aWrap.layers[1].wrapT).toBeCloseTo(-0.4);
+    expect(aWrap.layers[0].weight + aWrap.layers[1].weight).toBeCloseTo(1);
     expect(aWrap.transition?.kind).toBe("fade");
 
     // schedule on empty doc
@@ -486,13 +458,12 @@ describe("Text Animation (src/motion/text-anim.ts)", () => {
 });
 
 describe("Layouts (src/motion/layouts.ts)", () => {
-  it("resolves single layout with screen aspect and entrance handling", () => {
+  it("resolves single layout with screen aspect", () => {
     const doc = createDoc();
-    const nodes = resolveLayout(doc.shots[0].layout, "16:9", doc.assets, 0.4, 5, "rise");
+    const nodes = resolveLayout(doc.shots[0].layout, "16:9", doc.assets, 0.4, 5);
     expect(nodes.length).toBe(1);
     expect(nodes[0].device).toBe("browser");
-    expect(nodes[0].opacity).toBeGreaterThan(0);
-    expect(nodes[0].transform.y).toBeLessThan(0); // rising
+    expect(nodes[0].opacity).toBe(1);
 
     // Phone aspect
     const phoneNodes = resolveLayout(
@@ -501,7 +472,6 @@ describe("Layouts (src/motion/layouts.ts)", () => {
       [],
       0,
       5,
-      "none",
     );
     expect(phoneNodes[0].screenAspect).toBeCloseTo(0.4615);
   });
@@ -512,7 +482,7 @@ describe("Layouts (src/motion/layouts.ts)", () => {
 });
 
 describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
-  it("loop seams: evaluate(doc, 0) deep-equals evaluate(doc, total) within 1e-5 for all 4 required scenarios", () => {
+  it("loop seams: evaluate(doc, 0) deep-equals evaluate(doc, total) within 1e-5 for all 3 required scenarios", () => {
     // 1. Single static
     const docStatic = createDoc();
     docStatic.loop = true;
@@ -535,71 +505,6 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     docOrbit.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
     const schedOrbit = schedule(docOrbit);
     assertDeepCloseTo(evaluate(docOrbit, 0), evaluate(docOrbit, schedOrbit.total));
-
-    // 4. 3-shot loop with fade/push transitions
-    const doc3Shot = createDoc();
-    doc3Shot.loop = true;
-    doc3Shot.shots = [
-      {
-        ...defaultShot(),
-        id: "shot-0",
-        duration: 4,
-        transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
-        camera: { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 },
-      },
-      {
-        ...defaultShot(),
-        id: "shot-1",
-        duration: 4,
-        transitionIn: { kind: "push", duration: 0.7, easing: "quintInOut", direction: "left" },
-        camera: { preset: "orbitRight", intensity: 0.8, easing: "smooth", float: 0 },
-      },
-      {
-        ...defaultShot(),
-        id: "shot-2",
-        duration: 4,
-        transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
-        camera: { preset: "tiltUp", intensity: 0.6, easing: "smooth", float: 0 },
-      },
-    ];
-    const sched3Shot = schedule(doc3Shot);
-    assertDeepCloseTo(evaluate(doc3Shot, 0), evaluate(doc3Shot, sched3Shot.total));
-  });
-
-  it("entrances: shot 0 enters from opacity 0 unless the doc loops", () => {
-    const doc = createDoc();
-    doc.loop = false;
-    doc.shots[0].entrance = "rise";
-    const start = evaluate(doc, 0).layers[0].frame.nodes[0];
-    const settled = evaluate(doc, 1).layers[0].frame.nodes[0];
-    expect(start.opacity).toBe(0);
-    expect(start.transform.y).toBeCloseTo(-0.03, 6); // quality-bar §2.5: a 3% rise
-    expect(settled.opacity).toBe(1);
-    expect(settled.transform.y).toBeCloseTo(0, 9);
-
-    // frame(0) is also the frame a loop wraps into, so a looping shot 0 starts settled.
-    for (const transitionIn of [
-      { kind: "cut" as const, duration: 0, easing: "smooth" as const },
-      { kind: "fade" as const, duration: 0.8, easing: "quintInOut" as const },
-    ]) {
-      const looping = structuredClone(doc);
-      looping.loop = true;
-      looping.shots[0].transitionIn = transitionIn;
-      const { total } = schedule(looping);
-      expect(evaluate(looping, 0).layers[0].frame.nodes[0].opacity).toBe(1);
-      for (const layer of evaluate(looping, total - 0.1).layers) {
-        expect(layer.frame.nodes[0].opacity, transitionIn.kind).toBe(1);
-      }
-    }
-
-    // Later shots of a loop keep their entrance.
-    const reel = structuredClone(doc);
-    reel.loop = true;
-    reel.shots.push({ ...defaultShot(), id: "shot-1", entrance: "rise" });
-    const shot1Start = schedule(reel).shots[1].start;
-    const shot1 = evaluate(reel, shot1Start).layers.at(-1)!.frame;
-    expect(shot1.shotId).toBe("shot-1");
-    expect(shot1.nodes[0].opacity).toBe(0);
   });
 
   it("determinism: 1,000 random docs (seeded) evaluate identically twice", () => {
@@ -630,17 +535,12 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     }
   });
 
-  it("performance: evaluate on a 3-shot doc with 30 nodes takes under 0.3 ms on average", async () => {
+  it("performance: evaluate on a doc with 30 nodes takes under 0.3 ms on average", async () => {
     clearLayoutCache();
     const doc = createDoc();
-    doc.shots = [
-      { ...defaultShot(), id: "perf-s0", duration: 4 },
-      { ...defaultShot(), id: "perf-s1", duration: 4 },
-      { ...defaultShot(), id: "perf-s2", duration: 4 },
-    ];
+    doc.shots[0].duration = 12;
 
-    // Simulate 10 nodes per shot (30 nodes total)
-    const mockNodes = Array.from({ length: 10 }, (_, i) => ({
+    const mockNodes = Array.from({ length: 30 }, (_, i) => ({
       id: `perf-node-${i}`,
       device: "browser" as const,
       assetId: null,

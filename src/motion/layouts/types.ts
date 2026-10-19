@@ -16,7 +16,7 @@ export interface LayoutNode {
     rz: number; // in radians
     scale: number;
   };
-  opacity: number; // 0..1 (entrances)
+  opacity: number; // 0..1 (slider neighbours, a deck's entering card)
   scroll: number; // 0..1 of scrollable range (0 when scroll disabled)
   depthOrder: number; // tie-breaker for transparent sorting
 }

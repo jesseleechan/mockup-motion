@@ -1,4 +1,4 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
+import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { lanesAssetIds, resolveLanes } from "./lanes";
 import type { LayoutNode } from "./types";
@@ -56,7 +56,6 @@ export function resolveColumnsLayout(
   assets: AssetRef[],
   shotT: number,
   shotDuration: number,
-  entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
   const { assetIds, tilt = 0, device = "phone" } = layout;
   const W = aspectRatioValue(aspect);
@@ -77,6 +76,5 @@ export function resolveColumnsLayout(
     tilt,
     shotT,
     shotDuration,
-    entrance,
   });
 }

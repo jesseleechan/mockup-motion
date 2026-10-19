@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await keepResourceTimings(page);
 });
 
-// F09: export correctness (motion blur with transitions, multi-device exports, every
+// F09: export correctness (every
 // destination preset) and the export dialog (layout, truthful summary, cancel).
 
 interface Media {
@@ -72,95 +72,6 @@ async function loadMediabunny(page: Page) {
     (window as unknown as LabWindow).__f09Media = await import(/* @vite-ignore */ entry.name);
   });
 }
-
-async function openLab(page: Page) {
-  await page.goto("/lab?fixture=device-card-frontal&t=0&aspect=16:9");
-  await page.waitForFunction(() => (window as unknown as LabWindow).__labReady === true);
-  await loadMediabunny(page);
-}
-
-test.describe("F09 export correctness", () => {
-  test("motion blur keeps a fade transition in the exported video", async ({ page }) => {
-    // Timeouts allow for the GitHub runner, about 5x slower than a local SwiftShader run.
-    test.setTimeout(300_000);
-    await openLab(page);
-    const result = await page.evaluate(async () => {
-      const w = window as unknown as LabWindow;
-      const media = w.__f09Media;
-      const doc = structuredClone(w.__fixtures?.["device-card-frontal"]);
-      if (!media || !doc || !w.__exportWithEngine || !w.__createLabAssetProvider)
-        throw new Error("Lab export hooks are unavailable");
-      // Two static 1 s title shots, black then white, with a 0.6 s linear fade: 0.4 s to 1.0 s.
-      doc.loop = false;
-      doc.style.background = { kind: "solid", color: "#000000" };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      const shot = doc.shots[0];
-      shot.layout = { kind: "title" };
-      shot.texts = [];
-      shot.duration = 1;
-      shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      doc.shots = [
-        shot,
-        {
-          ...structuredClone(shot),
-          id: "white-shot",
-          styleOverrides: { background: { kind: "solid", color: "#FFFFFF" } },
-          transitionIn: { kind: "fade", duration: 0.6, easing: "linear" },
-        },
-      ];
-      const exported = await w.__exportWithEngine(doc, w.__createLabAssetProvider(), {
-        destination: "custom",
-        resolution: 360,
-        fps: 30,
-        quality: "high",
-        format: "webm",
-        supersample: 1,
-        motionBlur: true,
-      });
-      const input = new media.Input({
-        source: new media.BlobSource(exported.blob),
-        formats: media.ALL_FORMATS,
-      });
-      try {
-        const track = await input.getPrimaryVideoTrack();
-        if (!track) throw new Error("Export has no video track");
-        const sink = new media.CanvasSink(track);
-        const lumas: number[][] = [];
-        // Just after the transition start, midpoint and end frames (12, 21 and 30 at 30 fps)
-        for (const t of [0.405, 0.705, 1.005]) {
-          const decoded = await sink.getCanvas(t);
-          if (!decoded) throw new Error(`No decoded frame at ${t}s`);
-          const ctx = decoded.canvas.getContext("2d") as CanvasRenderingContext2D | null;
-          if (!ctx) throw new Error("Decoded frame has no 2D context");
-          const data = ctx.getImageData(0, 0, decoded.canvas.width, decoded.canvas.height).data;
-          const luma: number[] = [];
-          for (let i = 0; i < data.length; i += 4)
-            luma.push((data[i] + data[i + 1] + data[i + 2]) / 3);
-          lumas.push(luma);
-        }
-        const mad = (a: number[], b: number[]) =>
-          a.reduce((sum, value, i) => sum + Math.abs(value - b[i]), 0) / a.length;
-        const mean = (a: number[]) => a.reduce((sum, value) => sum + value, 0) / a.length;
-        return {
-          means: lumas.map(mean),
-          midVsBefore: mad(lumas[1], lumas[0]),
-          midVsAfter: mad(lumas[1], lumas[2]),
-        };
-      } finally {
-        input.dispose();
-      }
-    });
-    console.log(`F09 motion blur fade: ${JSON.stringify(result)}`);
-    expect(
-      result.midVsBefore,
-      "the transition midpoint must differ from its start",
-    ).toBeGreaterThan(2);
-    expect(result.midVsAfter, "the transition midpoint must differ from its end").toBeGreaterThan(
-      2,
-    );
-  });
-});
 
 /** Clears the project database from /lab/ui, then opens the editor with demo content. */
 async function openEditorWithDemo(page: Page) {

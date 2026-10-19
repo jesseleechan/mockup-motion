@@ -284,7 +284,6 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     duration: Math.max(1, Math.min(30, comp?.motion?.duration ?? 5)),
     layout,
     camera,
-    entrance: "none",
     texts,
     transitionIn: {
       kind: "cut",

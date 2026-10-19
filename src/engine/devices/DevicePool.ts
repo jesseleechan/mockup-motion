@@ -53,14 +53,7 @@ export class DevicePool {
     const wanted = new Map<string, { node: LayoutNode; style: Style }>();
     doc.shots.forEach((shot, shotIndex) => {
       const style = resolveShotStyle(doc, shotIndex);
-      const nodes = resolveLayout(
-        shot.layout,
-        doc.aspect,
-        doc.assets,
-        0,
-        shot.duration,
-        shot.entrance ?? "none",
-      );
+      const nodes = resolveLayout(shot.layout, doc.aspect, doc.assets, 0, shot.duration);
       for (const node of nodes) wanted.set(deviceKey(node, style), { node, style });
     });
 

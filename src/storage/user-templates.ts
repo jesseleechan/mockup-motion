@@ -173,8 +173,12 @@ export function fillUserTemplateSlots(
     return chosenId;
   };
 
-  const shots: Shot[] = template.shots.map((s) => {
+  // A video has one shot: a template saved from a multi-shot reel keeps its first.
+  const shots: Shot[] = template.shots.slice(0, 1).map((s) => {
     const shot = structuredClone(s);
+    // Its loop wrap: saved blur, push, zoom and wipe transitions play as fades.
+    const wrap = shot.transitionIn.kind as string;
+    if (wrap !== "cut" && wrap !== "fade") shot.transitionIn.kind = "fade";
 
     // A template saved before 19 Oct 2026 may use a removed layout: it takes the preset look a
     // saved project of that kind loads as (src/doc/legacy-layouts.ts).

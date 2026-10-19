@@ -44,14 +44,7 @@ export function chromeUrlRequests(doc: ProjectDoc): ChromeUrlRequest[] {
   doc.shots.forEach((shot, shotIndex) => {
     const style = resolveShotStyle(doc, shotIndex);
     if (!style.browserUrl || (style.browserChrome ?? "standard") !== "standard") return;
-    const nodes = resolveLayout(
-      shot.layout,
-      doc.aspect,
-      doc.assets,
-      0,
-      shot.duration,
-      shot.entrance ?? "none",
-    );
+    const nodes = resolveLayout(shot.layout, doc.aspect, doc.assets, 0, shot.duration);
     for (const node of nodes) {
       if (node.device !== "browser") continue;
       const toolbar = toolbarHeightFor(node.width) * Math.max(1, node.transform.scale);

@@ -4,7 +4,7 @@ import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
 import { V1_PRESETS, createV1Project } from "./fixtures/v1-presets";
 import { getTemplateById } from "../src/templates";
-import type { Layout } from "../src/doc/types";
+import type { AssetRef, Layout, Transition } from "../src/doc/types";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -39,15 +39,11 @@ describe("WP-01: Document Defaults and Validation", () => {
     });
 
     it("3. clamps shot duration to range [1, 30]", () => {
-      const brokenDoc = createDoc({
-        shots: [
-          { ...defaultShot(), duration: -5 },
-          { ...defaultShot(), duration: 100 },
-        ],
-      });
-      const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].duration).toBe(1);
-      expect(doc.shots[1].duration).toBe(30);
+      const duration = (value: number) =>
+        sanitizeDoc(createDoc({ shots: [{ ...defaultShot(), duration: value }] })).doc.shots[0]
+          .duration;
+      expect(duration(-5)).toBe(1);
+      expect(duration(100)).toBe(30);
     });
 
     it("4. clamps grain and vignette to [0, 1]", () => {
@@ -87,44 +83,38 @@ describe("WP-01: Document Defaults and Validation", () => {
     });
 
     it("7. removes missing asset references in single, saved pair and rows layouts", () => {
-      const brokenDoc = createDoc({
-        assets: [{ id: "asset-1", kind: "image", name: "test", mime: "image/png", bytes: 10 }],
-        shots: [
-          {
-            ...defaultShot(),
-            layout: { kind: "single", device: "browser", assetId: "missing-asset" },
-          },
-          {
-            ...defaultShot(),
-            // A saved pair (cut on 19 Oct 2026) loads as a browser with its desktop capture.
-            layout: {
-              kind: "pair",
-              desktopId: "missing-desk",
-              mobileId: "asset-1",
-              arrangement: "overlap",
-            } as unknown as Layout,
-          },
-          {
-            ...defaultShot(),
-            layout: {
-              kind: "rows",
-              assetIds: ["asset-1", "missing-id"],
-              rows: 2,
-              device: "browser",
-              tilt: 0,
-              travel: "period",
-            },
-          },
-        ],
+      const assets: AssetRef[] = [
+        { id: "asset-1", kind: "image", name: "test", mime: "image/png", bytes: 10 },
+      ];
+      const load = (layout: Layout) => {
+        const { doc, warnings } = sanitizeDoc(
+          createDoc({ assets, shots: [{ ...defaultShot(), layout }] }),
+        );
+        expect(warnings.length, layout.kind).toBeGreaterThan(0);
+        return doc.shots[0].layout;
+      };
+      expect(load({ kind: "single", device: "browser", assetId: "missing-asset" })).toEqual({
+        kind: "single",
+        device: "browser",
+        assetId: "",
       });
-      const { doc, warnings } = sanitizeDoc(brokenDoc);
-      expect(warnings.length).toBeGreaterThan(0);
-      const l0 = doc.shots[0].layout as { assetId?: string };
-      const l1 = doc.shots[1].layout;
-      const l2 = doc.shots[2].layout as { assetIds?: string[] };
-      expect(l0.assetId).toBe("");
-      expect(l1).toEqual({ kind: "single", device: "browser", assetId: "" });
-      expect(l2.assetIds).toEqual(["asset-1"]);
+      // A saved pair (cut on 19 Oct 2026) loads as a browser with its desktop capture.
+      const pair = {
+        kind: "pair",
+        desktopId: "missing-desk",
+        mobileId: "asset-1",
+        arrangement: "overlap",
+      } as unknown as Layout;
+      expect(load(pair)).toEqual({ kind: "single", device: "browser", assetId: "" });
+      const rows = load({
+        kind: "rows",
+        assetIds: ["asset-1", "missing-id"],
+        rows: 2,
+        device: "browser",
+        tilt: 0,
+        travel: "period",
+      }) as { assetIds?: string[] };
+      expect(rows.assetIds).toEqual(["asset-1"]);
     });
 
     it("8. resets missing asset in ambient and image background to empty", () => {
@@ -167,16 +157,18 @@ describe("WP-01: Document Defaults and Validation", () => {
           delay: -4,
         },
       ];
+      // A saved wipe (cut with reels on 19 Oct 2026) loads as a fade.
       shot.transitionIn = {
         kind: "wipe",
         duration: -1,
         easing: "quintInOut",
-      };
+      } as unknown as Transition;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
       expect(doc.shots[0].texts[0].size).toBe(1.6);
       expect(doc.shots[0].texts[0].delay).toBe(0);
       expect(doc.shots[0].transitionIn.duration).toBe(0);
+      expect(doc.shots[0].transitionIn.kind).toBe("fade");
     });
   });
 

@@ -9,7 +9,6 @@ const TEMPLATES = ["scroll-story"];
 
 const DEVICES = ["browser", "phone", "card"];
 const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
-const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
 const TEXT_ANIMS: Record<string, number> = {
   fadeUp: 0.375,
   maskReveal: 0.375,
@@ -100,14 +99,6 @@ for (const device of DEVICES) {
 }
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
-}
-for (const kind of TRANSITIONS) {
-  STILLS.push({
-    name: `transition-${kind}`,
-    fixture: `transition-${kind}`,
-    aspect: "16:9",
-    t: 3.6,
-  });
 }
 for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
   STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });

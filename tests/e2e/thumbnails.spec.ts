@@ -114,40 +114,11 @@ test.describe("F07: shot and project thumbnails", () => {
     await resetAndOpen(page);
   });
 
-  test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
+  test("the shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    // Every built-in template has one shot, so add a second layout and a title card.
     await applyTemplateWithDemo(page, "scroll-story");
-    for (const item of ["Same layout", "Title card"]) {
-      await page.getByRole("button", { name: "Add shot" }).click();
-      await page.getByRole("menuitem", { name: item }).click();
-    }
-    // A title card from the menu has no text, so its thumbnail is a flat background. Give it
-    // a title, as the reel templates did.
-    await page.evaluate(() => {
-      const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
-      if (!store) throw new Error("__editorStore is unavailable");
-      store.getState().apply((draft) => {
-        const title = draft.shots.find((s) => s.layout.kind === "title");
-        if (!title) throw new Error("No title card was added");
-        title.texts = [
-          {
-            id: "txt-title",
-            role: "title",
-            text: "Studio Kova",
-            color: "",
-            font: "display",
-            size: 8,
-            anchor: "center",
-            align: "center",
-            animation: "fadeUp",
-            delay: 0,
-          },
-        ];
-      });
-    });
     const shots = await shotCount(page);
-    expect(shots).toBe(3);
+    expect(shots).toBe(1);
 
     const cards = page.locator('[data-testid="shot-card"]');
     await expect(cards).toHaveCount(shots);

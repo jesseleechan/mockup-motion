@@ -16,7 +16,6 @@ import type {
   ShadowPreset,
   TextAnimId,
   TextLayer,
-  Transition,
 } from "../doc/types";
 import type { TemplateCategory } from "../templates";
 
@@ -65,22 +64,6 @@ export const CAMERA_PRESET_ORDER: CameraPresetId[] = [
   "heroTilt",
   "isoDrift",
 ];
-
-export const TRANSITION_LABELS: Record<Transition["kind"], string> = {
-  cut: "Cut",
-  fade: "Fade",
-  blur: "Blur",
-  push: "Push",
-  zoom: "Zoom",
-  wipe: "Wipe",
-};
-
-export const ENTRANCE_LABELS: Record<Shot["entrance"], string> = {
-  none: "None",
-  rise: "Rise",
-  scale: "Scale up",
-  stagger: "Stagger",
-};
 
 export const TEXT_ANIMATION_LABELS: Record<TextAnimId, string> = {
   none: "None",

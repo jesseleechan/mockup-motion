@@ -47,7 +47,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -106,7 +105,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -165,7 +163,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -224,7 +221,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -283,7 +279,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -342,7 +337,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -401,7 +395,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -460,7 +453,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -519,7 +511,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -578,7 +569,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -637,7 +627,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -696,7 +685,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -755,7 +743,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -814,7 +801,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",
@@ -873,7 +859,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "entrance": "none",
         "texts": [],
         "transitionIn": {
           "kind": "cut",

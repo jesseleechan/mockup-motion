@@ -67,14 +67,8 @@ const VALID_FPS = [24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
 const VALID_FORMATS = ["mp4", "webm"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
-const VALID_TRANSITIONS: readonly Transition["kind"][] = [
-  "cut",
-  "fade",
-  "blur",
-  "push",
-  "zoom",
-  "wipe",
-];
+// Saved blur, push, zoom and wipe transitions (cut with reels on 19 Oct 2026) load as fades.
+const LEGACY_TRANSITIONS = ["blur", "push", "zoom", "wipe"];
 const VALID_TEXT_ANIMS: readonly TextAnimId[] = [
   "none",
   "fadeUp",
@@ -228,9 +222,11 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
 
   // Shots
   const aspect: Aspect = includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9";
+  // A document has one shot. Multi-shot reels were cut on 19 Oct 2026: a saved reel keeps its
+  // first shot, whose transitionIn is the loop wrap (docs/cuts-plan/README.md).
   const shots: Shot[] = [];
   if (Array.isArray(d.shots)) {
-    for (let i = 0; i < d.shots.length; i++) {
+    for (let i = 0; i < d.shots.length && shots.length === 0; i++) {
       const s = d.shots[i];
       if (s && typeof s === "object") {
         const sanitizedShot = sanitizeShot(
@@ -244,6 +240,9 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
           shots.push(sanitizedShot);
         }
       }
+    }
+    if (d.shots.length > 1) {
+      warnings.push(`Kept the first of ${d.shots.length} shots: a video has one shot.`);
     }
   }
 
@@ -396,9 +395,6 @@ function sanitizeShot(
   }
 
   const camera: CameraMove = sanitizeCamera(s.camera);
-  const entrance = ["none", "rise", "scale", "stagger"].includes(s.entrance as string)
-    ? (s.entrance as Shot["entrance"])
-    : "none";
 
   const transitionIn: Transition = sanitizeTransition(s.transitionIn);
 
@@ -420,12 +416,11 @@ function sanitizeShot(
     layout,
     // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
-    entrance,
     texts,
     transitionIn,
   };
 
-  // A removed layout takes its preset look's camera, entrance, wrap and length.
+  // A removed layout takes its preset look's camera, wrap and length.
   const look =
     s.layout && typeof s.layout === "object"
       ? legacyLook(s.layout as Record<string, unknown>)
@@ -595,14 +590,11 @@ function sanitizeTransition(trans: unknown): Transition {
     return { kind: "cut", duration: 0, easing: "quintInOut" };
   }
   const t = trans as Record<string, unknown>;
-  const kind = includesValue(VALID_TRANSITIONS, t.kind) ? t.kind : "cut";
+  const kind = t.kind === "fade" || LEGACY_TRANSITIONS.includes(t.kind as string) ? "fade" : "cut";
   return {
     kind,
     duration: clamp(typeof t.duration === "number" ? t.duration : 0.7, 0, 5),
     easing: includesValue(VALID_EASINGS, t.easing) ? t.easing : "quintInOut",
-    direction: ["left", "right", "up", "down"].includes(t.direction as string)
-      ? (t.direction as Transition["direction"])
-      : undefined,
   };
 }
 

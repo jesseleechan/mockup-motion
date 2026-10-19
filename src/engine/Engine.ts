@@ -4,7 +4,6 @@ import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
 import {
   evaluate,
   isSteppedLayout,
-  shotEntrance,
   type FrameState,
   type LayoutNode,
   type ShotFrame,
@@ -150,7 +149,7 @@ export class Engine {
     this.compositeTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
       colorSpace: THREE.SRGBColorSpace,
     });
-    this.compositePass = new CompositePass(opts.width / opts.height);
+    this.compositePass = new CompositePass();
 
     // Final post-processing pass
     this.finalPass = new FinalPass({
@@ -229,7 +228,6 @@ export class Engine {
     const renderH = Math.round(h * ss);
 
     this.resizeTargets(renderW, renderH);
-    this.compositePass.setAspect(w / h);
     this.finalPass.resize(w, h, ss);
     this.rescaleScreens();
   }
@@ -311,7 +309,7 @@ export class Engine {
     // the slider reference.
     const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
     this.deviceFade.prepare(this.renderer, this.targetA, {
-      fade: hasStepped || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
+      fade: hasStepped,
       srgb: hasStepped,
     });
 

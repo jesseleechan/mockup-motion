@@ -180,38 +180,9 @@ export const EditorShell: React.FC = () => {
         return;
       }
 
-      // Cmd+D: Duplicate Shot
-      if (cmdKey && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        if (selection.kind === "shot") {
-          const target = doc.shots.find((s) => s.id === selection.id);
-          if (target) {
-            const copy = { ...structuredClone(target), id: crypto.randomUUID() };
-            apply(
-              (draft) => {
-                const idx = draft.shots.findIndex((s) => s.id === selection.id);
-                draft.shots.splice(idx + 1, 0, copy);
-              },
-              { label: "Duplicate shot" },
-            );
-            setSelection({ kind: "shot", id: copy.id });
-          }
-        }
-        return;
-      }
-
-      // Delete / Backspace: Remove selected shot or text
+      // Delete / Backspace: Remove selected text
       if (e.key === "Delete" || e.key === "Backspace") {
-        if (selection.kind === "shot" && doc.shots.length > 1) {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              draft.shots = draft.shots.filter((s) => s.id !== selection.id);
-            },
-            { label: "Delete shot" },
-          );
-          setSelection({ kind: "video" });
-        } else if (selection.kind === "text") {
+        if (selection.kind === "text") {
           e.preventDefault();
           apply(
             (draft) => {
