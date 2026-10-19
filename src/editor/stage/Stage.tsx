@@ -5,7 +5,7 @@ import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
 import { unfilledSlots, useTemplateActions } from "../template-actions";
 import type { AssetRef } from "../../doc/types";
-import { aspectRatioValue, schedule } from "../../motion";
+import { aspectRatioValue } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 import { validateAndDecodeAsset } from "../../assets/decode";
@@ -31,14 +31,12 @@ interface StageProps {
 
 export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   const doc = useEditorStore((s) => s.doc);
-  const apply = useEditorStore((s) => s.apply);
   const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
   const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
   const { addScreenshots, fillWithDemoContent } = useTemplateActions();
 
   const stageZoom = useUIStore((s) => s.stageZoom);
   const selection = useUIStore((s) => s.selection);
-  const playhead = useUIStore((s) => s.playhead);
   const selectedShotIndex = useMemo(() => {
     if (selection.kind === "shot") {
       const idx = doc.shots.findIndex((s) => s.id === selection.id);
@@ -134,50 +132,6 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     };
   }, [handleFiles]);
 
-  const handleCanvasClick = (
-    e: React.MouseEvent<HTMLCanvasElement>,
-    pick: { nodeId: string; u: number; v: number } | null,
-  ) => {
-    const activeShot = doc.shots[selectedShotIndex];
-    if (
-      !pick ||
-      !activeShot ||
-      activeShot.layout.kind !== "single" ||
-      !activeShot.cursor?.enabled
-    ) {
-      return;
-    }
-
-    const isClick = e.altKey;
-    const { shots: schedShots } = schedule(doc);
-    const sched = schedShots[selectedShotIndex];
-    const localT = sched
-      ? Math.max(0, Math.min(activeShot.duration, playhead - sched.start))
-      : playhead;
-
-    apply(
-      (draft) => {
-        const target = draft.shots.find((s) => s.id === activeShot.id);
-        if (!target) return;
-        if (!target.cursor) {
-          target.cursor = { enabled: true, style: "arrow", keys: [] };
-        }
-        const newKey = {
-          t: Number(localT.toFixed(2)),
-          x: Number(pick.u.toFixed(3)),
-          y: Number(pick.v.toFixed(3)),
-          click: isClick,
-        };
-        target.cursor.keys = (target.cursor.keys || []).filter(
-          (k) => Math.abs(k.t - newKey.t) > 0.05,
-        );
-        target.cursor.keys.push(newKey);
-        target.cursor.keys.sort((a, b) => a.t - b.t);
-      },
-      { label: isClick ? "Add cursor click" : "Add cursor key" },
-    );
-  };
-
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
   const showEmptyState = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
   // A template is applied but some required slot has no screenshot yet (F06).
@@ -187,191 +141,195 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     : null;
 
   return (
-    <div
-      ref={stageRef}
-      data-testid="stage"
-      className="relative flex-1 w-full h-full bg-[var(--color-stage)] flex items-center justify-center overflow-hidden select-none"
-      style={{ padding: STAGE_PADDING }}
-    >
-      {/* Hidden file input for file picker button */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept={SCREENSHOT_ACCEPT}
-        className="hidden"
-        onChange={async (e) => {
-          if (e.target.files) {
-            await handleFiles(Array.from(e.target.files));
-          }
-        }}
-      />
+    <>
+      <div
+        ref={stageRef}
+        data-testid="stage"
+        className="relative flex-1 w-full h-full bg-[var(--color-stage)] flex items-center justify-center overflow-hidden select-none"
+        style={{ padding: STAGE_PADDING }}
+      >
+        {/* Hidden file input for file picker button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={SCREENSHOT_ACCEPT}
+          className="hidden"
+          onChange={async (e) => {
+            if (e.target.files) {
+              await handleFiles(Array.from(e.target.files));
+            }
+          }}
+        />
 
-      {/* Empty State Card if no assets or shots */}
-      {showEmptyState ? (
-        <div className="z-10 max-w-md w-full bg-[var(--color-panel)] border border-[var(--color-line)] p-8 rounded-xl shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center shadow-xs">
-            <Icon icon={Film} size={26} />
+        {/* Empty State Card if no assets or shots */}
+        {showEmptyState ? (
+          <div className="z-10 max-w-md w-full bg-[var(--color-panel)] border border-[var(--color-line)] p-8 rounded-xl shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center shadow-xs">
+              <Icon icon={Film} size={26} />
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-semibold text-[var(--color-text)] tracking-tight">
+                Create a presentation
+              </h2>
+              <p className="text-xs text-[var(--color-text-2)] leading-relaxed">
+                Upload screenshots, pick a template, and export a video.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <Button
+                variant="primary"
+                className="w-full justify-center"
+                onClick={openTemplateGallery}
+                icon={<Icon icon={LayoutTemplate} size={15} />}
+              >
+                Start with a template
+              </Button>
+
+              <Button
+                variant="secondary"
+                className="w-full justify-center"
+                onClick={() => fileInputRef.current?.click()}
+                icon={<Icon icon={UploadCloud} size={15} />}
+              >
+                Choose screenshots
+              </Button>
+
+              <Button
+                variant="ghost"
+                className="w-full justify-center text-[var(--color-accent)]"
+                onClick={fillWithDemoContent}
+                icon={<Icon icon={Sparkles} size={15} />}
+              >
+                Try with demo content
+              </Button>
+            </div>
           </div>
-
-          <div className="space-y-1.5">
-            <h2 className="text-lg font-semibold text-[var(--color-text)] tracking-tight">
-              Create a presentation
-            </h2>
-            <p className="text-xs text-[var(--color-text-2)] leading-relaxed">
-              Upload screenshots, pick a template, and export a video.
-            </p>
-          </div>
-
-          <div className="space-y-2.5">
-            <Button
-              variant="primary"
-              className="w-full justify-center"
-              onClick={openTemplateGallery}
-              icon={<Icon icon={LayoutTemplate} size={15} />}
-            >
-              Start with a template
-            </Button>
-
-            <Button
-              variant="secondary"
-              className="w-full justify-center"
-              onClick={() => fileInputRef.current?.click()}
-              icon={<Icon icon={UploadCloud} size={15} />}
-            >
-              Choose screenshots
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-center text-[var(--color-accent)]"
-              onClick={fillWithDemoContent}
-              icon={<Icon icon={Sparkles} size={15} />}
-            >
-              Try with demo content
-            </Button>
-          </div>
-        </div>
-      ) : preview && preview.width > 0 && preview.height > 0 ? (
-        /* Canvas Stage Output Boundary: explicit pixels, fitted to the stage */
-        <div className="relative shrink-0" style={{ width: preview.width, height: preview.height }}>
+        ) : preview && preview.width > 0 && preview.height > 0 ? (
+          /* Canvas Stage Output Boundary: explicit pixels, fitted to the stage */
           <div
-            ref={canvasContainerRef}
-            onDragOver={(e) => {
-              if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.dataTransfer.dropEffect = "copy";
+            className="relative shrink-0"
+            style={{ width: preview.width, height: preview.height }}
+          >
+            <div
+              ref={canvasContainerRef}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/x-mockup-asset-id")) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.dataTransfer.dropEffect = "copy";
 
-                const canvas = canvasContainerRef.current?.querySelector("canvas");
-                if (canvas && engineRef.current) {
-                  const rect = canvas.getBoundingClientRect();
-                  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-                  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-                  const hit = engineRef.current.pick(x, y);
-                  setHoveredNodeId(hit?.nodeId ?? null);
-                }
-              }
-            }}
-            onDragLeave={(e) => {
-              if (!canvasContainerRef.current?.contains(e.relatedTarget as Node)) {
-                setHoveredNodeId(null);
-              }
-            }}
-            onDrop={(e) => {
-              const assetId = e.dataTransfer.getData("application/x-mockup-asset-id");
-              if (assetId) {
-                e.preventDefault();
-                e.stopPropagation();
-                const canvas = canvasContainerRef.current?.querySelector("canvas");
-                if (canvas && engineRef.current) {
-                  const rect = canvas.getBoundingClientRect();
-                  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-                  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-                  const hit = engineRef.current.pick(x, y);
-                  if (hit) {
-                    assignAssetToSlot(selectedShotIndex, hit.nodeId, assetId);
+                  const canvas = canvasContainerRef.current?.querySelector("canvas");
+                  if (canvas && engineRef.current) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                    const hit = engineRef.current.pick(x, y);
+                    setHoveredNodeId(hit?.nodeId ?? null);
                   }
                 }
-                setHoveredNodeId(null);
-              }
-            }}
-            // A ring instead of a border: the outline must not shrink the canvas below the fit.
-            className={`relative w-full h-full rounded-sm overflow-hidden shadow-2xl bg-black transition-shadow ${
-              hoveredNodeId
-                ? "ring-2 ring-[var(--color-accent)]"
-                : "ring-1 ring-[var(--color-line)]"
-            }`}
-          >
-            <Suspense fallback={null}>
-              <EngineCanvas
-                doc={doc}
-                assets={provider}
-                onEngineReady={(engine) => {
-                  engineRef.current = engine;
-                  if (import.meta.env.DEV) window.__editorEngine = engine;
-                }}
-                onCanvasClick={handleCanvasClick}
-              />
-            </Suspense>
+              }}
+              onDragLeave={(e) => {
+                if (!canvasContainerRef.current?.contains(e.relatedTarget as Node)) {
+                  setHoveredNodeId(null);
+                }
+              }}
+              onDrop={(e) => {
+                const assetId = e.dataTransfer.getData("application/x-mockup-asset-id");
+                if (assetId) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const canvas = canvasContainerRef.current?.querySelector("canvas");
+                  if (canvas && engineRef.current) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                    const hit = engineRef.current.pick(x, y);
+                    if (hit) {
+                      assignAssetToSlot(selectedShotIndex, hit.nodeId, assetId);
+                    }
+                  }
+                  setHoveredNodeId(null);
+                }
+              }}
+              // A ring instead of a border: the outline must not shrink the canvas below the fit.
+              className={`relative w-full h-full rounded-sm overflow-hidden shadow-2xl bg-black transition-shadow ${
+                hoveredNodeId
+                  ? "ring-2 ring-[var(--color-accent)]"
+                  : "ring-1 ring-[var(--color-line)]"
+              }`}
+            >
+              <Suspense fallback={null}>
+                <EngineCanvas
+                  doc={doc}
+                  assets={provider}
+                  onEngineReady={(engine) => {
+                    engineRef.current = engine;
+                    if (import.meta.env.DEV) window.__editorEngine = engine;
+                  }}
+                />
+              </Suspense>
 
-            {/* Hovered Device Drop Indicator */}
-            {hoveredNodeId && (
-              <div
-                data-testid="drop-hint"
-                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5"
-              >
-                <span>Drop to use this screenshot</span>
-              </div>
-            )}
-
-            {/* Safe Margins Overlay */}
-            {showSafeMargins && (
-              <div className="absolute inset-0 pointer-events-none z-10">
-                {/* 7% perimeter margin */}
-                <div className="absolute inset-[7%] border border-dashed border-[var(--color-accent)]/50 rounded-xs flex items-center justify-center">
-                  <span className="absolute top-1 left-1.5 text-[9px] font-mono text-[var(--color-accent)]/70 uppercase">
-                    7% safe margin
-                  </span>
-
-                  {/* 80% central vertical safe area for 9:16 and 4:5 */}
-                  {isVertical && (
-                    <div className="w-full h-[80%] border border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 rounded-xs flex items-center justify-center">
-                      <span className="text-[10px] font-mono text-[var(--color-danger)]/80 uppercase font-semibold">
-                        80% action area
-                      </span>
-                    </div>
-                  )}
+              {/* Hovered Device Drop Indicator */}
+              {hoveredNodeId && (
+                <div
+                  data-testid="drop-hint"
+                  className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5"
+                >
+                  <span>Drop to use this screenshot</span>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Safe Margins Overlay */}
+              {showSafeMargins && (
+                <div className="absolute inset-0 pointer-events-none z-10">
+                  {/* 7% perimeter margin */}
+                  <div className="absolute inset-[7%] border border-dashed border-[var(--color-accent)]/50 rounded-xs flex items-center justify-center">
+                    <span className="absolute top-1 left-1.5 text-[9px] font-mono text-[var(--color-accent)]/70 uppercase">
+                      7% safe margin
+                    </span>
+
+                    {/* 80% central vertical safe area for 9:16 and 4:5 */}
+                    {isVertical && (
+                      <div className="w-full h-[80%] border border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 rounded-xs flex items-center justify-center">
+                        <span className="text-[10px] font-mono text-[var(--color-danger)]/80 uppercase font-semibold">
+                          80% action area
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {showFillOverlay && (
-        <FillTemplateOverlay
-          onChooseScreenshots={() => fileInputRef.current?.click()}
-          onUseDemoContent={fillWithDemoContent}
-        />
-      )}
+        {showFillOverlay && (
+          <FillTemplateOverlay
+            onChooseScreenshots={() => fileInputRef.current?.click()}
+            onUseDemoContent={fillWithDemoContent}
+          />
+        )}
 
+        {/* Global Drag-and-drop Overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-50 bg-[var(--color-bg)]/80 backdrop-blur-xs border-2 border-dashed border-[var(--color-accent)] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-100">
+            <div className="w-14 h-14 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center animate-bounce">
+              <Icon icon={UploadCloud} size={30} />
+            </div>
+            <div className="text-base font-semibold text-[var(--color-text)]">
+              Drop screenshots anywhere to add
+            </div>
+            <div className="text-xs text-[var(--color-text-2)]">
+              PNG, WebP, JPG up to 8K resolution
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Below the stage, not over it: the stage re-fits, so the banner never covers the video. */}
       {!showEmptyState && !showFillOverlay && <UseMyScreenshotsBanner />}
-
-      {/* Global Drag-and-drop Overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 z-50 bg-[var(--color-bg)]/80 backdrop-blur-xs border-2 border-dashed border-[var(--color-accent)] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-100">
-          <div className="w-14 h-14 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center animate-bounce">
-            <Icon icon={UploadCloud} size={30} />
-          </div>
-          <div className="text-base font-semibold text-[var(--color-text)]">
-            Drop screenshots anywhere to add
-          </div>
-          <div className="text-xs text-[var(--color-text-2)]">
-            PNG, WebP, JPG up to 8K resolution
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };

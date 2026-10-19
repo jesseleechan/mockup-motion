@@ -94,6 +94,22 @@ export function fillSlots(
     }
   }
 
+  // Phase 1.5: Fill a same-page slot pair with two captures of one page (Responsive Scroll)
+  if (t.samePage) {
+    const [desktopKey, mobileKey] = t.samePage;
+    const desktopSlot = t.slots.find((s) => s.key === desktopKey);
+    const mobileSlot = t.slots.find((s) => s.key === mobileKey);
+    if (desktopSlot && mobileSlot && !result[desktopKey] && !result[mobileKey]) {
+      const pair = samePagePair(assets, desktopSlot.role, mobileSlot.role, used);
+      if (pair) {
+        result[desktopKey] = pair[0];
+        result[mobileKey] = pair[1];
+        used.add(pair[0].id);
+        used.add(pair[1].id);
+      }
+    }
+  }
+
   // Phase 2: Greedily assign remaining slots by role and tall preference
   for (const slot of t.slots) {
     if (result[slot.key]) continue; // Already preserved
@@ -131,6 +147,48 @@ export function fillSlots(
   return result;
 }
 
+/**
+ * A capture's page name from its file name: without the extension, `-full`, and the size suffix
+ * `npm run capture` adds, so `site-desktop-1440-full.png` and `site-mobile-390@2x-full.png` are
+ * both `site`.
+ */
+export function capturePageName(fileName: string): string {
+  return fileName
+    .replace(/\.[^./]+$/, "")
+    .replace(/-full$/, "")
+    .replace(/-(desktop|mobile)(-\d+(@\d+x)?)?$/, "");
+}
+
+/**
+ * Two screenshots of one page (decision D4): first a pair whose captures share a URL, then a pair
+ * whose file names name the same page. Tall screenshots first. Undefined when there is none.
+ */
+function samePagePair(
+  assets: AssetRef[],
+  desktopRole: AssetRole,
+  mobileRole: AssetRole,
+  used: Set<string>,
+): [AssetRef, AssetRef] | undefined {
+  const byTall = (a: AssetRef, b: AssetRef) =>
+    Number(Boolean(b.meta?.tall)) - Number(Boolean(a.meta?.tall));
+  const candidates = (role: AssetRole) =>
+    assets.filter((a) => a.kind === "image" && a.role === role && !used.has(a.id)).sort(byTall);
+  const desktops = candidates(desktopRole);
+  const mobiles = candidates(mobileRole);
+  const keys: ((a: AssetRef) => string | undefined)[] = [
+    (a) => a.meta?.page || undefined,
+    (a) => capturePageName(a.name) || undefined,
+  ];
+  for (const key of keys) {
+    for (const desktop of desktops) {
+      const page = key(desktop);
+      const mobile = page ? mobiles.find((m) => key(m) === page) : undefined;
+      if (mobile) return [desktop, mobile];
+    }
+  }
+  return undefined;
+}
+
 /** Required slots that fillSlots cannot fill from these assets. */
 export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
   const filled = fillSlots(t, assets);
@@ -138,7 +196,7 @@ export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[
 }
 
 /**
- * Applies a template to a project document, filling slots and preserving brand style.
+ * Applies a template to a project document, filling slots and keeping the browser chrome.
  */
 export function applyTemplate(
   template: Template,
@@ -147,11 +205,8 @@ export function applyTemplate(
 ): { style: Style; shots: Shot[]; loop: boolean } {
   const slots = fillSlots(template, doc.assets, previousAssignments);
 
-  // Preserve user's brand style (fonts, text color, accent)
+  // Preserve the user's browser chrome
   const brandStyle: Partial<Style> = {
-    fonts: doc.style.fonts,
-    textColor: doc.style.textColor,
-    accent: doc.style.accent,
     browserChrome: doc.style.browserChrome,
   };
 

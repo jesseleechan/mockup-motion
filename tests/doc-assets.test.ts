@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { collectAssetIds } from "../src/doc/assets";
 import { createDoc, defaultShot } from "../src/doc/defaults";
-import type { Aspect, AssetRef, Layout, ProjectDoc, TextLayer } from "../src/doc/types";
+import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
 import { textureWidths } from "../src/engine/textures/sizing";
 import { resolveLayout } from "../src/motion";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
@@ -12,22 +12,6 @@ function image(id: string, width = 1440, height = 900): AssetRef {
 
 function docWith(layouts: Layout[], assets: AssetRef[] = []): ProjectDoc {
   return createDoc({ assets, shots: layouts.map((layout) => defaultShot(layout)) });
-}
-
-function textLayer(id: string, logoAssetId?: string): TextLayer {
-  return {
-    id,
-    text: "Title",
-    role: "title",
-    font: "display",
-    size: 6,
-    anchor: "center",
-    align: "center",
-    color: "",
-    animation: "none",
-    delay: 0,
-    logoAssetId,
-  };
 }
 
 describe("F03: collectAssetIds", () => {
@@ -65,7 +49,6 @@ describe("F03: collectAssetIds", () => {
       layout: { kind: "stack", assetIds: ["k1", "k2", "k3"], device: "card", spread: 0.5 },
       ids: ["k1", "k2", "k3"],
     },
-    { layout: { kind: "title" }, ids: [] },
   ];
 
   for (const { layout, ids } of cases) {
@@ -79,32 +62,11 @@ describe("F03: collectAssetIds", () => {
     expect(collectAssetIds(doc).size).toBe(0);
   });
 
-  it("collects ambient and image backgrounds from the doc style and shot overrides", () => {
-    const doc = docWith([{ kind: "title" }, { kind: "title" }, { kind: "title" }]);
-    doc.style.background = { kind: "ambient", assetId: "doc-ambient", blur: 0.5, dim: 0.2 };
-    doc.shots[0].styleOverrides = {
-      background: { kind: "image", assetId: "shot-image", dim: 0.1 },
-    };
-    doc.shots[1].styleOverrides = { background: { kind: "solid", color: "#808080" } };
-    doc.shots[2].styleOverrides = {
-      background: { kind: "ambient", assetId: "shot-ambient", blur: 0.5, dim: 0.2 },
-    };
-    expect([...collectAssetIds(doc)].sort()).toEqual(["doc-ambient", "shot-ambient", "shot-image"]);
-  });
-
-  it("collects text-layer logos and excludes audio", () => {
-    const doc = docWith([{ kind: "title" }]);
-    doc.shots[0].texts = [textLayer("t1", "logo-a"), textLayer("t2")];
-    doc.audio = { assetId: "music", volume: 1, fadeIn: 0, fadeOut: 0, offset: 0 };
-    expect([...collectAssetIds(doc)]).toEqual(["logo-a"]);
-  });
-
   it("deduplicates ids shared across shots and slots", () => {
     const doc = docWith([
       { kind: "single", device: "browser", assetId: "a" },
       { kind: "pair", desktopId: "a", mobileId: "b", arrangement: "side" },
     ]);
-    doc.style.background = { kind: "ambient", assetId: "a", blur: 0.5, dim: 0.2 };
     expect([...collectAssetIds(doc)].sort()).toEqual(["a", "b"]);
   });
 });

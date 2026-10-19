@@ -17,7 +17,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
     layout,
     camera: { preset, intensity: 1, easing: "smooth", float: 0 },
     entrance: "none",
-    texts: [],
     transitionIn: { kind: "cut", duration: 0, easing: "smooth" },
   };
 }
@@ -25,7 +24,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
 describe("editor labels (F08)", () => {
   it("covers every map the UI uses", () => {
     expect(LABEL_MAPS.map(([name]) => name).sort()).toEqual([
-      "ANCHOR_LABELS",
       "ASSET_ROLE_LABELS",
       "BROWSER_CHROME_LABELS",
       "CAMERA_LABELS",
@@ -37,8 +35,6 @@ describe("editor labels (F08)", () => {
       "LAYOUT_LABELS",
       "SHADOW_LABELS",
       "TEMPLATE_CATEGORY_LABELS",
-      "TEXT_ANIMATION_LABELS",
-      "TEXT_ROLE_LABELS",
       "TRANSITION_LABELS",
     ]);
   });
@@ -72,7 +68,6 @@ describe("editor labels (F08)", () => {
         shot({ kind: "pair", desktopId: "a", mobileId: "b", arrangement: "overlap" }, "isoDrift"),
       ),
     ).toBe("Responsive pair · Isometric drift");
-    expect(labels.shotSummary(shot({ kind: "title" }, "heroTilt"))).toBe("Title card");
   });
 
   it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {
@@ -100,6 +95,24 @@ describe("editor labels (F08)", () => {
     );
     expect(labels.shotSummary(shot({ ...desktop, device: "browser", tilt: 8 }, "static"))).toBe(
       "Marquee rows · Static",
+    );
+  });
+
+  it("names a deck slider as the Stack preset of its card shape (stack plan S03)", () => {
+    const deck = {
+      kind: "slider" as const,
+      assetIds: ["a", "b", "c"],
+      axis: "y" as const,
+      shape: "desktop" as const,
+      step: 2,
+      arrangement: "deck" as const,
+    };
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Static");
+    expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
+      "Mobile stack · Static",
+    );
+    expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
+      "Slider · Static",
     );
   });
 

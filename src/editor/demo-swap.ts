@@ -17,8 +17,6 @@ function layoutAssetIds(layout: Layout): string[] {
       return [layout.desktopId, layout.mobileId];
     case "trio":
       return [layout.desktopId, layout.tabletId ?? "", layout.mobileId];
-    case "title":
-      return [];
     default:
       return layout.assetIds;
   }
@@ -39,8 +37,6 @@ function replaceLayoutAssetIds(layout: Layout, swap: (id: string) => string): vo
       layout.desktopId = swap(layout.desktopId);
       if (layout.tabletId) layout.tabletId = swap(layout.tabletId);
       layout.mobileId = swap(layout.mobileId);
-      return;
-    case "title":
       return;
     default:
       layout.assetIds = layout.assetIds.map(swap);
@@ -103,13 +99,6 @@ export function applyDemoSwap(draft: ProjectDoc, replacements: Map<string, strin
     if (before.some((id) => replacements.has(id)) && shot.scroll?.sections) {
       delete shot.scroll.sections;
     }
-  }
-  const background = draft.style.background;
-  if (
-    (background.kind === "ambient" || background.kind === "image") &&
-    replacements.has(background.assetId)
-  ) {
-    background.assetId = swap(background.assetId);
   }
   draft.assets = draft.assets.filter((a) => !replacements.has(a.id));
 }

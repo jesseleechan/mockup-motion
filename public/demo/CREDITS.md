@@ -4,8 +4,8 @@ All imagery and media assets included in MockupMotion demo sites are fully licen
 
 ## Assets
 
-1. **Aurelia Lake House (`public/demo/aurelia.png`, `demo-sites/aurelia/images/hero.jpg`)**
-   - Description: Minimalist lake pavilion architecture photograph. `hero.jpg` is the photograph cropped out of `aurelia.png`, without that image's own page header and captions.
+1. **Aurelia Lake House (`demo-sites/aurelia/images/hero.jpg`)**
+   - Description: Minimalist lake pavilion architecture photograph, cropped out of the project's original `aurelia.png` (since removed) without that image's own page header and captions.
    - Source: Original project asset retained from initial build
    - License: MIT / Project License
 

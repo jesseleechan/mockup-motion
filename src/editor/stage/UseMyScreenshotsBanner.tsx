@@ -28,11 +28,11 @@ export const UseMyScreenshotsBanner: React.FC = () => {
   };
 
   return (
-    <div className="absolute bottom-6 inset-x-0 z-20 flex justify-center pointer-events-none px-4">
+    <div className="shrink-0 flex justify-center px-4 pb-3 bg-[var(--color-stage)]">
       <section
         data-testid="use-my-screenshots"
         aria-label="Use my screenshots"
-        className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] pl-4 pr-2 py-2.5 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200"
+        className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] pl-4 pr-2 py-2.5 animate-in fade-in duration-200"
       >
         <p className="text-xs font-medium text-[var(--color-text)]">
           Your screenshots are in the library.
