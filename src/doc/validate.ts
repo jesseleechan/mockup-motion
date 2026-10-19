@@ -218,7 +218,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     supersample: includesValue(VALID_SUPERSAMPLES, rawExport.supersample)
       ? rawExport.supersample
       : 1.5,
-    motionBlur: Boolean(rawExport.motionBlur),
   };
 
   // Shots

@@ -158,7 +158,7 @@ test.describe("F09 export dialog", () => {
       await expect(summary).not.toContainText("Checking encoder");
       await expectCleanLayout(page, card, 6);
     }
-    for (const format of [/Animated GIF/, /Still frame/, /WebM/]) {
+    for (const format of [/Still frame/, /WebM/]) {
       await choose(page, dialog, "Format", format);
       await expect(summary).not.toContainText("Checking encoder");
       await expectCleanLayout(page, `Format ${format.source}`, 6);

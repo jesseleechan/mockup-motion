@@ -9,7 +9,7 @@ import {
 import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
-import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
+import { keyframeIntervalFor } from "./destinations";
 
 export type ToWorker =
   | {
@@ -108,11 +108,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
           }
 
           const t = frame / fps;
-          if (settings.motionBlur) {
-            engine.renderAccumulated(t, motionBlurShutter(fps), MOTION_BLUR_SAMPLES);
-          } else {
-            engine.renderAt(t);
-          }
+          engine.renderAt(t);
 
           await source.add(t, 1 / fps);
 

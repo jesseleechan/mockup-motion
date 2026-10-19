@@ -194,10 +194,10 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Select 4K presentation preset
     await dialog.getByRole("button", { name: "4K presentation", exact: true }).click();
 
-    // Verify format dropdown options include MP4, WebM, Web Bundle, GIF, Still Frame
+    // Verify format dropdown options include MP4, WebM, Web Bundle, Still Frame
     const formatSelect = dialog.getByRole("combobox").first();
     await formatSelect.click();
-    await expect(page.getByRole("option", { name: /Animated GIF/i })).toBeVisible();
+    await expect(page.getByRole("option", { name: /Still frame/i })).toBeVisible();
     await expect(page.getByRole("option", { name: /Web Bundle/i })).toBeVisible();
     await page.keyboard.press("Escape");
 

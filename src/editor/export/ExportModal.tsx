@@ -22,8 +22,8 @@ interface ExportModalProps {
 }
 
 function presetSettings(id: DestinationId): ExportSettings {
-  const { resolution, fps, quality, format, supersample, motionBlur } = DESTINATION_PRESETS[id];
-  return { destination: id, resolution, fps, quality, format, supersample, motionBlur };
+  const { resolution, fps, quality, format, supersample } = DESTINATION_PRESETS[id];
+  return { destination: id, resolution, fps, quality, format, supersample };
 }
 
 const notice = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs flex items-start gap-2";

@@ -130,7 +130,6 @@ test.describe("/lab page and Engine visual rendering", () => {
         quality: "high",
         format: "webm",
         supersample: 1,
-        motionBlur: false,
       });
 
       return {

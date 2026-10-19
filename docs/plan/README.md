@@ -35,7 +35,7 @@
 | **Typography:** curated font pairs (self-hosted), custom font upload, kinetic text (fade-up, mask reveal, blur-in, word stagger)                                                                           | Titles and end cards with the designer's own brand fonts.                                        |
 | **Brand kit:** logo, colors, fonts saved once and reused                                                                                                                                                   | Consistency across every video for the studio.                                                   |
 | **Cursor overlay** with click ripples (optional, per shot)                                                                                                                                                 | Shows interactions without screen recording.                                                     |
-| **Export v2:** destination presets (Website embed, Dribbble 4:3, Instagram, LinkedIn/X, 4K), supersampling, optional motion blur, **web-embed bundle** (MP4 + WebM + poster + `<video>` snippet), GIF, PNG | Built for the designer's actual destinations, especially their own website.                      |
+| **Export v2:** destination presets (Website embed, Dribbble 4:3, Instagram, LinkedIn/X, 4K), supersampling, **web-embed bundle** (MP4 + WebM + poster + `<video>` snippet), PNG (GIF and motion blur: cut) | Built for the designer's actual destinations, especially their own website.                      |
 | **4:3 aspect**                                                                                                                                                                                             | Dribbble's classic shot size (1600 × 1200).                                                      |
 | **Capture CLI** (`npm run capture <url>`): full-page desktop (1440) and mobile (390 @2×) screenshots via Playwright                                                                                        | Getting good full-page screenshots is half the job. This runs locally on the designer's machine. |
 | **Polished demo content:** static demo sites captured to real full-page screenshots                                                                                                                        | First impressions, template previews, and the test fixtures for visual regression.               |
@@ -57,6 +57,7 @@
 | Native `<select>` and `<input type=color>`, the 1,715-line `index.css`, and the unused Tailwind import                         | Replaced by a design system: Tailwind v4 tokens + Radix primitives.                                |
 | Google Fonts CDN, AI Studio leftovers (`metadata.json`, `DISABLE_HMR`, `@` alias to root, `experimentalDecorators`, `allowJs`) | Hygiene. Local-first means self-hosted fonts.                                                      |
 | Music track (WP-17), removed on 2026-10-19                                                                                     | The product is flat, looping presets; no template or demo used it. Saved music is dropped on load. |
+| Animated GIF export and motion blur, removed on 2026-10-19                                                                     | GIF froze the page and wrote 83 MB. Saved projects load with MP4 and no blur.                      |
 
 ### Keep
 
@@ -69,7 +70,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 **Why three.js:**
 
 - Perspective is the look you are after. Tilted browsers, isometric walls, floating phones, and orbiting cameras need a real camera, and Canvas 2D only supports affine transforms. Faking perspective in 2D (mesh warping) gives worse quality for more work.
-- **GPU quality features come cheap:** mipmapped and anisotropic screenshot textures (crisp text at angles), MSAA, supersampling, soft shadows via shaders, grain and dither, mesh-gradient shaders, transitions as shader blends, and motion blur by accumulation.
+- **GPU quality features come cheap:** mipmapped and anisotropic screenshot textures (crisp text at angles), MSAA, supersampling, soft shadows via shaders, grain and dither, mesh-gradient shaders, transitions as shader blends.
 - **It runs in the export worker.** `OffscreenCanvas` + WebGL2 works in Chrome, Edge, Firefox, and Safari 17+. The same `Engine` code renders the preview and every exported frame, so preview always matches export.
 - **It is mature, well-documented, and tree-shakable** (current release r186). Agents know it well, so they make fewer mistakes than with an exotic stack.
 
@@ -101,7 +102,6 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | `bezier-easing`                                                                            | Cubic-bezier solver                                                                                         | Tiny. Or hand-roll (about 40 lines)                                    |
 | `@fontsource-variable/*`                                                                   | Self-hosted UI and curated title fonts                                                                      | Inter, Instrument Serif, Fraunces, Geist, DM Sans/Serif, Space Grotesk |
 | `fflate`                                                                                   | Zip the web-embed bundle                                                                                    |                                                                        |
-| `gifenc`                                                                                   | GIF export                                                                                                  |                                                                        |
 | `vitest`, `@playwright/test`, `eslint` + `typescript-eslint` + `eslint-plugin-react-hooks` | Tests and linting                                                                                           | Replaces `node:test` and "lint = tsc"                                  |
 
 **Considered and rejected:** **Remotion** (rendering needs Node/Chromium or an experimental browser renderer, company licensing applies, and it would replace a working local pipeline); **Theatre.js** (heavy, slowing development, and imperative state); **GSAP** (excellent, but its imperative timelines do not serialize into projects); **PixiJS** (2D, no perspective camera without plugins); **React Three Fiber** (see above); **Lottie/Rive** (not needed for screenshot content).
@@ -123,7 +123,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
            projects · blobs · kits                │ preview: <canvas>, DPR-aware, on demand
                                                   │ export: OffscreenCanvas in worker
                                                   ▼
-                                   export/encode (Mediabunny) ─▶ MP4 / WebM / GIF / PNG / bundle
+                                   export/encode (Mediabunny) ─▶ MP4 / WebM / PNG / bundle
 ```
 
 - **`motion/` is the brain.** It is pure and holds all timing, easing, camera, layout, scroll, and text animation. It is unit-tested, including loop seams and framing limits.
@@ -199,7 +199,7 @@ Every WP above is marked Done (decided 7 Oct 2026). These are the acceptance cri
 - **WP-12:** the Layout select only switches between a single device and a title card. The editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
 - **WP-13:** Media tab cards show an icon instead of the screenshot. Duplicating a project doesn't copy its thumbnail.
 - **WP-15:** section detection precision is about 25%. The mobile ground truth in `sections.test.ts` is loose.
-- **WP-16:** GIF export runs on the main thread and is far over the WP-16 size target. The dialog doesn't remember settings. `probe.canExport4K` is unused. Cached text rasters are transferred to the worker. X has no card of its own.
+- **WP-16:** the dialog doesn't remember settings. `probe.canExport4K` is unused. Cached text rasters are transferred to the worker. X has no card of its own.
 - **WP-18:** Safari, Firefox and Edge have never been run; they are out of scope for now ([`browser-matrix.md`](browser-matrix.md)). Perf numbers on real hardware aren't reported. The loop-watch, banding and shimmer items of quality bar §8 aren't verified for any template ([`quality-review.md`](quality-review.md)). The CI e2e job takes 39–68 min. The visual baselines are 21 MB. Three e2e tests are timing-sensitive on CI. e2e runs rewrite tracked screenshots. No dead-code check (`knip` or `ts-prune`) has been run.
 
 Sizes: S ≈ half a day of agent work, M ≈ 1–2 days, L ≈ 2–4 days, each including verification.

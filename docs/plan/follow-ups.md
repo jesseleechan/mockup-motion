@@ -57,13 +57,12 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 
 ## Export
 
-| Item                                                                                                                                                                                                                                                                          | Source   |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| The export transfers cached text-raster bitmaps to the worker. A second export at the same resolution (a bundle's second file) may get detached bitmaps. Images were fixed in F09 by sending clones; text and URL rasters need the same. Not reproduced.                      | F09, F11 |
-| The export dialog doesn't remember the last-used settings (`doc.export` is never read or written). It starts from the Website preset each time.                                                                                                                               | F09      |
-| `probe.canExport4K` is computed but unused by the dialog.                                                                                                                                                                                                                     | F09      |
-| GIF export renders and encodes on the main thread. A 6 s GIF at the default size (1708 × 960, 20 fps) froze the page for over a minute and came out at 83 MB, against an estimate of 46.9 MB. WP-16 asks for under 15 MB at 960 px and 15 fps. No browser test exports a GIF. | F14      |
-| X has no destination card of its own; "LinkedIn & X" uses the LinkedIn preset.                                                                                                                                                                                                | F09      |
+| Item                                                                                                                                                                                                                                                     | Source   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| The export transfers cached text-raster bitmaps to the worker. A second export at the same resolution (a bundle's second file) may get detached bitmaps. Images were fixed in F09 by sending clones; text and URL rasters need the same. Not reproduced. | F09, F11 |
+| The export dialog doesn't remember the last-used settings (`doc.export` is never read or written). It starts from the Website preset each time.                                                                                                          | F09      |
+| `probe.canExport4K` is computed but unused by the dialog.                                                                                                                                                                                                | F09      |
+| X has no destination card of its own; "LinkedIn & X" uses the LinkedIn preset.                                                                                                                                                                           | F09      |
 
 ## Demo content and capture
 

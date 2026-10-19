@@ -1,5 +1,5 @@
 import React from "react";
-import { Field, Select, Switch } from "../../ui";
+import { Field, Select } from "../../ui";
 import type { ExportFormat, ExportQuality, ExportSettings } from "../../doc/types";
 import { sectionHeading } from "./DestinationPicker";
 
@@ -7,7 +7,6 @@ const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
   { value: "mp4", label: "MP4 (H.264)" },
   { value: "webm", label: "WebM (VP9)" },
   { value: "bundle", label: "Web bundle (.zip)" },
-  { value: "gif", label: "Animated GIF" },
   { value: "png", label: "Still frame (.png)" },
 ];
 
@@ -45,7 +44,7 @@ interface EncodingSettingsProps {
 
 /**
  * Two columns of stacked fields. Controls that a format ignores are disabled: a still frame
- * has no frame rate, and GIFs and stills skip bitrate, supersampling and motion blur.
+ * has no frame rate, bitrate or supersampling.
  */
 export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, onChange }) => {
   const { format } = settings;
@@ -105,19 +104,6 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
             options={SUPERSAMPLE_OPTIONS}
             disabled={!isVideo}
           />
-        </Field>
-        <Field label="Motion blur" stacked>
-          <div className="flex h-8 items-center gap-2.5">
-            <Switch
-              aria-label="Motion blur"
-              checked={settings.motionBlur && isVideo}
-              onCheckedChange={(checked) => onChange({ motionBlur: checked })}
-              disabled={!isVideo}
-            />
-            <span className="min-w-0 truncate text-[12px] text-[var(--color-text-3)]">
-              {settings.motionBlur && isVideo ? "On, slower to render" : "Off"}
-            </span>
-          </div>
         </Field>
       </div>
     </section>
