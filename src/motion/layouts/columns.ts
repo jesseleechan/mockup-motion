@@ -1,11 +1,8 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { lanesAssetIds, resolveLanes } from "./lanes";
+import { PHONE_BODY_ASPECT, PHONE_SCREEN_ASPECT } from "../phone-spec";
 import type { LayoutNode } from "./types";
-
-// Quality-bar §3.1: a phone's screen aspect (9:19.5), and a phone body's width / height.
-const PHONE_SCREEN_ASPECT = 0.4615;
-const PHONE_BODY_ASPECT = 0.488;
 
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
 
