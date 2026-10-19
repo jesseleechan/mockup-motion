@@ -1,25 +1,30 @@
 import { create } from "zustand";
 import { produce } from "immer";
-import { createDoc } from "../doc/defaults";
+import { newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
+import { replaceLayoutAssetIds } from "../doc/assets";
 import { readLastExport, writeLastExport } from "../export/last-settings";
 import type {
   AssetMeta,
   AssetRef,
   AssetRole,
+  DeviceKind,
   ExportSettings,
   ProjectDoc,
   Shot,
   Style,
 } from "../doc/types";
 import {
-  clampSliderStep,
+  fitPace,
   fixedShotCamera,
   fixedShotDuration,
-  minShotDuration,
+  isPacedShot,
   isSteppedLayout,
-  sliderDuration,
+  minShotDuration,
+  minShotScreenshots,
+  setPace,
   steppedAssetIds,
+  type Pace,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 
@@ -55,7 +60,15 @@ export interface EditorStoreState {
    */
   rememberExport: (settings: ExportSettings) => void;
   applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
-  addAssets: (refs: AssetRef[], blobs?: Record<string, Blob>) => Promise<void>;
+  /**
+   * Adds assets. `replace` swaps screen asset ids in every shot (old id to new id) in the same
+   * undo step, such as a full-page screenshot taking a short one's place in Scroll Story.
+   */
+  addAssets: (
+    refs: AssetRef[],
+    blobs?: Record<string, Blob>,
+    replace?: Record<string, string>,
+  ) => Promise<void>;
   /**
    * Adds assets and applies a template in one undo step. `build` receives the document with
    * the new assets already in it, so the template's slots can fill from them.
@@ -76,26 +89,50 @@ export interface EditorStoreState {
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
   /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
-  /** Takes a screenshot out of a list layout. */
+  /**
+   * Adds new screenshots to the project and to a list layout's shot in one undo step (the
+   * screenshot list's Upload).
+   */
+  addScreenshotsToShot: (
+    shotIndex: number,
+    refs: AssetRef[],
+    blobs: Record<string, Blob>,
+  ) => Promise<void>;
+  /** Takes a screenshot out of a list layout; not below the layout's minimum (quality-bar §4). */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
+  /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
+  moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
 
   // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
+  /** Sets a looping shot's pace (src/motion/pace.ts); its timing follows. One undo step. */
+  setShotPace: (index: number, pace: Pace) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
+}
+
+/** Appends a screenshot to a list layout's shot. fitFixedShots refits a Frames shot's duration. */
+function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
+  const shot = draft.shots[shotIndex];
+  if (!shot || !("assetIds" in shot.layout)) return;
+  if (shot.layout.assetIds.includes(assetId)) return;
+  shot.layout.assetIds.push(assetId);
 }
 
 const MAX_HISTORY = 100;
 const COALESCE_WINDOW_MS = 800;
 
 /**
- * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
- * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
- * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
- * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
+ * Keeps every looping shot loop-safe after any edit. Its pace sets its timing (src/motion/pace.ts):
+ * a slider's or orbit's step, which fits the shown screenshots in a 30 s shot, a Frames shot's
+ * duration, which keeps it under its speed limit, and Responsive Scroll's hold. A slider or orbit
+ * lasts one step per shown screenshot and keeps a still camera (contracts.md §5). Edits that set
+ * such a shot's duration or camera directly are undone here. A responsive shot keeps a still
+ * camera and, while it scrolls, lasts its holds plus moves.
  */
 function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
+    fitPace(shot, draft.aspect, draft.assets);
     if (shot.layout.kind === "responsive") {
       const duration = fixedShotDuration(shot.layout, shot.scroll, draft.assets);
       if (duration !== null && duration !== shot.duration) shot.duration = duration;
@@ -104,18 +141,40 @@ function fitFixedShots(draft: ProjectDoc): void {
       continue;
     }
     if (!isSteppedLayout(shot.layout)) continue;
-    shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
-    shot.duration = sliderDuration(shot.layout);
     // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
     const camera = fixedShotCamera(shot.layout, shot.camera);
     if (camera !== shot.camera) shot.camera = camera;
   }
 }
 
-/** A new project starts from the last export settings used in this browser, if any. */
+/** The screenshot role each single device shows. */
+const DEVICE_ROLE: Partial<Record<DeviceKind, AssetRole>> = {
+  browser: "desktop",
+  phone: "mobile",
+};
+
+/**
+ * Puts the first added screenshot of the device's role on every single-device shot whose screen
+ * is empty, such as a new project's browser, so an upload shows at once. A browser takes a
+ * desktop screenshot and a phone a mobile one; other screenshots only join the library.
+ */
+function fillEmptyScreens(draft: ProjectDoc, refs: AssetRef[]): void {
+  for (const shot of draft.shots) {
+    if (shot.layout.kind !== "single" || shot.layout.assetId) continue;
+    const role = DEVICE_ROLE[shot.layout.device];
+    const match = refs.find((ref) => ref.kind === "image" && ref.role === role);
+    if (match) shot.layout.assetId = match.id;
+  }
+}
+
+/**
+ * A new project: the preset look (`newProjectDoc`), with the last export settings used in this
+ * browser, if any.
+ */
 function createNewProjectDoc(): ProjectDoc {
+  const doc = newProjectDoc();
   const lastExport = readLastExport();
-  return createDoc(lastExport ? { export: lastExport } : undefined);
+  return lastExport ? { ...doc, export: { ...doc.export, ...lastExport } } : doc;
 }
 
 export function createEditorStore(initialDoc?: ProjectDoc) {
@@ -263,7 +322,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    addAssets: async (refs: AssetRef[], blobs?: Record<string, Blob>) => {
+    addAssets: async (refs, blobs, replace) => {
       if (blobs) {
         for (const [id, blob] of Object.entries(blobs)) {
           await putBlob(id, blob);
@@ -276,6 +335,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               draft.assets.push(ref);
             }
           }
+          if (replace) {
+            for (const shot of draft.shots) replaceLayoutAssetIds(shot.layout, replace);
+          }
+          fillEmptyScreens(draft, refs);
         },
         { label: "Add assets" },
       );
@@ -449,29 +512,30 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               layout.assetIds.push(assetId);
             }
           }
-          // Another screenshot lengthens a Frames period; keep it under its speed limit.
-          shot.duration = Math.min(
-            30,
-            Math.max(shot.duration, minShotDuration(layout, draft.aspect)),
-          );
+          // Another screenshot lengthens a Frames period: fitFixedShots refits its duration.
         },
         { label: "Assign media to slot" },
       );
     },
 
     addAssetToShot: (shotIndex: number, assetId: string) => {
+      get().apply((draft) => pushShotAsset(draft, shotIndex, assetId), {
+        label: "Add screenshot to shot",
+      });
+    },
+
+    addScreenshotsToShot: async (shotIndex, refs, blobs) => {
+      for (const [id, blob] of Object.entries(blobs)) {
+        await putBlob(id, blob);
+      }
       get().apply(
         (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot || !("assetIds" in shot.layout)) return;
-          if (shot.layout.assetIds.includes(assetId)) return;
-          shot.layout.assetIds.push(assetId);
-          shot.duration = Math.min(
-            30,
-            Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)),
-          );
+          for (const ref of refs) {
+            if (!draft.assets.some((a) => a.id === ref.id)) draft.assets.push(ref);
+            pushShotAsset(draft, shotIndex, ref.id);
+          }
         },
-        { label: "Add screenshot to shot" },
+        { label: refs.length === 1 ? "Add screenshot" : "Add screenshots" },
       );
     },
 
@@ -480,17 +544,37 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         (draft) => {
           const shot = draft.shots[shotIndex];
           if (!shot || !("assetIds" in shot.layout)) return;
+          if (shot.layout.assetIds.length <= minShotScreenshots(shot.layout)) return;
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },
       );
     },
 
+    moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => {
+      const shot = get().doc.shots[shotIndex];
+      if (!shot || !("assetIds" in shot.layout)) return;
+      const from = shot.layout.assetIds.indexOf(assetId);
+      const to = Math.max(0, Math.min(shot.layout.assetIds.length - 1, toIndex));
+      // A move to its own place is not an edit, so it leaves no undo step.
+      if (from < 0 || from === to) return;
+      get().apply(
+        (draft) => {
+          const target = draft.shots[shotIndex];
+          if (!target || !("assetIds" in target.layout)) return;
+          target.layout.assetIds.splice(from, 1);
+          target.layout.assetIds.splice(to, 0, assetId);
+        },
+        { label: "Reorder screenshots" },
+      );
+    },
+
     // Timeline actions
     setShotDuration: (index: number, duration: number) => {
-      // A slider sets its own length; skip it so the edit leaves no empty undo step.
+      // A looping shot's pace sets its length; skip it so the edit leaves no empty undo step.
       const { doc } = get();
       const current = doc.shots[index];
+      if (current && isPacedShot(current)) return;
       if (current && fixedShotDuration(current.layout, current.scroll, doc.assets) !== null) return;
       get().apply(
         (draft) => {
@@ -501,6 +585,16 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: "Change shot duration" },
+      );
+    },
+
+    setShotPace: (index: number, pace: Pace) => {
+      get().apply(
+        (draft) => {
+          const shot = draft.shots[index];
+          if (shot && isPacedShot(shot)) setPace(shot, pace);
+        },
+        { label: "Change pace" },
       );
     },
 

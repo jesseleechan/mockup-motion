@@ -18,7 +18,7 @@ import { pathToFileURL } from "node:url";
 
 export const E2E_SHARDS: readonly (readonly string[])[] = [
   ["export", "orbit", "first-run", "frames"],
-  ["editor", "ui-overflow", "lab"],
+  ["editor", "ui-overflow", "lab", "import"],
   ["assets", "export-dialog", "slider", "polish"],
   ["orientation", "thumbnails", "stage", "devices", "color", "art-direction"],
 ];

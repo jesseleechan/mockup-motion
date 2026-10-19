@@ -1,9 +1,11 @@
+import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
 import { createDoc } from "../src/doc/defaults";
 import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
 import { sanitizeDoc } from "../src/doc/validate";
 import {
   evaluate,
+  minShotScreenshots,
   resolveSliderLayout,
   schedule,
   SLIDER_MAX_SCREENSHOTS,
@@ -183,13 +185,12 @@ describe("Editing a slider keeps its loop seamless", () => {
     return { store, shot: () => store.getState().doc.shots[0] };
   }
 
-  it("a step change sets the duration to N × step, and undo restores both", () => {
+  it("a pace change sets the step and the duration to N × step, and undo restores both", () => {
     const { store, shot } = storeWith(sliderDoc(4));
-    store.getState().apply((draft) => {
-      (draft.shots[0].layout as SliderLayout).step = 3;
-    });
-    expect((shot().layout as SliderLayout).step).toBe(3);
-    expect(shot().duration).toBe(12);
+    store.getState().setShotPace(0, "brisk");
+    expect(store.getState().past).toHaveLength(1);
+    expect((shot().layout as SliderLayout).step).toBe(1.6);
+    expect(shot().duration).toBeCloseTo(6.4, 9);
     store.getState().undo();
     expect((shot().layout as SliderLayout).step).toBe(2);
     expect(shot().duration).toBe(8);
@@ -262,6 +263,66 @@ describe("Editing a slider keeps its loop seamless", () => {
     expect(shot().duration).toBe(8);
   });
 
+  it("moving a screenshot reorders the list in one undo step, clamped to its ends", () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const ids = () => (shot().layout as SliderLayout).assetIds;
+    const past = store.getState().past.length;
+
+    store.getState().moveAssetInShot(0, "mobile-3", 1);
+    expect(ids()).toEqual(["mobile-0", "mobile-3", "mobile-1", "mobile-2"]);
+    expect(store.getState().past).toHaveLength(past + 1);
+    // The step and length don't change with the order.
+    expect(shot().duration).toBe(8);
+
+    store.getState().moveAssetInShot(0, "mobile-0", 99);
+    expect(ids()).toEqual(["mobile-3", "mobile-1", "mobile-2", "mobile-0"]);
+    store.getState().moveAssetInShot(0, "mobile-2", -5);
+    expect(ids()).toEqual(["mobile-2", "mobile-3", "mobile-1", "mobile-0"]);
+
+    // A move to its own place, or of a screenshot the shot doesn't show, is not an edit.
+    const steps = store.getState().past.length;
+    store.getState().moveAssetInShot(0, "mobile-2", 0);
+    store.getState().moveAssetInShot(0, "mobile-9", 2);
+    expect(store.getState().past).toHaveLength(steps);
+
+    store.getState().undo();
+    store.getState().undo();
+    store.getState().undo();
+    expect(ids()).toEqual(["mobile-0", "mobile-1", "mobile-2", "mobile-3"]);
+  });
+
+  it("the list keeps each layout's minimum: Remove stops at 3 for a slider", () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const ids = () => (shot().layout as SliderLayout).assetIds;
+    store.getState().removeAssetFromShot(0, "mobile-0");
+    expect(ids()).toHaveLength(3);
+    const steps = store.getState().past.length;
+    store.getState().removeAssetFromShot(0, "mobile-1");
+    expect(ids()).toHaveLength(3);
+    expect(store.getState().past).toHaveLength(steps);
+    expect(minShotScreenshots(slider(3))).toBe(3);
+    expect(minShotScreenshots({ ...slider(4), kind: "orbit" } as Layout)).toBe(4);
+  });
+
+  it("uploading into the list adds the screenshots to the project and the shot in one step", async () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const past = store.getState().past.length;
+    const fresh = [screenshot("mobile", 40), screenshot("mobile", 41)];
+    await store.getState().addScreenshotsToShot(0, fresh, {
+      "mobile-40": new Blob(["a"]),
+      "mobile-41": new Blob(["b"]),
+    });
+    expect((shot().layout as SliderLayout).assetIds.slice(-2)).toEqual(["mobile-40", "mobile-41"]);
+    expect(store.getState().doc.assets.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["mobile-40", "mobile-41"]),
+    );
+    expect(shot().duration).toBe(12);
+    expect(store.getState().past).toHaveLength(past + 1);
+    store.getState().undo();
+    expect((shot().layout as SliderLayout).assetIds).toHaveLength(4);
+    expect(store.getState().doc.assets.some((a) => a.id === "mobile-40")).toBe(false);
+  });
+
   it("removing a screenshot from the project takes it out of the slider", async () => {
     const { store, shot } = storeWith(sliderDoc(4));
     await store.getState().removeAsset("mobile-2");
@@ -283,12 +344,14 @@ describe("Editing a slider keeps its loop seamless", () => {
     expect(shot().duration).toBe(10);
   });
 
-  it("more screenshots shorten a long step so the shot stays within 30 s", () => {
-    const { store, shot } = storeWith(sliderDoc(7, 4));
-    expect(shot().duration).toBe(28);
+  it("more screenshots shorten a Calm step so the shot stays within 30 s", () => {
+    const doc = sliderDoc(12, 2.4);
+    doc.shots[0].pace = "calm";
+    const { store, shot } = storeWith(doc);
+    expect(shot().duration).toBeCloseTo(28.8, 9);
     store.getState().addAssetToShot(0, "mobile-12");
-    expect((shot().layout as SliderLayout).step).toBe(3.7);
-    expect(shot().duration).toBeCloseTo(29.6, 9);
+    expect((shot().layout as SliderLayout).step).toBe(2.3);
+    expect(shot().duration).toBeCloseTo(29.9, 9);
   });
 
   it("past 18 screenshots the shot shows the first 18 at 1.6 s", () => {
@@ -311,9 +374,11 @@ describe("User templates keep slider layouts", () => {
     const fresh = screenshots("desktop", 0).concat(
       ["a", "b", "c", "d", "e"].map((id) => ({ ...screenshot("mobile", 0), id })),
     );
+    // Saved before paces existed, its 3 s step takes the nearest pace: Calm, 2.4 s.
     const restored = fillUserTemplateSlots(template, fresh);
-    expect(restored.shots[0].layout).toMatchObject({ assetIds: ["a", "b", "c", "d"], step: 3 });
-    expect(restored.shots[0].duration).toBe(12);
+    expect(restored.shots[0].layout).toMatchObject({ assetIds: ["a", "b", "c", "d"], step: 2.4 });
+    expect(restored.shots[0].pace).toBe("calm");
+    expect(restored.shots[0].duration).toBeCloseTo(9.6, 9);
 
     // Fewer screenshots than slots: none repeats, and the shot gets shorter to match.
     const two = fillUserTemplateSlots(
@@ -321,6 +386,6 @@ describe("User templates keep slider layouts", () => {
       ["a", "b"].map((id) => ({ ...screenshot("mobile", 0), id })),
     );
     expect(two.shots[0].layout).toMatchObject({ assetIds: ["a", "b"] });
-    expect(two.shots[0].duration).toBe(6);
+    expect(two.shots[0].duration).toBeCloseTo(4.8, 9);
   });
 });

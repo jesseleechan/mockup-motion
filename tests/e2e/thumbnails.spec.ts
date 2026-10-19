@@ -25,7 +25,8 @@ async function resetAndOpen(page: Page) {
 
 /** Applies a template from the gallery and fills its slots with demo screenshots. */
 async function applyTemplateWithDemo(page: Page, templateId: string) {
-  await page.getByRole("button", { name: "Start with a template" }).click();
+  // The editor opens on the gallery when it starts on an empty project.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();
@@ -261,7 +262,7 @@ test.describe("F07: shot and project thumbnails", () => {
   });
 });
 
-test.describe("F07: template previews in the gallery and Library", () => {
+test.describe("F07: template previews in the gallery", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await resetAndOpen(page);
@@ -276,7 +277,8 @@ test.describe("F07: template previews in the gallery and Library", () => {
   test("a card plays its preview on hover and focus, and pauses and rewinds after", async ({
     page,
   }) => {
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     const cards = page.locator('[data-testid="template-card"]');
     await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
@@ -285,6 +287,14 @@ test.describe("F07: template previews in the gallery and Library", () => {
       els.map((el) => el.querySelector("video")?.getAttribute("poster")),
     );
     for (const poster of posters) expect(poster).toMatch(/^\/templates\/[a-z-]+\.webp$/);
+
+    // The selected card, the first-run default, plays as soon as the gallery opens.
+    const selected = page.locator(
+      `[data-testid="template-card"][data-template-id="${BUILTIN_TEMPLATES[0].id}"]`,
+    );
+    await expect
+      .poll(async () => (await videoState(selected)).paused, { timeout: ciTimeout(10_000) })
+      .toBe(false);
 
     // A rejected play() logs "[TemplatePreview] … failed to play"; report it instead of a timeout.
     const previewErrors: string[] = [];
@@ -332,7 +342,8 @@ test.describe("F07: template previews in the gallery and Library", () => {
 
   test("reduced motion shows posters only", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     const cards = page.locator('[data-testid="template-card"]');
     await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
@@ -340,15 +351,5 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await expect(posters).toHaveCount(BUILTIN_TEMPLATES.length);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
-  });
-
-  test("Library template cards show their posters", async ({ page }) => {
-    const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
-    for (let i = 0; i < BUILTIN_TEMPLATES.length; i++) {
-      const img = cards.nth(i).locator("img");
-      await img.scrollIntoViewIfNeeded();
-      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);
-    }
   });
 });

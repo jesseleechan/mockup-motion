@@ -222,7 +222,7 @@ async function openSmallPreview(page: Page) {
   // These tests check the playback loop on a single browser: Scroll Story's. The first-run
   // demo is Desktop Slider (presets D1), which plays at 60 fps on a GPU but renders 2-3x slower
   // than a single browser on SwiftShader (P05 evidence).
-  await page.getByRole("button", { name: "Browse all templates" }).click();
+  await page.getByRole("button", { name: "Templates", exact: true }).click();
   const gallery = page.getByRole("dialog");
   await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();

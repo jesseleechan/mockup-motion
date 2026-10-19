@@ -1,10 +1,8 @@
 import React from "react";
-import type { Aspect, AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
-import { framesAssetIds, isSteppedLayout, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
-import { useEditorStore } from "../../../state/store";
-import { Field, Section, Select, Slider } from "../../../ui";
+import type { AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
+import { isSteppedLayout } from "../../../motion";
+import { Field, Section, Select } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
-import { LoopLengthChips } from "./LoopLengthChips";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
@@ -17,37 +15,9 @@ interface LayoutSectionProps {
   assets: AssetRef[];
 }
 
-type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
-
-/**
- * Desktop Frames and Mobile Frames: the speed follows the shot length, so the
- * loop length chips are the speed control.
- */
-const FramesSpeedNote: React.FC<{ shot: Shot; layout: FramesLayout; aspect: Aspect }> = ({
-  shot,
-  layout,
-  aspect,
-}) => {
-  const shown = framesAssetIds(layout, aspect).length;
-  return (
-    <>
-      <Field label="Speed">
-        <p className="text-[11px] text-[var(--color-text-2)]">Speed follows shot length</p>
-        {shown < layout.assetIds.length && (
-          <p className="mt-1 text-[11px] text-[var(--color-text-2)]">
-            Shows the first {shown} screenshots, so the loop fits in 30 s.
-          </p>
-        )}
-      </Field>
-      <LoopLengthChips shot={shot} layout={layout} aspect={aspect} />
-    </>
-  );
-};
-
-/** Layout kind plus the layout's own parameters (device, lanes, steps). */
+/** Layout kind plus the layout's own parameters (device, lanes, card shape). */
 export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
-  const aspect = useEditorStore((s) => s.doc.aspect);
   const { layout } = shot;
 
   const handleKindChange = (kind: Layout["kind"]) => {
@@ -120,8 +90,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            {/* Frames has no tilt by design (quality bar §4). */}
-            <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
+            {/* Frames has no tilt by design (quality bar §4); its speed is the Pace section. */}
           </>
         )}
 
@@ -166,26 +135,6 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            <Field label="Step length" value={`${layout.step.toFixed(1)} s`}>
-              <Slider
-                aria-label="Step length"
-                min={SLIDER_MIN_STEP}
-                // One step per screenshot must fit in a 30 s shot (quality bar §2.2).
-                max={sliderStepMax(layout.assetIds.length)}
-                step={0.1}
-                value={layout.step}
-                onChange={(val) =>
-                  update(
-                    (target) => {
-                      // Whole tenths; the store sets the shot length to screenshots × step.
-                      if (isSteppedLayout(target.layout))
-                        target.layout.step = Math.round(val * 10) / 10;
-                    },
-                    { label: "Change step length", coalesceKey: `slider-step-${shot.id}` },
-                  )
-                }
-              />
-            </Field>
           </>
         )}
 
@@ -209,7 +158,6 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
           </>
         )}
       </div>

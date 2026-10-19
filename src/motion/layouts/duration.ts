@@ -35,6 +35,23 @@ export function sliderAssetIds(layout: SliderLayout): string[] {
  */
 export const ORBIT_MAX_SCREENSHOTS = 6;
 
+/**
+ * The fewest screenshots a list layout needs (quality-bar §4): 3 for a slider or stack, 4 for an
+ * orbit or Frames. Other layouts have no list, so 0.
+ */
+export function minShotScreenshots(layout: Layout): number {
+  switch (layout.kind) {
+    case "slider":
+      return 3;
+    case "orbit":
+    case "rows":
+    case "columns":
+      return 4;
+    default:
+      return 0;
+  }
+}
+
 /** The screenshots an orbit shot shows: the first ORBIT_MAX_SCREENSHOTS of its list. */
 export function orbitAssetIds(layout: OrbitLayout): string[] {
   return layout.assetIds.slice(0, ORBIT_MAX_SCREENSHOTS);
@@ -58,6 +75,19 @@ export function sliderStepMax(count: number): number {
 /** `step` limited to 1.6 s … sliderStepMax(count). */
 export function clampSliderStep(step: number, count: number): number {
   return Math.min(sliderStepMax(count), Math.max(SLIDER_MIN_STEP, step));
+}
+
+/**
+ * The longest step of a slider or orbit, counting only the screenshots it shows: an orbit shows
+ * at most 6, so its 7th and later screenshots don't shorten its step.
+ */
+export function steppedStepMax(layout: SteppedLayout): number {
+  return sliderStepMax(steppedAssetIds(layout).length);
+}
+
+/** `step` limited to 1.6 s … steppedStepMax(layout). */
+export function clampSteppedStep(step: number, layout: SteppedLayout): number {
+  return Math.min(steppedStepMax(layout), Math.max(SLIDER_MIN_STEP, step));
 }
 
 /**
@@ -96,7 +126,8 @@ export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove 
   return { preset: "static", intensity: 0, easing: camera.easing, float: 0 };
 }
 
-function isStillCamera(camera: CameraMove): boolean {
+/** A camera with no move, no intensity and no float. */
+export function isStillCamera(camera: CameraMove): boolean {
   return camera.preset === "static" && camera.intensity === 0 && camera.float === 0;
 }
 

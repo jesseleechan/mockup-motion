@@ -342,7 +342,8 @@ test.describe("slider editing", () => {
       });
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     await page.locator('[data-testid="template-card"][data-template-id="mobile-slider"]').click();
     await page.getByRole("button", { name: "Apply template" }).click();
     await page.getByRole("button", { name: "Use demo content" }).click();
@@ -353,7 +354,7 @@ test.describe("slider editing", () => {
       .locator('[data-testid="shot-card"]')
       .first()
       .click({ position: { x: 6, y: 6 } });
-    await expect(page.getByRole("slider", { name: "Step length" })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Pace" })).toBeVisible();
   }
 
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
@@ -366,7 +367,7 @@ test.describe("slider editing", () => {
     expect(camera).toMatchObject({ preset: "static", intensity: 0, float: 0 });
   });
 
-  test("changing the step length sets the shot length, and undo restores both", async ({
+  test("changing the pace sets the step and the shot length, and undo restores both", async ({
     page,
   }) => {
     await openMobileSlider(page);
@@ -375,29 +376,50 @@ test.describe("slider editing", () => {
     expect(before.step).toBe(2);
     expect(before.duration).toBe(n * 2);
 
-    // The duration control is read-only for a slider and says why.
-    const hint = page.getByText("Set by step length × screenshots");
-    await expect(hint).toBeVisible();
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "aria-describedby",
-      (await hint.getAttribute("id")) ?? "",
-    );
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "data-disabled",
-      "",
-    );
+    // A slider sets its own length, so the inspector shows it as a read-out, not a control.
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
+    const loopLength = page
+      .locator('[data-panel="inspector"] [data-field]')
+      .filter({ hasText: "Loop length" });
+    await expect(loopLength).toContainText(`${(n * 2).toFixed(1)} s`);
 
-    // Page Up moves the slider ten 0.1 s steps at once, 2.0 → 3.0 s, as one edit. (Ten arrow
-    // presses are ten edits, which coalesce into one undo step only within 800 ms.)
-    const step = page.getByRole("slider", { name: "Step length" });
-    await step.focus();
-    await step.press("PageUp");
-    await expect.poll(async () => (await sliderShot(page)).step).toBe(3);
-    expect((await sliderShot(page)).duration).toBe(n * 3);
-    await expect(page.getByText(`${(n * 3).toFixed(1)} s`).first()).toBeVisible();
+    // Calm is 2.4 s per step (quality bar §2.2), one edit.
+    const pace = page.getByRole("radiogroup", { name: "Pace" });
+    await expect(pace.getByRole("radio", { name: "Default" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await pace.getByRole("radio", { name: "Calm" }).click();
+    await expect.poll(async () => (await sliderShot(page)).step).toBe(2.4);
+    expect((await sliderShot(page)).duration).toBeCloseTo(n * 2.4, 9);
+    await expect(loopLength).toContainText(`${(n * 2.4).toFixed(1)} s`);
+    await expect(pace.getByRole("radio", { name: "Calm" })).toHaveAttribute("aria-checked", "true");
 
     await page.getByRole("button", { name: "Undo" }).click();
     expect(await sliderShot(page)).toEqual(before);
+  });
+
+  test("the screenshot list reorders by keyboard, keeping focus on the moved row", async ({
+    page,
+  }) => {
+    await openMobileSlider(page);
+    const before = (await sliderShot(page)).assetIds;
+    const list = page.getByRole("list", { name: "Slider screenshots" });
+    const first = list.getByRole("listitem").first();
+    await first.focus();
+
+    // Two moves in a row: React reorders the row's element, so focus must be put back after each.
+    await page.keyboard.press("Alt+ArrowDown");
+    await page.keyboard.press("Alt+ArrowDown");
+    const moved = [before[1], before[2], before[0], ...before.slice(3)];
+    await expect.poll(async () => (await sliderShot(page)).assetIds).toEqual(moved);
+    await expect(list.getByRole("listitem").nth(2)).toBeFocused();
+
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect
+      .poll(async () => (await sliderShot(page)).assetIds)
+      .toEqual([before[1], before[0], ...before.slice(2)]);
+    await expect(list.getByRole("listitem").nth(1)).toBeFocused();
   });
 
   test("a screenshot added from the Media tab joins the slider and adds one step", async ({
@@ -406,7 +428,6 @@ test.describe("slider editing", () => {
     await openMobileSlider(page);
     const before = await sliderShot(page);
 
-    await page.getByRole("tab", { name: "Media" }).click();
     const png = await sharp({
       create: { width: 780, height: 1688, channels: 3, background: "#3366CC" },
     })
@@ -417,7 +438,7 @@ test.describe("slider editing", () => {
       mimeType: "image/png",
       buffer: png,
     });
-    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    const card = page.getByTestId("media-card").filter({ hasText: "extra-mobile.png" });
     await expect(card).toBeVisible();
     await card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to slider" }).click();

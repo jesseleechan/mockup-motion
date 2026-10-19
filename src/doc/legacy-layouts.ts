@@ -1,6 +1,6 @@
 import { clampSliderStep } from "../motion/layouts/duration";
-import { framesDuration } from "../motion/layouts/rows";
-import { FRAMES_MIN_LOOP, framesLayout, mobileFramesLayout } from "../templates/frames-template";
+import { framesDefaultLoop } from "../motion/pace";
+import { framesLayout, mobileFramesLayout } from "../templates/frames-template";
 import type { Aspect, CameraMove, Layout, Shot } from "./types";
 
 /**
@@ -77,6 +77,6 @@ export function applyLegacyLook(shot: Shot, look: LegacyLook, aspect: Aspect): v
   shot.camera = still;
   shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
   if (look === "frames" && (shot.layout.kind === "rows" || shot.layout.kind === "columns")) {
-    shot.duration = Math.max(FRAMES_MIN_LOOP, framesDuration(shot.layout, aspect));
+    shot.duration = framesDefaultLoop(shot.layout, aspect);
   }
 }

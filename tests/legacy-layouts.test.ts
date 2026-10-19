@@ -152,9 +152,12 @@ describe("Saved projects with removed layouts", () => {
     const frames = framesLayout("16:9", DESKTOPS);
     const doc = load(frames as unknown as Record<string, unknown>);
     expect(doc.shots[0].layout).toEqual(frames);
-    // Not a removed layout, so the saved camera and length stay.
+    // Not a removed layout, so the saved camera stays. Its saved 8 s loop takes the nearest pace,
+    // Brisk: 15 s × 0.8, above its speed limit (src/motion/pace.ts).
     expect(doc.shots[0].camera.preset).toBe("pushIn");
-    expect(doc.shots[0].duration).toBe(8);
+    expect(doc.shots[0].pace).toBe("brisk");
+    expect(doc.shots[0].duration).toBe(12);
+    expect(doc.shots[0].duration).toBeGreaterThanOrEqual(framesDuration(frames, "16:9"));
   });
 
   it("loads a laptop or a tablet as a browser", () => {

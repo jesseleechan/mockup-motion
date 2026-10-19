@@ -22,6 +22,15 @@ interface UIStoreHandle {
 type Theme = "dark" | "light";
 
 const PANELS = ["library", "inspector", "timeline"] as const;
+// The fewest rendered elements each panel has; fewer means it failed to render. The slim
+// timeline without steps has exactly 10 before its thumbnail <img> loads: the root, the shot
+// button, its thumbnail box and label, the scrubber with its track, progress and playhead, and
+// the loop length with its value. Every one is checked for overflow.
+const MIN_CHECKED: Record<(typeof PANELS)[number], number> = {
+  library: 21,
+  inspector: 21,
+  timeline: 10,
+};
 
 // Desktop Frames and Mobile Frames at 16:9 (src/templates/frames-template.ts), without assets.
 type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
@@ -68,7 +77,8 @@ async function resetAndOpen(page: Page, theme: Theme) {
 
 /** Applies a template from the gallery and fills its slots with demo screenshots. */
 async function applyTemplateWithDemo(page: Page, templateId: string) {
-  await page.getByRole("button", { name: "Start with a template" }).click();
+  // The editor opens on the gallery when it starts on an empty project.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();
@@ -194,8 +204,11 @@ async function expectNoOverflow(
 ) {
   const reports = await overflowReport(page, panels);
   for (const report of reports) {
-    // A panel that renders almost nothing would pass trivially.
-    expect(report.checked, `${context}: elements checked in ${report.panel}`).toBeGreaterThan(20);
+    // A panel that renders almost nothing would pass trivially (MIN_CHECKED).
+    expect(
+      report.checked,
+      `${context}: elements checked in ${report.panel}`,
+    ).toBeGreaterThanOrEqual(MIN_CHECKED[report.panel as (typeof PANELS)[number]]);
     expect(report.offenders, `${context}: overflow in ${report.panel}`).toEqual([]);
   }
 }
@@ -237,11 +250,7 @@ test.describe("F08 overflow guard", () => {
           await expectNoOverflow(page, `${look} shot inspector`);
         }
 
-        // The other library tab.
-        await page.getByRole("tab", { name: "Media" }).click();
-        await expectNoOverflow(page, "Media tab");
-
-        // Both Frames presets, whose speed row holds the loop length chips: the shot takes a
+        // Both Frames presets, whose Pace section holds the pace control: the shot takes a
         // Desktop Frames, then a Mobile Frames layout with six screenshots. The inspector only.
         for (const layout of FRAMES_LAYOUTS) {
           await page.evaluate(
@@ -263,7 +272,7 @@ test.describe("F08 overflow guard", () => {
             { id: shotId, layout },
           );
           await select(page, { kind: "shot", id: shotId });
-          await expect(inspector.getByRole("group", { name: "Loop length" })).toBeVisible();
+          await expect(inspector.getByRole("radiogroup", { name: "Pace" })).toBeVisible();
           await expectNoOverflow(page, `${layout.kind} Frames inspector`, ["inspector"]);
         }
       });

@@ -35,6 +35,8 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
   it("transactions: begin and end around slider drags produce exactly 1 undo step", () => {
     const store = createEditorStore();
     expect(store.getState().past.length).toBe(0);
+    const initialGrain = store.getState().doc.style.grain;
+    expect(initialGrain).not.toBe(1);
 
     store.getState().begin();
 
@@ -53,10 +55,10 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
 
     // After end(), exactly 1 undo step recorded
     expect(store.getState().past.length).toBe(1);
-    expect(store.getState().past[0].style.grain).toBe(0.25); // default
+    expect(store.getState().past[0].style.grain).toBe(initialGrain);
 
     store.getState().undo();
-    expect(store.getState().doc.style.grain).toBe(0.25);
+    expect(store.getState().doc.style.grain).toBe(initialGrain);
 
     store.getState().redo();
     expect(store.getState().doc.style.grain).toBe(1);
@@ -125,6 +127,7 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
       draft.assets.push(sampleAsset);
     });
     expect(store.getState().doc.assets.length).toBe(1);
+    const initialShadow = store.getState().doc.style.shadow;
 
     const newStyle = { ...defaultStyle(), shadow: "dramatic" as const };
     const newShots = [
@@ -152,7 +155,7 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
 
     // Undo reverts the template application in 1 step
     store.getState().undo();
-    expect(store.getState().doc.style.shadow).toBe("soft");
+    expect(store.getState().doc.style.shadow).toBe(initialShadow);
     expect(store.getState().doc.assets).toEqual([sampleAsset]);
   });
 

@@ -13,11 +13,14 @@ export { resolveSingleLayout } from "./single";
 export { framesAssetIds, framesDuration, resolveRowsLayout, rowsGeometry } from "./rows";
 export {
   clampSliderStep,
+  clampSteppedStep,
   fixedShotCamera,
   fixedShotDuration,
   MAX_SHOT_DURATION,
   isSteppedLayout,
+  isStillCamera,
   minShotDuration,
+  minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
   SLIDER_MAX_SCREENSHOTS,
@@ -27,6 +30,7 @@ export {
   sliderDuration,
   sliderStepMax,
   steppedAssetIds,
+  steppedStepMax,
 } from "./duration";
 export type { SteppedLayout } from "./duration";
 export { columnsGeometry, resolveColumnsLayout } from "./columns";

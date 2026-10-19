@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { TopBar } from "./shell/TopBar";
 import { PanelResizer } from "./shell/PanelResizer";
 import { CollapsedRail } from "./shell/CollapsedRail";
@@ -11,6 +11,7 @@ import {
 } from "./shell/panel-layout";
 import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
+import { UseMyScreenshotsBanner } from "./stage/UseMyScreenshotsBanner";
 import { TransportBar } from "./transport/TransportBar";
 import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
@@ -19,22 +20,16 @@ import { ProjectsModal } from "./dialogs/ProjectsModal";
 import { TemplateGalleryModal } from "./dialogs/TemplateGalleryModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
+import { openOnStart, watchFirstRunGallery } from "./first-run-gallery";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
+import { ImportDropZone } from "./import/ImportDropZone";
+import { isTypingTarget } from "./focus";
+import { useExportModal } from "./export/useExportModal";
 import { Monitor } from "lucide-react";
-
-const ExportModal = lazy(() =>
-  import("./export/ExportModal").then((m) => ({ default: m.ExportModal })),
-);
-
-function isInputElement(el: EventTarget | null): boolean {
-  if (!el || !(el instanceof HTMLElement)) return false;
-  const tag = el.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-}
 
 export const EditorShell: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
@@ -57,6 +52,7 @@ export const EditorShell: React.FC = () => {
   const setPanelWidths = useUIStore((s) => s.setPanelWidths);
 
   const [exportOpen, setExportOpen] = useState(false);
+  const ExportModal = useExportModal(exportOpen);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [showSafeMargins, setShowSafeMargins] = useState(false);
@@ -81,17 +77,19 @@ export const EditorShell: React.FC = () => {
 
     // 2. Autosave subscription
     const cancelAutosave = setupAutosave(useEditorStore);
+    const stopFirstRunGallery = watchFirstRunGallery();
 
-    // 3. V1 Database Migration
+    // 3. Open the migrated v1 project, else the most recent saved one, else the gallery
     checkAndMigrateV1()
-      .then((migratedDoc) => {
-        if (migratedDoc) {
-          loadDoc(migratedDoc);
-        }
-      })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.warn("[Migration] v1 migration check encountered:", err);
-      });
+        return null;
+      })
+      .then((migratedDoc) => (migratedDoc ? loadDoc(migratedDoc) : openOnStart()))
+      .catch((err: unknown) => {
+        console.error("[Start] couldn't open the last project:", err);
+      })
+      .finally(() => useUIStore.getState().finishStarting());
 
     if (import.meta.env.DEV) {
       (window as unknown as { __editorStore: unknown }).__editorStore = useEditorStore;
@@ -100,6 +98,7 @@ export const EditorShell: React.FC = () => {
 
     return () => {
       cancelAutosave();
+      stopFirstRunGallery();
     };
   }, [loadDoc, setTheme]);
 
@@ -136,7 +135,7 @@ export const EditorShell: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
-      if (isInputElement(e.target)) return;
+      if (isTypingTarget(e.target)) return;
 
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const cmdKey = isMac ? e.metaKey : e.ctrlKey;
@@ -287,6 +286,7 @@ export const EditorShell: React.FC = () => {
               {/* Center Stage & Transport */}
               <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
                 <Stage showSafeMargins={showSafeMargins} />
+                <UseMyScreenshotsBanner />
                 <TransportBar
                   showSafeMargins={showSafeMargins}
                   onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
@@ -313,12 +313,13 @@ export const EditorShell: React.FC = () => {
             {!isMobileScreen && panels.timeline && <TimelineContainer />}
 
             {/* Dialogs */}
-            {exportOpen && (
-              <Suspense fallback={null}>
-                <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
-              </Suspense>
+            {exportOpen && ExportModal && (
+              // The loaded module's export: one component that never changes once set.
+              // eslint-disable-next-line react-hooks/static-components
+              <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
             )}
             <TemplateGalleryModal />
+            <ImportDropZone />
             <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
             <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
           </div>

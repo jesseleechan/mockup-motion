@@ -109,3 +109,8 @@ function shotSubject(layout: Layout): string {
   }
   return LAYOUT_LABELS[layout.kind];
 }
+
+/** "19.5 s", "20 s": whole seconds drop the decimal. */
+export function formatSeconds(seconds: number): string {
+  return `${Number.isInteger(seconds) ? seconds : seconds.toFixed(1)} s`;
+}

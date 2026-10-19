@@ -1,25 +1,22 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
   Icon,
-  useToast,
 } from "../../ui";
 import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import { getBlob } from "../../storage/blobs";
+import { useAssetUrls } from "../assets/useAssetUrls";
+import { MediaCard } from "./MediaCard";
 import type { AssetRef, AssetRole } from "../../doc/types";
-import { analyzeImage } from "../../assets/roles";
-import { validateAndDecodeAsset } from "../../assets/decode";
-import { useTemplateActions } from "../template-actions";
-import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "./capture-import";
+import { useImportFiles } from "../import/use-import-files";
+import { SCREENSHOT_ACCEPT } from "./capture-import";
 import {
   Copy,
   GalleryHorizontal,
-  ImageIcon,
   Minus,
   Plus,
   RefreshCw,
@@ -38,7 +35,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     () => ({ ...fullDoc, assets: fullDoc.assets.filter((a) => a.kind === "image") }),
     [fullDoc],
   );
-  const { addScreenshots } = useTemplateActions();
+  const importFiles = useImportFiles();
   const replaceAsset = useEditorStore((s) => s.replaceAsset);
   const removeAsset = useEditorStore((s) => s.removeAsset);
   const setAssetRole = useEditorStore((s) => s.setAssetRole);
@@ -55,48 +52,11 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const selectedSlider = selectedLayout && isSteppedLayout(selectedLayout) ? selectedLayout : null;
   const steppedName = selectedLayout?.kind === "orbit" ? "orbit" : "slider";
 
-  const [assetThumbnails, setAssetThumbnails] = useState<Record<string, string>>({});
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
-  // Load thumbnail URLs
-  useEffect(() => {
-    let active = true;
-    const urls: Record<string, string> = {};
-
-    async function loadThumbs() {
-      for (const asset of doc.assets) {
-        if (
-          asset.id.startsWith("/") ||
-          asset.id.startsWith("http") ||
-          asset.id.startsWith("blob:") ||
-          asset.id.startsWith("data:")
-        ) {
-          urls[asset.id] = asset.id;
-        } else {
-          const blob = await getBlob(asset.id);
-          if (blob && active) {
-            urls[asset.id] = URL.createObjectURL(blob);
-          }
-        }
-      }
-      if (active) {
-        setAssetThumbnails(urls);
-      }
-    }
-
-    loadThumbs();
-
-    return () => {
-      active = false;
-      for (const [id, url] of Object.entries(urls)) {
-        if (!id.startsWith("/") && !id.startsWith("http")) {
-          URL.revokeObjectURL(url);
-        }
-      }
-    };
-  }, [doc.assets]);
+  const assetThumbnails = useAssetUrls(doc.assets);
 
   // Which shots use this asset?
   const getAssetUsage = (assetId: string): number[] => {
@@ -117,59 +77,6 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
       if (used) shotIndices.push(idx + 1);
     });
     return shotIndices;
-  };
-
-  const { toast } = useToast();
-
-  const handleFileUpload = async (files: File[]) => {
-    const newRefs: AssetRef[] = [];
-    const blobs: Record<string, Blob> = {};
-    const { images, captures, errors } = await splitCaptureFiles(files);
-
-    for (const file of images) {
-      let validated: { ref: AssetRef; blob: Blob };
-      try {
-        validated = await validateAndDecodeAsset(file, file.name);
-      } catch (err) {
-        errors.push(
-          err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`,
-        );
-        continue;
-      }
-
-      const { ref } = validated;
-      blobs[ref.id] = validated.blob;
-      let hasStatusBar = false;
-      let bottomColor = "#000000";
-      try {
-        const bmp = await createImageBitmap(file);
-        const canvas = new OffscreenCanvas(Math.min(bmp.width, 390), Math.min(bmp.height, 844));
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-          const analysis = analyzeImage({
-            width: canvas.width,
-            height: canvas.height,
-            rgba: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
-          });
-          hasStatusBar = analysis.hasStatusBar;
-          bottomColor = analysis.bottomColor;
-        }
-        bmp.close();
-      } catch {
-        // Dimensions already came from validation.
-      }
-
-      newRefs.push({
-        ...ref,
-        meta: { ...ref.meta, hasStatusBar, bottomColor },
-      });
-    }
-
-    const attached = applyCaptures(newRefs, captures);
-    for (const message of [...errors, ...attached.errors]) toast(message);
-    // Fills the template when it is waiting for screenshots (F06).
-    if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
   };
 
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,7 +149,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
-            await handleFileUpload(Array.from(e.target.files));
+            await importFiles(Array.from(e.target.files));
           }
         }}
       />
@@ -298,67 +205,16 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
               return (
                 <ContextMenu key={asset.id}>
                   <ContextMenuTrigger asChild>
-                    <div
-                      draggable
+                    <MediaCard
+                      asset={asset}
+                      thumb={thumb}
+                      usage={usage}
                       onDragStart={(e) => handleDragStart(e, asset)}
                       onDragOver={handleCardDragOver}
                       onDrop={(e) => handleCardDrop(e, asset.id)}
                       onClick={() => onSelectAsset?.(asset.id)}
-                      className="group relative flex flex-col rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] overflow-hidden cursor-grab active:cursor-grabbing transition-all select-none"
-                    >
-                      {/* Thumbnail Container */}
-                      <div className="w-full aspect-[4/3] bg-black/60 relative overflow-hidden flex items-center justify-center border-b border-[var(--color-line)]">
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt={asset.name}
-                            className="w-full h-full object-cover pointer-events-none"
-                          />
-                        ) : (
-                          <Icon icon={ImageIcon} size={20} className="text-[var(--color-text-3)]" />
-                        )}
-
-                        {/* Top Badges */}
-                        <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
-                          <span className="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[9px] font-medium text-[var(--color-text)] uppercase tracking-wider">
-                            {asset.role || "desktop"}
-                          </span>
-
-                          {asset.meta?.tall && (
-                            <span className="px-1 py-0.5 rounded bg-[var(--color-accent)]/80 text-[8px] font-bold text-black uppercase">
-                              Tall
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Used in Shot Dot */}
-                        {isUsed && (
-                          <div
-                            title={`Used in shot ${usage.join(", ")}`}
-                            className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[9px] text-[var(--color-text-2)]"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
-                            <span>S{usage.join(",")}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-1.5 flex flex-col min-w-0">
-                        <span
-                          data-truncate
-                          title={asset.name}
-                          className="text-[11px] font-semibold text-[var(--color-text)] truncate"
-                        >
-                          {asset.name}
-                        </span>
-                        <span className="text-[9px] text-[var(--color-text-3)] font-mono truncate mt-0.5">
-                          {asset.width && asset.height
-                            ? `${asset.width}×${asset.height}`
-                            : `${(asset.bytes / 1024).toFixed(0)} KB`}
-                        </span>
-                      </div>
-                    </div>
+                      onSetRole={(role) => setAssetRole(asset.id, role)}
+                    />
                   </ContextMenuTrigger>
 
                   <ContextMenuContent>

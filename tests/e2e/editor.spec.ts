@@ -38,8 +38,10 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
       }
     });
 
-    // 1. First run empty state
+    // 1. First run opens on the gallery; closing it shows the empty state
     await page.goto("/");
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start with a template" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Choose screenshots" })).toBeVisible();
@@ -52,18 +54,20 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(page.locator("canvas")).toBeVisible();
     await expect(page.getByText("Create Motion Mockups")).not.toBeVisible();
 
-    // Verify timeline shows Shot 1
-    const shot1Card = page.locator(".group", { hasText: "Shot 1" });
+    // Verify the timeline shows the shot
+    const shot1Card = page.getByTestId("shot-card");
     await expect(shot1Card).toBeVisible();
 
     // 3. Change Background Palette in Inspector
-    // Click on "Ink" palette swatch
-    const inkPalette = page.getByRole("button", { name: "Ink" });
-    await expect(inkPalette).toBeVisible();
-    await inkPalette.click();
+    // Switch the background to the preset's dark fill
+    const darkTone = page
+      .getByRole("radiogroup", { name: "Background tone" })
+      .getByRole("radio", { name: "Dark" });
+    await darkTone.click();
+    await expect(darkTone).toHaveAttribute("aria-checked", "true");
 
     // 4. Change Camera Preset in Inspector
-    // Click Shot 1 card in the timeline to select it
+    // Click the shot in the timeline to select it
     await shot1Card.click();
 
     // The demo is Desktop Slider (presets D1), whose camera is still: no Camera section. Switching
@@ -220,7 +224,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // Verify canvas rendered
     await expect(page.locator("canvas")).toBeVisible();
-    await expect(page.locator(".group", { hasText: "Shot 1" })).toBeVisible();
+    await expect(page.getByTestId("shot-card")).toBeVisible();
   });
 
   test("accessibility: Axe reports 0 serious or critical violations", async ({ page }) => {
@@ -245,8 +249,10 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
       fs.mkdirSync(screenshotDir, { recursive: true });
     }
 
-    // 1. Empty state dark
+    // 1. Empty state dark, behind the gallery the editor opens on
     await page.goto("/");
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-empty-dark.png") });
 
@@ -270,5 +276,44 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-export-dark.png") });
+  });
+
+  test("Media cards show each screenshot, and the badge switches its role", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Try with demo content" }).click();
+
+    // Demo screenshots have no stored blob; each card still loads its image (it showed a
+    // generic icon before).
+    const cards = page.getByTestId("media-card");
+    await expect(cards.first()).toBeVisible();
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      const img = cards.nth(i).locator("img");
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth))
+        .toBeGreaterThan(0);
+    }
+
+    const first = cards.first();
+    const id = await first.getAttribute("data-asset-id");
+    const role = () =>
+      page.evaluate(
+        (assetId) =>
+          (
+            window as unknown as {
+              __editorStore: {
+                getState: () => { doc: { assets: { id: string; role?: string }[] } };
+              };
+            }
+          ).__editorStore
+            .getState()
+            .doc.assets.find((a) => a.id === assetId)?.role,
+        id,
+      );
+    expect(await role()).toBe("desktop");
+    await first.getByRole("button", { name: /Desktop screenshot\. Change to Mobile/ }).click();
+    expect(await role()).toBe("mobile");
+    await expect(first.getByTestId("media-role")).toHaveText("Mobile");
   });
 });

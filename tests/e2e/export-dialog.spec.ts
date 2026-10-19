@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BLANK_PAGE } from "../helpers/blank-page";
+import { ciTimeout } from "../helpers/ci";
 
 // F09: the export dialog's layout, its summary of what will really be written, and cancel.
 
@@ -63,7 +64,12 @@ async function useOneSecondDoc(page: Page) {
 async function openExportDialog(page: Page) {
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible();
+  // The click renders the preloaded dialog at once, but right after the demo content applies,
+  // the preview's start-up GPU work (WebGL context, texture row reads, thumbnails) can still hold
+  // the main thread before the check runs: up to 2.4 s locally on SwiftShader, about 5x on CI.
+  await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible({
+    timeout: ciTimeout(5_000),
+  });
   return dialog;
 }
 
@@ -243,6 +249,39 @@ test.describe("F09 export dialog", () => {
     await expect(download).toHaveText("Download WebM");
     await expect(dialog.getByTestId("export-verification")).toContainText("Verified WebM");
     await expect(dialog.getByTestId("export-verification")).toContainText("1280 × 720");
+  });
+
+  test("several sizes export one verified file each, and the project keeps its aspect", async ({
+    page,
+  }) => {
+    test.setTimeout(420_000);
+    await openEditorWithDemo(page);
+    await useOneSecondDoc(page);
+    const dialog = await openExportDialog(page);
+    await dialog
+      .getByRole("group", { name: "Sizes" })
+      .getByRole("button", { name: "9:16" })
+      .click();
+    await choose(page, dialog, "Format", /WebM/);
+    await choose(page, dialog, "Resolution", /720p/);
+    const summary = dialog.getByTestId("export-summary");
+    await expect(summary).toContainText("1280 × 720");
+    await expect(summary).toContainText("720 × 1280");
+
+    await dialog.getByRole("button", { name: "Export 2 files" }).click();
+    await expect(dialog.getByText(/File 1 of 2 · 16:9/)).toBeVisible({ timeout: 120_000 });
+    await expect(dialog.getByText("Export complete")).toBeVisible({ timeout: 300_000 });
+    const files = dialog.getByTestId("export-files");
+    await expect(files.getByRole("link", { name: "Download 16:9 WebM" })).toBeVisible();
+    await expect(files.getByRole("link", { name: "Download 9:16 WebM" })).toBeVisible();
+    await expect(files.getByText(/Verified WebM/)).toHaveCount(2);
+    await expect(files).toContainText("1280 × 720");
+    await expect(files).toContainText("720 × 1280");
+    await expectCleanLayout(page, "Files", 0);
+    const aspect = await page.evaluate(
+      () => (window as unknown as EditorWindow).__editorStore?.getState().doc.aspect,
+    );
+    expect(aspect).toBe("16:9");
   });
 
   test("cancel stops the worker and returns to the settings, which are remembered", async ({
