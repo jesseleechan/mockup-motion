@@ -9,6 +9,7 @@ import {
   fixedShotCamera,
   fixedShotDuration,
   minShotDuration,
+  minShotScreenshots,
   isSteppedLayout,
   sliderDuration,
   steppedAssetIds,
@@ -62,7 +63,16 @@ export interface EditorStoreState {
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
   /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
-  /** Takes a screenshot out of a list layout. */
+  /**
+   * Adds new screenshots to the project and to a list layout's shot in one undo step (the
+   * screenshot list's Upload).
+   */
+  addScreenshotsToShot: (
+    shotIndex: number,
+    refs: AssetRef[],
+    blobs: Record<string, Blob>,
+  ) => Promise<void>;
+  /** Takes a screenshot out of a list layout; not below the layout's minimum (quality-bar §4). */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
   /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
   moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
@@ -81,6 +91,15 @@ export interface EditorStoreState {
   setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
+}
+
+/** Appends a screenshot to a list layout's shot and lengthens the shot if the layout needs it. */
+function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
+  const shot = draft.shots[shotIndex];
+  if (!shot || !("assetIds" in shot.layout)) return;
+  if (shot.layout.assetIds.includes(assetId)) return;
+  shot.layout.assetIds.push(assetId);
+  shot.duration = Math.min(30, Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)));
 }
 
 const MAX_HISTORY = 100;
@@ -464,18 +483,23 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     addAssetToShot: (shotIndex: number, assetId: string) => {
+      get().apply((draft) => pushShotAsset(draft, shotIndex, assetId), {
+        label: "Add screenshot to shot",
+      });
+    },
+
+    addScreenshotsToShot: async (shotIndex, refs, blobs) => {
+      for (const [id, blob] of Object.entries(blobs)) {
+        await putBlob(id, blob);
+      }
       get().apply(
         (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot || !("assetIds" in shot.layout)) return;
-          if (shot.layout.assetIds.includes(assetId)) return;
-          shot.layout.assetIds.push(assetId);
-          shot.duration = Math.min(
-            30,
-            Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)),
-          );
+          for (const ref of refs) {
+            if (!draft.assets.some((a) => a.id === ref.id)) draft.assets.push(ref);
+            pushShotAsset(draft, shotIndex, ref.id);
+          }
         },
-        { label: "Add screenshot to shot" },
+        { label: refs.length === 1 ? "Add screenshot" : "Add screenshots" },
       );
     },
 
@@ -484,6 +508,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         (draft) => {
           const shot = draft.shots[shotIndex];
           if (!shot || !("assetIds" in shot.layout)) return;
+          if (shot.layout.assetIds.length <= minShotScreenshots(shot.layout)) return;
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },

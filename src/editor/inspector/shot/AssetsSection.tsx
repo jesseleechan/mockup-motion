@@ -3,6 +3,7 @@ import type { AssetRef, Shot } from "../../../doc/types";
 import {
   framesAssetIds,
   isSteppedLayout,
+  minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   SLIDER_MAX_SCREENSHOTS,
 } from "../../../motion";
@@ -66,6 +67,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           images={images}
           label={slider ? "Slider screenshots" : "Orbit screenshots"}
           shown={max}
+          minimum={minShotScreenshots(layout)}
           overflowNote={
             slider
               ? `Shows the first ${max} screenshots, so the loop fits in 30 s.`
@@ -85,6 +87,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           images={images}
           label="Frames screenshots"
           shown={framesAssetIds(layout, aspect).length}
+          minimum={minShotScreenshots(layout)}
         />
       </Section>
     );

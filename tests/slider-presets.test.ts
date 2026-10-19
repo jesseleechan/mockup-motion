@@ -1,9 +1,11 @@
+import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
 import { createDoc } from "../src/doc/defaults";
 import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
 import { sanitizeDoc } from "../src/doc/validate";
 import {
   evaluate,
+  minShotScreenshots,
   resolveSliderLayout,
   schedule,
   SLIDER_MAX_SCREENSHOTS,
@@ -288,6 +290,38 @@ describe("Editing a slider keeps its loop seamless", () => {
     store.getState().undo();
     store.getState().undo();
     expect(ids()).toEqual(["mobile-0", "mobile-1", "mobile-2", "mobile-3"]);
+  });
+
+  it("the list keeps each layout's minimum: Remove stops at 3 for a slider", () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const ids = () => (shot().layout as SliderLayout).assetIds;
+    store.getState().removeAssetFromShot(0, "mobile-0");
+    expect(ids()).toHaveLength(3);
+    const steps = store.getState().past.length;
+    store.getState().removeAssetFromShot(0, "mobile-1");
+    expect(ids()).toHaveLength(3);
+    expect(store.getState().past).toHaveLength(steps);
+    expect(minShotScreenshots(slider(3))).toBe(3);
+    expect(minShotScreenshots({ ...slider(4), kind: "orbit" } as Layout)).toBe(4);
+  });
+
+  it("uploading into the list adds the screenshots to the project and the shot in one step", async () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const past = store.getState().past.length;
+    const fresh = [screenshot("mobile", 40), screenshot("mobile", 41)];
+    await store.getState().addScreenshotsToShot(0, fresh, {
+      "mobile-40": new Blob(["a"]),
+      "mobile-41": new Blob(["b"]),
+    });
+    expect((shot().layout as SliderLayout).assetIds.slice(-2)).toEqual(["mobile-40", "mobile-41"]);
+    expect(store.getState().doc.assets.map((a) => a.id)).toEqual(
+      expect.arrayContaining(["mobile-40", "mobile-41"]),
+    );
+    expect(shot().duration).toBe(12);
+    expect(store.getState().past).toHaveLength(past + 1);
+    store.getState().undo();
+    expect((shot().layout as SliderLayout).assetIds).toHaveLength(4);
+    expect(store.getState().doc.assets.some((a) => a.id === "mobile-40")).toBe(false);
   });
 
   it("removing a screenshot from the project takes it out of the slider", async () => {

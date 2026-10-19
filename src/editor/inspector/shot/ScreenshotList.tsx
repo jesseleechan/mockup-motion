@@ -1,4 +1,11 @@
-import React, { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import React, {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+} from "react";
 import clsx from "clsx";
 import { GripVertical, Plus, Upload, X } from "lucide-react";
 import { validateAndDecodeAsset } from "../../../assets/decode";
@@ -13,6 +20,7 @@ import {
   DropdownMenuTrigger,
   Icon,
   IconButton,
+  Tooltip,
   useToast,
 } from "../../../ui";
 import { useAssetUrls } from "../../assets/useAssetUrls";
@@ -30,6 +38,8 @@ interface ScreenshotListProps {
   shown: number;
   /** Says why later rows are dimmed, when there are any. */
   overflowNote?: string;
+  /** The fewest screenshots the layout needs; Remove is disabled at this count. */
+  minimum: number;
 }
 
 /** A 40 × 26 preview, top-aligned so a tall page shows its hero (quality-bar §3: no side crop). */
@@ -57,17 +67,28 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   label,
   shown,
   overflowNote,
+  minimum,
 }) => {
   const addAssetToShot = useEditorStore((s) => s.addAssetToShot);
   const removeAssetFromShot = useEditorStore((s) => s.removeAssetFromShot);
   const moveAssetInShot = useEditorStore((s) => s.moveAssetInShot);
-  const addAssets = useEditorStore((s) => s.addAssets);
+  const addScreenshotsToShot = useEditorStore((s) => s.addScreenshotsToShot);
   const { toast } = useToast();
   const imageIds = useMemo(() => images.map((a) => a.id), [images]);
   const urls = useAssetUrls(imageIds);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The gap a dragged row would land in: 0 is before the first row.
   const [dropGap, setDropGap] = useState<number | null>(null);
+  // React reorders a moved row's element, which drops its focus; a keyboard move puts it back.
+  const rowRefs = useRef(new Map<string, HTMLLIElement>());
+  const refocusId = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const id = refocusId.current;
+    refocusId.current = null;
+    if (id) rowRefs.current.get(id)?.focus();
+  }, [assetIds]);
+  const atMinimum = assetIds.length <= minimum;
+  const minimumReason = `Needs at least ${minimum} screenshots`;
 
   const nameOf = (id: string) => images.find((a) => a.id === id)?.name ?? "Missing screenshot";
   const available = images.filter((a) => !assetIds.includes(a.id));
@@ -87,9 +108,7 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
         toast(err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`);
       }
     }
-    if (refs.length === 0) return;
-    await addAssets(refs, blobs);
-    for (const ref of refs) addAssetToShot(shotIndex, ref.id);
+    if (refs.length > 0) await addScreenshotsToShot(shotIndex, refs, blobs);
   };
 
   const gapAt = (e: DragEvent<HTMLLIElement>, index: number) => {
@@ -111,6 +130,7 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   const handleKeyDown = (e: KeyboardEvent, id: string, index: number) => {
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     e.preventDefault();
+    refocusId.current = id;
     moveAssetInShot(shotIndex, id, index + (e.key === "ArrowUp" ? -1 : 1));
   };
 
@@ -120,6 +140,10 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
         {assetIds.map((id, i) => (
           <li
             key={id}
+            ref={(el) => {
+              if (el) rowRefs.current.set(id, el);
+              else rowRefs.current.delete(id);
+            }}
             draggable
             tabIndex={0}
             aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
@@ -157,12 +181,26 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
             <span className="flex-1 min-w-0 truncate" title={nameOf(id)} data-truncate="">
               {nameOf(id)}
             </span>
-            <IconButton
-              size="sm"
-              aria-label={`Remove ${nameOf(id)}`}
-              icon={<Icon icon={X} size={12} />}
-              onClick={() => removeAssetFromShot(shotIndex, id)}
-            />
+            {atMinimum ? (
+              // aria-disabled, not disabled, so the reason shows on hover and focus.
+              <Tooltip content={minimumReason}>
+                <IconButton
+                  size="sm"
+                  aria-label={`Remove ${nameOf(id)}`}
+                  aria-disabled
+                  aria-description={minimumReason}
+                  className="opacity-40 cursor-not-allowed"
+                  icon={<Icon icon={X} size={12} />}
+                />
+              </Tooltip>
+            ) : (
+              <IconButton
+                size="sm"
+                aria-label={`Remove ${nameOf(id)}`}
+                icon={<Icon icon={X} size={12} />}
+                onClick={() => removeAssetFromShot(shotIndex, id)}
+              />
+            )}
           </li>
         ))}
       </ol>
