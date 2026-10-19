@@ -6,6 +6,8 @@ import {
   BUILTIN_TEMPLATES,
   applyTemplate,
   demoAssetsToFill,
+  emptyRequiredSlots,
+  fullPageReplacements,
   getTemplateById,
   missingRequiredSlots,
   type SlotSpec,
@@ -25,11 +27,13 @@ export function unfilledSlots(doc: ProjectDoc): SlotSpec[] {
 
 /**
  * The document's template while it has empty required slots. Otherwise none, so adding
- * screenshots to a filled template never rebuilds its shots.
+ * screenshots to a filled template never rebuilds its shots. A full-page slot holding a short
+ * screenshot isn't empty: a new full-page screenshot takes its place instead
+ * (`fullPageReplacements`).
  */
-function templateToFill(doc: ProjectDoc): Template | undefined {
+export function templateToFill(doc: ProjectDoc): Template | undefined {
   const template = currentTemplate(doc);
-  return template && missingRequiredSlots(template, doc.assets).length > 0 ? template : undefined;
+  return template && emptyRequiredSlots(template, doc.assets).length > 0 ? template : undefined;
 }
 
 /**
@@ -71,19 +75,29 @@ export function useTemplateActions() {
     const template = templateToFill(doc);
     if (template) {
       await addAssetsAndApplyTemplate(refs, template.id, (d) => applyTemplate(template, d), blobs);
-    } else {
-      await addAssets(refs, blobs);
+      return;
     }
+    const current = currentTemplate(doc);
+    const replace = current ? fullPageReplacements(current, doc.assets, refs) : {};
+    await addAssets(refs, blobs, Object.keys(replace).length > 0 ? replace : undefined);
   }, []);
 
-  /** Demo screenshots for the empty required slots of the current (or default) template. */
-  const fillWithDemoContent = useCallback(async () => {
+  /**
+   * Applies a template and fills its empty required slots with demo screenshots, in one step.
+   * The selection stays as it is, as for "Try with demo content" on the stage.
+   */
+  const applyTemplateWithDemo = useCallback(async (template: Template) => {
     const { doc, addAssetsAndApplyTemplate } = useEditorStore.getState();
-    const template = demoContentTemplate(doc);
     await addAssetsAndApplyTemplate(demoAssetsToFill(template, doc.assets), template.id, (d) =>
       applyTemplate(template, d),
     );
   }, []);
 
-  return { applyTemplateById, addScreenshots, fillWithDemoContent };
+  /** Demo screenshots for the empty required slots of the current (or default) template. */
+  const fillWithDemoContent = useCallback(
+    () => applyTemplateWithDemo(demoContentTemplate(useEditorStore.getState().doc)),
+    [applyTemplateWithDemo],
+  );
+
+  return { applyTemplateById, applyTemplateWithDemo, addScreenshots, fillWithDemoContent };
 }
