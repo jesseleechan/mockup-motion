@@ -25,6 +25,15 @@ export interface UIState {
   theme: "dark" | "light";
   /** The template gallery is rendered once, in EditorShell; anything may open it (F06). */
   templateGalleryOpen: boolean;
+  /** The gallery was opened by the editor on start, not by the user (`first-run-gallery.ts`). */
+  firstRunGallery: boolean;
+  /**
+   * True until the editor has decided what to open on start: the last project or the gallery
+   * (`openOnStart`). The stage shows no empty state meanwhile, so it doesn't flash.
+   */
+  starting: boolean;
+  /** Counts requests for the stage's screenshot file picker (the gallery's Choose screenshots). */
+  screenshotPickerRequests: number;
 
   // Actions
   setSelection: (selection: UISelection) => void;
@@ -37,7 +46,10 @@ export interface UIState {
   setPanelWidths: (widths: PanelWidths) => void;
   setTheme: (theme: "dark" | "light") => void;
   openTemplateGallery: () => void;
+  openFirstRunGallery: () => void;
   closeTemplateGallery: () => void;
+  requestScreenshotPicker: () => void;
+  finishStarting: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -54,6 +66,9 @@ export const useUIStore = create<UIState>((set) => ({
   libraryAutoCollapsed: false,
   theme: "dark",
   templateGalleryOpen: false,
+  firstRunGallery: false,
+  starting: true,
+  screenshotPickerRequests: 0,
 
   setSelection: (selection) => set({ selection }),
   setPlayhead: (playhead) => set({ playhead }),
@@ -79,6 +94,10 @@ export const useUIStore = create<UIState>((set) => ({
     })),
   setPanelWidths: (panelWidths) => set({ panelWidths }),
   setTheme: (theme) => set({ theme }),
-  openTemplateGallery: () => set({ templateGalleryOpen: true }),
-  closeTemplateGallery: () => set({ templateGalleryOpen: false }),
+  openTemplateGallery: () => set({ templateGalleryOpen: true, firstRunGallery: false }),
+  openFirstRunGallery: () => set({ templateGalleryOpen: true, firstRunGallery: true }),
+  closeTemplateGallery: () => set({ templateGalleryOpen: false, firstRunGallery: false }),
+  finishStarting: () => set({ starting: false }),
+  requestScreenshotPicker: () =>
+    set((state) => ({ screenshotPickerRequests: state.screenshotPickerRequests + 1 })),
 }));
