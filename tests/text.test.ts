@@ -92,7 +92,7 @@ describe("WP-10 Text & Typography Unit Tests", () => {
     }
   });
 
-  it("auto-contrast meets WCAG targets on Bone, Graphite, and Dusk", () => {
+  it("auto-contrast meets WCAG targets on Bone and Graphite", () => {
     // 1. Bone (light palette)
     const bone = BUILTIN_PALETTES.find((p) => p.id === "bone")!;
     expect(bone).toBeDefined();
@@ -108,15 +108,6 @@ describe("WP-10 Text & Typography Unit Tests", () => {
     const graphiteTextColor = getAutoTextColor(graphite.background, "caption");
     const graphiteContrast = getContrastRatio("#141417", graphiteTextColor);
     expect(graphiteContrast).toBeGreaterThanOrEqual(4.5);
-
-    // 3. Dusk (dark mesh palette)
-    const dusk = BUILTIN_PALETTES.find((p) => p.id === "dusk")!;
-    expect(dusk).toBeDefined();
-    const duskTextColor = getAutoTextColor(dusk.background, "caption");
-    // Average color of Dusk is dark (< 0.4)
-    // Test contrast against the dark background base
-    const duskContrast = getContrastRatio("#1B1B2F", duskTextColor);
-    expect(duskContrast).toBeGreaterThanOrEqual(4.5);
   });
 
   it("clamps text size below 1.6% of frame height up to 1.6%", async () => {

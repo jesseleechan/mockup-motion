@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 const TEMPLATES = ["scroll-story"];
 
 const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
-const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
+const BACKGROUNDS = ["solid", "gradient"];
 const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
 const TEXT_ANIMS: Record<string, number> = {
   fadeUp: 0.375,

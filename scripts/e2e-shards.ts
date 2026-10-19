@@ -17,17 +17,7 @@
 import { pathToFileURL } from "node:url";
 
 export const E2E_SHARDS: readonly (readonly string[])[] = [
-  [
-    "assets",
-    "orientation",
-    "art-direction",
-    "layouts",
-    "timeline",
-    "wave5",
-    "first-run",
-    "backgrounds",
-    "spike",
-  ],
+  ["assets", "orientation", "art-direction", "layouts", "timeline", "wave5", "first-run", "spike"],
   ["editor", "color", "ui-overflow", "polish", "text", "demo-assets", "library", "shadows-post"],
   [
     "audio",

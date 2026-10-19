@@ -5,8 +5,6 @@ import { BUILTIN_PALETTES, shadowTintFor } from "../src/doc/palettes";
 
 describe("Palettes & Color atmosphere (quality-bar §6)", () => {
   it("Built-in palettes satisfy low-chroma quality-bar limits (C <= 0.09 light, C <= 0.12 dark)", () => {
-    expect(BUILTIN_PALETTES.length).toBe(10);
-
     for (const p of BUILTIN_PALETTES) {
       expect(p.id).toBeDefined();
       expect(p.name).toBeDefined();
@@ -27,16 +25,6 @@ describe("Palettes & Color atmosphere (quality-bar §6)", () => {
         const c = oklch(p.background.color);
         expect(c).toBeDefined();
         expect(c!.c ?? 0).toBeLessThanOrEqual(p.frameAppearance === "light" ? 0.09 : 0.12);
-      } else if (p.background.kind === "mesh") {
-        for (const col of p.background.colors) {
-          const c = oklch(col);
-          expect(c).toBeDefined();
-          if (p.frameAppearance === "light") {
-            expect(c!.c ?? 0).toBeLessThanOrEqual(0.09);
-          } else {
-            expect(c!.c ?? 0).toBeLessThanOrEqual(0.12);
-          }
-        }
       }
     }
   });
@@ -91,13 +79,13 @@ describe("Palettes & Color atmosphere (quality-bar §6)", () => {
     expect(hasBrandBlue).toBe(true);
   });
 
-  it("suggestBackgrounds generates 4 candidates obeying quality-bar §6 chroma and lightness shifts", () => {
+  it("suggestBackgrounds generates light and dark candidates obeying quality-bar §6 chroma and lightness shifts", () => {
     // Palette from a light website screenshot
     const palette = ["#2563eb", "#1e293b", "#f8fafc", "#60a5fa", "#94a3b8"];
-    const suggestions = suggestBackgrounds(palette, "asset-1");
+    const suggestions = suggestBackgrounds(palette);
 
-    expect(suggestions.length).toBe(4);
-    const [lightBg, darkBg, meshBg, ambientBg] = suggestions;
+    expect(suggestions.length).toBe(2);
+    const [lightBg, darkBg] = suggestions;
 
     expect(lightBg.kind).toBe("gradient");
     if (lightBg.kind === "gradient") {
@@ -112,16 +100,5 @@ describe("Palettes & Color atmosphere (quality-bar §6)", () => {
       expect(c!.l).toBeLessThanOrEqual(0.25);
       expect(c!.c ?? 0).toBeLessThanOrEqual(0.12);
     }
-
-    expect(meshBg.kind).toBe("mesh");
-    if (meshBg.kind === "mesh") {
-      expect(meshBg.colors.length).toBe(4);
-      for (const col of meshBg.colors) {
-        const c = oklch(col);
-        expect(c!.c ?? 0).toBeLessThanOrEqual(0.09);
-      }
-    }
-
-    expect(ambientBg.kind).toBe("ambient");
   });
 });

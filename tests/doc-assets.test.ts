@@ -79,19 +79,6 @@ describe("F03: collectAssetIds", () => {
     expect(collectAssetIds(doc).size).toBe(0);
   });
 
-  it("collects ambient and image backgrounds from the doc style and shot overrides", () => {
-    const doc = docWith([{ kind: "title" }, { kind: "title" }, { kind: "title" }]);
-    doc.style.background = { kind: "ambient", assetId: "doc-ambient", blur: 0.5, dim: 0.2 };
-    doc.shots[0].styleOverrides = {
-      background: { kind: "image", assetId: "shot-image", dim: 0.1 },
-    };
-    doc.shots[1].styleOverrides = { background: { kind: "solid", color: "#808080" } };
-    doc.shots[2].styleOverrides = {
-      background: { kind: "ambient", assetId: "shot-ambient", blur: 0.5, dim: 0.2 },
-    };
-    expect([...collectAssetIds(doc)].sort()).toEqual(["doc-ambient", "shot-ambient", "shot-image"]);
-  });
-
   it("collects text-layer logos and excludes audio", () => {
     const doc = docWith([{ kind: "title" }]);
     doc.shots[0].texts = [textLayer("t1", "logo-a"), textLayer("t2")];
@@ -104,7 +91,6 @@ describe("F03: collectAssetIds", () => {
       { kind: "single", device: "browser", assetId: "a" },
       { kind: "pair", desktopId: "a", mobileId: "b", arrangement: "side" },
     ]);
-    doc.style.background = { kind: "ambient", assetId: "a", blur: 0.5, dim: 0.2 };
     expect([...collectAssetIds(doc)].sort()).toEqual(["a", "b"]);
   });
 });

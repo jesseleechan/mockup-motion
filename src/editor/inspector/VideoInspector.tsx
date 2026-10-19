@@ -154,8 +154,6 @@ export const VideoInspector: React.FC = () => {
                   bgStyle = p.background.color;
                 } else if (p.background.kind === "gradient") {
                   bgStyle = `linear-gradient(${p.background.angle}deg, ${p.background.stops.join(", ")})`;
-                } else if (p.background.kind === "mesh") {
-                  bgStyle = `radial-gradient(circle at 50% 50%, ${p.background.colors[0]}, ${p.background.colors[1]})`;
                 }
 
                 return (

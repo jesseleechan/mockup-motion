@@ -536,9 +536,6 @@ test("F03: alternating documents releases old textures", async ({ page }) => {
         width: 1600,
         height: 1000,
       });
-      // F11: the asset also feeds a blurred ambient background, whose cached render
-      // target must be released with it.
-      doc.style.background = { kind: "ambient", assetId, blur: 1, dim: 0.35 };
       return doc;
     };
     const bitmaps = await Promise.all([

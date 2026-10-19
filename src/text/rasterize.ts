@@ -55,15 +55,6 @@ export function getBackgroundLuminance(background: Background): number {
       const sum = background.stops.reduce((acc, c) => acc + getRelativeLuminance(c), 0);
       return sum / background.stops.length;
     }
-    case "mesh": {
-      if (!background.colors.length) return 0.5;
-      const sum = background.colors.reduce((acc, c) => acc + getRelativeLuminance(c), 0);
-      return sum / background.colors.length;
-    }
-    case "ambient":
-    case "image":
-      // Blurred ambient / dim screenshots typically lean darker (dim 0.5)
-      return (1.0 - (background.dim ?? 0.5)) * 0.3;
   }
 }
 

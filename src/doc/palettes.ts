@@ -24,13 +24,6 @@ export function shadowTintFor(background: Background): string {
     case "gradient":
       sampleColor = background.stops[0] ?? "#F1EDE6";
       break;
-    case "mesh":
-      sampleColor = background.colors[0] ?? "#1B1B2F";
-      break;
-    case "ambient":
-    case "image":
-      sampleColor = "#141417";
-      break;
   }
 
   const parsed = oklch(sampleColor);
@@ -50,7 +43,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 10 Built-in curated palettes from quality-bar §6.
+ * 8 built-in curated palettes from quality-bar §6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [
@@ -138,35 +131,7 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     textColor: "#261914",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D2B8A6" }),
   },
-  // 7. Dusk (Moody Warm Twilight Mesh) - OKLCH C ~0.04-0.06
-  {
-    id: "dusk",
-    name: "Dusk",
-    background: {
-      kind: "mesh",
-      colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-      drift: 0.05,
-      seed: 42,
-    },
-    frameAppearance: "dark",
-    textColor: "#FAF5FF",
-    shadowTint: shadowTintFor({ kind: "solid", color: "#1B1B2F" }),
-  },
-  // 8. Mist (Ethereal Morning Pastel Mesh) - OKLCH C ~0.02
-  {
-    id: "mist",
-    name: "Mist",
-    background: {
-      kind: "mesh",
-      colors: ["#E9EEF5", "#D7E0EE", "#EDE3F0", "#F6EFE6"],
-      drift: 0.04,
-      seed: 108,
-    },
-    frameAppearance: "light",
-    textColor: "#18181B",
-    shadowTint: shadowTintFor({ kind: "solid", color: "#D7E0EE" }),
-  },
-  // 9. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
+  // 7. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
   {
     id: "ash",
     name: "Ash",
@@ -175,7 +140,7 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#DFE1E3" }),
   },
-  // 10. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
+  // 8. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
   // slider and Frames presets - OKLCH C ~0.005
   {
     id: "onyx",

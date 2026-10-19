@@ -127,8 +127,8 @@ describe("WP-14: Storyboard Timeline & Transitions", () => {
       expect(frameStart.layers.length).toBeGreaterThan(0);
       expect(frameEnd.layers.length).toBeGreaterThan(0);
 
-      // In a looped document, t = total wraps to t = 0, so backgroundPhase and layers match
-      expect(frameEnd.backgroundPhase).toBeCloseTo(frameStart.backgroundPhase, 4);
+      // In a looped document, t = total wraps to t = 0, so the time and layers match
+      expect(frameEnd.t).toBeCloseTo(frameStart.t, 4);
 
       // Camera pose continuity across seam
       const startCam = frameStart.layers[0].frame.camera;

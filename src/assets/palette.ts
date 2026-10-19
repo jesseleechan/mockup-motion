@@ -125,18 +125,16 @@ export function dominantColors(rgba: Uint8ClampedArray, w: number, h: number, k 
 }
 
 /**
- * Derives 4 candidate backgrounds (light, dark, mesh, ambient) from the extracted palette per quality-bar §6.
+ * Derives 2 candidate backgrounds (light, dark) from the extracted palette per quality-bar §6.
  * - Chroma lowered by 40-60% (C <= 0.09 light, C <= 0.12 dark).
  * - Lightness shifted away from the screenshot's average by at least 0.25 L.
  */
-export function suggestBackgrounds(palette: string[], assetId = ""): Background[] {
+export function suggestBackgrounds(palette: string[]): Background[] {
   const parsed = palette.map((hex) => oklch(hex)).filter(Boolean);
   if (parsed.length === 0) {
     return [
       { kind: "solid", color: "#F1EDE6" },
       { kind: "gradient", stops: ["#141417", "#2A2A30"], angle: 305, angleConvention: "css" },
-      { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.05, seed: 1 },
-      { kind: "ambient", assetId, blur: 0.8, dim: 0.2 },
     ];
   }
 
@@ -194,31 +192,5 @@ export function suggestBackgrounds(palette: string[], assetId = ""): Background[
     angleConvention: "css",
   };
 
-  // Mesh suggestion: 4 harmonious low-chroma colors
-  const meshColors: string[] = [];
-  const baseH = primary.h ?? 240;
-  for (let i = 0; i < 4; i++) {
-    const l = 0.22 + i * 0.14;
-    const c = Math.min(0.04 + (i % 2) * 0.02, 0.06);
-    const h = (baseH + i * 35) % 360;
-    const col = formatHex(oklch({ mode: "oklch", l, c, h }));
-    if (col) meshColors.push(col);
-  }
-
-  const meshBg: Background = {
-    kind: "mesh",
-    colors: meshColors.length === 4 ? meshColors : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-    drift: 0.05,
-    seed: 42,
-  };
-
-  // Ambient suggestion
-  const ambientBg: Background = {
-    kind: "ambient",
-    assetId,
-    blur: 0.8,
-    dim: 0.25,
-  };
-
-  return [lightBg, darkBg, meshBg, ambientBg];
+  return [lightBg, darkBg];
 }

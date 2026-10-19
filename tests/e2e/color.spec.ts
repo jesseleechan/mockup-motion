@@ -47,17 +47,16 @@ for (const [hex, rgb] of [
     expectRgbNear(avgRegion(frame, 600, 320, 680, 400), rgb, 1);
   });
 }
-for (const kind of ["gradient", "mesh"] as const) {
-  test(`F02 constant ${kind} outputs linear values`, async ({ page }) => {
-    await ready(page);
-    const bg: Background =
-      kind === "gradient"
-        ? { kind, stops: ["#3366CC", "#3366CC"], angle: 90, angleConvention: "css" }
-        : { kind, colors: ["#3366CC", "#3366CC", "#3366CC"], drift: 0, seed: 1 };
-    const frame = await background(page, bg);
-    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+test("F02 constant gradient outputs linear values", async ({ page }) => {
+  await ready(page);
+  const frame = await background(page, {
+    kind: "gradient",
+    stops: ["#3366CC", "#3366CC"],
+    angle: 90,
+    angleConvention: "css",
   });
-}
+  expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+});
 test("F02 screenshot band centres preserve RGB in source top-to-bottom order", async ({ page }) => {
   await ready(page, "&cameraDistance=0.7");
   const pixels = await page.evaluate(async () => {
