@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { PHONE_BODY_ASPECT } from "../phone-spec";
 import { type LayoutNode, screenAspectFor } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
@@ -39,7 +40,7 @@ export function resolvePairLayout(
 
   // Phone height is 78-86% of browser height (quality-bar §4)
   let phoneH = deskH * 0.82;
-  let phoneW = phoneH * 0.488; // body aspect 0.488
+  let phoneW = phoneH * PHONE_BODY_ASPECT;
 
   let deskX: number;
   let deskY: number;
