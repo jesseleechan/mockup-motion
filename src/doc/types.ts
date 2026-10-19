@@ -19,7 +19,7 @@ export interface AssetMeta {
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font";
   name: string;
   mime: string;
   bytes: number;
@@ -29,8 +29,6 @@ export interface AssetRef {
   palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
   meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
-  durationSec?: number;    // audio
-  peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
 }
 
 export interface FontRef {
@@ -173,13 +171,11 @@ export interface Shot {
   styleOverrides?: Partial<Style>;
 }
 
-export interface AudioTrack { assetId: string; volume: number; fadeIn: number; fadeOut: number; offset: number }
-
 export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
   | "linkedin" | "x" | "presentation-4k";
 
 export type ExportQuality = "web" | "high" | "master";
-export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "png";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -188,7 +184,6 @@ export interface ExportSettings {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -202,7 +197,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[];           // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }

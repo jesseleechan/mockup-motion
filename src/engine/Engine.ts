@@ -38,8 +38,6 @@ export interface AssetProvider {
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
   /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
   getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
-  /** Raw bytes of an audio asset (music track); absent where audio is unsupported (worker). */
-  getAudio?(assetId: string): Promise<Blob | null>;
 }
 
 export interface EngineDebugInfo {
@@ -53,7 +51,6 @@ export interface EngineDebugInfo {
   devicesBuilt: number;
 }
 
-import { AccumulationPass } from "./post/accumulate";
 import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
 import { loadChromeUrlRasters, type LoadedChromeUrl } from "./text/chrome-url";
@@ -79,8 +76,6 @@ export class Engine {
   private compositeTarget: THREE.WebGLRenderTarget;
   private compositePass: CompositePass;
   private finalPass: FinalPass;
-  // Motion blur accumulation, created on first use (export only)
-  private accumulation: AccumulationPass | null = null;
 
   private currentDoc: ProjectDoc | null = null;
   private currentAssets: AssetProvider | null = null;
@@ -238,7 +233,6 @@ export class Engine {
     this.targetA.setSize(renderW, renderH);
     this.targetB.setSize(renderW, renderH);
     this.compositeTarget.setSize(renderW, renderH);
-    this.accumulation?.setSize(renderW, renderH);
     this.deviceFade.setSize(renderW, renderH);
   }
 
@@ -453,47 +447,6 @@ export class Engine {
   }
 
   /**
-   * Motion blur: averages `samples` composites spread over the shutter interval centred
-   * on t (transitions included), then runs the final pass once.
-   */
-  renderAccumulated(t: number, shutter: number, samples: number): void {
-    if (samples <= 1 || shutter <= 0) {
-      this.renderAt(t);
-      return;
-    }
-
-    if (!this.currentDoc) return;
-    this.renderCalls++;
-
-    if (!this.accumulation) {
-      const ss = this.opts.supersample ?? 1;
-      this.accumulation = new AccumulationPass(
-        Math.round(this.opts.width * ss),
-        Math.round(this.opts.height * ss),
-      );
-    }
-    const accumulation = this.accumulation;
-    accumulation.clear(this.renderer);
-
-    const halfShutter = shutter * 0.5;
-    const dt = shutter / (samples - 1);
-    const startT = Math.max(0, t - halfShutter);
-
-    for (let i = 0; i < samples; i++) {
-      if (!this.renderComposite(startT + i * dt, this.compositeTarget)) continue;
-      accumulation.add(this.renderer, this.compositeTarget, 1.0 / samples);
-    }
-
-    const frameState = evaluate(this.currentDoc, t);
-    this.finalPass.render(
-      this.renderer,
-      accumulation.target,
-      frameState.layers[0]?.frame.style ?? this.currentDoc.style,
-      t,
-    );
-  }
-
-  /**
    * Hit test output pixel coordinate.
    */
   pick(x: number, y: number): { nodeId: string; u: number; v: number } | null {
@@ -587,7 +540,6 @@ export class Engine {
     this.targetA.dispose();
     this.targetB.dispose();
     this.compositeTarget.dispose();
-    this.accumulation?.dispose();
 
     this.compositePass.dispose();
     this.finalPass.dispose();

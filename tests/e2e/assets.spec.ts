@@ -208,7 +208,6 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
           return bitmapById[id] ?? provider.getImage(id, width);
         },
         getText: provider.getText.bind(provider),
-        getAudio: provider.getAudio?.bind(provider),
       });
       engine.renderAt(3);
       missing.push(...ids.filter((id) => !requested.has(id)).map((id) => `${layout.kind}:${id}`));
