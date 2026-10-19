@@ -16,6 +16,7 @@ export interface ManagedTexture {
   height: number;
   strips: TextureStrip[];
   bottomRowColor?: [number, number, number, number]; // RGBA 0..1
+  topRowColor?: [number, number, number, number]; // RGBA 0..1, behind a phone's status bar
 }
 
 interface CacheEntry {
@@ -120,7 +121,8 @@ export class TextureManager {
       width,
       height,
       strips,
-      bottomRowColor: this.extractBottomRowColor(bitmap),
+      bottomRowColor: this.extractRowColor(bitmap, bitmap.height - 1),
+      topRowColor: this.extractRowColor(bitmap, 0),
     };
 
     // A wider load may have finished first; keep whichever is wider.
@@ -161,7 +163,11 @@ export class TextureManager {
     return texture;
   }
 
-  private extractBottomRowColor(bitmap: ImageBitmap): [number, number, number, number] | undefined {
+  /** The mean colour of one pixel row of the image. */
+  private extractRowColor(
+    bitmap: ImageBitmap,
+    row: number,
+  ): [number, number, number, number] | undefined {
     let canvas: HTMLCanvasElement | OffscreenCanvas;
     if (typeof OffscreenCanvas !== "undefined") {
       canvas = new OffscreenCanvas(bitmap.width, 1);
@@ -177,7 +183,7 @@ export class TextureManager {
       CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
     if (!ctx) return undefined;
 
-    ctx.drawImage(bitmap, 0, bitmap.height - 1, bitmap.width, 1, 0, 0, bitmap.width, 1);
+    ctx.drawImage(bitmap, 0, row, bitmap.width, 1, 0, 0, bitmap.width, 1);
     const data = ctx.getImageData(0, 0, bitmap.width, 1).data;
 
     let r = 0;

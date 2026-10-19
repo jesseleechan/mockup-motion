@@ -10,7 +10,7 @@ import type {
 import { cameraPose } from "./camera";
 import { frameDistance } from "./framing";
 import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
-import { scrollPosition } from "./scroll";
+import { scrollableFramesFor, scrollPosition } from "./scroll";
 import { textFrame, type TextFrame } from "./text-anim";
 import { activeLayers, schedule } from "./timeline";
 
@@ -80,11 +80,7 @@ function evaluateNodes(
     const base = nodes[0];
     if (base.assetId) {
       const asset = assets.find((a) => a.id === base.assetId);
-      let scrollableFrames = 0;
-      if (asset?.width && asset?.height && asset.height > 0) {
-        const imgAspect = asset.width / asset.height;
-        scrollableFrames = Math.max(0, base.screenAspect / imgAspect - 1);
-      }
+      const scrollableFrames = scrollableFramesFor(base.device, base.screenAspect, asset);
       base.scroll = scrollPosition(shot.scroll, localT, shot.duration, scrollableFrames);
     }
   }
