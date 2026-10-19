@@ -1,6 +1,6 @@
 # R06: owner review and visual baselines
 
-**Status: waiting for the owner's review.** No visual baselines are committed until the owner approves the rendered stills in writing (`tests/visual/README.md`).
+**Status: approved.** The owner approved the stills and baselines on 19 October 2026 (below).
 
 ## Contact sheet
 
@@ -27,6 +27,10 @@ Six stills in `tests/visual/stills.spec.ts`, rendered by the Visual baselines wo
 - `responsive-scroll-<aspect>-t3.6`: the works hold at 16:9, 4:3, 1:1, 4:5 and 9:16. These pin the card geometry per aspect and both screens on the same section.
 - `responsive-scroll-16x9-t2.05`: mid-move. This pins the shared timing.
 
-## Open question for the owner
+## Decisions (owner, 19 October 2026)
 
-The last stop is held for 1.0 s, and the wrap crossfade takes the last 0.8 s of that hold. So the monograph frame shows on its own for 0.2 s before it starts dissolving into the top. The alternative is a full 1.0 s on its own before the fade, which makes the loop 10.2 s (shot 11.0 s).
+The owner approved the stills and baselines and chose the recommendation on every open decision:
+
+- **Contact sheet:** signed off.
+- **Baselines:** the six stills above, rendered by the Visual baselines workflow on the CI runner.
+- **Last stop:** as previewed. The last stop holds 1.0 s like the others, and the 0.8 s wrap crossfade falls inside that hold, so the loop is 9.4 s (holds plus moves).

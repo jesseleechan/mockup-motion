@@ -463,6 +463,8 @@ export function fillSlots(t: Template, assets: AssetRef[]): Record<string, strin
 
 The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`) and Scroll Story (`scroll-story`). The two sliders are one effect in two sizes, and so are the two Frames presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
 
+Responsive Scroll (`responsive-scroll`, `docs/responsive-scroll-plan/README.md`) is last in the gallery. It shows a desktop and a mobile screenshot of one page, so its category is `"both"` and it sits under the Desktop and the Mobile tab (`templateInCategory`). Its two slots are a same-page pair (`Template.samePage`): `fillSlots` fills them with captures of one page (same capture URL, then the same page name in the file names) before the greedy fill.
+
 The four slider and Frames presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
