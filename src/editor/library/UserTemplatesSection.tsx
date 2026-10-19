@@ -34,7 +34,7 @@ export const UserTemplatesSection: React.FC = () => {
   }, []);
 
   const handleApply = (template: UserTemplate) => {
-    const res = fillUserTemplateSlots(template, doc.assets);
+    const res = fillUserTemplateSlots(template, doc.assets, doc.aspect);
     applyTemplateResult(res, template.id);
   };
 
@@ -128,8 +128,7 @@ export const UserTemplatesSection: React.FC = () => {
               {template.description}
             </p>
 
-            <div className="flex items-center justify-between text-[10px] text-[var(--color-text-3)]">
-              <span>{template.shots.length} shot(s)</span>
+            <div className="flex items-center justify-end text-[10px] text-[var(--color-text-3)]">
               <span className="text-[9px] text-[var(--color-accent)] font-medium">
                 Click to apply
               </span>

@@ -1,6 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { ProjectDoc } from "../doc/types";
-import type { BrandKit } from "./brand-kits";
 import type { UserTemplate } from "./user-templates";
 
 export interface MockupMotionDB extends DBSchema {
@@ -21,9 +20,11 @@ export interface MockupMotionDB extends DBSchema {
     key: string;
     value: unknown;
   };
+  // The brand kit was removed (October 2026). Its store stays, so the schema needs no version
+  // bump; nothing reads or writes it.
   brandKits: {
     key: string;
-    value: BrandKit;
+    value: unknown;
   };
   userTemplates: {
     key: string;

@@ -9,7 +9,7 @@ import {
 import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
-import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
+import { keyframeIntervalFor } from "./destinations";
 
 export type ToWorker =
   | {
@@ -76,9 +76,9 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
             if (!bmp) throw new Error(`Asset not provided to worker: ${assetId}`);
             return bmp;
           },
-          getText: async (layer) => {
-            const raster = msg.texts[layer.id];
-            if (!raster) throw new Error(`Text raster not provided to worker: ${layer.id}`);
+          getText: async (line) => {
+            const raster = msg.texts[line.id];
+            if (!raster) throw new Error(`Text raster not provided to worker: ${line.id}`);
             return raster;
           },
         };
@@ -108,11 +108,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
           }
 
           const t = frame / fps;
-          if (settings.motionBlur) {
-            engine.renderAccumulated(t, motionBlurShutter(fps), MOTION_BLUR_SAMPLES);
-          } else {
-            engine.renderAt(t);
-          }
+          engine.renderAt(t);
 
           await source.add(t, 1 / fps);
 

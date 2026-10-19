@@ -11,7 +11,7 @@ import { type AssetProvider, Engine } from "../engine/Engine";
 import { schedule } from "../motion";
 import type { ExportProgress } from "./engine-export";
 import type { FromWorker, ToWorker } from "./engine-worker";
-import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
+import { keyframeIntervalFor } from "./destinations";
 
 // Video encoding for MP4/WebM exports: in a module worker where OffscreenCanvas exists,
 // otherwise the same loop on the main thread.
@@ -150,11 +150,7 @@ async function encodeFrames(
     signal?.throwIfAborted();
 
     const t = frame / fps;
-    if (settings.motionBlur) {
-      engine.renderAccumulated(t, motionBlurShutter(fps), MOTION_BLUR_SAMPLES);
-    } else {
-      engine.renderAt(t);
-    }
+    engine.renderAt(t);
 
     await source.add(t, 1 / fps);
 

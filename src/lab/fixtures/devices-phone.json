@@ -27,18 +27,11 @@
       "color": "#F1EDE6"
     },
     "frameAppearance": "light",
-    "deviceFinish": "silver",
     "browserChrome": "standard",
     "browserUrl": "",
     "shadow": "soft",
     "grain": 0.25,
-    "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "",
-    "accent": "#000000"
+    "vignette": 0.06
   },
   "shots": [
     {
@@ -50,13 +43,12 @@
         "assetId": "demo-northwind-mobile-hero"
       },
       "camera": {
-        "preset": "heroTilt",
+        "preset": "static",
         "intensity": 1,
         "easing": "smooth",
         "float": 0
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "cut",
         "duration": 0,
@@ -70,7 +62,6 @@
     "fps": 30,
     "quality": "high",
     "format": "mp4",
-    "supersample": 1,
-    "motionBlur": false
+    "supersample": 1
   }
 }

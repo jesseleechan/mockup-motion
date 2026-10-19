@@ -3,9 +3,8 @@ import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { chromeUrlRequests } from "../engine/text/chrome-url";
 import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
-import { calculateBitrate, gifOutput, outputDimensions } from "./destinations";
+import { calculateBitrate, outputDimensions } from "./destinations";
 import { createWebEmbedBundle } from "./bundle";
-import { encodeGif } from "./gif";
 import { probeVideoEncoders } from "./probe";
 import { verifyExportBlob, type VerifyExportResult } from "./verify";
 import { createCanvas, encodeInWorker, encodeMainThread, type StartMessage } from "./video-encode";
@@ -33,7 +32,7 @@ export interface ExportProgress {
   part?: string;
 }
 
-/** verify.ts result for one exported file ("MP4", "WebM", "GIF", "PNG"). */
+/** verify.ts result for one exported file ("MP4", "WebM", "PNG"). */
 export interface ExportVerification {
   label: string;
   result: VerifyExportResult;
@@ -112,7 +111,7 @@ export async function exportFrames(
 }
 
 /**
- * Main export coordinator using the Three.js Engine and Mediabunny / gifenc / fflate.
+ * Main export coordinator using the Three.js Engine and Mediabunny / fflate.
  * `settings.format` is the container that is written; the editor resolves MP4/WebM
  * against the encoder probe first (plan.ts).
  */
@@ -132,13 +131,6 @@ export async function exportWithEngine(
     const { width, height } = outputDimensions(doc.aspect, settings.resolution);
     const result = await verifyExportBlob(blob, { width, height, duration: 0, fps: 1 });
     return { blob, mime: "image/png", warnings: [], verification: [{ label: "PNG", result }] };
-  }
-
-  if (settings.format === "gif") {
-    const { blob, mime } = await exportGifWithEngine(doc, provider, settings, signal, onProgress);
-    const gif = gifOutput(doc.aspect, settings.resolution, settings.fps);
-    const result = await verifyExportBlob(blob, { ...gif, duration: total });
-    return { blob, mime, warnings: [], verification: [{ label: "GIF", result }] };
   }
 
   if (settings.format === "bundle") {
@@ -166,22 +158,12 @@ export async function exportWithEngine(
     images[id] = await createImageBitmap(source);
   }
 
-  // Pre-rasterize all text layers at export resolution
+  // The browser URL pills, rasterized at export resolution.
   const ss = settings.supersample ?? 1;
   const frameHeightPx = Math.round(height * ss);
   const texts: Record<string, TextRaster> = {};
-  for (const shot of doc.shots) {
-    if (shot.texts && shot.texts.length > 0) {
-      const shotStyle = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
-      for (const layer of shot.texts) {
-        texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
-        signal?.throwIfAborted();
-      }
-    }
-  }
-  // The browser URL pills: synthetic `chrome-url` layers, rasterized here like any text.
   for (const request of chromeUrlRequests(doc)) {
-    texts[request.layer.id] = await provider.getText(request.layer, request.style, frameHeightPx);
+    texts[request.line.id] = await provider.getText(request.line, frameHeightPx);
     signal?.throwIfAborted();
   }
 
@@ -217,66 +199,6 @@ export async function exportWithEngine(
     warnings: [],
     verification: [{ label: container === "mp4" ? "MP4" : "WebM", result }],
   };
-}
-
-/**
- * GIF export implementation using gifenc and Engine OffscreenCanvas.
- */
-async function exportGifWithEngine(
-  doc: ProjectDoc,
-  provider: AssetProvider,
-  settings: ExportSettings,
-  signal?: AbortSignal,
-  onProgress?: (p: ExportProgress) => void,
-): Promise<{ blob: Blob; mime: string }> {
-  const { width, height, fps } = gifOutput(doc.aspect, settings.resolution, settings.fps);
-  const canvas = createCanvas(width, height);
-  const engine = await Engine.create(canvas, {
-    width,
-    height,
-    supersample: 1,
-    preserveDrawingBuffer: true,
-  });
-
-  const { total: duration } = schedule(doc);
-  const totalFrames = Math.max(1, Math.round(duration * fps));
-  const frames: Uint8ClampedArray[] = [];
-  try {
-    await engine.setDocument(doc, provider);
-    onProgress?.({ stage: "preparing", frame: 0, total: totalFrames, percentage: 0 });
-
-    for (let frame = 0; frame < totalFrames; frame++) {
-      signal?.throwIfAborted();
-
-      engine.renderAt(frame / fps);
-      frames.push(engine.readPixels());
-
-      if (frame % 3 === 0 || frame === totalFrames - 1) {
-        onProgress?.({
-          stage: "rendering",
-          frame,
-          total: totalFrames,
-          percentage: Math.round((frame / totalFrames) * 70),
-        });
-        await new Promise((r) => setTimeout(r, 0));
-      }
-    }
-  } finally {
-    engine.dispose();
-  }
-
-  onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 80 });
-
-  const { blob, mime } = encodeGif(frames, { width, height, fps, dither: true }, (p) => {
-    onProgress?.({
-      stage: "finishing",
-      frame: p.frame,
-      total: p.total,
-      percentage: 80 + Math.round(p.percentage * 0.2),
-    });
-  });
-
-  return { blob, mime };
 }
 
 /**

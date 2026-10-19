@@ -146,26 +146,6 @@ export function buildBrowserDevice(
     urlText.mesh.position.set(0, lightCenterY, 0.00034);
     group.add(urlText.mesh);
     pillWidth = pillW;
-  } else if (chrome === "minimal") {
-    // Floating traffic lights inside top-left corner
-    const diameter = width * 0.0085;
-    const radius = diameter / 2;
-    const gap = width * 0.0055;
-    const leftInset = width * 0.016;
-    const topInset = width * 0.016;
-    const halfW = width / 2;
-    const topY = height / 2;
-    const lightCenterY = topY - topInset - radius;
-    const firstCenterX = -halfW + leftInset + radius;
-
-    trafficLights.forEach((light, i) => {
-      const cx = firstCenterX + i * (diameter + gap);
-      const dotGeo = new THREE.CircleGeometry(radius, 24);
-      const dotMat = new THREE.MeshBasicMaterial({ color: light.color });
-      const dotMesh = new THREE.Mesh(dotGeo, dotMat);
-      dotMesh.position.set(cx, lightCenterY, 0.0003);
-      chromeGroup.add(dotMesh);
-    });
   }
 
   function update(updatedNode: LayoutNode, updatedStyle: Style, _t: number): void {

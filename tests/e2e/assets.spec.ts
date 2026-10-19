@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
-import type { AssetProvider, Engine, TextRaster } from "../../src/engine/Engine";
+import type { AssetProvider, Engine } from "../../src/engine/Engine";
 import type { exportWithEngine } from "../../src/export/engine-export";
 import type { schedule } from "../../src/motion";
 import { keepResourceTimings } from "../helpers/resource-timing";
@@ -39,9 +39,6 @@ declare global {
     __labSchedule?: typeof schedule;
   }
 }
-
-// ScreenCompositor's empty-state fill, #18181B.
-const EMPTY_FILL = [0x18, 0x18, 0x1b];
 
 test("F03: every built-in template loads a texture for every screen", async ({ page }) => {
   test.setTimeout(120_000);
@@ -90,61 +87,7 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
   ).toEqual([]);
 });
 
-test("F03: a pair shows screenshots in both the browser and the phone", async ({ page }) => {
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const centres = await page.evaluate(async () => {
-    const doc = window.__fixtures?.["pair"];
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const scheduleDoc = window.__labSchedule;
-    if (!doc || !engine || !setDoc || !scheduleDoc)
-      throw new Error("F03 pair fixture hooks are unavailable");
-    const width = 640;
-    const height = 360;
-    engine.resize(width, height);
-    await setDoc(doc);
-    engine.renderAt(scheduleDoc(doc).total * 0.5);
-    const pixels = engine.readPixels();
-    // Find each device's footprint with pick(), then sample a 5x5 patch at its centroid.
-    const sums: Record<string, { x: number; y: number; n: number }> = {};
-    for (let y = 2; y < height; y += 4) {
-      for (let x = 2; x < width; x += 4) {
-        const hit = engine.pick(x, y);
-        if (!hit) continue;
-        const sum = sums[hit.nodeId] ?? { x: 0, y: 0, n: 0 };
-        sum.x += x;
-        sum.y += y;
-        sum.n++;
-        sums[hit.nodeId] = sum;
-      }
-    }
-    return Object.fromEntries(
-      Object.entries(sums).map(([nodeId, sum]) => {
-        const cx = Math.round(sum.x / sum.n);
-        const cy = Math.round(sum.y / sum.n);
-        const mean = [0, 0, 0];
-        for (let dy = -2; dy <= 2; dy++) {
-          for (let dx = -2; dx <= 2; dx++) {
-            const i = ((cy + dy) * width + (cx + dx)) * 4;
-            for (let c = 0; c < 3; c++) mean[c] += pixels[i + c] / 25;
-          }
-        }
-        return [nodeId, { cx, cy, mean: mean.map(Math.round) }];
-      }),
-    );
-  });
-  expect(Object.keys(centres).sort()).toEqual(["pair:desktop", "pair:mobile"]);
-  for (const [nodeId, centre] of Object.entries(centres)) {
-    const distance = Math.max(...centre.mean.map((value, c) => Math.abs(value - EMPTY_FILL[c])));
-    expect(
-      distance,
-      `${nodeId} centre (${centre.cx}, ${centre.cy}) is rgb(${centre.mean.join(", ")}), not the empty fill`,
-    ).toBeGreaterThan(24);
-  }
-});
-
-test("F03: alternating a single browser and the isometric wall keeps GPU memory flat", async ({
+test("F03: alternating a single browser and Desktop Frames keeps GPU memory flat", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -154,10 +97,10 @@ test("F03: alternating a single browser and the isometric wall keeps GPU memory 
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
-    if (!fixtures?.["single-browser"] || !fixtures["wall-isometric"] || !engine || !setDoc)
+    if (!fixtures?.["single-browser"] || !fixtures["frames"] || !engine || !setDoc)
       throw new Error("F03 memory fixture hooks are unavailable");
     engine.resize(640, 360);
-    const docs = [fixtures["single-browser"], fixtures["wall-isometric"]];
+    const docs = [fixtures["single-browser"], fixtures["frames"]];
     const snapshots = [];
     for (let cycle = 1; cycle <= 20; cycle++) {
       await setDoc(docs[(cycle - 1) % 2]);
@@ -178,7 +121,7 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
     const fixtures = window.__fixtures;
     const engine = window.__labEngine;
     const createProvider = window.__createLabAssetProvider;
-    if (!fixtures?.["wall-isometric"] || !fixtures["single-browser"] || !engine || !createProvider)
+    if (!fixtures?.["frames"] || !fixtures["single-browser"] || !engine || !createProvider)
       throw new Error("F03 race fixture hooks are unavailable");
     engine.resize(640, 360);
     const provider = createProvider();
@@ -189,72 +132,13 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
       },
       getText: provider.getText.bind(provider),
     };
-    const older = engine.setDocument(fixtures["wall-isometric"], slow);
+    const older = engine.setDocument(fixtures["frames"], slow);
     const newer = engine.setDocument(fixtures["single-browser"], provider);
     await Promise.all([older, newer]);
     engine.renderAt(1);
     return engine.debugInfo().nodes.map((n) => n.id);
   });
-  expect(nodeIds, "the single browser, none of the wall's tiles").toEqual(["single:0"]);
-});
-
-test("F03: pair layouts preload both screen assets", async ({ page }) => {
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const greenPixels = await page.evaluate(async () => {
-    const doc = structuredClone(window.__fixtures?.["card-hero"]);
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const images = window.__labTestImages;
-    if (!doc || !engine || !setDoc || !images)
-      throw new Error("F03 pixel fixture hook is unavailable");
-    engine.resize(1280, 720);
-    const desktopId = "f03-desktop";
-    const mobileId = "f03-mobile";
-    doc.assets.push(
-      {
-        id: desktopId,
-        kind: "image",
-        name: desktopId,
-        mime: "image/png",
-        bytes: 1,
-        width: 1600,
-        height: 1000,
-      },
-      {
-        id: mobileId,
-        kind: "image",
-        name: mobileId,
-        mime: "image/png",
-        bytes: 1,
-        width: 780,
-        height: 1688,
-      },
-    );
-    doc.style.grain = 0;
-    doc.style.vignette = 0;
-    doc.shots[0].layout = { kind: "pair", desktopId, mobileId, arrangement: "overlap" };
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-    const desktopBitmap = await images.bands(1600, 1000, ["#FF0000"]);
-    const mobileBitmap = await images.bands(780, 1688, ["#00FF00"]);
-    await setDoc(doc, { [desktopId]: desktopBitmap, [mobileId]: mobileBitmap });
-    engine.renderAt(2.5);
-    const pixels = engine.readPixels();
-    let red = 0;
-    let green = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 180 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
-      if (pixels[i + 1] > 180 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
-    }
-    return { red, green };
-  });
-  expect(greenPixels.red, "desktop screen should show its independent red source").toBeGreaterThan(
-    100,
-  );
-  expect(
-    greenPixels.green,
-    "phone screen should show its independent green source",
-  ).toBeGreaterThan(100);
+  expect(nodeIds, "the single browser, none of the Frames cards").toEqual(["single:0"]);
 });
 
 test("F03: every multi-asset layout requests each independent image", async ({ page }) => {
@@ -269,36 +153,35 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
       throw new Error("F03 multi-layout fixture hooks are unavailable");
     engine.resize(1280, 720);
     const layouts = [
-      { kind: "pair", desktopId: "pair-desktop", mobileId: "pair-mobile", arrangement: "overlap" },
-      { kind: "trio", desktopId: "trio-desktop", tabletId: "trio-tablet", mobileId: "trio-mobile" },
       {
         kind: "rows",
         assetIds: ["rows-a", "rows-b", "rows-c"],
         rows: 2,
         device: "browser",
         tilt: 0,
-        speed: 0,
+        travel: "period",
       },
       {
         kind: "columns",
         assetIds: ["columns-a", "columns-b", "columns-c"],
         columns: 3,
         tilt: 0,
-        speed: 0,
+        travel: "period",
       },
-      { kind: "wall", assetIds: ["wall-a", "wall-b", "wall-c"], columns: 3, speed: 0 },
-      { kind: "stack", assetIds: ["stack-a", "stack-b", "stack-c"], device: "browser", spread: 0 },
+      {
+        kind: "slider",
+        assetIds: ["slider-a", "slider-b", "slider-c"],
+        axis: "y",
+        shape: "desktop",
+        step: 2,
+        arrangement: "deck",
+      },
     ] as const;
     const missing: string[] = [];
     for (const layout of layouts) {
       const doc = structuredClone(base);
-      const ids: string[] =
-        "assetIds" in layout
-          ? [...layout.assetIds]
-          : layout.kind === "pair"
-            ? [layout.desktopId, layout.mobileId]
-            : [layout.desktopId, layout.tabletId, layout.mobileId];
-      doc.shots[0].layout = layout as (typeof doc.shots)[number]["layout"];
+      const ids: string[] = [...layout.assetIds];
+      doc.shots[0].layout = layout as unknown as (typeof doc.shots)[number]["layout"];
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
       doc.style.background = { kind: "solid", color: "#808080" };
       doc.style.grain = 0;
@@ -334,182 +217,6 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
   expect(missing, "every layout asset must be loaded before rendering").toEqual([]);
 });
 
-test("F03: a slower earlier setDocument cannot replace the newer text raster", async ({ page }) => {
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const textColors = await page.evaluate(async () => {
-    const base = window.__fixtures?.["card-hero"];
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc as
-      | ((
-          doc: ProjectDoc,
-          images: Record<string, ImageBitmap>,
-          provider: AssetProvider,
-        ) => Promise<void>)
-      | undefined;
-    const createProvider = window.__createLabAssetProvider;
-    if (!base || !engine || !setDoc || !createProvider)
-      throw new Error("F03 race fixture hooks are unavailable");
-    engine.resize(640, 360);
-    const provider = createProvider();
-    const makeDoc = (text: string, color: string) => {
-      const doc = structuredClone(base);
-      doc.shots[0].layout = { kind: "title" };
-      doc.shots[0].texts = [
-        {
-          id: "f03-race-shared-layer",
-          text,
-          role: "title",
-          font: "display",
-          size: 20,
-          anchor: "center",
-          align: "center",
-          color,
-          animation: "none",
-          delay: 0,
-        },
-      ];
-      doc.style.background = { kind: "solid", color: "#808080" };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      return doc;
-    };
-    const delayedProvider: AssetProvider = {
-      getImage: provider.getImage.bind(provider),
-      async getText(layer, style, frameHeightPx): Promise<TextRaster> {
-        if (layer.text === "OLD") await new Promise((resolve) => setTimeout(resolve, 300));
-        return provider.getText(layer, style, frameHeightPx);
-      },
-    };
-    const earlier = setDoc(makeDoc("OLD", "#FF0000"), {}, delayedProvider);
-    const newer = setDoc(makeDoc("NEW", "#00FF00"), {}, delayedProvider);
-    await Promise.all([earlier, newer]);
-    engine.renderAt(0);
-    const pixels = engine.readPixels();
-    let red = 0;
-    let green = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 150 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
-      if (pixels[i + 1] > 150 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
-    }
-    return { red, green };
-  });
-  expect(
-    textColors.green,
-    "the final frame should use the newer green text raster",
-  ).toBeGreaterThan(20);
-  expect(textColors.red, "the final frame must not use the stale red text raster").toBe(0);
-});
-
-test("F03: a pair's WebM export contains both screen assets", async ({ page }) => {
-  test.setTimeout(180_000);
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const mediabunnyUrl = await page.evaluate(() =>
-    performance
-      .getEntriesByType("resource")
-      .map((entry) => entry.name)
-      .find((name) => new URL(name).pathname.endsWith("/deps/mediabunny.js")),
-  );
-  if (!mediabunnyUrl)
-    throw new Error("Mediabunny's already-loaded browser module URL was not found");
-  await page.evaluate(async (url) => {
-    window.__mediabunnyTest = await import(url);
-  }, mediabunnyUrl);
-  const colors = await page.evaluate(async () => {
-    const base = window.__fixtures?.["card-hero"];
-    const images = window.__labTestImages;
-    const createProvider = window.__createLabAssetProvider;
-    const exportFn = window.__exportWithEngine;
-    const media = window.__mediabunnyTest;
-    if (!base || !images || !createProvider || !exportFn || !media) {
-      const missing = Object.entries({ base, images, createProvider, exportFn, media })
-        .filter(([, value]) => !value)
-        .map(([name]) => name);
-      throw new Error(`F03 export fixture hooks are unavailable: ${missing.join(", ")}`);
-    }
-    const doc = structuredClone(base);
-    const desktopId = "f03-export-desktop";
-    const mobileId = "f03-export-mobile";
-    doc.aspect = "16:9";
-    doc.assets = [
-      {
-        id: desktopId,
-        kind: "image",
-        name: desktopId,
-        mime: "image/png",
-        bytes: 1,
-        width: 640,
-        height: 360,
-      },
-      {
-        id: mobileId,
-        kind: "image",
-        name: mobileId,
-        mime: "image/png",
-        bytes: 1,
-        width: 360,
-        height: 780,
-      },
-    ];
-    doc.shots = [
-      {
-        ...doc.shots[0],
-        duration: 1,
-        layout: { kind: "pair", desktopId, mobileId, arrangement: "overlap" },
-        camera: { preset: "static", intensity: 0, easing: "smooth", float: 0 },
-      },
-    ];
-    doc.style.background = { kind: "solid", color: "#808080" };
-    doc.style.grain = 0;
-    doc.style.vignette = 0;
-    const bitmaps: Record<string, ImageBitmap> = {
-      [desktopId]: await images.bands(640, 360, ["#FF0000"]),
-      [mobileId]: await images.bands(360, 780, ["#00FF00"]),
-    };
-    const baseProvider = createProvider();
-    const provider: AssetProvider = {
-      async getImage(id, maxWidth) {
-        return bitmaps[id] ?? baseProvider.getImage(id, maxWidth);
-      },
-      getText: baseProvider.getText.bind(baseProvider),
-    };
-    const result = await exportFn(doc, provider, {
-      destination: "custom",
-      resolution: 360,
-      fps: 30,
-      quality: "web",
-      format: "webm",
-      supersample: 1,
-      motionBlur: false,
-    });
-    const input = new media.Input({
-      source: new media.BlobSource(result.blob),
-      formats: media.ALL_FORMATS,
-    });
-    const track = await input.getPrimaryVideoTrack();
-    if (!track) throw new Error("Exported WebM has no video track");
-    const sink = new media.CanvasSink(track);
-    const wrapped = await sink.getCanvas(0.5);
-    if (!wrapped) throw new Error("Could not decode the exported WebM at 0.5 seconds");
-    const context = wrapped.canvas.getContext("2d");
-    if (!context) throw new Error("Decoded WebM canvas has no 2D context");
-    const pixels = context.getImageData(0, 0, wrapped.canvas.width, wrapped.canvas.height).data;
-    let red = 0;
-    let green = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 180 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
-      if (pixels[i + 1] > 180 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
-    }
-    input.dispose();
-    return { red, green, mime: result.mime, bytes: result.blob.size };
-  });
-  expect(colors.mime).toBe("video/webm");
-  expect(colors.bytes).toBeGreaterThan(1000);
-  expect(colors.red, "exported desktop screen should retain its red image").toBeGreaterThan(100);
-  expect(colors.green, "exported phone screen should retain its green image").toBeGreaterThan(100);
-});
-
 test("F03: alternating documents releases old textures", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
@@ -536,9 +243,6 @@ test("F03: alternating documents releases old textures", async ({ page }) => {
         width: 1600,
         height: 1000,
       });
-      // F11: the asset also feeds a blurred ambient background, whose cached render
-      // target must be released with it.
-      doc.style.background = { kind: "ambient", assetId, blur: 1, dim: 0.35 };
       return doc;
     };
     const bitmaps = await Promise.all([
@@ -568,58 +272,36 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const built = await page.evaluate(async () => {
-    const base = window.__fixtures?.["pair"];
+    const browser = window.__fixtures?.["single-browser"];
+    const frames = window.__fixtures?.["frames"];
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
-    if (!base || !engine || !setDoc) throw new Error("F03 diffing fixture hooks are unavailable");
+    if (!browser || !frames || !engine || !setDoc)
+      throw new Error("F03 diffing fixture hooks are unavailable");
     engine.resize(640, 360);
-    const doc = structuredClone(base);
-    await setDoc(doc);
-    const initial = engine.debugInfo().devicesBuilt;
-    // Background, grain and text do not change any device.
-    doc.style.background = { kind: "solid", color: "#808080" };
-    doc.style.grain = 0;
-    await setDoc(structuredClone(doc));
-    const afterBackground = engine.debugInfo().devicesBuilt;
-    // Browser chrome is part of the browser's key, so only the browser is rebuilt.
-    doc.style.browserChrome = doc.style.browserChrome === "minimal" ? "standard" : "minimal";
-    await setDoc(structuredClone(doc));
-    const afterChrome = engine.debugInfo().devicesBuilt;
-    return { initial, afterBackground, afterChrome };
-  });
-  expect(built.initial).toBeGreaterThan(0);
-  expect(built.afterBackground, "a background change rebuilds no device").toBe(built.initial);
-  const rebuilt = built.afterChrome - built.afterBackground;
-  expect(rebuilt, "a chrome change rebuilds the browser").toBeGreaterThan(0);
-  expect(rebuilt, "a chrome change keeps the phone").toBeLessThan(built.initial);
-});
-
-test("F03: text textures are released when their layers go away", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const counts = await page.evaluate(async () => {
-    const base = window.__fixtures?.["text-title"];
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    if (!base || !engine || !setDoc) throw new Error("F03 text fixture hooks are unavailable");
-    engine.resize(640, 360);
-    const snapshots = [];
-    for (let cycle = 1; cycle <= 20; cycle++) {
+    const rebuilds = async (base: typeof browser) => {
       const doc = structuredClone(base);
-      doc.shots[0].texts = doc.shots[0].texts.map((layer) => ({
-        ...layer,
-        id: `${layer.id}-${cycle}`,
-        text: `${layer.text} ${cycle}`,
-      }));
       await setDoc(doc);
-      // Text fades in from t = 0; render while it is visible so its texture uploads.
-      engine.renderAt(2.5);
-      snapshots.push(engine.debugInfo().textures);
-    }
-    return snapshots;
+      const initial = engine.debugInfo().devicesBuilt;
+      // Background, grain and text do not change any device.
+      doc.style.background = { kind: "solid", color: "#808080" };
+      doc.style.grain = 0;
+      await setDoc(structuredClone(doc));
+      const afterBackground = engine.debugInfo().devicesBuilt;
+      // Browser chrome is part of every device's key.
+      doc.style.browserChrome = doc.style.browserChrome === "none" ? "standard" : "none";
+      await setDoc(structuredClone(doc));
+      const afterChrome = engine.debugInfo().devicesBuilt;
+      return { initial, afterBackground, afterChrome };
+    };
+    return { browser: await rebuilds(browser), cards: await rebuilds(frames) };
   });
-  expect(counts[19], JSON.stringify(counts)).toBe(counts[1]);
+  for (const [name, b] of Object.entries(built)) {
+    expect(b.initial, name).toBeGreaterThan(0);
+    expect(b.afterBackground, `${name}: a background change rebuilds no device`).toBe(b.initial);
+  }
+  const browserRebuilt = built.browser.afterChrome - built.browser.afterBackground;
+  expect(browserRebuilt, "a chrome change rebuilds the browser").toBe(1);
 });
 
 test("F03: devices whose key disappears are disposed", async ({ page }) => {
@@ -653,90 +335,70 @@ test("F03: devices whose key disappears are disposed", async ({ page }) => {
   expect(counts[19].textures, JSON.stringify(counts)).toBe(counts[1].textures);
 });
 
-// Phone Parade, Portfolio Rows and Isometric Wall were removed (Frames plan PF01). A project saved
-// with one of them keeps its tilted columns, tilted rows or wall, and must still render.
-const SAVED_REMOVED = [
-  { fixture: "columns-phone-tilted", templateId: "phone-parade", node: "col" },
-  { fixture: "wall-isometric", templateId: "isometric-wall", node: "wall" },
-  { fixture: "rows-browser-tilted", templateId: "portfolio-rows", node: "row" },
-];
-
-test("PF01: saved projects of removed templates load a texture for every screen", async ({
+// Phone Parade, Portfolio Rows and Isometric Wall were removed (Frames plan PF01), and their
+// tilted rows, tilted columns and wall on 19 Oct 2026 (docs/cuts-plan/README.md). A project saved
+// with one of them loads as Desktop or Mobile Frames, and must draw every screen.
+test("PF01: saved projects of removed templates load as Frames with every texture", async ({
   page,
 }) => {
   test.setTimeout(120_000);
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const lab = await page.evaluate(async (saved) => {
-    const fixtures = window.__fixtures;
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const scheduleDoc = window.__labSchedule;
-    if (!fixtures || !engine || !setDoc || !scheduleDoc)
-      throw new Error("PF01 lab hooks are unavailable");
-    engine.resize(640, 360);
-    const out = [];
-    for (const { fixture, templateId } of saved) {
-      const base = fixtures[fixture];
-      if (!base) throw new Error(`No lab fixture ${fixture}`);
-      // As IndexedDB returns it: plain JSON naming the removed template.
-      const doc = JSON.parse(JSON.stringify({ ...base, templateId }));
-      await setDoc(doc);
-      const total = scheduleDoc(doc).total;
-      for (const t of [0, total * 0.5, total]) {
-        engine.renderAt(t);
-        const nodes = engine.debugInfo().nodes;
-        out.push({
-          label: `${templateId} at ${t.toFixed(2)} s`,
-          ids: nodes.map((n) => n.id),
-          unloaded: nodes.filter((n) => !n.assetId || !n.textureLoaded).map((n) => n.id),
-        });
-      }
-    }
-    return {
-      out,
-      wall: JSON.stringify({ ...fixtures["wall-isometric"], templateId: "isometric-wall" }),
-    };
-  }, SAVED_REMOVED);
-
-  expect(lab.out).toHaveLength(SAVED_REMOVED.length * 3);
-  for (const [i, result] of lab.out.entries()) {
-    const { node } = SAVED_REMOVED[Math.floor(i / 3)];
-    expect(result.ids.length, `${result.label}: screens drawn`).toBeGreaterThan(3);
-    expect(
-      result.ids.filter((id) => !id.startsWith(node)),
-      `${result.label}: every node is a ${node} screen`,
-    ).toEqual([]);
-    expect(result.unloaded, `${result.label}: screens without a texture`).toEqual([]);
-  }
-
-  // The editor opens the saved wall, renders it, and the gallery starts on the first template.
   // The stage mounts its engine once a document has shots, as after demo content.
   await page.goto("/");
   await page.getByRole("button", { name: "Try with demo content" }).click();
   await page.waitForFunction(() => Boolean(window.__editorEngine));
-  await page.evaluate((json) => {
-    const store = (
-      window as unknown as {
-        __editorStore?: { getState(): { loadDoc(doc: ProjectDoc): void } };
-      }
-    ).__editorStore;
-    if (!store) throw new Error("__editorStore is unavailable");
-    store.getState().loadDoc(JSON.parse(json) as ProjectDoc);
-  }, lab.wall);
-  await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          const nodes = window.__editorEngine?.debugInfo().nodes ?? [];
-          return {
-            wall: nodes.length > 3 && nodes.every((n) => n.id.startsWith("wall")),
-            unloaded: nodes.filter((n) => !n.assetId || !n.textureLoaded).length,
-          };
-        }),
-      { timeout: 20_000, message: "the editor draws the saved wall with every texture" },
-    )
-    .toEqual({ wall: true, unloaded: 0 });
+
+  const saved = [
+    { templateId: "isometric-wall", layout: { kind: "wall", columns: 4, speed: 0.3 }, node: "row" },
+    {
+      templateId: "portfolio-rows",
+      layout: { kind: "rows", rows: 2, device: "browser", tilt: 8, speed: 0.35 },
+      node: "row",
+    },
+    {
+      templateId: "phone-parade",
+      layout: { kind: "columns", columns: 3, tilt: 12, speed: 0.4 },
+      node: "col",
+    },
+  ];
+  for (const { templateId, layout, node } of saved) {
+    await page.evaluate(
+      ({ templateId, layout }) => {
+        const store = (
+          window as unknown as {
+            __editorStore?: {
+              getState(): { doc: ProjectDoc; loadDoc(doc: ProjectDoc): void };
+            };
+          }
+        ).__editorStore;
+        if (!store) throw new Error("__editorStore is unavailable");
+        // As IndexedDB returns it: plain JSON with the removed layout and template.
+        const doc = JSON.parse(JSON.stringify(store.getState().doc));
+        // The demo content's screenshots; a Frames card shows any of them.
+        const ids = doc.assets
+          .filter((a: { kind: string }) => a.kind === "image")
+          .map((a: { id: string }) => a.id);
+        doc.templateId = templateId;
+        doc.shots = [{ ...doc.shots[0], layout: { ...layout, assetIds: ids } }];
+        store.getState().loadDoc(doc);
+      },
+      { templateId, layout },
+    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate((node) => {
+            const nodes = window.__editorEngine?.debugInfo().nodes ?? [];
+            return {
+              frames: nodes.length > 3 && nodes.every((n) => n.id.startsWith(node)),
+              unloaded: nodes.filter((n) => !n.assetId || !n.textureLoaded).length,
+            };
+          }, node),
+        { timeout: 20_000, message: `the editor draws the saved ${templateId} as Frames` },
+      )
+      .toEqual({ frames: true, unloaded: 0 });
+  }
+
+  // The gallery starts on the first template.
   await page.getByRole("button", { name: "Browse all templates" }).click();
   const gallery = page.getByRole("dialog");
   await expect(gallery.getByText("Selected: Desktop Slider")).toBeVisible();
