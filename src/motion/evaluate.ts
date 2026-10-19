@@ -25,7 +25,6 @@ export interface ShotFrame {
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number;
   layers: { frame: ShotFrame; weight: number }[];
   transition?: {
     kind: Transition["kind"];
@@ -116,7 +115,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   }
 
   const active = activeLayers(doc, normT);
-  const backgroundPhase = total > 0 ? normT / total : 0;
 
   const layers = active.layers.map((activeShot) => {
     const shot = activeShot.shot;
@@ -182,7 +180,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   return {
     t: normT,
     total,
-    backgroundPhase,
     layers,
     transition: active.transition,
   };

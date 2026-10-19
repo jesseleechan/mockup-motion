@@ -227,11 +227,8 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
       angleConvention: "css",
     };
   } else if (bgType === "image") {
-    background = {
-      kind: "image",
-      assetId: comp.background.imageId || "",
-      dim: 0,
-    };
+    // Image backgrounds were removed: they become the flat Ash fill (quality-bar §6).
+    background = { kind: "solid", color: "#DFE1E3" };
   } else {
     background = {
       kind: "solid",

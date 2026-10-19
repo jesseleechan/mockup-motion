@@ -124,19 +124,11 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(l2.assetIds).toEqual(["asset-1"]);
     });
 
-    it("8. resets missing asset in ambient and image background to empty", () => {
-      const brokenDoc = createDoc();
-      brokenDoc.style.background = {
-        kind: "ambient",
-        assetId: "nonexistent",
-        blur: 0.5,
-        dim: 0.2,
-      };
-      const { doc, warnings } = sanitizeDoc(brokenDoc);
-      expect(warnings.length).toBeGreaterThan(0);
-      expect(doc.style.background.kind).toBe("ambient");
-      const bg = doc.style.background as { assetId?: string };
-      expect(bg.assetId).toBe("");
+    it("8. replaces an unknown background kind with the default background", () => {
+      const brokenDoc = createDoc() as unknown as { style: { background: unknown } };
+      brokenDoc.style.background = { kind: "video", assetId: "clip" };
+      const { doc } = sanitizeDoc(brokenDoc);
+      expect(doc.style.background).toEqual(createDoc().style.background);
     });
 
     it("9. drops text layers and title cards from a saved document", () => {
@@ -364,6 +356,46 @@ describe("F02 CSS angle compatibility", () => {
       kind: "gradient",
       angle: 180,
       angleConvention: "css",
+    });
+  });
+});
+
+describe("Removed backgrounds load as preset looks", () => {
+  it("loads mesh as a gradient of its colours, and ambient and image as the Ash solid", () => {
+    const saved = createDoc() as unknown as {
+      style: { background: unknown };
+      shots: { styleOverrides?: { background?: unknown } }[];
+    };
+    saved.style.background = {
+      kind: "mesh",
+      colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
+      drift: 0.05,
+      seed: 42,
+    };
+    saved.shots = [defaultShot(), defaultShot()];
+    saved.shots[0].styleOverrides = {
+      background: { kind: "ambient", assetId: "shot", blur: 0.8, dim: 0.2 },
+    };
+    saved.shots[1].styleOverrides = { background: { kind: "image", assetId: "shot", dim: 0 } };
+
+    const { doc } = sanitizeDoc(saved);
+    expect(doc.style.background).toEqual({
+      kind: "gradient",
+      stops: ["#1B1B2F", "#C3A6A0"],
+      angle: 315,
+      angleConvention: "css",
+    });
+    const ash = { kind: "solid", color: "#DFE1E3" };
+    expect(doc.shots[0].styleOverrides?.background).toEqual(ash);
+    expect(doc.shots[1].styleOverrides?.background).toEqual(ash);
+  });
+
+  it("migrates a v1 image background to the Ash solid", () => {
+    const preset = createV1Project();
+    preset.composition.background.type = "image";
+    expect(migrateV1Project(preset).style.background).toEqual({
+      kind: "solid",
+      color: "#DFE1E3",
     });
   });
 });

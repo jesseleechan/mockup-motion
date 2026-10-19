@@ -276,7 +276,6 @@ export class Engine {
     this.currentDoc = doc;
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
-    this.backgroundRenderer.prepareDocument(this.renderer, doc, this.textureManager);
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
@@ -298,16 +297,9 @@ export class Engine {
     target: THREE.WebGLRenderTarget,
     frame: ShotFrame,
     stageAspect: number,
-    backgroundPhase = 0,
   ): void {
     // 1. Clear background
-    this.backgroundRenderer.render(
-      this.renderer,
-      target,
-      frame,
-      backgroundPhase,
-      this.textureManager,
-    );
+    this.backgroundRenderer.render(this.renderer, target, frame);
 
     // 2. Position camera
     applyCameraPose(
@@ -369,14 +361,9 @@ export class Engine {
     if (layers.length === 0) return null;
 
     // Outgoing (or only) layer into targetA, incoming layer into targetB during a transition
-    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect, frameState.backgroundPhase);
+    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect);
     if (layers.length > 1 && layers[1].weight > 0) {
-      this.renderShotToTarget(
-        this.targetB,
-        layers[1].frame,
-        stageAspect,
-        frameState.backgroundPhase,
-      );
+      this.renderShotToTarget(this.targetB, layers[1].frame, stageAspect);
     }
 
     this.compositePass.render(

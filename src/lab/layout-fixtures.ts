@@ -60,7 +60,7 @@ function pairFixture(): ProjectDoc {
     assets,
     style: {
       ...defaultStyle(),
-      background: paletteBackground("mist"),
+      background: paletteBackground("fog"),
       frameAppearance: "light",
       shadow: "soft",
       browserChrome: "standard",

@@ -70,8 +70,7 @@
     "browserUrl": "",
     "shadow": "none",
     "grain": 0,
-    "vignette": 0,
-    "accent": "#000000"
+    "vignette": 0
   },
   "shots": [
     {

@@ -31,8 +31,7 @@
     "browserUrl": "aurelia.studio",
     "shadow": "medium",
     "grain": 0.25,
-    "vignette": 0.06,
-    "accent": "#FFFFFF"
+    "vignette": 0.06
   },
   "shots": [
     {

@@ -25,7 +25,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "timeline",
     "wave5",
     "first-run",
-    "backgrounds",
     "spike",
     "responsive-scroll",
   ],

@@ -14,9 +14,6 @@ function docWith(layouts: Layout[], assets: AssetRef[] = []): ProjectDoc {
   return createDoc({ assets, shots: layouts.map((layout) => defaultShot(layout)) });
 }
 
-// A shot whose only screen is an empty slot, so it adds no asset of its own.
-const EMPTY_CARD: Layout = { kind: "single", device: "card", assetId: "" };
-
 describe("F03: collectAssetIds", () => {
   const cases: { layout: Layout; ids: string[] }[] = [
     { layout: { kind: "single", device: "browser", assetId: "s" }, ids: ["s"] },
@@ -65,25 +62,11 @@ describe("F03: collectAssetIds", () => {
     expect(collectAssetIds(doc).size).toBe(0);
   });
 
-  it("collects ambient and image backgrounds from the doc style and shot overrides", () => {
-    const doc = docWith([EMPTY_CARD, EMPTY_CARD, EMPTY_CARD]);
-    doc.style.background = { kind: "ambient", assetId: "doc-ambient", blur: 0.5, dim: 0.2 };
-    doc.shots[0].styleOverrides = {
-      background: { kind: "image", assetId: "shot-image", dim: 0.1 },
-    };
-    doc.shots[1].styleOverrides = { background: { kind: "solid", color: "#808080" } };
-    doc.shots[2].styleOverrides = {
-      background: { kind: "ambient", assetId: "shot-ambient", blur: 0.5, dim: 0.2 },
-    };
-    expect([...collectAssetIds(doc)].sort()).toEqual(["doc-ambient", "shot-ambient", "shot-image"]);
-  });
-
   it("deduplicates ids shared across shots and slots", () => {
     const doc = docWith([
       { kind: "single", device: "browser", assetId: "a" },
       { kind: "pair", desktopId: "a", mobileId: "b", arrangement: "side" },
     ]);
-    doc.style.background = { kind: "ambient", assetId: "a", blur: 0.5, dim: 0.2 };
     expect([...collectAssetIds(doc)].sort()).toEqual(["a", "b"]);
   });
 });

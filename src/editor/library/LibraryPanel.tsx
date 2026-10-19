@@ -11,7 +11,6 @@ import {
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { useTemplateActions } from "../template-actions";
 import { MediaTab } from "./MediaTab";
-import { BrandTab } from "./BrandTab";
 import { UserTemplatesSection } from "./UserTemplatesSection";
 import { templatePosterUrl } from "./template-media";
 import { CaptureHelpModal } from "../dialogs/CaptureHelpModal";
@@ -21,7 +20,6 @@ import {
   Camera,
   Film,
   FolderOpen,
-  Palette,
   PanelLeftClose,
   Sparkles,
 } from "lucide-react";
@@ -112,7 +110,6 @@ export const LibraryPanel: React.FC = () => {
                   badge: doc.assets.length,
                   icon: <Icon icon={FolderOpen} size={13} />,
                 },
-                { id: "brand", label: "Brand", icon: <Icon icon={Palette} size={13} /> },
               ]}
             />
           </div>
@@ -214,11 +211,6 @@ export const LibraryPanel: React.FC = () => {
           {/* Media Content */}
           <TabsContent value="media" className="flex-1 flex flex-col min-h-0">
             <MediaTab />
-          </TabsContent>
-
-          {/* Brand Content */}
-          <TabsContent value="brand" className="flex-1 flex flex-col min-h-0">
-            <BrandTab />
           </TabsContent>
         </Tabs>
       </div>
