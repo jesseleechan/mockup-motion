@@ -39,6 +39,35 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
     .toBeGreaterThan(0);
 }
 
+/**
+ * Waits until no thumbnail is queued or rendering, and the shot cards show the results. Idle
+ * must hold across 200 ms: a request React issues just after a change waits 300 ms for its
+ * debounce, so it can't fall between the two samples.
+ */
+async function waitForThumbnails(page: Page) {
+  const settled = () =>
+    page.evaluate(() => {
+      const renderer = (window as unknown as { __thumbnailRenderer?: { idle: boolean } })
+        .__thumbnailRenderer;
+      if (!renderer) throw new Error("__thumbnailRenderer is unavailable");
+      const images = [
+        ...document.querySelectorAll<HTMLImageElement>('[data-testid="shot-card"] img'),
+      ];
+      return renderer.idle && images.length > 0 && images.every((img) => img.complete);
+    });
+  await expect
+    .poll(
+      async () => {
+        if (!(await settled())) return false;
+        await page.waitForTimeout(200);
+        return settled();
+      },
+      // Rendering competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
+      { timeout: ciTimeout(20_000) },
+    )
+    .toBe(true);
+}
+
 async function shotCount(page: Page): Promise<number> {
   return page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
@@ -148,8 +177,10 @@ test.describe("F07: shot and project thumbnails", () => {
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => el.naturalWidth), { timeout: 20_000 })
       .toBeGreaterThan(0);
-    // Let the first project-thumbnail write (and any other queued render) finish.
-    await page.waitForTimeout(1000);
+    // The shot card shows a thumbnail as soon as there is one, first of the template without
+    // screenshots: wait until the renderer has drawn the filled shot (and the project
+    // thumbnail), so "before" is the push-in render and not an older one still being replaced.
+    await waitForThumbnails(page);
     const before = await imageStats(thumb);
 
     const started = Date.now();
