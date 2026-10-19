@@ -99,15 +99,44 @@ export function backgroundColor(background: Background): string {
 // 8% card hairline that keeps a dark screenshot's edge visible on a dark fill (quality-bar §6).
 const DARK_FILL_LIGHTNESS = 0.5;
 
-/** The style fields a custom flat colour sets, with the frame look and text colour to match. */
-export function customBackgroundStyle(color: string): ToneStyle {
+type FillStyle = Pick<Style, "background" | "frameAppearance">;
+
+/** The style fields a custom flat colour sets: the fill and the frame look to match it. */
+export function customBackgroundStyle(color: string): FillStyle {
   const lightness = oklch(color)?.l ?? 1;
   const look = lightness < DARK_FILL_LIGHTNESS ? FLAT_TONES.dark : FLAT_TONES.light;
-  return {
-    background: { kind: "solid", color },
-    textColor: paletteTextColor(look),
-    frameAppearance: palette(look).frameAppearance,
-  };
+  return { background: { kind: "solid", color }, frameAppearance: palette(look).frameAppearance };
+}
+
+/**
+ * The fill a tone sets from the Background control: only the background and its frame look, so
+ * a template's own text colour (Scroll Story keeps the brand's) is left alone.
+ */
+export function toneFillStyle(tone: PresetTone, tones: PresetTones = FLAT_TONES): FillStyle {
+  const { background, frameAppearance } = presetToneStyle(tone, tones);
+  return { background, frameAppearance };
+}
+
+/** A key that is equal for equal backgrounds, for remembering which one a UI state belongs to. */
+export function backgroundKey(background: Background): string {
+  return JSON.stringify(background).toUpperCase();
+}
+
+export type BackgroundChoice = PresetTone | "custom";
+
+/**
+ * What the Background control shows as selected. `customFor` is the background key Custom was
+ * opened on (or last set by the colour field); it holds only while the document still shows that
+ * background, so an undo, redo or template change selects from the document again.
+ */
+export function backgroundChoice(
+  style: Pick<Style, "background">,
+  tones: PresetTones,
+  customFor: string | null,
+): BackgroundChoice {
+  const tone = presetToneOf(style, tones);
+  if (!tone || customFor === backgroundKey(style.background)) return "custom";
+  return tone;
 }
 
 /**

@@ -2,23 +2,27 @@ import React, { useState } from "react";
 import { useEditorStore } from "../../state/store";
 import { ColorField, Field, Section, SegmentedControl } from "../../ui";
 import {
+  backgroundChoice,
   backgroundColor,
+  backgroundKey,
   customBackgroundStyle,
   paletteBackground,
-  presetToneOf,
-  presetToneStyle,
   templateTones,
-  type PresetTone,
+  toneFillStyle,
+  type BackgroundChoice,
 } from "../../templates/looks";
 import { currentTemplate } from "../template-actions";
 
-type BackgroundChoice = PresetTone | "custom";
+// Custom's dot before a colour is chosen: a muted hue wheel, the usual sign for "any colour".
+const ANY_COLOR = "conic-gradient(#E99AB0, #9BB5E9, #9FDDB6, #E9D79A, #E99AB0)";
 
-const Dot: React.FC<{ color: string }> = ({ color }) => (
+// The ring uses the secondary text colour, so a near-black fill such as Onyx still reads as a
+// dot on the dark panel, and a near-white one on the light panel.
+const Dot: React.FC<{ fill: string }> = ({ fill }) => (
   <span
     aria-hidden
-    className="block w-2.5 h-2.5 rounded-full border border-[var(--color-line-strong)]"
-    style={{ background: color }}
+    className="block w-2.5 h-2.5 rounded-full border border-[var(--color-text-3)]"
+    style={{ background: fill }}
   />
 );
 
@@ -29,32 +33,34 @@ const Dot: React.FC<{ color: string }> = ({ color }) => (
 export const BackgroundSection: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
-  // Custom stays selected while the colour row is open, even before the colour changes.
-  const [customOpen, setCustomOpen] = useState(false);
+  // The background Custom was opened on, so Custom stays selected before the colour changes
+  // (backgroundChoice). Any other change to the background selects from the document again.
+  const [customFor, setCustomFor] = useState<string | null>(null);
 
   const tones = templateTones(currentTemplate(doc));
-  const tone = presetToneOf(doc.style, tones);
-  const choice: BackgroundChoice = customOpen || !tone ? "custom" : tone;
+  const choice = backgroundChoice(doc.style, tones, customFor);
   const current = backgroundColor(doc.style.background);
 
   const handleChoice = (next: BackgroundChoice) => {
     if (next === "custom") {
-      setCustomOpen(true);
+      setCustomFor(backgroundKey(doc.style.background));
       return;
     }
-    setCustomOpen(false);
+    setCustomFor(null);
     apply(
       (draft) => {
-        Object.assign(draft.style, presetToneStyle(next, tones));
+        Object.assign(draft.style, toneFillStyle(next, tones));
       },
       { label: next === "dark" ? "Use dark background" : "Use light background" },
     );
   };
 
   const handleCustomColor = (color: string) => {
+    const fill = customBackgroundStyle(color);
+    setCustomFor(backgroundKey(fill.background));
     apply(
       (draft) => {
-        Object.assign(draft.style, customBackgroundStyle(color));
+        Object.assign(draft.style, fill);
       },
       { label: "Change background color", coalesceKey: "background-color" },
     );
@@ -72,17 +78,17 @@ export const BackgroundSection: React.FC = () => {
             {
               value: "light",
               label: "Light",
-              icon: <Dot color={backgroundColor(paletteBackground(tones.light))} />,
+              icon: <Dot fill={backgroundColor(paletteBackground(tones.light))} />,
             },
             {
               value: "dark",
               label: "Dark",
-              icon: <Dot color={backgroundColor(paletteBackground(tones.dark))} />,
+              icon: <Dot fill={backgroundColor(paletteBackground(tones.dark))} />,
             },
             {
               value: "custom",
               label: "Custom",
-              icon: <Dot color={choice === "custom" ? current : "#8E8E98"} />,
+              icon: <Dot fill={choice === "custom" ? current : ANY_COLOR} />,
             },
           ]}
         />

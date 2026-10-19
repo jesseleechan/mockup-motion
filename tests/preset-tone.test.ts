@@ -12,15 +12,18 @@ import {
   getTemplateById,
 } from "../src/templates";
 import {
+  backgroundChoice,
+  backgroundKey,
   customBackgroundStyle,
   presetToneOf,
   presetToneStyle,
   setPresetTone,
   templateTones,
+  toneFillStyle,
 } from "../src/templates/looks";
 
-const ASH = { kind: "solid", color: "#DFE1E3" };
-const ONYX = { kind: "solid", color: "#141417" };
+const ASH: Background = { kind: "solid", color: "#DFE1E3" };
+const ONYX: Background = { kind: "solid", color: "#141417" };
 const TONE_TEMPLATES = [
   "desktop-slider",
   "mobile-slider",
@@ -150,12 +153,10 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
   it("a custom colour is flat, and a dark one takes the white card hairline", () => {
     expect(customBackgroundStyle("#2B3A55")).toEqual({
       background: { kind: "solid", color: "#2B3A55" },
-      textColor: "#F4F4F5",
       frameAppearance: "dark",
     });
     expect(customBackgroundStyle("#F3E9DC")).toEqual({
       background: { kind: "solid", color: "#F3E9DC" },
-      textColor: "#18181B",
       frameAppearance: "light",
     });
     // Mid grey sits either side of the OKLCH L 0.5 line.
@@ -163,6 +164,34 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
     expect(customBackgroundStyle("#7A7A7A").frameAppearance).toBe("light");
     // A custom colour that happens to equal a fill reads as that tone.
     expect(presetToneOf(customBackgroundStyle("#141417"))).toBe("dark");
+  });
+
+  it("the control sets only the fill and frame look, never the text colour", () => {
+    const tones = templateTones(getTemplateById("scroll-story"));
+    expect(Object.keys(toneFillStyle("dark", tones)).sort()).toEqual([
+      "background",
+      "frameAppearance",
+    ]);
+    expect(toneFillStyle("dark", tones)).toEqual({ background: GRAPHITE, frameAppearance: "dark" });
+  });
+
+  it("Custom stays selected only while the document shows the background it was opened on", () => {
+    const tones = templateTones(getTemplateById("frames"));
+    const ash = { background: ASH };
+    const onyx = { background: ONYX };
+    // Nothing open: the document decides.
+    expect(backgroundChoice(ash, tones, null)).toBe("light");
+    expect(backgroundChoice(onyx, tones, null)).toBe("dark");
+    expect(backgroundChoice({ background: { kind: "solid", color: "#2B3A55" } }, tones, null)).toBe(
+      "custom",
+    );
+    // Custom opened on Ash, before a colour is picked.
+    const openOnAsh = backgroundKey(ASH);
+    expect(backgroundChoice(ash, tones, openOnAsh)).toBe("custom");
+    // An undo, redo or template change moves the document to Onyx: the document decides again.
+    expect(backgroundChoice(onyx, tones, openOnAsh)).toBe("dark");
+    // The key ignores letter case, as the tone read-out does.
+    expect(backgroundKey({ kind: "solid", color: "#dfe1e3" })).toBe(openOnAsh);
   });
 
   it("a document on a dark custom colour takes the preset's Dark when one is applied", () => {
