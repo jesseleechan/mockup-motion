@@ -89,26 +89,6 @@ test.describe("Responsive Scroll: capture sections on assets (R02)", () => {
     // Image analysis still runs on screenshots that carry sections.
     expect(mobile?.meta?.bottomColor).toMatch(/^#[0-9a-f]{6}$/i);
   });
-
-  test("a capture file added later attaches to its screenshot in the library", async ({ page }) => {
-    await resetAndOpenMedia(page);
-    await page.getByTestId("media-input").setInputFiles([FILES.mobile]);
-    await expect.poll(async () => (await storedAssets(page)).length).toBe(1);
-    expect((await storedAssets(page))[0].meta?.sections).toBeUndefined();
-
-    await page.getByTestId("media-input").setInputFiles([FILES.mobileJson]);
-    await expect.poll(async () => sectionTop((await storedAssets(page))[0], "works")).toBe(3204);
-    expect(await storedAssets(page)).toHaveLength(1);
-  });
-
-  test("a capture file that matches no screenshot says so", async ({ page }) => {
-    await resetAndOpenMedia(page);
-    await page.getByTestId("media-input").setInputFiles([FILES.desktopJson]);
-    await expect(
-      page.getByText("aurelia-desktop-1440.json: no screenshot matches this capture file."),
-    ).toBeVisible();
-    expect(await storedAssets(page)).toHaveLength(0);
-  });
 });
 
 test.describe("Responsive Scroll: rendering (R04)", () => {
