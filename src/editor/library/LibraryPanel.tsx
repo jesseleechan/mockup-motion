@@ -5,6 +5,7 @@ import { useUIStore } from "../../state/ui-store";
 import {
   BUILTIN_TEMPLATES,
   templateInCategory,
+  templateNeeds,
   validateTemplateRequirements,
   type TemplateCategory,
 } from "../../templates";
@@ -47,7 +48,7 @@ export const LibraryPanel: React.FC = () => {
   return (
     <aside
       data-panel="library"
-      className="w-[280px] bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden"
+      className="w-full min-w-0 bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col select-none overflow-hidden"
     >
       {/* Dialogs */}
       <CaptureHelpModal open={captureModalOpen} onOpenChange={setCaptureModalOpen} />
@@ -155,7 +156,6 @@ export const LibraryPanel: React.FC = () => {
             >
               {filteredTemplates.map((template) => {
                 const validation = validateTemplateRequirements(template, doc.assets);
-                const requiredSlots = template.slots.filter((s) => s.required);
 
                 return (
                   <div
@@ -186,19 +186,16 @@ export const LibraryPanel: React.FC = () => {
                       {template.description}
                     </p>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-medium text-[var(--color-text-3)]">
-                        {requiredSlots.length === 0
-                          ? "No media needed"
-                          : `${requiredSlots.length} slot${requiredSlots.length > 1 ? "s" : ""}`}
-                      </span>
-
-                      {!validation.valid && (
-                        <span className="text-[9px] text-[var(--color-text-3)] font-medium">
-                          {validation.reason}
-                        </span>
-                      )}
-                    </div>
+                    <span
+                      data-testid="template-needs"
+                      className={`text-[10px] font-medium ${
+                        validation.valid
+                          ? "text-[var(--color-text-3)]"
+                          : "text-[var(--color-accent)]"
+                      }`}
+                    >
+                      {templateNeeds(template)}
+                    </span>
                   </div>
                 );
               })}

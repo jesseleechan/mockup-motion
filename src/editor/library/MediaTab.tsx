@@ -11,6 +11,7 @@ import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { useAssetUrls } from "../assets/useAssetUrls";
+import { MediaCard } from "./MediaCard";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
 import { validateAndDecodeAsset } from "../../assets/decode";
@@ -19,7 +20,6 @@ import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "./capture-i
 import {
   Copy,
   GalleryHorizontal,
-  ImageIcon,
   Minus,
   Plus,
   RefreshCw,
@@ -261,67 +261,16 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
               return (
                 <ContextMenu key={asset.id}>
                   <ContextMenuTrigger asChild>
-                    <div
-                      draggable
+                    <MediaCard
+                      asset={asset}
+                      thumb={thumb}
+                      usage={usage}
                       onDragStart={(e) => handleDragStart(e, asset)}
                       onDragOver={handleCardDragOver}
                       onDrop={(e) => handleCardDrop(e, asset.id)}
                       onClick={() => onSelectAsset?.(asset.id)}
-                      className="group relative flex flex-col rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] overflow-hidden cursor-grab active:cursor-grabbing transition-all select-none"
-                    >
-                      {/* Thumbnail Container */}
-                      <div className="w-full aspect-[4/3] bg-black/60 relative overflow-hidden flex items-center justify-center border-b border-[var(--color-line)]">
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt={asset.name}
-                            className="w-full h-full object-cover pointer-events-none"
-                          />
-                        ) : (
-                          <Icon icon={ImageIcon} size={20} className="text-[var(--color-text-3)]" />
-                        )}
-
-                        {/* Top Badges */}
-                        <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
-                          <span className="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[9px] font-medium text-[var(--color-text)] uppercase tracking-wider">
-                            {asset.role || "desktop"}
-                          </span>
-
-                          {asset.meta?.tall && (
-                            <span className="px-1 py-0.5 rounded bg-[var(--color-accent)]/80 text-[8px] font-bold text-black uppercase">
-                              Tall
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Used in Shot Dot */}
-                        {isUsed && (
-                          <div
-                            title={`Used in shot ${usage.join(", ")}`}
-                            className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[9px] text-[var(--color-text-2)]"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
-                            <span>S{usage.join(",")}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-1.5 flex flex-col min-w-0">
-                        <span
-                          data-truncate
-                          title={asset.name}
-                          className="text-[11px] font-semibold text-[var(--color-text)] truncate"
-                        >
-                          {asset.name}
-                        </span>
-                        <span className="text-[9px] text-[var(--color-text-3)] font-mono truncate mt-0.5">
-                          {asset.width && asset.height
-                            ? `${asset.width}×${asset.height}`
-                            : `${(asset.bytes / 1024).toFixed(0)} KB`}
-                        </span>
-                      </div>
-                    </div>
+                      onSetRole={(role) => setAssetRole(asset.id, role)}
+                    />
                   </ContextMenuTrigger>
 
                   <ContextMenuContent>

@@ -1,4 +1,5 @@
 import type { Aspect, AssetRef, AssetRole, Shot, Style } from "../doc/types";
+import type { PresetTones } from "./looks";
 
 export interface SlotSpec {
   key: string; // "desktop1", "mobile1", "logo"
@@ -28,8 +29,8 @@ export interface Template {
   category: TemplateCategory;
   slots: SlotSpec[];
   defaultDuration: number;
-  /** Shows the Light / Dark background switch (Ash or Onyx, `presetToneStyle`). */
-  toneSwitch?: boolean;
+  /** The Light and Dark background fills (`presetToneStyle`); Ash and Onyx when omitted. */
+  tones?: PresetTones;
   /**
    * Two slot keys that show one page at two sizes (Responsive Scroll). `fillSlots` fills them with
    * a desktop and a mobile capture of the same page when the library has one.
