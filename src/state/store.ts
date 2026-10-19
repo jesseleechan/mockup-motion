@@ -96,9 +96,17 @@ const COALESCE_WINDOW_MS = 800;
  * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
  * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
  * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
+ * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
  */
-function fitSliderShots(draft: ProjectDoc): void {
+function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
+    if (shot.layout.kind === "responsive") {
+      const duration = fixedShotDuration(shot.layout, shot.scroll, draft.assets);
+      if (duration !== null && duration !== shot.duration) shot.duration = duration;
+      const camera = fixedShotCamera(shot.layout, shot.camera);
+      if (camera !== shot.camera) shot.camera = camera;
+      continue;
+    }
     if (!isSteppedLayout(shot.layout)) continue;
     shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
     shot.duration = sliderDuration(shot.layout);
@@ -126,7 +134,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       const current = get().doc;
       const next = produce(current, (draft) => {
         recipe(draft);
-        fitSliderShots(draft);
+        fitFixedShots(draft);
       });
 
       // No-op if doc reference didn't change (no modifications)
@@ -585,8 +593,9 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
     setShotDuration: (index: number, duration: number) => {
       // A slider sets its own length; skip it so the edit leaves no empty undo step.
-      const current = get().doc.shots[index];
-      if (current && fixedShotDuration(current.layout) !== null) return;
+      const { doc } = get();
+      const current = doc.shots[index];
+      if (current && fixedShotDuration(current.layout, current.scroll, doc.assets) !== null) return;
       get().apply(
         (draft) => {
           const shot = draft.shots[index];
