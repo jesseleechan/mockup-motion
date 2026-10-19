@@ -23,8 +23,6 @@ Checked against `quality-bar.md`:
 
 `works-hold_<aspect>.webp` are the column-3 stills at full width.
 
-## Rendering test
+## Tests
 
-`tests/e2e/responsive-scroll.spec.ts`, "Responsive Scroll: rendering (R04)", 16:9 and 4:5: both card interiors show screenshot content (luminance spread > 8) at t = 0.5 s and at t = 3.6 s, and more than 10% of their pixels change between the two (the screens scrolled).
-
-- Fails with the `evaluate` scroll wiring removed: 2 failed (changed fraction: expected > 0.1, received 0).
+The stills cover the look (CLAUDE.md, Tests: "Visual stills show the look"): R06 adds Linux baselines for the works hold at all five aspects and 16:9 mid-move. An e2e pixel test written for this task (both screens show the page and scroll between t = 0.5 s and 3.6 s; it failed with the `evaluate` scroll wiring removed) was removed on 19 October 2026 under the new rule. The unit tests in `tests/responsive-scroll.test.ts` guard the scroll positions.
