@@ -222,10 +222,10 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll.
+        // Every section of a single-device shot: Scroll Story's shot already scrolls.
         const shotId = (await currentDoc(page)).shots[0].id;
         await select(page, { kind: "shot", id: shotId });
-        await inspector.getByRole("switch", { name: "Scroll through page" }).click();
+        await expect(inspector.getByRole("switch", { name: "Scroll through page" })).toBeChecked();
         await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Shot inspector, scroll");
 
