@@ -1,13 +1,9 @@
 import * as THREE from "three";
-import type { DeviceFinish, Style } from "../../doc/types";
+import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
 import { DeviceShadowGroup } from "../shadows/DeviceShadow";
-import {
-  createBodyMaterial,
-  createRoundedExtrudeGeometry,
-  DEVICE_FINISH_COLORS,
-} from "./body";
+import { createBodyMaterial, createRoundedExtrudeGeometry } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
 export function buildTabletDevice(
@@ -17,7 +13,6 @@ export function buildTabletDevice(
 ): DeviceInstance {
   const bodyW = node.width;
   const bodyH = node.height;
-  const finish: DeviceFinish = style.deviceFinish ?? "graphite";
 
   // Quality-bar §3.4
   const bezel = bodyW * 0.04;
@@ -47,7 +42,7 @@ export function buildTabletDevice(
 
   // Solid chassis
   const bodyGeo = createRoundedExtrudeGeometry(bodyW, bodyH, bodyRadius, bodyDepth, 0.0005);
-  const bodyMat = createBodyMaterial(finish);
+  const bodyMat = createBodyMaterial();
   const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
   group.add(bodyMesh);
 
@@ -82,9 +77,6 @@ export function buildTabletDevice(
       borderRgba[3],
     );
     compositor.material.uniforms.uBorderWidth.value = 0.0006;
-
-    const finishHex = DEVICE_FINISH_COLORS[updatedStyle.deviceFinish ?? "graphite"];
-    bodyMat.color.set(finishHex);
   }
 
   function dispose(): void {

@@ -8,7 +8,6 @@ import type {
   BrowserChrome,
   CameraPresetId,
   DestinationId,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   Layout,
@@ -124,15 +123,7 @@ export const SHADOW_LABELS: Record<ShadowPreset, string> = {
 
 export const BROWSER_CHROME_LABELS: Record<BrowserChrome, string> = {
   standard: "Standard",
-  minimal: "Minimal",
   none: "None",
-};
-
-export const DEVICE_FINISH_LABELS: Record<DeviceFinish, string> = {
-  graphite: "Graphite",
-  silver: "Silver",
-  black: "Black",
-  sand: "Sand",
 };
 
 export const ASSET_ROLE_LABELS: Record<AssetRole, string> = {

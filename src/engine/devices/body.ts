@@ -1,12 +1,7 @@
 import * as THREE from "three";
-import type { DeviceFinish } from "../../doc/types";
 
-export const DEVICE_FINISH_COLORS: Record<DeviceFinish, string> = {
-  graphite: "#3A3B3F",
-  silver: "#D9DADD",
-  black: "#121214",
-  sand: "#CBBBA0",
-};
+/** The silver body colour of the tablet and laptop, their only finish. */
+export const DEVICE_BODY_COLOR = "#D9DADD";
 
 /**
  * Creates a 2D rounded rectangle shape centered at (0, 0).
@@ -58,12 +53,11 @@ export function createRoundedExtrudeGeometry(
 }
 
 /**
- * Creates standard PBR material for a device finish.
+ * Creates the standard PBR body material.
  */
-export function createBodyMaterial(finish: DeviceFinish): THREE.MeshStandardMaterial {
-  const hex = DEVICE_FINISH_COLORS[finish] ?? DEVICE_FINISH_COLORS.graphite;
+export function createBodyMaterial(): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
-    color: new THREE.Color(hex),
+    color: new THREE.Color(DEVICE_BODY_COLOR),
     roughness: 0.35,
     metalness: 0.5,
   });

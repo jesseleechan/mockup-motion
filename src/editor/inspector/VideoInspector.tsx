@@ -4,8 +4,8 @@ import { BUILTIN_PALETTES } from "../../doc/palettes";
 import { CURATED_FONT_PAIRS } from "../../assets/fonts";
 import { schedule } from "../../motion";
 import { ColorField, Field, Section, SegmentedControl, Select, Slider, Switch } from "../../ui";
-import type { BrowserChrome, DeviceFinish, ShadowPreset } from "../../doc/types";
-import { BROWSER_CHROME_LABELS, DEVICE_FINISH_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
+import type { BrowserChrome, ShadowPreset } from "../../doc/types";
+import { BROWSER_CHROME_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
 import { presetToneOf, setPresetTone, type PresetTone } from "../../templates/looks";
 import { currentTemplate } from "../template-actions";
 
@@ -17,8 +17,7 @@ function formatTime(sec: number): string {
 }
 
 const SHADOW_ORDER: ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const CHROME_ORDER: BrowserChrome[] = ["standard", "minimal", "none"];
-const FINISH_ORDER: DeviceFinish[] = ["silver", "graphite", "black", "sand"];
+const CHROME_ORDER: BrowserChrome[] = ["standard", "none"];
 
 // The aspect ratio lives in the top bar only (F08).
 export const VideoInspector: React.FC = () => {
@@ -30,9 +29,6 @@ export const VideoInspector: React.FC = () => {
   // Check if any shots use browser or 3D devices
   const hasBrowserShot = doc.shots.some(
     (s) => s.layout.kind === "single" && s.layout.device === "browser",
-  );
-  const hasDeviceShot = doc.shots.some(
-    (s) => s.layout.kind === "single" && s.layout.device !== "card",
   );
 
   const handleApplyPalette = (paletteId: string) => {
@@ -211,24 +207,6 @@ export const VideoInspector: React.FC = () => {
               options={optionsFor(SHADOW_LABELS, SHADOW_ORDER)}
             />
           </Field>
-
-          {hasDeviceShot && (
-            <Field label="Device finish">
-              <Select
-                aria-label="Device finish"
-                value={doc.style.deviceFinish}
-                onChange={(val) =>
-                  apply(
-                    (draft) => {
-                      draft.style.deviceFinish = val;
-                    },
-                    { label: "Change device finish" },
-                  )
-                }
-                options={optionsFor(DEVICE_FINISH_LABELS, FINISH_ORDER)}
-              />
-            </Field>
-          )}
 
           {hasBrowserShot && (
             <>

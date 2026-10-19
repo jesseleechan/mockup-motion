@@ -9,7 +9,6 @@ export function defaultStyle(): Style {
       angleConvention: "css",
     },
     frameAppearance: "light",
-    deviceFinish: "silver",
     browserChrome: "standard",
     browserUrl: "",
     shadow: "soft",
