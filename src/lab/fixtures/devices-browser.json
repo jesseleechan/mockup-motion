@@ -27,7 +27,6 @@
       "color": "#F1EDE6"
     },
     "frameAppearance": "light",
-    "deviceFinish": "graphite",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "soft",
@@ -44,7 +43,7 @@
         "assetId": "demo-aurelia-desktop-hero"
       },
       "camera": {
-        "preset": "heroTilt",
+        "preset": "static",
         "intensity": 1,
         "easing": "smooth",
         "float": 0

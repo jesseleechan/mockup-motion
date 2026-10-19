@@ -10,7 +10,6 @@ export function defaultStyle(): Style {
       angleConvention: "css",
     },
     frameAppearance: "light",
-    deviceFinish: "silver",
     browserChrome: "standard",
     browserUrl: "",
     shadow: "soft",
@@ -49,7 +48,6 @@ export function defaultShot(layout?: Layout): Shot {
       assetId: "",
     },
     camera: defaultCameraMove(),
-    entrance: "none",
     transitionIn: {
       kind: "cut",
       duration: 0,

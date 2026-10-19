@@ -1,4 +1,4 @@
-import { backgroundAssetId, collectAssetIds, resolveShotStyle } from "../../doc/assets";
+import { collectAssetIds } from "../../doc/assets";
 import type { ExportQuality, ProjectDoc } from "../../doc/types";
 import { aspectRatioValue, cameraPose, resolveLayout } from "../../motion";
 
@@ -49,21 +49,12 @@ export function textureWidths(doc: ProjectDoc, opts: TextureSizingOptions): Map<
 
   doc.shots.forEach((shot, shotIndex) => {
     const distance = opts.cameraDistanceOverride ?? smallestCameraDistance(doc, shotIndex);
-    const nodes = resolveLayout(
-      shot.layout,
-      doc.aspect,
-      doc.assets,
-      0,
-      shot.duration,
-      shot.entrance ?? "none",
-    );
+    const nodes = resolveLayout(shot.layout, doc.aspect, doc.assets, 0, shot.duration);
     for (const node of nodes) {
       const onScreenPx = ((node.width * node.transform.scale) / stageWidthUnits) * framePx;
       want(node.assetId, (onScreenPx / distance) * oversample);
     }
-    want(backgroundAssetId(resolveShotStyle(doc, shotIndex).background), framePx * oversample);
   });
-  want(backgroundAssetId(doc.style.background), framePx * oversample);
   // A layout can list more assets than it places at t = 0; size those for a full frame.
   for (const assetId of collectAssetIds(doc)) {
     if (!needed.has(assetId)) want(assetId, framePx * oversample);

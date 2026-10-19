@@ -1,16 +1,7 @@
 import * as THREE from "three";
-import type { DeviceFinish } from "../../doc/types";
 
-/**
- * Phone frame colours, after the iPhone Pro finishes (quality-bar §3.3). The finish names are
- * the document's; the colours are Black Titanium, a deeper black, Silver and Desert Titanium.
- */
-export const PHONE_FINISH_COLORS: Record<DeviceFinish, string> = {
-  graphite: "#45454A",
-  black: "#232326",
-  silver: "#D9DADC",
-  sand: "#C2A78F",
-};
+/** The phone's frame colour: the iPhone Pro's Silver, its only finish (quality-bar §3.3). */
+export const PHONE_FRAME_COLOR = "#D9DADC";
 
 const vertexShader = /* glsl */ `
   varying vec2 vPos;
@@ -57,7 +48,6 @@ export function createPhoneFrameRing(
   height: number,
   radius: number,
   ring: number,
-  finish: DeviceFinish,
 ): THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> {
   const material = new THREE.ShaderMaterial({
     vertexShader,
@@ -66,7 +56,7 @@ export function createPhoneFrameRing(
       uHalfSize: { value: new THREE.Vector2(width / 2, height / 2) },
       uRadius: { value: radius },
       uRing: { value: ring },
-      uColor: { value: new THREE.Color(PHONE_FINISH_COLORS[finish]) },
+      uColor: { value: new THREE.Color(PHONE_FRAME_COLOR) },
     },
     transparent: true,
   });
