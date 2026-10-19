@@ -220,6 +220,13 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     shots.push(defaultShot());
   }
 
+  // A scrolling responsive layout lasts its holds plus moves, which depend on its screenshots
+  // (contracts.md §5), so its length is set once the assets are known.
+  for (const shot of shots) {
+    const fixed = fixedShotDuration(shot.layout, shot.scroll, assets);
+    if (fixed !== null) shot.duration = fixed;
+  }
+
   const doc: ProjectDoc = {
     version: 2,
     id: typeof d.id === "string" && d.id ? d.id : crypto.randomUUID(),
@@ -380,6 +387,12 @@ function sanitizeShot(
       hold: clamp(typeof sc.hold === "number" ? sc.hold : 0.8, 0, 10),
       easing: includesValue(VALID_EASINGS, sc.easing) ? sc.easing : "smooth",
     };
+    // Responsive Scroll's section stops: keys in page order; unset means the default stops.
+    if (Array.isArray(sc.sections)) {
+      shot.scroll.sections = sc.sections.filter(
+        (key): key is string => typeof key === "string" && key !== "",
+      );
+    }
   }
 
   if (s.styleOverrides && typeof s.styleOverrides === "object") {
@@ -430,6 +443,12 @@ function sanitizeLayout(
         desktopId: checkAsset(l.desktopId, "desktopId"),
         mobileId: checkAsset(l.mobileId, "mobileId"),
         arrangement: l.arrangement === "side" ? "side" : "overlap",
+      };
+    case "responsive":
+      return {
+        kind: "responsive",
+        desktopId: checkAsset(l.desktopId, "desktopId"),
+        mobileId: checkAsset(l.mobileId, "mobileId"),
       };
     case "trio": {
       const res: Layout = {
