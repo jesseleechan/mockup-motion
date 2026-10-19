@@ -189,13 +189,12 @@ async function canEncode(page: Page, codec: "avc" | "vp9", width: number, height
 }
 
 const PRESETS = [
-  { card: "Website", width: 1920, height: 1080, bundle: true },
+  { card: "Video", width: 1920, height: 1080, bundle: false },
   { card: "Dribbble", width: 1600, height: 1200, bundle: false },
   { card: "Instagram", width: 1080, height: 1350, bundle: false },
   { card: "Story", width: 1080, height: 1920, bundle: false },
-  { card: "LinkedIn & X", width: 1920, height: 1080, bundle: false },
   { card: "4K presentation", width: 3840, height: 2160, bundle: false },
-  { card: "Custom", width: 1920, height: 1080, bundle: false },
+  { card: "Web bundle", width: 1920, height: 1080, bundle: true },
 ] as const;
 
 const ONE_FRAME = 1 / 30;

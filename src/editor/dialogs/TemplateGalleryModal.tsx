@@ -4,9 +4,11 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import {
   BUILTIN_TEMPLATES,
+  demoAssetsToFill,
   fittingTemplateId,
   getTemplateById,
   templateInCategory,
+  templateNeeds,
   validateTemplateRequirements,
   type Template,
   type TemplateCategory,
@@ -14,14 +16,25 @@ import {
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
-import { Check, Film, Monitor, Search, Smartphone, Sparkles, X } from "lucide-react";
+import {
+  Check,
+  Film,
+  Monitor,
+  Search,
+  Smartphone,
+  Sparkles,
+  UploadCloud,
+  Wand2,
+  X,
+} from "lucide-react";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const open = useUIStore((s) => s.templateGalleryOpen);
   const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
-  const { applyTemplateById } = useTemplateActions();
+  const requestScreenshotPicker = useUIStore((s) => s.requestScreenshotPicker);
+  const { applyTemplateById, applyTemplateWithDemo } = useTemplateActions();
   const onOpenChange = (next: boolean) => {
     if (!next) closeTemplateGallery();
   };
@@ -75,9 +88,34 @@ export const TemplateGalleryModal: React.FC = () => {
     closeTemplateGallery();
   };
 
+  // Offered while the selected template is missing screenshots the demo content can fill.
+  const canUseDemo = selectedTemplate
+    ? demoAssetsToFill(selectedTemplate, doc.assets).length > 0
+    : false;
+  // Applies the template, then opens the stage's file picker: the uploads fill it (F06).
+  const handleChooseScreenshots = (template: Template) => {
+    handleApply(template);
+    requestScreenshotPicker();
+  };
+  const handleApplyWithDemo = async (template: Template) => {
+    closeTemplateGallery();
+    await applyTemplateWithDemo(template);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl">
+      <DialogContent
+        // Focus starts on the selected card, the one Apply uses, rather than the close button.
+        onOpenAutoFocus={(e) => {
+          const card = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+            `[data-template-id="${selectedTemplateId}"]`,
+          );
+          if (!card) return;
+          e.preventDefault();
+          card.focus({ preventScroll: true });
+        }}
+        className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--color-line)] flex items-center justify-between bg-[var(--color-panel)] shrink-0">
           <div>
@@ -155,10 +193,12 @@ export const TemplateGalleryModal: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTemplates.map((template) => {
                 const isSelected = selectedTemplateId === template.id;
+                // The selected card always plays, so something moves as soon as the gallery opens.
                 const isPreviewing =
-                  hoveredTemplateId === template.id || focusedTemplateId === template.id;
+                  isSelected ||
+                  hoveredTemplateId === template.id ||
+                  focusedTemplateId === template.id;
                 const validation = validateTemplateRequirements(template, doc.assets);
-                const requiredSlots = template.slots.filter((s) => s.required);
 
                 return (
                   <div
@@ -227,19 +267,21 @@ export const TemplateGalleryModal: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Slots & Validation Status */}
-                      <div className="pt-2 border-t border-[var(--color-line)] flex items-center justify-between">
-                        <span className="text-[10px] text-[var(--color-text-3)]">
-                          {requiredSlots.length === 0
-                            ? "No media required"
-                            : `${requiredSlots.length} slot${requiredSlots.length > 1 ? "s" : ""}`}
-                        </span>
-
-                        {!validation.valid && (
-                          <span className="text-[10px] font-medium text-[var(--color-accent)]">
-                            {validation.reason}
-                          </span>
+                      {/* What the template needs; accent while the library falls short. */}
+                      <div className="pt-2 border-t border-[var(--color-line)] flex items-center gap-1.5">
+                        {validation.valid && (
+                          <Icon icon={Check} size={11} className="text-[var(--color-text-3)]" />
                         )}
+                        <span
+                          data-testid="template-needs"
+                          className={`text-[10px] font-medium ${
+                            validation.valid
+                              ? "text-[var(--color-text-3)]"
+                              : "text-[var(--color-accent)]"
+                          }`}
+                        >
+                          {templateNeeds(template)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -283,10 +325,26 @@ export const TemplateGalleryModal: React.FC = () => {
             )}
           </div>
 
+          {/* The close button and Escape cancel, so the footer has room for the ways in. */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
+            {selectedTemplate && canUseDemo && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleChooseScreenshots(selectedTemplate)}
+                  icon={<Icon icon={UploadCloud} size={14} />}
+                >
+                  Choose screenshots
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleApplyWithDemo(selectedTemplate)}
+                  icon={<Icon icon={Wand2} size={14} />}
+                >
+                  Try with demo content
+                </Button>
+              </>
+            )}
             <Button
               variant="primary"
               disabled={!selectedTemplate}

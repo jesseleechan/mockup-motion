@@ -66,7 +66,7 @@ describe("Responsive Scroll template (R05)", () => {
       validateTemplateRequirements(responsiveScrollTemplate, [demo("aurelia", "desktop")]),
     ).toEqual({
       valid: false,
-      reason: "Needs a mobile screenshot",
+      reason: "Needs a desktop and a mobile full-page screenshot",
     });
     expect(
       validateTemplateRequirements(responsiveScrollTemplate, [

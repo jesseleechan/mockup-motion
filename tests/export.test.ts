@@ -15,15 +15,14 @@ import { unzipSync } from "fflate";
 
 describe("WP-16: Export v2, Destinations and Web-Embed Bundle", () => {
   describe("Destinations & Dimensions (src/export/destinations.ts)", () => {
-    it("exports all 7 platform destination presets with verified configurations", () => {
+    it("exports every destination preset with a verified configuration", () => {
       const expectedIds: DestinationId[] = [
-        "web-embed",
+        "video",
         "dribbble",
         "instagram-feed",
         "instagram-story",
-        "linkedin",
-        "x",
         "presentation-4k",
+        "web-embed",
         "custom",
       ];
 
@@ -116,8 +115,10 @@ describe("WP-16: Export v2, Destinations and Web-Embed Bundle", () => {
       expect(html).toContain('<video autoplay muted loop playsinline preload="metadata"');
       expect(html).toContain('poster="aurelia-hero-poster.webp"');
       expect(html).toContain('width="1920" height="1080"');
-      expect(html).toContain('<source src="aurelia-hero.webm" type=\'video/webm; codecs="vp09.00.41.08"\'>');
-      expect(html).toContain('<source src="aurelia-hero.mp4" type=\'video/mp4\'>');
+      expect(html).toContain(
+        '<source src="aurelia-hero.webm" type=\'video/webm; codecs="vp09.00.41.08"\'>',
+      );
+      expect(html).toContain("<source src=\"aurelia-hero.mp4\" type='video/mp4'>");
       expect(html).toContain("prefers-reduced-motion: reduce");
       expect(html).toContain("v.pause()");
     });

@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import clsx from "clsx";
+import { ChevronRight } from "lucide-react";
 import { Field, Select } from "../../ui";
 import type { ExportFormat, ExportQuality, ExportSettings } from "../../doc/types";
 import { sectionHeading } from "./DestinationPicker";
@@ -31,22 +33,37 @@ const QUALITY_OPTIONS: { value: ExportQuality; label: string }[] = [
   { value: "master", label: "Master (28 Mbps)" },
 ];
 
-const SUPERSAMPLE_OPTIONS = [
-  { value: "1", label: "Standard (1×)" },
-  { value: "1.5", label: "Crisp (1.5×)" },
-  { value: "2", label: "Sharpest (2×)" },
+const SUPERSAMPLE_NAMES: { value: string; name: string }[] = [
+  { value: "1", name: "Standard" },
+  { value: "1.5", name: "Crisp" },
+  { value: "2", name: "Sharpest" },
 ];
+
+const SUPERSAMPLE_OPTIONS = SUPERSAMPLE_NAMES.map(({ value, name }) => ({
+  value,
+  label: `${name} (${value}×)`,
+}));
 
 interface EncodingSettingsProps {
   settings: ExportSettings;
   onChange: (patch: Partial<ExportSettings>) => void;
 }
 
+/** The closed Advanced row names its values, so a changed setting is never out of sight. */
+function advancedSummary(settings: ExportSettings, isStill: boolean): string {
+  if (isStill) return "Not used for still frames";
+  const name = SUPERSAMPLE_NAMES.find((o) => o.value === String(settings.supersample))?.name;
+  const supersample = `${name ? `${name} ` : ""}${settings.supersample}×`;
+  return [`${settings.fps} fps`, supersample].join(" · ");
+}
+
 /**
- * Two columns of stacked fields. Controls that a format ignores are disabled: a still frame
- * has no frame rate, bitrate or supersampling.
+ * Format, resolution and quality, with frame rate and anti-aliasing under a collapsed
+ * Advanced row. Controls that a format ignores are disabled: a still frame has no frame rate,
+ * bitrate or supersampling.
  */
 export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, onChange }) => {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const { format } = settings;
   const isStill = format === "png";
   const isVideo = format === "mp4" || format === "webm" || format === "bundle";
@@ -60,8 +77,15 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
 
   return (
     <section>
-      <span className={sectionHeading}>Encoding</span>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+      <span className={sectionHeading}>
+        Encoding
+        {settings.destination === "custom" && (
+          <span className="ml-1.5 font-medium normal-case tracking-normal text-[var(--color-text-2)]">
+            · Custom
+          </span>
+        )}
+      </span>
+      <div className="grid grid-cols-3 gap-x-4 gap-y-3">
         <Field label="Format" stacked>
           <Select
             aria-label="Format"
@@ -78,15 +102,6 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
             options={resolutionOptions}
           />
         </Field>
-        <Field label="Frame rate" stacked>
-          <Select
-            aria-label="Frame rate"
-            value={String(settings.fps)}
-            onChange={(v) => onChange({ fps: Number(v) })}
-            options={FPS_OPTIONS}
-            disabled={isStill}
-          />
-        </Field>
         <Field label="Quality" stacked>
           <Select
             aria-label="Quality"
@@ -96,16 +111,54 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
             disabled={!isVideo}
           />
         </Field>
-        <Field label="Anti-aliasing" stacked>
-          <Select
-            aria-label="Anti-aliasing"
-            value={String(settings.supersample)}
-            onChange={(v) => onChange({ supersample: Number(v) })}
-            options={SUPERSAMPLE_OPTIONS}
-            disabled={!isVideo}
-          />
-        </Field>
       </div>
+
+      <button
+        type="button"
+        aria-expanded={advancedOpen}
+        aria-controls="export-advanced"
+        onClick={() => setAdvancedOpen((open) => !open)}
+        className={clsx(
+          "mt-3 w-full flex items-center gap-1.5 py-1 rounded-xs text-left text-[12px]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
+          "text-[var(--color-text-2)] hover:text-[var(--color-text)] transition-colors",
+        )}
+      >
+        <ChevronRight
+          size={12}
+          className={clsx(
+            "shrink-0 transition-transform duration-180",
+            advancedOpen && "rotate-90",
+          )}
+        />
+        <span className="font-medium">Advanced</span>
+        <span className="ml-auto min-w-0 truncate tabular-nums text-[var(--color-text-3)]">
+          {advancedSummary(settings, isStill)}
+        </span>
+      </button>
+
+      {advancedOpen && (
+        <div id="export-advanced" className="mt-2 grid grid-cols-3 gap-x-4 gap-y-3">
+          <Field label="Frame rate" stacked>
+            <Select
+              aria-label="Frame rate"
+              value={String(settings.fps)}
+              onChange={(v) => onChange({ fps: Number(v) })}
+              options={FPS_OPTIONS}
+              disabled={isStill}
+            />
+          </Field>
+          <Field label="Anti-aliasing" stacked>
+            <Select
+              aria-label="Anti-aliasing"
+              value={String(settings.supersample)}
+              onChange={(v) => onChange({ supersample: Number(v) })}
+              options={SUPERSAMPLE_OPTIONS}
+              disabled={!isVideo}
+            />
+          </Field>
+        </div>
+      )}
     </section>
   );
 };
