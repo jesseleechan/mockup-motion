@@ -16,7 +16,6 @@ import type {
   CameraMove,
   CameraPresetId,
   CaptureSection,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   ExportSettings,
@@ -41,8 +40,7 @@ const VALID_EASINGS: readonly EasingId[] = [
 ];
 const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = ["static", "pushIn"];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
-const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
+const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
 const VALID_FPS = [24, 30, 60] as const;
@@ -137,11 +135,10 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     unknown
   >;
   const style: Style = {
-    background: sanitizeBackground(rawStyle.background, assetIdSet, warnings),
+    background: sanitizeBackground(rawStyle.background),
     frameAppearance: rawStyle.frameAppearance === "dark" ? "dark" : "light",
-    deviceFinish: includesValue(VALID_DEVICE_FINISHES, rawStyle.deviceFinish)
-      ? rawStyle.deviceFinish
-      : defaults.style.deviceFinish,
+    // Device finishes were removed: a saved `deviceFinish` is dropped, so every phone loads in
+    // the one finish (quality-bar §3.3). The removed `minimal` chrome loads as `standard`.
     browserChrome: includesValue(VALID_BROWSER_CHROMES, rawStyle.browserChrome)
       ? rawStyle.browserChrome
       : defaults.style.browserChrome,
@@ -155,10 +152,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
       0,
       1,
     ),
-    accent:
-      typeof rawStyle.accent === "string" && rawStyle.accent
-        ? rawStyle.accent
-        : defaults.style.accent,
   };
 
   // Export
@@ -229,7 +222,20 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   return { doc, warnings };
 }
 
-function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string[]): Background {
+// The Ash palette's fill (quality-bar §6), which removed screenshot backgrounds load as.
+const ASH = "#DFE1E3";
+
+function meshToGradient(colors: unknown): Background {
+  const hexes = Array.isArray(colors)
+    ? colors.filter((c): c is string => typeof c === "string")
+    : [];
+  const first = hexes[0] ?? "#1B1B2F";
+  const last = hexes[hexes.length - 1] ?? first;
+  // The angle and convention of the light built-in gradients (quality-bar §6).
+  return { kind: "gradient", stops: [first, last], angle: 315, angleConvention: "css" };
+}
+
+function sanitizeBackground(bg: unknown): Background {
   if (!bg || typeof bg !== "object") {
     return defaultStyle().background;
   }
@@ -248,51 +254,12 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
         ...(b.angleConvention === "css" ? { angleConvention: "css" as const } : {}),
       });
     case "mesh":
-      return {
-        kind: "mesh",
-        colors:
-          Array.isArray(b.colors) && b.colors.length >= 3
-            ? b.colors.slice(0, 5).map((c) => (typeof c === "string" ? c : "#F1EDE6"))
-            : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-        drift: clamp(typeof b.drift === "number" ? b.drift : 0.05, 0, 1),
-        seed: typeof b.seed === "number" ? b.seed : 42,
-      };
-    case "ambient": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(
-          `Background ambient screenshot asset '${assetId}' not found. Cleared asset reference.`,
-        );
-        return {
-          kind: "ambient",
-          assetId: "",
-          blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-        };
-      }
-      return {
-        kind: "ambient",
-        assetId,
-        blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-      };
-    }
-    case "image": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(`Background image asset '${assetId}' not found. Cleared asset reference.`);
-        return {
-          kind: "image",
-          assetId: "",
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-        };
-      }
-      return {
-        kind: "image",
-        assetId,
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-      };
-    }
+      // Mesh backgrounds were removed: keep their colours as a gradient from first to last.
+      return meshToGradient(b.colors);
+    case "ambient":
+    case "image":
+      // Ambient and image backgrounds were removed: they load as the flat Ash fill.
+      return { kind: "solid", color: ASH };
     default:
       return defaultStyle().background;
   }
@@ -362,9 +329,7 @@ function sanitizeShot(
     const overrides = s.styleOverrides as Partial<Style>;
     shot.styleOverrides = {
       ...overrides,
-      ...(overrides.background
-        ? { background: sanitizeBackground(overrides.background, assetIds, warnings) }
-        : {}),
+      ...(overrides.background ? { background: sanitizeBackground(overrides.background) } : {}),
     };
   }
 

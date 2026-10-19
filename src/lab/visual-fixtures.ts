@@ -59,9 +59,6 @@ export function deviceFixtures(): Record<string, ProjectDoc> {
 const BACKGROUNDS: Record<string, Background> = {
   solid: { kind: "solid", color: "#141417" },
   gradient: { kind: "gradient", stops: ["#F1EDE6", "#E3DCD0"], angle: 290, angleConvention: "css" },
-  mesh: { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.2, seed: 3 },
-  ambient: { kind: "ambient", assetId: DESKTOP.id, blur: 0.55, dim: 0.35 },
-  image: { kind: "image", assetId: DESKTOP.id, dim: 0.15 },
 };
 
 export function backgroundFixtures(): Record<string, ProjectDoc> {
@@ -71,7 +68,7 @@ export function backgroundFixtures(): Record<string, ProjectDoc> {
     doc.style = {
       ...doc.style,
       background,
-      frameAppearance: name === "solid" || name === "mesh" ? "dark" : "light",
+      frameAppearance: name === "solid" ? "dark" : "light",
     };
     singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`bg-${name}`] = doc;

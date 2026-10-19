@@ -74,7 +74,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - Corner radius: 1.1% of window width. Hairline border: 1 px at 1080p equivalent (0.0009 stage units), `rgba(0,0,0,0.08)` light or `rgba(255,255,255,0.08)` dark.
 - `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in Inter Regular (+2% tracking) at 42% of toolbar height, 55% opacity.
-- `minimal`: no toolbar; traffic lights float inside the top-left corner over a 6% top fade. `none`: the screen only, with radius and border kept.
+- `none`: the screen only, with radius and border kept. (A `minimal` chrome, floating traffic lights and no toolbar, was removed on 19 October 2026; saved ones load as `standard`.)
 - Light toolbar `#F6F6F7`, dark `#1E1E21`.
 
 ### 3.3 Phone (an iPhone Pro, front on)
@@ -85,7 +85,7 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 - Dynamic Island: 31.3% × 9.2% of the screen width, 2.7% below the screen top, pure black with the front camera lens at its right end.
 - Buttons stand 0.6% of the width proud: the Action button and volume buttons on the left, the side button on the right, at the iPhone's positions.
 - **Status bar.** The top 62 pt of the 874 pt screen (7.1%). A screenshot without a status bar starts below it: the bar shows "9:41", signal, Wi-Fi and a full battery over the screenshot's top-row colour, in black on a light colour and white on a dark one, like iOS. So content is never covered by the island. A screenshot that already includes a status bar (detected by `assets/roles.ts`) fills the whole screen, and its own status bar stays pinned while the page scrolls. Scroll speeds are measured against the viewport below the status bar.
-- Finishes (frame colours): `graphite #45454A` (Black Titanium), `black #232326`, `silver #D9DADC` (Silver), `sand #C2A78F` (Desert Titanium).
+- Finish: Silver, frame colour `#D9DADC`. The other finishes (Black Titanium, black, Desert Titanium) and the Device finish control were removed on 19 October 2026; saved finishes load as Silver. The tablet and laptop body is silver `#D9DADD`.
 
 ### 3.4 Tablet, laptop, card
 
@@ -136,11 +136,11 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 
 ## 6. Color and backgrounds
 
-- Palettes are defined in OKLCH. Gradients and mesh interpolate in OKLab (using `culori`) to avoid muddy middles.
-- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Dusk** mesh `#1B1B2F #3A2F4F #6B4E71 #C3A6A0`; **Mist** mesh `#E9EEF5 #D7E0EE #EDE3F0 #F6EFE6`; **Ash** solid `#DFE1E3`, the flat light grey of the slider and Frames presets, used with grain 0 and vignette 0 (a flat fill cannot band); **Onyx** solid `#141417` (Graphite's first stop), their dark option, with the same grain 0 and vignette 0. The presets' Light / Dark switch (Video inspector) picks between Ash and Onyx, and Onyx sets `frameAppearance: "dark"` so the card hairline is white at 8%, which keeps a near-black screenshot's edge visible on the near-black fill.
+- Palettes are defined in OKLCH. Gradients interpolate in OKLab (using `culori`) to avoid muddy middles.
+- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Ash** solid `#DFE1E3`, the flat light grey of the slider and Frames presets, used with grain 0 and vignette 0 (a flat fill cannot band); **Onyx** solid `#141417` (Graphite's first stop), their dark option, with the same grain 0 and vignette 0. The presets' Light / Dark switch (Video inspector) picks between Ash and Onyx, and Onyx sets `frameAppearance: "dark"` so the card hairline is white at 8%, which keeps a near-black screenshot's edge visible on the near-black fill.
 - **Auto palette:** extract 5 dominant colors from the primary screenshot, then derive a background that complements without matching (lower chroma by 40–60%, shift lightness away from the screenshot's average by at least 0.25 L).
 - Background chroma stays at or below 0.09 (OKLCH C) for light palettes and 0.12 for dark, unless the user picks a custom color. Elegance comes from low chroma.
-- Mesh drift: at most 6% of the frame per loop, using integer harmonics only (loop-safe).
+- Backgrounds are a solid or a gradient. Mesh, ambient (blurred screenshot) and image backgrounds were removed on 19 October 2026; saved ones load as a gradient of the mesh's colours or as Ash (`contracts.md` §2).
 
 ## 7. Typography
 

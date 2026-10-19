@@ -46,12 +46,6 @@ Scrolling is off unless you pick Desktop Scroll Story or Mobile Scroll Story, or
 
 Add shots on the timeline. Between two shots, pick a cut or a fade, blur, push, zoom or wipe transition. A looping video also has a wrap transition from the last shot back to the first, so the camera never reverses. Each shot's camera is still or a slow push in.
 
-## Brand kit
-
-In the Brand tab, save colours, a default URL and a light and dark logo once, then apply the kit to a project.
-
-Not available yet: logos in the video (a saved logo is not drawn). See [`docs/plan/follow-ups.md`](docs/plan/follow-ups.md).
-
 ## Sound
 
 Videos are silent. Music was removed in October 2026; a saved project with a music track still opens, without the music.
@@ -107,7 +101,7 @@ Export stays on this machine. Each finished file is read back and checked ("Veri
 
 ## Projects
 
-Projects, screenshots and brand kits are stored in IndexedDB in this browser. Open Projects from the MockupMotion menu at the top left to switch, rename, duplicate or delete them. If storage is full, the save indicator says so. Clearing site data removes the local library.
+Projects and screenshots are stored in IndexedDB in this browser. Open Projects from the MockupMotion menu at the top left to switch, rename, duplicate or delete them. If storage is full, the save indicator says so. Clearing site data removes the local library.
 
 ## Checks
 
@@ -136,7 +130,6 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Uploads and assigning   | A PNG uploaded after demo content went to the library only; dragging it onto the stage device moved slot 1 to it. A WebP dropped on the window was added. `polish.spec.ts` "rejects corrupt and oversized screenshots"; types from `src/assets/decode.ts` |
 | Scroll Story            | "Scroll through page" is off on a new shot with a tall screenshot; turning it on shows stops, hold and easing. `tests/e2e/wave5.spec.ts` "WP-15: Scroll Story…"                                                                                           |
 | Reels                   | The transition picker lists Cut, Fade, Blur, Push, Zoom and Wipe, and the timeline has a "Loop wrap transition" chip. `tests/timeline.test.ts`, `tests/motion.test.ts` loop seams                                                                         |
-| Brand kit               | Brand tab fields as listed. `tests/e2e/library.spec.ts` "Media Tab & Brand Kit flow…". Missing logo drawing: [`follow-ups.md`](docs/plan/follow-ups.md)                                                                                                   |
 | Export                  | Destinations, formats and resolutions read from the dialog; "Switch to 4:3" changed Dribbble to 1600 × 1200. `tests/e2e/export.spec.ts` "F09 destination presets export at their size and length"                                                         |
 | Web bundle              | A 720p Website export: the zip held `untitled-presentation.mp4`, `.webm`, `-poster.webp` and `embed.html`; both videos verified; the snippet above is the dialog's text, formatted by Prettier                                                            |
 | PNG                     | Exported from the dialog and verified (PNG 1920 × 1080)                                                                                                                                                                                                   |

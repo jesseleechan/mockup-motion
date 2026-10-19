@@ -66,13 +66,11 @@
       "color": "#DFE1E3"
     },
     "frameAppearance": "light",
-    "deviceFinish": "graphite",
     "browserChrome": "standard",
     "browserUrl": "",
     "shadow": "none",
     "grain": 0,
-    "vignette": 0,
-    "accent": "#000000"
+    "vignette": 0
   },
   "shots": [
     {

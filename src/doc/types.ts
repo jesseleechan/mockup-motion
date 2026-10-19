@@ -32,26 +32,20 @@ export interface AssetRef {
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number }    // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number }   // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type FrameAppearance = "light" | "dark";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: FrameAppearance;
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string;      // shown in URL pill; "" hides text
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  accent: string;          // highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";

@@ -27,13 +27,11 @@
       "color": "#F1EDE6"
     },
     "frameAppearance": "light",
-    "deviceFinish": "silver",
     "browserChrome": "standard",
     "browserUrl": "",
     "shadow": "soft",
     "grain": 0.25,
-    "vignette": 0.06,
-    "accent": "#000000"
+    "vignette": 0.06
   },
   "shots": [
     {

@@ -178,18 +178,18 @@ describe("F06: add assets and apply a template in one undo step", () => {
     expect(store.getState().doc.assets).toEqual([]);
   });
 
-  it("keeps the brand style the template preserves", async () => {
+  it("keeps the browser chrome the template preserves", async () => {
     const store = createEditorStore();
     store.getState().apply((draft) => {
-      draft.style.accent = "#FF5500";
+      draft.style.browserChrome = "none";
     });
-    const story = template("scroll-story");
+    const slider = template("desktop-slider");
     await store
       .getState()
-      .addAssetsAndApplyTemplate(demoAssetsToFill(story, []), story.id, (doc) =>
-        applyTemplate(story, doc),
+      .addAssetsAndApplyTemplate(demoAssetsToFill(slider, []), slider.id, (doc) =>
+        applyTemplate(slider, doc),
       );
-    expect(store.getState().doc.style.accent).toBe("#FF5500");
-    expect(store.getState().doc.templateId).toBe("scroll-story");
+    expect(store.getState().doc.style.browserChrome).toBe("none");
+    expect(store.getState().doc.templateId).toBe("desktop-slider");
   });
 });

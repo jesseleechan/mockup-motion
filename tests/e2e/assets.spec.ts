@@ -469,9 +469,6 @@ test("F03: alternating documents releases old textures", async ({ page }) => {
         width: 1600,
         height: 1000,
       });
-      // F11: the asset also feeds a blurred ambient background, whose cached render
-      // target must be released with it.
-      doc.style.background = { kind: "ambient", assetId, blur: 1, dim: 0.35 };
       return doc;
     };
     const bitmaps = await Promise.all([
@@ -515,7 +512,7 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
     await setDoc(structuredClone(doc));
     const afterBackground = engine.debugInfo().devicesBuilt;
     // Browser chrome is part of the browser's key, so only the browser is rebuilt.
-    doc.style.browserChrome = doc.style.browserChrome === "minimal" ? "standard" : "minimal";
+    doc.style.browserChrome = doc.style.browserChrome === "none" ? "standard" : "none";
     await setDoc(structuredClone(doc));
     const afterChrome = engine.debugInfo().devicesBuilt;
     return { initial, afterBackground, afterChrome };

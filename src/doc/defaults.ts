@@ -9,13 +9,11 @@ export function defaultStyle(): Style {
       angleConvention: "css",
     },
     frameAppearance: "light",
-    deviceFinish: "silver",
     browserChrome: "standard",
     browserUrl: "",
     shadow: "soft",
     grain: 0.25,
     vignette: 0.06,
-    accent: "#7C93FF",
   };
 }
 
