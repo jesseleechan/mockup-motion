@@ -6,14 +6,12 @@ import type {
   AssetMeta,
   AssetRef,
   AssetRole,
-  AudioTrack,
   Layout,
   ProjectDoc,
   Shot,
   Style,
   Transition,
 } from "../doc/types";
-import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -24,7 +22,6 @@ import {
   steppedAssetIds,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
-import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -76,15 +73,6 @@ export interface EditorStoreState {
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
-  applyBrandKit: (kit: BrandKit) => void;
-
-  // Music track (WP-17)
-  setMusic: (ref: AssetRef, blob: Blob) => Promise<void>;
-  updateMusic: (
-    patch: Partial<Omit<AudioTrack, "assetId">>,
-    opts?: { coalesceKey?: string },
-  ) => void;
-  removeMusic: () => void;
 
   // Timeline / storyboard actions
   addShot: (layout?: Layout, insertAfterIndex?: number) => void;
@@ -94,7 +82,6 @@ export interface EditorStoreState {
   setShotDuration: (index: number, duration: number) => void;
   setTransition: (shotIndex: number, transition: Transition) => void;
   splitShot: (index: number, splitLocalT: number) => void;
-  setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
@@ -327,63 +314,13 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
-          if (draft.audio?.assetId === id) delete draft.audio;
-          // Sanitize references to removed asset across layouts/texts
+          // Sanitize references to the removed asset across layouts and backgrounds
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
           draft.shots = doc.shots;
         },
         { label: "Remove asset" },
       );
-    },
-
-    setMusic: async (ref: AssetRef, blob: Blob) => {
-      const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
-      await putBlob(ref.id, blob);
-      if (previousId && previousId !== ref.id) {
-        try {
-          await deleteBlob(previousId);
-        } catch (error) {
-          console.error(`Failed to remove replaced audio blob ${previousId}:`, error);
-        }
-      }
-      get().apply(
-        (draft) => {
-          // One music track per project: replace any previous audio asset.
-          draft.assets = draft.assets.filter((a) => a.kind !== "audio");
-          draft.assets.push(ref);
-          draft.audio = defaultAudioTrack(ref.id);
-        },
-        { label: "Add music" },
-      );
-    },
-
-    updateMusic: (patch, opts) => {
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          draft.audio = clampAudioTrack({ ...draft.audio, ...patch });
-        },
-        { label: "Edit music", coalesceKey: opts?.coalesceKey },
-      );
-    },
-
-    removeMusic: () => {
-      const id = get().doc.audio?.assetId;
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          const assetId = draft.audio.assetId;
-          delete draft.audio;
-          draft.assets = draft.assets.filter((a) => a.id !== assetId);
-        },
-        { label: "Remove music" },
-      );
-      if (id) {
-        void deleteBlob(id).catch((error) => {
-          console.error(`Failed to remove stored audio blob ${id}:`, error);
-        });
-      }
     },
 
     setAssetRole: (id: string, role: AssetRole) => {
@@ -468,7 +405,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
-          } else if (layout.kind === "pair") {
+          } else if (layout.kind === "pair" || layout.kind === "responsive") {
             if (slotKeyOrNodeId.includes("mobile")) {
               layout.mobileId = assetId;
             } else {
@@ -543,42 +480,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },
-      );
-    },
-
-    applyBrandKit: (kit: BrandKit) => {
-      get().apply(
-        (draft) => {
-          if (kit.colors[0]) {
-            draft.style.textColor = kit.colors[0];
-          }
-          if (kit.colors[1]) {
-            draft.style.accent = kit.colors[1];
-          }
-          if (kit.browserUrl !== undefined) {
-            draft.style.browserUrl = kit.browserUrl;
-          }
-          if (kit.fontDisplay) {
-            draft.style.fonts.display.family = kit.fontDisplay;
-          }
-          if (kit.fontBody) {
-            draft.style.fonts.body.family = kit.fontBody;
-          }
-          // Update logo on text layers if kit defines one
-          const logoId = kit.logoDarkAssetId || kit.logoLightAssetId;
-          if (logoId) {
-            for (const shot of draft.shots) {
-              if (shot.texts) {
-                for (const text of shot.texts) {
-                  if (text.role === "title" || text.logoAssetId) {
-                    text.logoAssetId = logoId;
-                  }
-                }
-              }
-            }
-          }
-        },
-        { label: `Apply brand kit "${kit.name}"` },
       );
     },
 
@@ -708,20 +609,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           draft.shots.splice(index + 1, 0, shotB);
         },
         { label: "Split shot" },
-      );
-    },
-
-    setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot) return;
-          const text = shot.texts.find((t) => t.id === textLayerId);
-          if (text) {
-            text.delay = Math.max(0, Math.min(shot.duration, delay));
-          }
-        },
-        { label: "Change text delay" },
       );
     },
 

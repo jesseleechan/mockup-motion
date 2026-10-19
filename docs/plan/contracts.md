@@ -8,25 +8,25 @@ This file is the source of truth for shared types and module APIs. WP-00 copies 
 src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
-  storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
-  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts · fonts.ts
+  storage/     db.ts (idb) · projects.ts · blobs.ts · user-templates.ts
+  assets/      decode.ts · roles.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
                framing.ts · timeline.ts (scheduling, transitions, loop wrap) · scroll.ts
-               text-anim.ts · cursor.ts · evaluate.ts (doc, t) → FrameState
+               evaluate.ts (doc, t) → FrameState
   engine/      three.js, no React (except react/)
                Engine.ts · stage.ts (camera fit) · devices/ · backgrounds/ · shadows/ · materials/
-               textures/ (tiling, downscale cache) · text/ (screen-space text pass)
-               compositor.ts (shots → RT → transition) · post/ (final pass, motion blur)
+               textures/ (tiling, downscale cache) · text/ (browser URL pill rasters)
+               compositor.ts (shots → RT → transition) · post/ (composite, final pass)
                react/EngineCanvas.tsx (thin preview wrapper)
-  text/        rasterize.ts (main thread only: text layer → ImageBitmap + word boxes)
+  text/        rasterize.ts (main thread only: one line of Inter → ImageBitmap, for the URL pill)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
-               verify.ts · bundle.ts · gif.ts
+               verify.ts · bundle.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
-  editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
-               Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
-  lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
+  editor/      Shell · TopBar · Library/ (Templates, Media) · Stage/ · Timeline/
+               Inspector/ (VideoPanel, ShotPanel) · dialogs/
+  lab/         dev-only render lab (/lab): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
 demo-sites/    static HTML/CSS sources for demo screenshots (WP-04)
 ```
@@ -43,14 +43,13 @@ export type EasingId =
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font"; // saved "audio" assets (music, removed October 2026) are dropped on load
   name: string;
   mime: string;
   bytes: number;
   width?: number; // image px
   height?: number; // image px
   role?: AssetRole; // auto-detected (assets/roles.ts), user-editable
-  palette?: string[]; // image: 5 dominant colours, hex, most-to-least prominent
   meta?: {
     tall?: boolean;
     hasStatusBar?: boolean;
@@ -59,14 +58,6 @@ export interface AssetRef {
     page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
   };
   family?: string; // font: CSS family name registered via FontFace
-  durationSec?: number; // audio
-  peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
-}
-
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string; // builtin family name or AssetRef.family
-  weight: number; // 100..900
 }
 
 export type Background =
@@ -89,9 +80,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string; // default text colour; "" = auto contrast vs background
-  accent: string; // cursor, highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
@@ -133,8 +121,7 @@ export type Layout =
       arrangement?: "carousel" | "deck";
     }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string }
-  | { kind: "title" };
+  | { kind: "responsive"; desktopId: string; mobileId: string };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
 // cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
@@ -197,49 +184,11 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor =
-  | "top-left"
-  | "top"
-  | "top-right"
-  | "left"
-  | "center"
-  | "right"
-  | "bottom-left"
-  | "bottom"
-  | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number; // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string; // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number; // seconds from shot start
-  logoAssetId?: string; // render a logo above the text
-}
-
 export interface Transition {
   kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
   duration: number; // seconds, overlaps the previous shot (see §5)
   easing: EasingId;
   direction?: "left" | "right" | "up" | "down";
-}
-
-export interface CursorKey {
-  t: number;
-  x: number;
-  y: number;
-  click?: boolean;
-} // x,y 0..1 of device screen
-export interface CursorSpec {
-  enabled: boolean;
-  style: "arrow" | "pointer" | "dot";
-  keys: CursorKey[];
 }
 
 export interface Shot {
@@ -249,18 +198,8 @@ export interface Shot {
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec; // honoured for single-device and responsive layouts
-  cursor?: CursorSpec; // honoured only for single-device layouts
-  texts: TextLayer[];
   transitionIn: Transition; // for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
-}
-
-export interface AudioTrack {
-  assetId: string;
-  volume: number;
-  fadeIn: number;
-  fadeOut: number;
-  offset: number;
 }
 
 export type DestinationId =
@@ -280,7 +219,6 @@ export interface ExportSettings {
   quality: "web" | "high" | "master";
   format: "mp4" | "webm";
   supersample: 1 | 1.5 | 2;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -294,7 +232,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[]; // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string; // last applied template (informational)
 }
@@ -307,7 +244,6 @@ Gradient angles use CSS direction in normalized frame coordinates: 0° runs bott
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
 - **Fit distance.** `d_fit = 0.5 / tan(fov/2)`. A camera with `distance = 1`, `yaw = pitch = roll = 0`, `pan = 0` sees exactly the stage. Because `distance` is a multiple of `d_fit`, changing `fov` at the same `distance` keeps the framing constant and only changes the amount of perspective.
 - **Orbit.** The camera orbits the target point `(panX, panY, 0)` by yaw and pitch at radius `distance × d_fit`, looking at the target, then rolls.
-- **Text and overlays** render in screen space (§6), not in the 3D scene, so camera moves never distort typography.
 
 ## 4. Layout resolution (`src/motion/layouts.ts`)
 
@@ -368,14 +304,7 @@ export interface ShotFrame {
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
-  cursor?: { x: number; y: number; pressed: number; nodeId: string }; // pressed 0..1 ripple
   style: Style; // resolved (doc.style + overrides)
-}
-export interface TextFrame {
-  layerId: string;
-  words: { index: number; opacity: number; dy: number; blur: number; clip: number }[]; // dy in % frame height
-  opacity: number;
 }
 export interface FrameState {
   t: number;
@@ -401,20 +330,27 @@ export interface EngineOptions {
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
   cameraDistanceOverride?: number; // isolated fixture override, not serialized
+  hideDevices?: boolean; // lab/test fixture: draw the background only; not serialized
 }
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
+}
+/** One line of Inter: the browser URL pill's domain. */
+export interface TextLine {
+  id: string; // raster key, used to hand rasters to the export worker
+  text: string;
+  size: number; // % of frame height
+  color: string; // #RRGGBB
 }
 export interface TextRaster {
   bitmap: ImageBitmap;
-  words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
-  color?: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
+  color: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
 }
 
 export class Engine {
@@ -424,7 +360,6 @@ export class Engine {
   renderAt(t: number): void; // synchronous; deterministic
   /** Active layers and transition blend into a linear target; no vignette, encoding or grain. */
   renderComposite(t: number, target: THREE.WebGLRenderTarget): FrameState | null;
-  renderAccumulated(t: number, shutter: number, samples: number): void; // motion blur (export)
   resize(width: number, height: number): void;
   /** Hit-test output-pixel coordinates; returns the LayoutNode id and screen UV (0..1), or null. */
   pick(x: number, y: number): { nodeId: string; u: number; v: number } | null;
@@ -442,15 +377,15 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, and ambient and image backgrounds in the style and shot overrides) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
-Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation averages `renderComposite` results (transitions included) in a linear half-float target, then runs the final pass once. Exports use 8 samples over a 180° shutter (`0.5 / fps`).
+Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision.
 
-`TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
-`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
+`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract. `EngineOptions.hideDevices` is the same kind of override: the development-only `devices=0` URL parameter draws the background alone, for tests of backgrounds, transitions and grain.
 
 ## 8. Templates (`src/templates/`)
 
@@ -466,7 +401,7 @@ export interface TemplateBuildContext {
   aspect: Aspect;
   slots: Record<string, AssetRef | undefined>;
   projectName: string;
-  style?: Partial<Style>; // keep user's brand style when re-applying
+  style?: Partial<Style>; // keep the user's browser chrome when re-applying
 }
 export interface Template {
   id: string;
@@ -483,9 +418,11 @@ export function fillSlots(t: Template, assets: AssetRef[]): Record<string, strin
 
 `fillSlots` is greedy by role and `prefer`. It never puts a `mobile`-role asset in a desktop slot or the reverse, and only reuses an asset when there are not enough distinct ones.
 
-The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`), Desktop Orbit (`desktop-orbit`), Mobile Orbit (`mobile-orbit`) and Scroll Story (`scroll-story`). The two sliders are one effect in two sizes, and so are the two Frames presets and the two Orbit presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
+The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`), Desktop Stack (`desktop-stack`), Mobile Stack (`mobile-stack`; stack plan D5), Desktop Orbit (`desktop-orbit`), Mobile Orbit (`mobile-orbit`), Desktop Scroll Story (`scroll-story`) and Mobile Scroll Story (`mobile-scroll-story`, `docs/mobile-scroll-story-plan/README.md`). The two sliders are one effect in two sizes, and so are the two Frames presets, the two Stack presets (slider decks, §5), the two Orbit presets and the two Scroll Story presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
 
-The slider, Frames and Orbit presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
+Responsive Scroll (`responsive-scroll`, `docs/responsive-scroll-plan/README.md`) is last in the gallery. It shows a desktop and a mobile screenshot of one page, so its category is `"both"` and it sits under the Desktop and the Mobile tab (`templateInCategory`). Its two slots are a same-page pair (`Template.samePage`): `fillSlots` fills them with captures of one page (same capture URL, then the same page name in the file names) before the greedy fill.
+
+The slider, Frames, Stack, Orbit and Responsive Scroll presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
 
@@ -514,4 +451,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises all text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.

@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 test.describe("WP-14 Storyboard Timeline & Transitions", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();
@@ -39,11 +40,10 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     // Verify Shot 2 appeared
     await expect(page.locator(".group", { hasText: "Shot 2" })).toBeVisible();
 
-    // Add Shot 3 (Title card)
+    // Add Shot 3
     await addShotBtn.click();
-    const titleCardItem = page.getByRole("menuitem", { name: /Title card/i });
-    await expect(titleCardItem).toBeVisible();
-    await titleCardItem.click();
+    await expect(sameLayoutItem).toBeVisible();
+    await sameLayoutItem.click();
 
     // Verify Shot 3 appeared
     await expect(page.locator(".group", { hasText: "Shot 3" })).toBeVisible();
@@ -130,7 +130,7 @@ test.describe("WP-14 Storyboard Timeline & Transitions", () => {
     // these 25 screenshots past the timeout on CI.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
-    await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+    await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 
