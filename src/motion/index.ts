@@ -7,5 +7,6 @@ export * from "./text-anim";
 export * from "./layouts";
 export * from "./framing";
 export * from "./cursor";
+export * from "./phone-spec";
 export * from "./evaluate";
 export type { DeviceKind } from "../doc";

@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
+import { PHONE_BODY_ASPECT } from "../phone-spec";
 import { resolvePairLayout } from "./pair";
 import { type LayoutNode, screenAspectFor } from "./types";
 
@@ -52,7 +53,7 @@ export function resolveTrioLayout(
   let tabW = tabH * tabScreenAspect;
 
   let phoneH = deskH * 0.70;
-  let phoneW = phoneH * 0.488;
+  let phoneW = phoneH * PHONE_BODY_ASPECT;
 
   let deskX = 0;
   let deskY = 0.05;
