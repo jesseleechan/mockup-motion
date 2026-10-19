@@ -8,7 +8,7 @@ Rendered 18 October 2026 on Linux (Playwright Chromium 1194, SwiftShader).
 
 - §3.1: no card is cropped sideways; tall screenshots are cropped at the bottom only. Settled cards are colour-exact (S02 e2e, ΔE < 1).
 - §2.5: one move per step, the front card leaving and the deck following on `slide`; nothing reverses (S01 unit test).
-- §4: the deck at rest is centred with at least 7% of the shortest side clear at every aspect (unit test). **One open point for the owner:** at 16:9 the Desktop Stack front card spans 58% of the frame width, under the 62–74% a single desktop device gets, because the deck height cap (0.8) binds. Raising the cap to 0.86 would give 62% and still leave 9% of the frame height clear above and below the deck. The numbers are unchanged until the owner decides.
+- §4: the deck at rest is centred with at least 7% of the shortest side clear at every aspect (unit test). **Tuned in this review:** with the preview's deck-height cap of 0.8, the Desktop Stack front card spanned 58% of the frame width at 16:9, under the 62–74% a single desktop device gets. The cap is now 0.86 (recommended in this PR; the coordinating session relayed "go with your recommendation" on 19 October 2026). Measured on the re-rendered 16:9 still: the front card spans 62.4% of the frame width with 9.0% and 9.2% of the frame height clear above and below the deck. 4:3 gets the same larger card (78% of the width); 9:16, 1:1 and 4:5 are unchanged (their width cap binds). The contact sheet, the three Desktop Stack 16:9 candidates and the Desktop Stack gallery preview were re-rendered with it.
 - §5: shadow none, grain 0, vignette 0.
 
 ## Loop seam
