@@ -43,7 +43,7 @@
         "assetId": "demo-maison-oak-desktop-hero"
       },
       "camera": {
-        "preset": "heroTilt",
+        "preset": "static",
         "intensity": 1,
         "easing": "smooth",
         "float": 0

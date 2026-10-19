@@ -464,13 +464,11 @@ describe("Template loop seam", () => {
   // whole steps, so halfway through the wrap crossfade both layers show cards in the same
   // places on screen and only the screens dissolve. The exceptions: tilted browser rows at 9:16
   // and tilted phone columns at 9:16 and 4:5 would need more than 0.12 frame widths per second
-  // to move one card per loop, and the wall's isoDrift camera ends away from its start pose,
-  // so its cards line up on the plane but not on screen.
+  // to move one card per loop.
   const UNREGISTERED = new Set([
     "rows-browser-tilted 9:16",
     "columns-phone-tilted 9:16",
     "columns-phone-tilted 4:5",
-    ...ASPECTS.map((aspect) => `wall-isometric ${aspect}`),
   ]);
 
   it("cards stay in place during the wrap crossfade wherever a whole card step fits", () => {

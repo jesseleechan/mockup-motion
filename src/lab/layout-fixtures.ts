@@ -52,7 +52,7 @@ function pairFixture(): ProjectDoc {
   shot.duration = 6;
   shot.transitionIn = loopWrapCrossfade();
   shot.entrance = "stagger";
-  shot.camera = { preset: "orbitRight", intensity: 0.6, easing: "smooth", float: 0.2 };
+  shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0.2 };
   return {
     ...createDoc(),
     name: "Pair",
@@ -157,7 +157,7 @@ function wallIsometricFixture(aspect: Aspect = "16:9"): ProjectDoc {
   });
   shot.duration = 8;
   shot.transitionIn = loopWrapCrossfade();
-  shot.camera = { preset: "isoDrift", intensity: 0.5, easing: "smooth", float: 0 };
+  shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
   return {
     ...createDoc(),
     name: "Isometric wall",

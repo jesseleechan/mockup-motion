@@ -57,7 +57,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.style.vignette).toBe(0);
     });
 
-    it("5. sanitizes camera moves: invalid preset defaults to pushIn, clamps intensity and float", () => {
+    it("5. sanitizes camera moves: invalid preset defaults to static, clamps intensity and float", () => {
       const shot = defaultShot();
       const cameraRecord = shot.camera as unknown as Record<string, unknown>;
       cameraRecord.preset = "invalid_3d_spin";
@@ -65,7 +65,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       shot.camera.float = -1;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].camera.preset).toBe("pushIn");
+      expect(doc.shots[0].camera.preset).toBe("static");
       expect(doc.shots[0].camera.intensity).toBe(1);
       expect(doc.shots[0].camera.float).toBe(0);
     });

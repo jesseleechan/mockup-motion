@@ -38,20 +38,7 @@ const VALID_EASINGS: readonly EasingId[] = [
   "spring",
   "slide",
 ];
-const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "riseUp",
-  "dollyLeft",
-  "dollyRight",
-  "isoDrift",
-  "heroTilt",
-];
+const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = ["static", "pushIn"];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
 const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
@@ -511,7 +498,8 @@ function sanitizeCamera(camera: unknown): CameraMove {
   if (!camera || typeof camera !== "object") return defaultCameraMove();
   const c = camera as Record<string, unknown>;
   return {
-    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "pushIn",
+    // A removed move (orbit, tilt, dolly, ...) or an unknown one loads as a still camera.
+    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "static",
     intensity: clamp(typeof c.intensity === "number" ? c.intensity : 0.5, 0, 1),
     easing: includesValue(VALID_EASINGS, c.easing) ? c.easing : "smooth",
     float: clamp(typeof c.float === "number" ? c.float : 0.3, 0, 1),

@@ -45,17 +45,13 @@ function singleShot(
   return shot;
 }
 
-/** Frontal (static) and tilted (settled hero tilt) stills for every device. */
+/** A frontal (static) still for every device. */
 export function deviceFixtures(): Record<string, ProjectDoc> {
   const out: Record<string, ProjectDoc> = {};
   for (const device of DEVICES) {
     const frontal = stillDoc(`device-${device}-frontal`);
     singleShot(frontal, device, { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`device-${device}-frontal`] = frontal;
-
-    const tilted = stillDoc(`device-${device}-tilted`);
-    singleShot(tilted, device, { preset: "heroTilt", intensity: 1, easing: "smooth", float: 0 });
-    out[`device-${device}-tilted`] = tilted;
   }
   return out;
 }

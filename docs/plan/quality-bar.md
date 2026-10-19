@@ -39,17 +39,12 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 Default lens: **fov 22°**. Long lenses look like product photography; wide lenses distort the screenshots. Allowed range is 15–35°.
 
-| Preset                     | From → To                                                           |
-| -------------------------- | ------------------------------------------------------------------- |
-| `static`                   | No change (float only)                                              |
-| `pushIn`                   | distance 1.10 → 0.98 (about 12% scale change)                       |
-| `pullBack`                 | distance 0.92 → 1.06                                                |
-| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05                             |
-| `tiltUp` / `tiltDown`      | pitch 14° → 4° (or reverse), distance 1.04                          |
-| `riseUp`                   | panY −0.06 → 0.02, pitch 8° → 3°                                    |
-| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6°                       |
-| `isoDrift`                 | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal    |
-| `heroTilt`                 | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
+| Preset    | From → To                                     |
+| --------- | --------------------------------------------- |
+| `static`  | No change (float only)                        |
+| `pushIn`  | distance 1.10 → 0.98 (about 12% scale change) |
+
+The editor offers these two as Still and Push in. On 19 October 2026 the owner cut the other ten moves (pull back, orbit, tilt, rise, dolly, isometric drift and hero tilt), which no template used: the product is flat, looping presets. A saved project that uses one loads with `static`.
 
 `intensity` scales the delta between from and to around the midpoint pose. Every preset must keep all screen content inside the frame at `intensity = 1` for every aspect (WP-09 adds a framing test).
 

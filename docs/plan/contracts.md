@@ -140,19 +140,9 @@ export type Layout =
 // scroll together (Responsive Scroll, quality-bar §4). Side by side at 16:9, 4:3 and 1:1, stacked
 // at 4:5 and 9:16.
 
-export type CameraPresetId =
-  | "static"
-  | "pushIn"
-  | "pullBack"
-  | "orbitLeft"
-  | "orbitRight"
-  | "tiltUp"
-  | "tiltDown"
-  | "riseUp"
-  | "dollyLeft"
-  | "dollyRight"
-  | "isoDrift"
-  | "heroTilt";
+// Since 19 October 2026. A saved project with a removed move (pullBack, orbitLeft, orbitRight,
+// tiltUp, tiltDown, riseUp, dollyLeft, dollyRight, isoDrift, heroTilt) loads with "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;

@@ -64,9 +64,9 @@ describe("editor labels (F08)", () => {
     ).toBe("Browser · Push in");
     expect(
       labels.shotSummary(
-        shot({ kind: "pair", desktopId: "a", mobileId: "b", arrangement: "overlap" }, "isoDrift"),
+        shot({ kind: "pair", desktopId: "a", mobileId: "b", arrangement: "overlap" }, "static"),
       ),
-    ).toBe("Responsive pair · Isometric drift");
+    ).toBe("Responsive pair · Still");
   });
 
   it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {
@@ -76,10 +76,10 @@ describe("editor labels (F08)", () => {
       labels.shotSummary(
         shot({ ...mobile, speed: 0.35, device: "card", travel: "period" }, "static"),
       ),
-    ).toBe("Mobile frames · Static");
+    ).toBe("Mobile frames · Still");
     // Phone Parade's tilted phones keep the layout's own name.
     expect(labels.shotSummary(shot({ ...mobile, tilt: 12, speed: 0.4 }, "static"))).toBe(
-      "Phone columns · Static",
+      "Phone columns · Still",
     );
     const desktop = {
       kind: "rows" as const,
@@ -90,10 +90,10 @@ describe("editor labels (F08)", () => {
       speed: 0.35,
     };
     expect(labels.shotSummary(shot({ ...desktop, travel: "period" }, "static"))).toBe(
-      "Desktop frames · Static",
+      "Desktop frames · Still",
     );
     expect(labels.shotSummary(shot({ ...desktop, device: "browser", tilt: 8 }, "static"))).toBe(
-      "Marquee rows · Static",
+      "Marquee rows · Still",
     );
   });
 
@@ -106,12 +106,12 @@ describe("editor labels (F08)", () => {
       step: 2,
       arrangement: "deck" as const,
     };
-    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Static");
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Still");
     expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
-      "Mobile stack · Static",
+      "Mobile stack · Still",
     );
     expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
-      "Slider · Static",
+      "Slider · Still",
     );
   });
 
