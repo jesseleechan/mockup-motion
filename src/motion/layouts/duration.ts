@@ -1,4 +1,5 @@
-import type { Aspect, CameraMove, Layout } from "../../doc/types";
+import type { Aspect, AssetRef, CameraMove, Layout, ScrollSpec } from "../../doc/types";
+import { responsiveScreens, responsiveScrollDuration } from "../responsive-scroll";
 import { MAX_SHOT_DURATION } from "./limits";
 import { framesDuration } from "./rows";
 
@@ -68,19 +69,30 @@ export function sliderDuration(layout: SteppedLayout): number {
 
 /**
  * The shot length a layout sets itself, or null when the user sets it. A slider or orbit lasts
- * N × step so it loops natively (contracts.md §5).
+ * N × step so it loops natively; a scrolling responsive layout lasts its holds plus moves
+ * (contracts.md §5). Without both screenshots it lasts its holds alone.
  */
-export function fixedShotDuration(layout: Layout): number | null {
-  return isSteppedLayout(layout) ? sliderDuration(layout) : null;
+export function fixedShotDuration(
+  layout: Layout,
+  scroll?: ScrollSpec,
+  assets: AssetRef[] = [],
+): number | null {
+  if (isSteppedLayout(layout)) return sliderDuration(layout);
+  if (layout.kind === "responsive" && scroll?.enabled) {
+    const screens = responsiveScreens(layout, assets);
+    return screens ? responsiveScrollDuration(scroll, screens) : Math.max(1, scroll.hold);
+  }
+  return null;
 }
 
 /**
  * The camera a layout allows. A slider's or orbit's camera is still (quality bar §4): a camera
- * move would end the shot on another pose, so the native loop would pop. Other layouts keep
- * theirs.
+ * move would end the shot on another pose, so the native loop would pop. Responsive Scroll's is
+ * still too: the scroll is the shot's one move (quality bar §2.5). Other layouts keep theirs.
  */
 export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove {
-  if (!isSteppedLayout(layout) || isStillCamera(camera)) return camera;
+  const still = isSteppedLayout(layout) || layout.kind === "responsive";
+  if (!still || isStillCamera(camera)) return camera;
   return { preset: "static", intensity: 0, easing: camera.easing, float: 0 };
 }
 
