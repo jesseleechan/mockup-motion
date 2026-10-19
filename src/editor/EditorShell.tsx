@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { TopBar } from "./shell/TopBar";
 import { PanelResizer } from "./shell/PanelResizer";
 import { CollapsedRail } from "./shell/CollapsedRail";
@@ -28,11 +28,8 @@ import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
 import { ImportDropZone } from "./import/ImportDropZone";
 import { isTypingTarget } from "./focus";
+import { useExportModal } from "./export/useExportModal";
 import { Monitor } from "lucide-react";
-
-const ExportModal = lazy(() =>
-  import("./export/ExportModal").then((m) => ({ default: m.ExportModal })),
-);
 
 export const EditorShell: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
@@ -55,6 +52,7 @@ export const EditorShell: React.FC = () => {
   const setPanelWidths = useUIStore((s) => s.setPanelWidths);
 
   const [exportOpen, setExportOpen] = useState(false);
+  const ExportModal = useExportModal(exportOpen);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [showSafeMargins, setShowSafeMargins] = useState(false);
@@ -315,10 +313,10 @@ export const EditorShell: React.FC = () => {
             {!isMobileScreen && panels.timeline && <TimelineContainer />}
 
             {/* Dialogs */}
-            {exportOpen && (
-              <Suspense fallback={null}>
-                <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
-              </Suspense>
+            {exportOpen && ExportModal && (
+              // The loaded module's export: one component that never changes once set.
+              // eslint-disable-next-line react-hooks/static-components
+              <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
             )}
             <TemplateGalleryModal />
             <ImportDropZone />
