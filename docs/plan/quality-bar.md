@@ -15,16 +15,16 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 ### 2.1 Easing vocabulary (`src/motion/easing.ts`)
 
-| Id | Curve | Use |
-|---|---|---|
-| `gentle` | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out) | Long camera drifts, background, float |
-| `smooth` | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out) | Default camera moves, scroll segments |
-| `expoOut` | cubic-bezier(0.16, 1, 0.3, 1) | Entrances, text reveals |
-| `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1) | Transitions, decisive pushes |
-| `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only (cursor click). Overshoot 3% or less |
-| `spring` | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels |
-| `slide` | cubic-bezier(0.40, 0, 0.05, 1) | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
-| `linear` | — | Marquees only |
+| Id           | Curve                                              | Use                                                                                          |
+| ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `gentle`     | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out)       | Long camera drifts, background, float                                                        |
+| `smooth`     | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out)      | Default camera moves, scroll segments                                                        |
+| `expoOut`    | cubic-bezier(0.16, 1, 0.3, 1)                      | Entrances, text reveals                                                                      |
+| `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1)                     | Transitions, decisive pushes                                                                 |
+| `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only (cursor click). Overshoot 3% or less                                 |
+| `spring`     | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels                                                                    |
+| `slide`      | cubic-bezier(0.40, 0, 0.05, 1)                     | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
+| `linear`     | —                                                  | Marquees only                                                                                |
 
 ### 2.2 Durations
 
@@ -40,17 +40,17 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 Default lens: **fov 22°**. Long lenses look like product photography; wide lenses distort the screenshots. Allowed range is 15–35°.
 
-| Preset | From → To |
-|---|---|
-| `static` | No change (float only) |
-| `pushIn` | distance 1.10 → 0.98 (about 12% scale change) |
-| `pullBack` | distance 0.92 → 1.06 |
-| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05 |
-| `tiltUp` / `tiltDown` | pitch 14° → 4° (or reverse), distance 1.04 |
-| `riseUp` | panY −0.06 → 0.02, pitch 8° → 3° |
-| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6° |
-| `isoDrift` | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal |
-| `heroTilt` | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
+| Preset                     | From → To                                                           |
+| -------------------------- | ------------------------------------------------------------------- |
+| `static`                   | No change (float only)                                              |
+| `pushIn`                   | distance 1.10 → 0.98 (about 12% scale change)                       |
+| `pullBack`                 | distance 0.92 → 1.06                                                |
+| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05                             |
+| `tiltUp` / `tiltDown`      | pitch 14° → 4° (or reverse), distance 1.04                          |
+| `riseUp`                   | panY −0.06 → 0.02, pitch 8° → 3°                                    |
+| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6°                       |
+| `isoDrift`                 | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal    |
+| `heroTilt`                 | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
 
 `intensity` scales the delta between from and to around the midpoint pose. Every preset must keep all screen content inside the frame at `intensity = 1` for every aspect (WP-09 adds a framing test).
 
@@ -122,6 +122,9 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
   - The deck at rest (front card plus peeks) is centred in the frame and keeps the safe margin. The S04 contact sheet review may tune these numbers; any change is recorded here.
 
 - **Orbit** (`orbit`; Desktop Orbit and Mobile Orbit, `docs/orbit-plan/README.md`): the screenshots on a ring seen from slightly above, still camera, cards always facing the camera (never tilted). Card i at phase φ has angle θ = 2π(i − φ)/N, x = R sin θ, depth z = cos θ, scale 0.58 + 0.42 × (1 + z)/2, and sits lift × (1 − z)/2 higher than the front card; nearer cards draw over further ones. The front card's centre is (lift − 0.21 × h0)/2 below the frame centre, so the ring is centred between the front card's bottom and the back card's top (h0 = front card height). Each step turns the next card in from the right. Mobile Orbit: portrait cards at 0.4615, h0 = min(0.58, 0.42 × frame width / 0.4615), R = min(1.25 × card width, frame width/2 − 0.25 × card width), lift = 0.42 × h0. Desktop Orbit: landscape cards, card width = min(0.62 × frame width, 0.672), R = min(0.62 × card width, frame width/2 − 0.2 × card width), lift = 0.34 × h0. Side cards may be cropped by the frame edge, as slider neighbours are. Orbits need 4 screenshots, read best with 5–6, and show at most the first 6, each once. These are the approved preview's values, kept unchanged in the O04 contact sheet review (owner, 19 October 2026).
+
+- **Scroll Story** (`single`, one tall screenshot, scroll stops `[0, 0.33, 0.66, 1]` with 0.8 s holds, `pushIn` at intensity 0.2, Fog, no loop): Desktop Scroll Story uses the browser window, Mobile Scroll Story the phone (§3.3), at the single-device sizes above. The shot lasts 10 s, or longer when the page needs it to stay under the §2.2 scroll limit, rounded up to 0.5 s.
+
 - **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
 
 - **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).

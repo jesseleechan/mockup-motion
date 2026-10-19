@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
  * still and the others still run. Baselines are Linux-only and generated in CI; see README.md.
  */
 
-const TEMPLATES = ["scroll-story"];
+const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
 const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
 const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
@@ -110,6 +110,23 @@ for (const device of DEVICES) {
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
 }
+// Responsive Scroll: the works hold (3.6 s, both screens on one section) at every aspect, side by
+// side or stacked, plus 16:9 mid-move (2.05 s, the shared timing). Responsive Scroll plan R06.
+for (const aspect of ["16:9", "4:3", "1:1", "4:5", "9:16"]) {
+  const tag = aspect.replace(":", "x");
+  STILLS.push({
+    name: `responsive-scroll-${tag}-t3.6`,
+    fixture: "responsive-scroll",
+    aspect,
+    t: 3.6,
+  });
+}
+STILLS.push({
+  name: "responsive-scroll-16x9-t2.05",
+  fixture: "responsive-scroll",
+  aspect: "16:9",
+  t: 2.05,
+});
 for (const kind of TRANSITIONS) {
   STILLS.push({
     name: `transition-${kind}`,
