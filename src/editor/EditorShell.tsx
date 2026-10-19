@@ -19,6 +19,7 @@ import { ProjectsModal } from "./dialogs/ProjectsModal";
 import { TemplateGalleryModal } from "./dialogs/TemplateGalleryModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
+import { openOnStart, watchFirstRunGallery } from "./first-run-gallery";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
 import { ToastProvider, TooltipProvider } from "../ui";
@@ -77,17 +78,19 @@ export const EditorShell: React.FC = () => {
 
     // 2. Autosave subscription
     const cancelAutosave = setupAutosave(useEditorStore);
+    const stopFirstRunGallery = watchFirstRunGallery();
 
-    // 3. V1 Database Migration
+    // 3. Open the migrated v1 project, else the most recent saved one, else the gallery
     checkAndMigrateV1()
-      .then((migratedDoc) => {
-        if (migratedDoc) {
-          loadDoc(migratedDoc);
-        }
-      })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.warn("[Migration] v1 migration check encountered:", err);
-      });
+        return null;
+      })
+      .then((migratedDoc) => (migratedDoc ? loadDoc(migratedDoc) : openOnStart()))
+      .catch((err: unknown) => {
+        console.error("[Start] couldn't open the last project:", err);
+      })
+      .finally(() => useUIStore.getState().finishStarting());
 
     if (import.meta.env.DEV) {
       (window as unknown as { __editorStore: unknown }).__editorStore = useEditorStore;
@@ -96,6 +99,7 @@ export const EditorShell: React.FC = () => {
 
     return () => {
       cancelAutosave();
+      stopFirstRunGallery();
     };
   }, [loadDoc, setTheme]);
 

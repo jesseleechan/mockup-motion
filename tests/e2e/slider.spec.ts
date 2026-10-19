@@ -342,7 +342,8 @@ test.describe("slider editing", () => {
       });
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     await page.locator('[data-testid="template-card"][data-template-id="mobile-slider"]').click();
     await page.getByRole("button", { name: "Apply template" }).click();
     await page.getByRole("button", { name: "Use demo content" }).click();
@@ -417,7 +418,7 @@ test.describe("slider editing", () => {
       mimeType: "image/png",
       buffer: png,
     });
-    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    const card = page.getByTestId("media-card").filter({ hasText: "extra-mobile.png" });
     await expect(card).toBeVisible();
     await card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to slider" }).click();

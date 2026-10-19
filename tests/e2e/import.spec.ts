@@ -57,6 +57,8 @@ test("a dropped captures folder imports its full pages with roles and sections; 
 }, testInfo) => {
   const folder = writeCapturesFolder(testInfo.outputPath());
   await resetEditor(page);
+  // A first run opens the template gallery; drag once the editor has settled under it.
+  await expect(page.getByRole("dialog")).toBeVisible();
 
   // A real OS drop of a folder, which the page reads through webkitGetAsEntry.
   const cdp = await page.context().newCDPSession(page);

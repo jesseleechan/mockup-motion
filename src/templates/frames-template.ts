@@ -100,7 +100,6 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
     // A pair's gallery tab is the role of its screenshots.
     category: spec.role,
     slots,
-    toneSwitch: true,
     defaultDuration: FRAMES_MIN_LOOP,
     build: (ctx: TemplateBuildContext) => {
       // fillSlots reuses an asset when a slot has no distinct one; a lane must not show the

@@ -1,12 +1,10 @@
 import React from "react";
 import { useEditorStore } from "../../state/store";
-import { BUILTIN_PALETTES } from "../../doc/palettes";
 import { schedule } from "../../motion";
-import { ColorField, Field, Section, SegmentedControl, Select, Slider, Switch } from "../../ui";
+import { Field, Section, Select, Slider, Switch } from "../../ui";
 import type { BrowserChrome, ShadowPreset } from "../../doc/types";
 import { BROWSER_CHROME_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
-import { presetToneOf, setPresetTone, type PresetTone } from "../../templates/looks";
-import { currentTemplate } from "../template-actions";
+import { BackgroundSection } from "./BackgroundSection";
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -29,52 +27,6 @@ export const VideoInspector: React.FC = () => {
   const hasBrowserShot = doc.shots.some(
     (s) => s.layout.kind === "single" && s.layout.device === "browser",
   );
-
-  const handleApplyPalette = (paletteId: string) => {
-    const p = BUILTIN_PALETTES.find((pal) => pal.id === paletteId);
-    if (!p) return;
-    apply(
-      (draft) => {
-        draft.style.background = p.background;
-        draft.style.frameAppearance = p.frameAppearance;
-      },
-      { label: `Apply ${p.name} palette` },
-    );
-  };
-
-  // The slider and Frames presets switch between their flat light and dark fills in one click
-  // (Ash or Onyx). Other documents keep the palette grid only.
-  const hasToneSwitch = currentTemplate(doc)?.toneSwitch === true;
-  const tone = presetToneOf(doc.style);
-
-  const handleTone = (next: PresetTone) => {
-    apply(
-      (draft) => {
-        setPresetTone(draft.style, next);
-      },
-      { label: next === "dark" ? "Use dark background" : "Use light background" },
-    );
-  };
-
-  const handleCustomBgColor = (color: string) => {
-    apply(
-      (draft) => {
-        draft.style.background = { kind: "solid", color };
-      },
-      { label: "Change background color" },
-    );
-  };
-
-  // Determine current active palette ID if matching
-  const currentPalette = BUILTIN_PALETTES.find((p) => {
-    if (p.background.kind === "gradient" && doc.style.background.kind === "gradient") {
-      return (
-        p.background.stops[0] === doc.style.background.stops[0] &&
-        p.background.stops[1] === doc.style.background.stops[1]
-      );
-    }
-    return false;
-  });
 
   return (
     <div className="space-y-4">
@@ -105,74 +57,7 @@ export const VideoInspector: React.FC = () => {
         </div>
       </Section>
 
-      <Section title="Background">
-        <div className="space-y-3">
-          {hasToneSwitch && (
-            <Field label="Tone">
-              <div className="flex justify-end">
-                <SegmentedControl<PresetTone | "">
-                  aria-label="Background tone"
-                  size="sm"
-                  // Any other background selects neither, until one is picked.
-                  value={tone ?? ""}
-                  onChange={(next) => {
-                    if (next) handleTone(next);
-                  }}
-                  options={[
-                    { value: "light", label: "Light" },
-                    { value: "dark", label: "Dark" },
-                  ]}
-                />
-              </div>
-            </Field>
-          )}
-
-          <Field label="Palette" stacked>
-            <div className="grid grid-cols-4 gap-2">
-              {BUILTIN_PALETTES.map((p) => {
-                const isActive = currentPalette?.id === p.id;
-                let bgStyle = "";
-                if (p.background.kind === "solid") {
-                  bgStyle = p.background.color;
-                } else if (p.background.kind === "gradient") {
-                  bgStyle = `linear-gradient(${p.background.angle}deg, ${p.background.stops.join(", ")})`;
-                }
-
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleApplyPalette(p.id)}
-                    title={p.name}
-                    className={`group relative h-9 rounded-md overflow-hidden border transition-all ${
-                      isActive
-                        ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30 scale-102 shadow-xs"
-                        : "border-[var(--color-line)] hover:border-[var(--color-line-strong)]"
-                    }`}
-                    style={{ background: bgStyle }}
-                  >
-                    <span className="sr-only">{p.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-
-          <Field label="Color">
-            <ColorField
-              aria-label="Background color"
-              value={
-                doc.style.background.kind === "solid"
-                  ? doc.style.background.color
-                  : doc.style.background.kind === "gradient"
-                    ? doc.style.background.stops[0]
-                    : "#F1EDE6"
-              }
-              onChange={handleCustomBgColor}
-            />
-          </Field>
-        </div>
-      </Section>
+      <BackgroundSection />
 
       <Section title="Frame and effects">
         <div className="space-y-3">
