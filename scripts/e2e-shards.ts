@@ -27,6 +27,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "first-run",
     "backgrounds",
     "spike",
+    "responsive-scroll",
   ],
   ["editor", "color", "ui-overflow", "polish", "text", "demo-assets", "library", "shadows-post"],
   [
@@ -39,7 +40,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "devices",
     "ui",
     "preset-tone",
-    "responsive-scroll",
+    "orbit",
   ],
   ["export", "frames", "slider", "mobile-frames"],
 ];
