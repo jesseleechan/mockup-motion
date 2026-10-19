@@ -289,7 +289,7 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
       await setDoc(structuredClone(doc));
       const afterBackground = engine.debugInfo().devicesBuilt;
       // Browser chrome is part of every device's key.
-      doc.style.browserChrome = doc.style.browserChrome === "minimal" ? "standard" : "minimal";
+      doc.style.browserChrome = doc.style.browserChrome === "none" ? "standard" : "none";
       await setDoc(structuredClone(doc));
       const afterChrome = engine.debugInfo().devicesBuilt;
       return { initial, afterBackground, afterChrome };

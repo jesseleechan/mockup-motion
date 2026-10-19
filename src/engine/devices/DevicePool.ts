@@ -16,7 +16,6 @@ export function deviceKey(node: LayoutNode, style: Style): string {
     node.width.toFixed(5),
     node.height.toFixed(5),
     style.frameAppearance,
-    style.deviceFinish,
     style.browserChrome,
     style.browserUrl,
     style.shadow,

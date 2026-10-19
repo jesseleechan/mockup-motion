@@ -36,13 +36,11 @@ export type Background =
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type FrameAppearance = "light" | "dark";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: FrameAppearance;
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string;      // shown in URL pill; "" hides text
   shadow: ShadowPreset;

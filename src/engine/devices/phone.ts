@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { DeviceFinish, Style } from "../../doc/types";
+import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import {
   PHONE_BORDER,
@@ -12,7 +12,7 @@ import { ScreenCompositor } from "../materials/screen";
 import { DeviceShadowGroup } from "../shadows/DeviceShadow";
 import { createRoundedExtrudeGeometry, createRoundedRectShape } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
-import { createPhoneFrameRing, PHONE_FINISH_COLORS } from "./phone-frame";
+import { createPhoneFrameRing, PHONE_FRAME_COLOR } from "./phone-frame";
 
 // Glass around the screen: near-black, as the display's border is when it is lit.
 const GLASS_COLOR = 0x050506;
@@ -39,7 +39,6 @@ export function buildPhoneDevice(
 ): DeviceInstance {
   const bodyW = node.width;
   const bodyH = node.height;
-  const finish: DeviceFinish = style.deviceFinish ?? "silver";
 
   const border = bodyW * PHONE_BORDER;
   const frame = bodyW * PHONE_FRAME;
@@ -71,13 +70,13 @@ export function buildPhoneDevice(
   // The body: its sides show when the camera tilts.
   const bodyGeo = createRoundedExtrudeGeometry(bodyW, bodyH, bodyRadius, bodyDepth, frame * 0.5);
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(PHONE_FINISH_COLORS[finish]),
+    color: new THREE.Color(PHONE_FRAME_COLOR),
     roughness: 0.32,
     metalness: 0.6,
   });
   group.add(new THREE.Mesh(bodyGeo, bodyMat));
 
-  const ring = createPhoneFrameRing(bodyW, bodyH, bodyRadius, frame, finish);
+  const ring = createPhoneFrameRing(bodyW, bodyH, bodyRadius, frame);
   ring.position.z = 0.00005;
   group.add(ring);
 
@@ -142,10 +141,6 @@ export function buildPhoneDevice(
     group.scale.set(tf.scale, tf.scale, 1.0);
 
     shadowGroup.update(updatedStyle);
-
-    const finishHex = PHONE_FINISH_COLORS[updatedStyle.deviceFinish ?? "silver"];
-    bodyMat.color.set(finishHex);
-    (ring.material.uniforms.uColor.value as THREE.Color).set(finishHex);
   }
 
   function dispose(): void {
