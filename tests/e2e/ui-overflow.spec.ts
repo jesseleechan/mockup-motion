@@ -13,12 +13,7 @@ interface EditorStoreHandle {
 
 interface UIStoreHandle {
   getState: () => {
-    setSelection: (
-      selection:
-        | { kind: "video" }
-        | { kind: "shot"; id: string }
-        | { kind: "text"; shotId: string; id: string },
-    ) => void;
+    setSelection: (selection: { kind: "video" } | { kind: "shot"; id: string }) => void;
   };
 }
 
