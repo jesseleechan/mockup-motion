@@ -9,3 +9,4 @@ export * from "./cursor";
 export * from "./phone-spec";
 export * from "./evaluate";
 export type { DeviceKind } from "../doc";
+export * from "./responsive-scroll";

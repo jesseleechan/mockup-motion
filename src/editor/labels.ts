@@ -27,6 +27,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   stack: "Cascading stack",
   slider: "Slider",
   orbit: "Orbit",
+  responsive: "Responsive scroll",
 };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
