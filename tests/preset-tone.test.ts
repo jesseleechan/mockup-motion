@@ -21,6 +21,8 @@ const TONE_TEMPLATES = [
   "mobile-slider",
   "frames",
   "mobile-frames",
+  "desktop-orbit",
+  "mobile-orbit",
   "responsive-scroll",
 ];
 

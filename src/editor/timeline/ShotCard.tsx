@@ -27,6 +27,7 @@ import {
   Columns,
   GalleryHorizontal,
   GalleryVertical,
+  Orbit,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
 import { LAYOUT_LABELS, shotSummary } from "../labels";
@@ -266,6 +267,8 @@ export const ShotCard: React.FC<ShotCardProps> = ({
         return <Icon icon={LayoutGrid} size={13} />;
       case "slider":
         return <Icon icon={layout.axis === "y" ? GalleryVertical : GalleryHorizontal} size={13} />;
+      case "orbit":
+        return <Icon icon={Orbit} size={13} />;
       default:
         return <Icon icon={Monitor} size={13} />;
     }
@@ -397,8 +400,8 @@ export const ShotCard: React.FC<ShotCardProps> = ({
             </div>
           )}
 
-          {/* Right Duration Resize Handle. A slider's length is screenshots × step. */}
-          {layoutKind !== "slider" && (
+          {/* Right Duration Resize Handle. A slider's or orbit's length is screenshots × step. */}
+          {layoutKind !== "slider" && layoutKind !== "orbit" && (
             <div
               role="separator"
               aria-orientation="vertical"

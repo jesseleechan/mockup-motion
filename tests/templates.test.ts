@@ -105,13 +105,16 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
-    // Gallery order (Frames plan D12): Desktop Slider, Mobile Slider, Desktop Frames, Mobile
-    // Frames, Scroll Story. The first entry is the first-run default (presets plan D1).
+    // Gallery order (Frames plan D12, orbit plan): Desktop Slider, Mobile Slider, Desktop
+    // Frames, Mobile Frames, Desktop Orbit, Mobile Orbit, Scroll Story. The first entry is the
+    // first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
       "mobile-frames",
+      "desktop-orbit",
+      "mobile-orbit",
       "scroll-story",
       "responsive-scroll",
     ]);
@@ -131,6 +134,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-slider": "mobile",
       frames: "desktop",
       "mobile-frames": "mobile",
+      "desktop-orbit": "desktop",
+      "mobile-orbit": "mobile",
       "scroll-story": "desktop",
       "responsive-scroll": "both",
     });
@@ -302,6 +307,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
   const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
+  // An orbit loops natively with a cut: after N steps the ring is back where it started.
+  const ORBIT_TEMPLATES = ["desktop-orbit", "mobile-orbit"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
@@ -324,7 +331,12 @@ describe("Template loop seam", () => {
 
   it("covers every looping single-shot template", () => {
     expect([...LOOPING_SINGLE_SHOT].sort()).toEqual(
-      [...NATIVE_MARQUEE_TEMPLATES, ...SLIDER_TEMPLATES, ...WRAP_SCROLL_TEMPLATES].sort(),
+      [
+        ...NATIVE_MARQUEE_TEMPLATES,
+        ...SLIDER_TEMPLATES,
+        ...ORBIT_TEMPLATES,
+        ...WRAP_SCROLL_TEMPLATES,
+      ].sort(),
     );
   });
 

@@ -1,5 +1,6 @@
 import React from "react";
 import type { AssetRef, Shot } from "../../../doc/types";
+import { isSteppedLayout } from "../../../motion";
 import { Field, Section, Select } from "../../../ui";
 import { useEditorStore } from "../../../state/store";
 import { SliderScreenshots } from "./SliderScreenshots";
@@ -42,7 +43,7 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
 };
 
 /**
- * The screenshots a single, pair, responsive, trio or slider layout shows. Other layouts fill from the
+ * The screenshots a single, pair, responsive, trio, slider or orbit layout shows. Other layouts fill from the
  * project.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
@@ -51,7 +52,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
   const { layout } = shot;
   const images = assets.filter((a) => a.kind === "image");
 
-  if (layout.kind === "slider") {
+  if (isSteppedLayout(layout)) {
     return (
       <Section title="Screenshots">
         <SliderScreenshots shotIndex={shotIndex} layout={layout} images={images} />

@@ -10,4 +10,6 @@ export { mobileFramesTemplate, mobileFramesLayout } from "./mobile-frames";
 export { refitFramesLayout } from "./frames-template";
 export { mobileSliderTemplate } from "./mobile-slider";
 export { desktopSliderTemplate } from "./desktop-slider";
+export { desktopOrbitTemplate } from "./desktop-orbit";
+export { mobileOrbitTemplate } from "./mobile-orbit";
 export { responsiveScrollTemplate } from "./responsive-scroll";

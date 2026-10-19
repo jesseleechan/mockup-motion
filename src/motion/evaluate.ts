@@ -9,7 +9,7 @@ import type {
 } from "../doc/types";
 import { cameraPose } from "./camera";
 import { frameDistance } from "./framing";
-import { type LayoutNode, resolveLayout } from "./layouts";
+import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
 import { scrollPosition } from "./scroll";
 import { responsiveScreens, responsiveScrollAt } from "./responsive-scroll";
 import { textFrame, type TextFrame } from "./text-anim";
@@ -195,9 +195,10 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     );
 
     // Auto-framing: keep safe margins under camera moves for bounded layouts. A slider's
-    // neighbours are cropped by the frame on purpose (quality bar §4), so it is full bleed.
+    // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar
+    // §4), so they are full bleed.
     let camera = baseCamera;
-    const isFullBleed = marquee || shot.layout.kind === "title" || shot.layout.kind === "slider";
+    const isFullBleed = marquee || shot.layout.kind === "title" || isSteppedLayout(shot.layout);
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {

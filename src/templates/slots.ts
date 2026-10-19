@@ -2,10 +2,12 @@ import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types"
 import type { SlotSpec, Template } from "./types";
 import { presetToneOf, setPresetTone } from "./looks";
 
-/** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames needs 4. */
+/** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames and Orbit need 4. */
 const MULTI_ASSET_MINIMUM: Record<string, number> = {
   frames: 4,
   "mobile-frames": 4,
+  "desktop-orbit": 4,
+  "mobile-orbit": 4,
 };
 
 /** The one role a multi-screen template's required slots share. */
