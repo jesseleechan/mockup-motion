@@ -351,7 +351,12 @@ test.describe("F07: template previews in the gallery and Library", () => {
     for (let i = 0; i < BUILTIN_TEMPLATES.length; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
-      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);
+      // Each poster loads lazily once scrolled into view; the CI runner is slower (tests/helpers/ci.ts).
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth), {
+          timeout: ciTimeout(5_000),
+        })
+        .toBe(1280);
     }
   });
 });
