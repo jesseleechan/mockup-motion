@@ -8,7 +8,6 @@ import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
 import { resolveSliderLayout } from "./slider";
 import { resolveStackLayout } from "./stack";
-import { resolveTitleLayout } from "./title";
 import { resolveTrioLayout } from "./trio";
 import type { LayoutNode } from "./types";
 import { resolveWallLayout } from "./wall";
@@ -47,7 +46,6 @@ export {
   responsiveGeometry,
 } from "./responsive";
 export { resolveStackLayout } from "./stack";
-export { resolveTitleLayout } from "./title";
 export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
 export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
@@ -84,8 +82,6 @@ export function resolveLayout(
       return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "responsive":
       return resolveResponsiveLayout(layout, aspect, shotT, entrance);
-    case "title":
-      return resolveTitleLayout();
     default: {
       const _exhaustive: never = layout;
       return [];

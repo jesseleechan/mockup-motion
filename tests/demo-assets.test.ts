@@ -139,7 +139,9 @@ describe("F04 demo asset map", () => {
     expect(resolveLabAssetUrl("demo-studio-kova-desktop-full")).toBe(
       "/demo/studio-kova/desktop-full.webp",
     );
-    expect(resolveLabAssetUrl("/demo/aurelia.png")).toBe("/demo/aurelia.png");
+    expect(resolveLabAssetUrl("/demo/aurelia/desktop-full.webp")).toBe(
+      "/demo/aurelia/desktop-full.webp",
+    );
     expect(resolveLabAssetUrl("blob:http://localhost/abc")).toBe("blob:http://localhost/abc");
   });
 });
@@ -159,6 +161,13 @@ describe("F04 template previews use varied demo sites", () => {
   it("mobile-slider shows 4+ different mobile sites", () => {
     expect(screens("mobile-slider").every((a) => a.role === "mobile")).toBe(true);
     expect(sites("mobile-slider").size).toBeGreaterThanOrEqual(4);
+  });
+
+  it("the Stack presets show 4+ different sites of their size", () => {
+    expect(screens("desktop-stack").every((a) => a.role === "desktop")).toBe(true);
+    expect(sites("desktop-stack").size).toBeGreaterThanOrEqual(4);
+    expect(screens("mobile-stack").every((a) => a.role === "mobile")).toBe(true);
+    expect(sites("mobile-stack").size).toBeGreaterThanOrEqual(4);
   });
 
   it("mobile-frames shows 4+ different mobile sites", () => {

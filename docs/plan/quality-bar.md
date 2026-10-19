@@ -19,19 +19,18 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 | ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `gentle`     | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out)       | Long camera drifts, background, float                                                        |
 | `smooth`     | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out)      | Default camera moves, scroll segments                                                        |
-| `expoOut`    | cubic-bezier(0.16, 1, 0.3, 1)                      | Entrances, text reveals                                                                      |
+| `expoOut`    | cubic-bezier(0.16, 1, 0.3, 1)                      | Entrances                                                                                    |
 | `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1)                     | Transitions, decisive pushes                                                                 |
-| `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only (cursor click). Overshoot 3% or less                                 |
+| `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only. Overshoot 3% or less                                                |
 | `spring`     | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels                                                                    |
 | `slide`      | cubic-bezier(0.40, 0, 0.05, 1)                     | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
 | `linear`     | —                                                  | Marquees only                                                                                |
 
 ### 2.2 Durations
 
-- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Title cards: 2–3 s. Two layouts set their own length instead: a `slider` shot lasts screenshots × step (carousel steps, below), and a Frames shot (Desktop Frames or Mobile Frames) lasts at least `framesDuration` (§2.5), 15 s by default. A Frames shot must also fit in 30 s, so it shows at most the screenshots whose period fits 30 s at 0.20 stage units per second: for Desktop Frames, 10 with the 3-row cards (4:5, 9:16, 1:1) and 8 with the 2-row cards (16:9, 4:3); for Mobile Frames, 9 at 16:9, 4:3 and 1:1 and 10 at 4:5 and 9:16. Later ones are left out, and the inspector says so.
+- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Two layouts set their own length instead: a `slider` shot lasts screenshots × step (carousel steps, below), and a Frames shot (Desktop Frames or Mobile Frames) lasts at least `framesDuration` (§2.5), 15 s by default. A Frames shot must also fit in 30 s, so it shows at most the screenshots whose period fits 30 s at 0.20 stage units per second: for Desktop Frames, 10 with the 3-row cards (4:5, 9:16, 1:1) and 8 with the 2-row cards (16:9, 4:3); for Mobile Frames, 9 at 16:9, 4:3 and 1:1 and 10 at 4:5 and 9:16. Later ones are left out, and the inspector says so.
 - Transitions: 0.5–0.9 s (default 0.7 s, `quintInOut`). Loop wrap crossfade: 0.8 s.
 - Entrances: 0.7–1.0 s with `expoOut`. Stagger between sibling elements: 80–120 ms.
-- Text: 0.6–0.9 s per reveal, 60–90 ms per-word stagger. Hold text fully visible for at least 1.2 s before any exit.
 - Carousel steps (`slider` layout, both arrangements: the carousel of the sliders and the deck of Desktop Stack and Mobile Stack): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress. A slider shot lasts screenshots × step and must fit in 30 s, so the step is at most min(4.0, 30 / N) s, and a slider shows at most its first 18 screenshots (18 × 1.6 s = 28.8 s). An `orbit` steps on the same timing: one step turns the ring one card, and it shows at most its first 6 screenshots.
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
 - Responsive Scroll: two screens scroll together, so each segment takes the time the screen that travels further needs at 0.9 screen heights per second, and both hold together (1.0 s by default). Defaults stop at the top and three sections both pages share (not the header or footer), each the farthest from the stops already chosen. The shot lasts holds plus moves plus the 0.8 s wrap crossfade, so the loop is holds plus moves and the fade falls inside the last hold; it fits in 30 s.
@@ -79,7 +78,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 ### 3.2 Browser window
 
 - Corner radius: 1.1% of window width. Hairline border: 1 px at 1080p equivalent (0.0009 stage units), `rgba(0,0,0,0.08)` light or `rgba(255,255,255,0.08)` dark.
-- `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in the body font at 42% of toolbar height, 55% opacity.
+- `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in Inter Regular (+2% tracking) at 42% of toolbar height, 55% opacity.
 - `minimal`: no toolbar; traffic lights float inside the top-left corner over a 6% top fade. `none`: the screen only, with radius and border kept.
 - Light toolbar `#F6F6F7`, dark `#1E1E21`.
 
@@ -117,7 +116,7 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
   At 16:9, 4:3, 1:1 and 9:16 every column is fully visible, with side margins of 4.8% of the frame width, the margins Desktop Frames' two rows leave at 16:9. At 4:5 the middle column is centred and the outer columns are cropped by 14% of their width, as the reference crops its outer rows. Cards are 0.48–0.58 of the frame height tall, so a column shows 1.5–1.8 cards. Adjacent columns move in opposite directions at one shared speed, and the left column moves up. Column c starts c/columns of a period along, so columns that move together never line up the same screenshot. Odd columns show the screenshots in reverse order, as odd rows do, and the passing-lanes exception above applies to adjacent columns too. Mobile Frames needs 4 screenshots. The PF04 contact sheet review may change a card width by at most ±10%; any change is recorded here (`docs/phone-frames-plan/README.md` §3).
 
 - **Desktop Stack and Mobile Stack** (`slider` with `arrangement: "deck"`, tilt 0, still camera; `docs/stack-plan/README.md`): a deck of flat cards. Each step the front card leaves the frame and every other card moves forward one slot, on the carousel step timing (§2.2). In view at rest: the front card plus the ones behind it, `depth = min(3, N − 1)` cards in all (1 with one screenshot), so with 3 screenshots the leaving card, the front card and the entering card are three different screenshots. The card r slots back is scaled 1 − 0.06 r and offset along the peek direction by r × peek, so its edge shows past the card in front, at full colour. The card entering slot depth − 1 fades in from opacity 0 with its move and scale (it comes from slot depth); the front card keeps scale 1 and leaves until its trailing edge is 0.03 stage units past the frame edge.
-  - Desktop Stack (`axis: "y"`, landscape cards): back cards peek out **below**, peek = 0.12 × card height; the front card leaves **up**, as Desktop Slider steps up. Card height = min(0.84 × W / 1.6, 0.8 / (1 + (depth − 1) × 0.12)), width = 1.6 × height (W = frame width in stage units).
+  - Desktop Stack (`axis: "y"`, landscape cards): back cards peek out **below**, peek = 0.12 × card height; the front card leaves **up**, as Desktop Slider steps up. Card height = min(0.84 × W / 1.6, 0.86 / (1 + (depth − 1) × 0.12)) (the preview had 0.8; raised to 0.86 in the S04 review so the front card spans 62% of the frame width at 16:9), width = 1.6 × height (W = frame width in stage units).
   - Mobile Stack (`axis: "x"`, portrait cards at the phone screen aspect 0.4615, §3.4): back cards peek out to the **right**, peek = 0.20 × card width; the front card leaves **left**, as Mobile Slider moves. Card width = min(0.7 × 0.4615, 0.86 × W / (1 + (depth − 1) × 0.2)).
   - The deck at rest (front card plus peeks) is centred in the frame and keeps the safe margin. The S04 contact sheet review may tune these numbers; any change is recorded here.
 
@@ -127,7 +126,7 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 
 - **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
 
-- **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).
+- **Vertical formats:** keep primary content inside the central 80% of the height (social UI overlays).
 
 ## 5. Light, shadow, and atmosphere
 
@@ -142,19 +141,15 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 
 ## 6. Color and backgrounds
 
-- Palettes are defined in OKLCH. Gradients and mesh interpolate in OKLab (using `culori`) to avoid muddy middles.
-- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Dusk** mesh `#1B1B2F #3A2F4F #6B4E71 #C3A6A0`; **Mist** mesh `#E9EEF5 #D7E0EE #EDE3F0 #F6EFE6`; **Ash** solid `#DFE1E3`, the flat light grey of the slider and Frames presets, used with grain 0 and vignette 0 (a flat fill cannot band); **Onyx** solid `#141417` (Graphite's first stop), their dark option, with the same grain 0 and vignette 0. The presets' Light / Dark switch (Video inspector) picks between Ash and Onyx, and Onyx sets `frameAppearance: "dark"` so the card hairline is white at 8%, which keeps a near-black screenshot's edge visible on the near-black fill.
+- Palettes are defined in OKLCH. Gradients interpolate in OKLab (using `culori`) to avoid muddy middles.
+- Built-in palettes (WP-07 finalizes them; these are starting values): **Bone** `#F1EDE6 → #E3DCD0`; **Fog** `#EEF1F4 → #D9DFE6`; **Graphite** `#141417 → #2A2A30`; **Ink** `#0D1424 → #1F2B45`; **Sage** `#E4E9E1 → #C9D3C4`; **Clay** `#EBDDD3 → #D2B8A6`; **Ash** solid `#DFE1E3`, the flat light grey of the slider and Frames presets, used with grain 0 and vignette 0 (a flat fill cannot band); **Onyx** solid `#141417` (Graphite's first stop), their dark option, with the same grain 0 and vignette 0. The presets' Light / Dark switch (Video inspector) picks between Ash and Onyx, and Onyx sets `frameAppearance: "dark"` so the card hairline is white at 8%, which keeps a near-black screenshot's edge visible on the near-black fill.
 - **Auto palette:** extract 5 dominant colors from the primary screenshot, then derive a background that complements without matching (lower chroma by 40–60%, shift lightness away from the screenshot's average by at least 0.25 L).
 - Background chroma stays at or below 0.09 (OKLCH C) for light palettes and 0.12 for dark, unless the user picks a custom color. Elegance comes from low chroma.
-- Mesh drift: at most 6% of the frame per loop, using integer harmonics only (loop-safe).
+- Backgrounds are a solid or a gradient. Mesh, ambient (blurred screenshot) and image backgrounds were removed on 19 October 2026; saved ones load as a gradient of the mesh's colours or as Ash (`contracts.md` §2).
 
 ## 7. Typography
 
-- Curated pairs (self-hosted, WP-10): **Inter Display / Inter**, **Instrument Serif / Inter**, **Fraunces / Inter**, **Geist / Geist**, **DM Serif Display / DM Sans**, **Space Grotesk / Inter**. Users can also upload their own fonts.
-- Title 5–7% of frame height, tracking −1.5% to −2.5%, line height 1.05–1.12, weight 500–650 (display serifs 400). Subtitle 2.2–2.8%, 70% opacity. Captions and labels 1.6–1.9%, uppercase optional with +6% tracking.
-- Text is never smaller than 1.6% of frame height (about 17 px at 1080p).
-- Text color is auto-contrasted against the local background luminance (WCAG ≥ 4.5:1 for captions, ≥ 3:1 for titles).
-- Text renders in screen space, crisp, never perspective-distorted. Max line length 22 characters for titles; wrap with balanced lines.
+Removed (owner, 19 October 2026). Videos carry no text layers, title cards or brand fonts. The only text drawn is the domain in the browser URL pill (§3.2), set in Inter, which the UI also uses.
 
 ## 8. Review checklist (paste into visual PRs)
 
@@ -162,6 +157,5 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 - [ ] No reversing motion. Each shot has one dominant move, and the easing comes from §2.1.
 - [ ] Safe margins (§4) hold at all 5 aspects. Checked on the contact sheet.
 - [ ] Shadow, grain, and vignette are within §5 ranges. No banding visible on the gradient frame at 1080p export.
-- [ ] Text is at least 1.6% of frame height, with contrast that passes.
 - [ ] The loop is seamless: frame(0) equals frame(total) (unit test), and there is no visible pop when watching 3 loops.
 - [ ] No shimmer on screenshot text during camera moves in a 1080p30 export.

@@ -1,8 +1,7 @@
 import type { Background, Style, Transition } from "../doc/types";
 import { BUILTIN_PALETTES } from "../doc/palettes";
 
-export type PaletteId =
-  "bone" | "fog" | "graphite" | "ink" | "sage" | "clay" | "dusk" | "mist" | "ash" | "onyx";
+export type PaletteId = "bone" | "fog" | "graphite" | "ink" | "sage" | "clay" | "ash" | "onyx";
 
 function palette(id: PaletteId) {
   const found = BUILTIN_PALETTES.find((p) => p.id === id);
@@ -17,11 +16,6 @@ export function paletteBackground(id: PaletteId, angle?: number): Background {
   return background;
 }
 
-/** The palette's text colour, chosen for contrast against its background. */
-export function paletteTextColor(id: PaletteId): string {
-  return palette(id).textColor;
-}
-
 /**
  * The background tone of the slider and Frames presets: their flat Ash fill (the default) or
  * its dark counterpart, Onyx. Both are solids, so grain and vignette stay 0 (quality-bar §6).
@@ -32,18 +26,15 @@ const TONE_PALETTE: Record<PresetTone, PaletteId> = { light: "ash", dark: "onyx"
 const TONES: PresetTone[] = ["light", "dark"];
 
 /** The style fields a preset tone sets. */
-export function presetToneStyle(
-  tone: PresetTone,
-): Pick<Style, "background" | "textColor" | "frameAppearance"> {
+export function presetToneStyle(tone: PresetTone): Pick<Style, "background" | "frameAppearance"> {
   const id = TONE_PALETTE[tone];
   return {
     background: paletteBackground(id),
-    textColor: paletteTextColor(id),
     frameAppearance: palette(id).frameAppearance,
   };
 }
 
-/** Switches a style (say a draft's) to the tone's fill and text colour; grain and vignette stay. */
+/** Switches a style (say a draft's) to the tone's fill; grain and vignette stay. */
 export function setPresetTone(style: Style, tone: PresetTone): void {
   Object.assign(style, presetToneStyle(tone));
 }
