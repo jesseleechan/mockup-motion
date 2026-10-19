@@ -25,6 +25,7 @@ import {
   mobileOrbitTemplate,
   pairedTemplateId,
 } from "../src/templates";
+import { FLAT_TONES, templateTones } from "../src/templates/looks";
 
 type OrbitLayout = Extract<Layout, { kind: "orbit" }>;
 type Shape = OrbitLayout["shape"];
@@ -243,6 +244,10 @@ describe("Orbit motion", () => {
     expect(fadeBlendFor(orbit("mobile", 4))).toBe("background");
     expect(fadeBlendFor({ ...orbit("mobile", 4), kind: "slider", axis: "x" })).toBe("srgb");
     expect(fadeBlendFor(undefined)).toBe("linear");
+    // A deck's entering card fades in linear light (quality bar §3.1).
+    expect(
+      fadeBlendFor({ ...orbit("mobile", 4), kind: "slider", axis: "x", arrangement: "deck" }),
+    ).toBe("linear");
   });
 });
 
@@ -286,7 +291,7 @@ describe("Desktop Orbit and Mobile Orbit templates", () => {
       [mobileOrbitTemplate, "mobile"],
     ] as const) {
       expect(template.category).toBe(role);
-      expect(template.toneSwitch).toBe(true);
+      expect(templateTones(template)).toEqual(FLAT_TONES);
       expect(template.slots.map((s) => [s.key, s.role, s.required])).toEqual(
         [1, 2, 3, 4, 5, 6].map((n) => [`${role}${n}`, role, n <= 4]),
       );

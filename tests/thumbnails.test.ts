@@ -116,6 +116,21 @@ describe("F07: ThumbnailRenderer", () => {
     expect(b).toBe(a);
   });
 
+  it("is idle only when no request waits for its debounce or renders", async () => {
+    const fake = fakeBackend();
+    const renderer = new ThumbnailRenderer({ backend: fake.backend });
+    expect(renderer.idle).toBe(true);
+    const url = renderer.render(docWithPreset("static"), 1, "16:9", "shot-1");
+    expect(renderer.idle).toBe(false);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(fake.calls).toHaveLength(1);
+    expect(renderer.idle, "rendering").toBe(false);
+    await fake.finishNext();
+    await url;
+    await vi.advanceTimersByTimeAsync(0);
+    expect(renderer.idle).toBe(true);
+  });
+
   it("renders one request at a time", async () => {
     const fake = fakeBackend();
     const renderer = new ThumbnailRenderer({ backend: fake.backend });

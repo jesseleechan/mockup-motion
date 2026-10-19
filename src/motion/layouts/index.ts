@@ -19,6 +19,7 @@ export {
   MAX_SHOT_DURATION,
   isSteppedLayout,
   minShotDuration,
+  minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
   SLIDER_MAX_SCREENSHOTS,

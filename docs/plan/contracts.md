@@ -180,15 +180,16 @@ export interface Shot {
   pace?: "calm" | "brisk"; // unset = Default; sets step, duration or hold (§5, Pace)
 }
 
+// "custom" is a state (settings that differ from every preset), not a card. Saved "linkedin"
+// and "x" load as "video" (export polish §3, October 2026).
 export type DestinationId =
-  | "custom"
-  | "web-embed"
+  | "video"
   | "dribbble"
   | "instagram-feed"
   | "instagram-story"
-  | "linkedin"
-  | "x"
-  | "presentation-4k";
+  | "presentation-4k"
+  | "web-embed"
+  | "custom";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -393,7 +394,7 @@ export interface Template {
   category: "desktop" | "mobile"; // the gallery tab; matches the screenshots' role
   slots: SlotSpec[];
   defaultDuration: number;
-  toneSwitch?: boolean; // Light / Dark background switch in the Video inspector (Ash or Onyx)
+  tones?: PresetTones; // { light, dark } palette ids for the Background control; Ash and Onyx when omitted
   build(ctx: TemplateBuildContext): { style: Style; shots: Shot[]; loop: boolean };
 }
 export function fillSlots(t: Template, assets: AssetRef[]): Record<string, string | undefined>;
@@ -405,7 +406,7 @@ The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2
 
 Responsive Scroll (`responsive-scroll`, `docs/responsive-scroll-plan/README.md`) is last in the gallery. It shows a desktop and a mobile screenshot of one page, so its category is `"both"` and it sits under the Desktop and the Mobile tab (`templateInCategory`). Its two slots are a same-page pair (`Template.samePage`): `fillSlots` fills them with captures of one page (same capture URL, then the same page name in the file names) before the greedy fill.
 
-The slider, Frames, Stack, Orbit and Responsive Scroll presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
+Video inspector > Background offers Light, Dark or Custom (`docs/polish-plan/inspectors.md` P1). Light and Dark are the template's `tones` (`templateTones`): Ash and Onyx for the slider, Stack, Frames, Orbit and Responsive Scroll presets and for documents without a template, Fog and Graphite for Desktop and Mobile Scroll Story. The tone is not stored: it is read from `style.background` (`presetToneOf`; a solid by colour, a gradient by stops and angle), so it saves and loads with the style; anything else is Custom. A custom colour is a flat solid; below OKLCH L 0.5 it sets `frameAppearance: "dark"` (`customBackgroundStyle`). `applyTemplate` gives a document whose `frameAppearance` is dark the new template's Dark fill; otherwise every template builds its Light fill.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
 

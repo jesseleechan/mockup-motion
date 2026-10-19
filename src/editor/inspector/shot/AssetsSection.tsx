@@ -1,9 +1,15 @@
 import React from "react";
 import type { AssetRef, Shot } from "../../../doc/types";
-import { isSteppedLayout } from "../../../motion";
+import {
+  framesAssetIds,
+  isSteppedLayout,
+  minShotScreenshots,
+  ORBIT_MAX_SCREENSHOTS,
+  SLIDER_MAX_SCREENSHOTS,
+} from "../../../motion";
 import { Field, Section, Select } from "../../../ui";
 import { useEditorStore } from "../../../state/store";
-import { SliderScreenshots } from "./SliderScreenshots";
+import { ScreenshotList } from "./ScreenshotList";
 import { assetDropProps, useShotUpdate } from "./useShotUpdate";
 
 interface AssetsSectionProps {
@@ -42,20 +48,47 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
   );
 };
 
-/**
- * The screenshots a single, responsive, slider or orbit layout shows. Frames fills from the
- * project.
- */
+/** The screenshots a single, responsive, slider, orbit or Frames layout shows. */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
   const shotIndex = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
+  const aspect = useEditorStore((s) => s.doc.aspect);
   const { layout } = shot;
   const images = assets.filter((a) => a.kind === "image");
 
   if (isSteppedLayout(layout)) {
+    const slider = layout.kind === "slider";
+    const max = slider ? SLIDER_MAX_SCREENSHOTS : ORBIT_MAX_SCREENSHOTS;
     return (
       <Section title="Screenshots">
-        <SliderScreenshots shotIndex={shotIndex} layout={layout} images={images} />
+        <ScreenshotList
+          shotIndex={shotIndex}
+          assetIds={layout.assetIds}
+          images={images}
+          label={slider ? "Slider screenshots" : "Orbit screenshots"}
+          shown={max}
+          minimum={minShotScreenshots(layout)}
+          overflowNote={
+            slider
+              ? `Shows the first ${max} screenshots, so the loop fits in 30 s.`
+              : `Shows the first ${max} screenshots, so the ring stays clear.`
+          }
+        />
+      </Section>
+    );
+  }
+  if (layout.kind === "rows" || layout.kind === "columns") {
+    // The Layout section says how many fit; the list only dims the rest.
+    return (
+      <Section title="Screenshots">
+        <ScreenshotList
+          shotIndex={shotIndex}
+          assetIds={layout.assetIds}
+          images={images}
+          label="Frames screenshots"
+          shown={framesAssetIds(layout, aspect).length}
+          minimum={minShotScreenshots(layout)}
+        />
       </Section>
     );
   }

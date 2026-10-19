@@ -3,7 +3,8 @@ import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
-import { unfilledSlots, useTemplateActions } from "../template-actions";
+import { currentTemplate, unfilledSlots, useTemplateActions } from "../template-actions";
+import { templateNeeds } from "../../templates";
 import type { AssetRef } from "../../doc/types";
 import { aspectRatioValue } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
@@ -96,6 +97,13 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     [addScreenshots, toast],
   );
 
+  // The gallery's "Choose screenshots" opens this picker (polish item 1). The click stays
+  // within the user's activation from the gallery button, so the browser allows the dialog.
+  const screenshotPickerRequests = useUIStore((s) => s.screenshotPickerRequests);
+  useEffect(() => {
+    if (screenshotPickerRequests > 0) fileInputRef.current?.click();
+  }, [screenshotPickerRequests]);
+
   // Global drag-and-drop listener
   useEffect(() => {
     const onDragOver = (e: DragEvent) => {
@@ -132,9 +140,14 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   }, [handleFiles]);
 
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
-  const showEmptyState = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
+  // While the editor decides what to open on start, the stage stays blank rather than
+  // flashing the empty state under the gallery.
+  const starting = useUIStore((s) => s.starting);
+  const emptyProject = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
+  const showEmptyState = emptyProject && !starting;
   // A template is applied but some required slot has no screenshot yet (F06).
-  const showFillOverlay = !showEmptyState && unfilledSlots(doc).length > 0;
+  const showFillOverlay = !emptyProject && unfilledSlots(doc).length > 0;
+  const fillTemplate = showFillOverlay ? currentTemplate(doc) : undefined;
   const preview = stageSize
     ? fitPreview(stageSize.width, stageSize.height, aspectRatioValue(doc.aspect), stageZoom)
     : null;
@@ -205,7 +218,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
             </Button>
           </div>
         </div>
-      ) : preview && preview.width > 0 && preview.height > 0 ? (
+      ) : !emptyProject && preview && preview.width > 0 && preview.height > 0 ? (
         /* Canvas Stage Output Boundary: explicit pixels, fitted to the stage */
         <div className="relative shrink-0" style={{ width: preview.width, height: preview.height }}>
           <div
@@ -301,8 +314,9 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         </div>
       ) : null}
 
-      {showFillOverlay && (
+      {fillTemplate && (
         <FillTemplateOverlay
+          needs={templateNeeds(fillTemplate)}
           onChooseScreenshots={() => fileInputRef.current?.click()}
           onUseDemoContent={fillWithDemoContent}
         />
