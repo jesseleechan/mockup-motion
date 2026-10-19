@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { AlertTriangle, Check, Code2, Copy, Download, RotateCcw } from "lucide-react";
 import { Button } from "../../ui";
+import type { Aspect } from "../../doc/types";
 import type { ExportResult as Result, ExportVerification } from "../../export/engine-export";
 import type { ExportExtension } from "../../export/plan";
+import { DOWNLOAD_LABELS } from "./download-labels";
 
 export interface ExportOutcome {
+  aspect: Aspect;
   url: string;
   filename: string;
   extension: ExportExtension;
@@ -18,17 +21,10 @@ interface ExportResultProps {
   onExportAnother: () => void;
 }
 
-const panel = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs";
-
-const DOWNLOAD_LABELS: Record<ExportExtension, string> = {
-  mp4: "MP4",
-  webm: "WebM",
-  zip: "bundle",
-  png: "PNG",
-};
+export const panel = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs";
 
 /** One exported file as verify.ts re-read it: size, duration, codec, or what is wrong. */
-const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }) => {
+export const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }) => {
   const { label, result } = item;
   const actual = result.actual;
   const facts = actual
