@@ -28,7 +28,9 @@ export interface MediaCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const MediaCard = React.forwardRef<HTMLDivElement, MediaCardProps>(
   ({ asset, thumb, usage, onSetRole, ...rest }, ref) => {
     const isUsed = usage.length > 0;
-    const screenRole = asset.role === "desktop" || asset.role === "mobile" ? asset.role : undefined;
+    // A screenshot without a role counts as desktop, as in saved templates (`user-templates.ts`).
+    const role = asset.role ?? "desktop";
+    const screenRole = role === "desktop" || role === "mobile" ? role : undefined;
     // The image fills the 16:10 box without overflowing it. A screenshot no wider than the box
     // covers it from the top, so only its bottom is cut; a wider one, or a phone screen, shows
     // whole. A page is never cropped at the sides (quality bar §3).
@@ -73,7 +75,7 @@ export const MediaCard = React.forwardRef<HTMLDivElement, MediaCardProps>(
               </button>
             ) : (
               <span className="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-xs text-[10px] font-medium text-white/90 pointer-events-none">
-                {asset.role ? asset.role[0].toUpperCase() + asset.role.slice(1) : "Other"}
+                {role[0].toUpperCase() + role.slice(1)}
               </span>
             )}
 
