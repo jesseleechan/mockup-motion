@@ -38,6 +38,13 @@ describe("Frame and effects shows only what applies", () => {
     });
   });
 
+  it("a kept control turned down to 0 stays visible while the fill is the same", () => {
+    const doc = presetDoc("frames");
+    doc.style.grain = 0;
+    expect(frameEffectsFor(doc).grain).toBe(false);
+    expect(frameEffectsFor(doc, { grain: true })).toMatchObject({ grain: true, vignette: false });
+  });
+
   it("on a flat fill, a grain or vignette already above 0 keeps its control to turn it off", () => {
     const doc = presetDoc("frames");
     doc.style.grain = 0.2;

@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useEditorStore } from "../../state/store";
 import { schedule } from "../../motion";
 import { Field, Section, Select, Slider, Switch } from "../../ui";
 import type { BrowserChrome, ShadowPreset } from "../../doc/types";
 import { BROWSER_CHROME_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
 import { BackgroundSection } from "./BackgroundSection";
-import { frameEffectsFor } from "./frame-effects";
+import { frameEffectsFor, type KeptEffects } from "./frame-effects";
+import { backgroundKey } from "../../templates/looks";
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -24,7 +25,15 @@ export const VideoInspector: React.FC = () => {
 
   const { total } = schedule(doc);
 
-  const effects = frameEffectsFor(doc);
+  // A grain or vignette slider shown for this fill stays while it is turned down to 0, until the
+  // background changes (keyed like BackgroundSection's Custom).
+  const fill = backgroundKey(doc.style.background);
+  const [kept, setKept] = useState<KeptEffects & { fill: string }>({ fill });
+  const effects = frameEffectsFor(doc, kept.fill === fill ? kept : {});
+  // Updated during render (React's "adjust state when a prop changes"); it settles in one pass.
+  if (kept.fill !== fill || kept.grain !== effects.grain || kept.vignette !== effects.vignette) {
+    setKept({ fill, grain: effects.grain, vignette: effects.vignette });
+  }
 
   return (
     <div className="space-y-4">

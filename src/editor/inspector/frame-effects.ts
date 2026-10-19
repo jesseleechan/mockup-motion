@@ -8,12 +8,22 @@ export interface FrameEffects {
   vignette: boolean;
 }
 
+/** Grain or vignette controls already shown for the current fill, so they stay at 0. */
+export interface KeptEffects {
+  grain?: boolean;
+  vignette?: boolean;
+}
+
 /**
  * Browser chrome only with a browser on screen, and its URL only when the chrome shows an
  * address bar. Grain and vignette only where they help: a gradient can band, a flat fill cannot
- * (quality-bar §6). A value already above 0 keeps its control, so a saved project can turn it off.
+ * (quality-bar §6). A value already above 0 keeps its control, so a saved project can turn it off;
+ * `kept` holds it while that value is turned down to 0, so the slider doesn't vanish mid-gesture.
  */
-export function frameEffectsFor(doc: Pick<ProjectDoc, "shots" | "style">): FrameEffects {
+export function frameEffectsFor(
+  doc: Pick<ProjectDoc, "shots" | "style">,
+  kept: KeptEffects = {},
+): FrameEffects {
   const browser = doc.shots.some(
     (shot) =>
       (shot.layout.kind === "single" || shot.layout.kind === "rows") &&
@@ -23,7 +33,7 @@ export function frameEffectsFor(doc: Pick<ProjectDoc, "shots" | "style">): Frame
   return {
     browserChrome: browser,
     browserUrl: browser && doc.style.browserChrome !== "none",
-    grain: gradient || doc.style.grain > 0,
-    vignette: gradient || doc.style.vignette > 0,
+    grain: gradient || doc.style.grain > 0 || kept.grain === true,
+    vignette: gradient || doc.style.vignette > 0 || kept.vignette === true,
   };
 }
