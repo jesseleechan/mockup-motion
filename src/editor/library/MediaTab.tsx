@@ -7,6 +7,7 @@ import {
   Icon,
   useToast,
 } from "../../ui";
+import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { getBlob } from "../../storage/blobs";
@@ -45,12 +46,14 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const reorderAssets = useEditorStore((s) => s.reorderAssets);
   const addAssetToShot = useEditorStore((s) => s.addAssetToShot);
   const removeAssetFromShot = useEditorStore((s) => s.removeAssetFromShot);
-  // A slider shot takes screenshots from here (presets P03); other layouts use their fields.
+  // A slider or orbit shot takes screenshots from here (presets P03); other layouts use their
+  // fields.
   const selection = useUIStore((s) => s.selection);
   const selectedShotIndex =
     selection.kind === "shot" ? fullDoc.shots.findIndex((shot) => shot.id === selection.id) : -1;
   const selectedLayout = fullDoc.shots[selectedShotIndex]?.layout;
-  const selectedSlider = selectedLayout?.kind === "slider" ? selectedLayout : null;
+  const selectedSlider = selectedLayout && isSteppedLayout(selectedLayout) ? selectedLayout : null;
+  const steppedName = selectedLayout?.kind === "orbit" ? "orbit" : "slider";
 
   const [assetThumbnails, setAssetThumbnails] = useState<Record<string, string>>({});
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
@@ -114,7 +117,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
           lay.kind === "columns" ||
           lay.kind === "wall" ||
           lay.kind === "stack" ||
-          lay.kind === "slider") &&
+          lay.kind === "slider" ||
+          lay.kind === "orbit") &&
         lay.assetIds.includes(assetId)
       )
         used = true;
@@ -374,14 +378,14 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
                           icon={<Icon icon={Minus} size={13} />}
                           onClick={() => removeAssetFromShot(selectedShotIndex, asset.id)}
                         >
-                          Remove from slider
+                          Remove from {steppedName}
                         </ContextMenuItem>
                       ) : (
                         <ContextMenuItem
                           icon={<Icon icon={GalleryHorizontal} size={13} />}
                           onClick={() => addAssetToShot(selectedShotIndex, asset.id)}
                         >
-                          Add to slider
+                          Add to {steppedName}
                         </ContextMenuItem>
                       ))}
 
