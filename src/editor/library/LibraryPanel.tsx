@@ -4,7 +4,7 @@ import { useUIStore } from "../../state/ui-store";
 import { MediaTab } from "./MediaTab";
 import { CaptureHelpModal } from "../dialogs/CaptureHelpModal";
 import { SaveTemplateModal } from "../dialogs/SaveTemplateModal";
-import { BookmarkPlus, Camera, Film, PanelLeftClose } from "lucide-react";
+import { BookmarkPlus, Camera, LayoutTemplate, PanelLeftClose } from "lucide-react";
 
 /**
  * The screenshots of the project. Templates live in the gallery dialog, which the header's
@@ -36,7 +36,7 @@ export const LibraryPanel: React.FC = () => {
             onClick={openTemplateGallery}
             className="flex items-center gap-1.5 px-2 py-1 mr-1 rounded text-xs text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
           >
-            <Icon icon={Film} size={13} className="text-[var(--color-accent)]" />
+            <Icon icon={LayoutTemplate} size={13} className="text-[var(--color-accent)]" />
             <span>Templates</span>
           </button>
 

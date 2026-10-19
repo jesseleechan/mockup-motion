@@ -254,7 +254,7 @@ test.describe("F07: shot and project thumbnails", () => {
   });
 });
 
-test.describe("F07: template previews in the gallery and Library", () => {
+test.describe("F07: template previews in the gallery", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await resetAndOpen(page);

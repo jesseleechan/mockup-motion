@@ -84,7 +84,7 @@ test.describe("WP-18 polish", () => {
     await page.getByRole("button", { name: "Templates", exact: true }).click();
     await expect(gallery.getByRole("button", { name: "Yours" })).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("library-template-card")).toHaveCount(0);
+    await expect(page.locator('aside[data-panel="library"]').getByRole("tab")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Save as template" }).click();
     const save = page.getByRole("dialog").filter({ hasText: "Save as template" });
@@ -97,6 +97,12 @@ test.describe("WP-18 polish", () => {
     const card = gallery.getByRole("button", { name: "Select template Studio reel" });
     await expect(gallery.getByTestId("user-template-card")).toHaveCount(1);
     const savedId = await card.getAttribute("data-template-id");
+    // Escape in the rename field cancels the rename and leaves the gallery open.
+    await card.getByRole("button", { name: "Rename Studio reel" }).click();
+    await gallery.getByLabel("Template name").fill("Something else");
+    await page.keyboard.press("Escape");
+    await expect(gallery).toBeVisible();
+    await expect(card).toBeVisible();
     await card.click();
     await expect(gallery.getByText("Selected: Studio reel")).toBeVisible();
     await gallery.getByRole("button", { name: "Apply template" }).click();
@@ -108,6 +114,14 @@ test.describe("WP-18 polish", () => {
     );
     expect(savedId).toBeTruthy();
     expect(templateId).toBe(savedId);
+
+    // Reopened, the gallery stays on Yours with the template the project uses selected.
+    await page.getByRole("button", { name: "Templates", exact: true }).click();
+    await expect(gallery.getByText("Selected: Studio reel")).toBeVisible();
+    await expect(gallery.getByRole("button", { name: "Yours" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("WebGL context loss during playback recovers", async ({ page }) => {

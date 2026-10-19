@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Icon } from "../../ui";
 import type { UserTemplate } from "../../storage/user-templates";
-import { Bookmark, Edit2, Trash2 } from "lucide-react";
+import { Bookmark, Check, Edit2, Trash2 } from "lucide-react";
 
 interface UserTemplateCardProps {
   template: UserTemplate;
   selected: boolean;
+  /** The project uses this template. */
+  active: boolean;
   onSelect: () => void;
   onRename: (name: string) => Promise<void>;
   onDelete: () => Promise<void>;
@@ -15,6 +17,7 @@ interface UserTemplateCardProps {
 export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
   template,
   selected,
+  active,
   onSelect,
   onRename,
   onDelete,
@@ -46,8 +49,14 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
           : "border-[var(--color-line)] bg-[var(--color-panel)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-raised)]"
       }`}
     >
-      <div className="aspect-video w-full bg-[var(--color-raised)] border-b border-[var(--color-line)] flex items-center justify-center">
+      <div className="aspect-video w-full bg-[var(--color-raised)] border-b border-[var(--color-line)] flex items-center justify-center relative">
         <Icon icon={Bookmark} size={28} className="text-[var(--color-text-3)] opacity-60" />
+        {active && (
+          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-white flex items-center gap-1 shadow-sm">
+            <Check size={10} />
+            Active
+          </span>
+        )}
       </div>
 
       <div className="p-3.5 flex-1 flex flex-col justify-between">
@@ -57,6 +66,7 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
               type="text"
               autoFocus
               aria-label="Template name"
+              data-rename-input
               value={name}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => setName(e.target.value)}
@@ -88,6 +98,7 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
               title="Rename"
               onClick={(e) => {
                 e.stopPropagation();
+                setName(template.name);
                 setEditing(true);
               }}
               className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"

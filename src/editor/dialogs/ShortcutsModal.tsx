@@ -14,7 +14,7 @@ const SHORTCUTS = [
   { keys: ["⌘ / Ctrl", "Z"], desc: "Undo last edit" },
   { keys: ["⇧", "⌘ / Ctrl", "Z"], desc: "Redo last undone edit" },
   { keys: ["⌘ / Ctrl", "E"], desc: "Open export video dialog" },
-  { keys: ["["], desc: "Toggle templates & media library" },
+  { keys: ["["], desc: "Toggle library" },
   { keys: ["]"], desc: "Toggle contextual inspector" },
   { keys: ["?"], desc: "Show keyboard shortcuts" },
 ];
