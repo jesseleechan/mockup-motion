@@ -4,6 +4,7 @@ import { resolveColumnsLayout } from "./columns";
 import { resolvePairLayout } from "./pair";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
+import { resolveOrbitLayout } from "./orbit";
 import { resolveSliderLayout } from "./slider";
 import { resolveStackLayout } from "./stack";
 import { resolveTitleLayout } from "./title";
@@ -21,14 +22,19 @@ export {
   fixedShotCamera,
   fixedShotDuration,
   MAX_SHOT_DURATION,
+  isSteppedLayout,
   minShotDuration,
+  ORBIT_MAX_SCREENSHOTS,
+  orbitAssetIds,
   SLIDER_MAX_SCREENSHOTS,
   SLIDER_MAX_STEP,
   SLIDER_MIN_STEP,
   sliderAssetIds,
   sliderDuration,
   sliderStepMax,
+  steppedAssetIds,
 } from "./duration";
+export type { SteppedLayout } from "./duration";
 export { columnsGeometry, resolveColumnsLayout } from "./columns";
 export { lanesAssetIds, lanesDuration, resolveLanes } from "./lanes";
 export type { LaneAxis, LaneGeometry, LaneOptions } from "./lanes";
@@ -37,6 +43,8 @@ export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";
 export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
 export { deckDepth, resolveDeckLayout } from "./deck";
+export { orbitGeometry, resolveOrbitLayout } from "./orbit";
+export type { OrbitGeometry } from "./orbit";
 
 export function resolveLayout(
   layout: Layout,
@@ -65,6 +73,8 @@ export function resolveLayout(
       return layout.arrangement === "deck"
         ? resolveDeckLayout(layout, aspect, assets, shotT)
         : resolveSliderLayout(layout, aspect, assets, shotT);
+    case "orbit":
+      return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "title":
       return resolveTitleLayout();
     default: {

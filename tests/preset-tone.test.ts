@@ -16,7 +16,14 @@ import { presetToneOf, presetToneStyle, setPresetTone } from "../src/templates/l
 
 const ASH = { kind: "solid", color: "#DFE1E3" };
 const ONYX = { kind: "solid", color: "#141417" };
-const TONE_TEMPLATES = ["desktop-slider", "mobile-slider", "frames", "mobile-frames"];
+const TONE_TEMPLATES = [
+  "desktop-slider",
+  "mobile-slider",
+  "frames",
+  "mobile-frames",
+  "desktop-orbit",
+  "mobile-orbit",
+];
 
 function presetDoc(id: string): ProjectDoc {
   const template = getTemplateById(id);
@@ -45,7 +52,7 @@ describe("Preset tone: the Light / Dark background of the slider and Frames pres
     expect(presetToneOf(createDoc().style)).toBeUndefined();
   });
 
-  it("only the four presets show the switch, and they still default to Ash", () => {
+  it("only the flat presets show the switch, and they still default to Ash", () => {
     const withSwitch = BUILTIN_TEMPLATES.filter((t) => t.toneSwitch).map((t) => t.id);
     expect(withSwitch.sort()).toEqual([...TONE_TEMPLATES].sort());
     for (const id of TONE_TEMPLATES) {
