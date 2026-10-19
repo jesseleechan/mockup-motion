@@ -94,36 +94,30 @@ export interface Style {
   accent: string; // cursor, highlights
 }
 
-export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
+export type DeviceKind = "browser" | "phone" | "card";
 
 export type Layout =
   | { kind: "single"; device: DeviceKind; assetId: string }
-  | { kind: "pair"; desktopId: string; mobileId: string; arrangement: "overlap" | "side" }
-  | { kind: "trio"; desktopId: string; tabletId?: string; mobileId: string }
   | {
       kind: "rows";
       assetIds: string[];
       rows: 1 | 2 | 3;
       device: "browser" | "card";
       tilt: number;
-      speed: number;
       cardHeight?: number;
       gap?: number;
-      travel?: "steps" | "period";
+      travel: "period";
     }
   | {
       kind: "columns";
       assetIds: string[];
       columns: 2 | 3 | 4 | 5;
       tilt: number;
-      speed: number;
       device?: "phone" | "card";
       cardWidth?: number;
       gap?: number;
-      travel?: "steps" | "period";
+      travel: "period";
     }
-  | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
-  | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
   | {
       kind: "slider";
       assetIds: string[];
@@ -135,16 +129,15 @@ export type Layout =
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
   | { kind: "responsive"; desktopId: string; mobileId: string }
   | { kind: "title" };
-// tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
-// rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
-// cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
-// today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
-// shot duration and `speed` is ignored (§5).
-// columns.device (default "phone") and columns.cardWidth, gap and travel mirror rows, turned 90°:
-// unset fields are today's tilted phone marquee. "card" draws portrait cards at the phone screen
-// aspect 0.4615, whatever the image's own aspect. cardWidth: stage units (card height =
-// cardWidth / 0.4615). gap: stage units between cards and columns. travel "period" is the Frames
-// loop on columns (Mobile Frames, §5).
+// rows and columns are Frames (Desktop Frames, Mobile Frames, §5): lanes that each move exactly one
+// asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
+// whole group (the presets use 0). travel is always "period" (see "Removed layouts" below).
+// rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
+// cards and rows (default: 0.14 × width across, 0.06 down).
+// columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"
+// draws portrait cards at the phone screen aspect 0.4615, whatever the image's own aspect.
+// cardWidth: stage units (card height = cardWidth / 0.4615). gap: stage units between cards and
+// columns.
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
@@ -300,6 +293,8 @@ export interface ProjectDoc {
 }
 ```
 
+**Removed layouts (19 October 2026, `docs/cuts-plan/README.md`).** `pair`, `trio`, the tilted `stack` fan, `wall`, the tilted `rows` and `columns` marquees (`travel: "steps"` or unset) and the `laptop` and `tablet` devices are gone. `sanitizeDoc` loads a saved one as the nearest preset look (`src/doc/legacy-layouts.ts`), so no shot is dropped: `pair` and `trio` become a single browser with the desktop screenshot; `stack` the Desktop Stack deck (`slider`, `axis: "y"`, `shape: "desktop"`, `arrangement: "deck"`); `wall` and tilted `rows` Desktop Frames; tilted `columns` Mobile Frames; a laptop or tablet a browser. A shot mapped to Frames or the deck also takes the preset's still camera, no entrance and a cut wrap, and a Frames shot lasts at least 15 s. The V1 migration and saved user templates map the same way. The `tablet` asset role stays: it is a screenshot's detected size.
+
 Gradient angles use CSS direction in normalized frame coordinates: 0° runs bottom to top, 90° left to right, 180° top to bottom. New gradients carry `angleConvention: "css"`; unmarked persisted v2 gradients retain their legacy direction through a one-time angle migration at load.
 
 ## 3. Stage, units and camera
@@ -330,12 +325,12 @@ export function resolveLayout(
   layout: Layout,
   aspect: Aspect,
   assets: AssetRef[],
-  shotT: number, // local shot time, for marquee offsets and entrances
+  shotT: number, // local shot time, for lane offsets and entrances
   shotDuration: number,
 ): LayoutNode[];
 ```
 
-Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` or `orbit` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule. A `responsive` layout emits a desktop card at `1.6` and a mobile card at `0.4615`, whatever the images' aspects, so tall pages scroll.
+Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), desktop browser `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` or `orbit` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule. A `responsive` layout emits a desktop card at `1.6` and a mobile card at `0.4615`, whatever the images' aspects, so tall pages scroll.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 
@@ -343,8 +338,7 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 - `totalDuration = s_last + duration_last`. When `doc.loop` is true and the doc has more than one shot **or** `shots[0].transitionIn.kind !== "cut"`: `totalDuration −= shots[0].transitionIn.duration`, and in `[total − d0, total)` the last shot blends into shot 0 with shot-0 local time `t − total`, clamped to 0 (shot 0 holds its first pose while fading in). So frame(total) ≡ frame(0) for every loop.
 - A single looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade).
 - In a looping doc, shot 0 has no entrance (`evaluate` treats it as `"none"`). Its first frame is also the frame the loop wraps into, so an entrance there would dissolve the last shot into an empty canvas, or pop out at a cut wrap, on every loop. Later shots keep their entrances, and a doc that does not loop plays shot 0's entrance from t = 0. `loopSkipsEntrance(doc, index)` in `motion/evaluate.ts` is the rule; the editor uses it to say so under shot 0's Entrance select.
-- Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade, except Frames (`rows` or `columns` with `travel: "period"`, below). At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
-- **Frames** (`rows` or `columns` with `travel: "period"`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. `Layout.speed` is ignored: the speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
+- **Frames** (`rows` or `columns`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. Given a wrap crossfade instead, a single looping shot's lanes travel one period per `totalDuration`, and during the wrap the incoming lanes run on their unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so both layers show the same cards in the same places. The speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
 - **Sliders** (`slider`) loop natively. Step `k` moves every card one slot over `[k × step, k × step + 1.85]` on the `slide` curve, then holds; after N steps (N = `assetIds.length`) the arrangement is back where it started. The shot lasts `sliderDuration(layout) = max(1, N) × step`, so a single looping slider shot with a `cut` wrap has frame(total) ≡ frame(0) with no crossfade. A shot fits in 30 s: N counts at most the first 18 screenshots (`SLIDER_MAX_SCREENSHOTS`; later ones are not shown) and the step is at most `sliderStepMax(N)` = min(4.0, 30 / N) in 0.1 s steps. `src/motion/layouts/duration.ts` holds these rules beside `minShotDuration`; `sanitizeDoc` and the editor store apply them after every edit, so a slider's `Shot.duration` always equals `sliderDuration`. A slider's camera is still: `fixedShotCamera` sets `preset: "static"`, `intensity: 0` and `float: 0` in the same places, and the Shot inspector shows no Camera section for a slider. When fewer screenshots than visible slots are lit, the lit window is centred on the active card: N slots, or N − 1 when N is even (N > 2).
 - **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light like an entrance; only the carousel's faded neighbours mix in sRGB.
 - **Orbits** (`orbit`, the Desktop Orbit and Mobile Orbit presets, `docs/orbit-plan/README.md`) loop natively on the slider's step timing. Card i sits at ring angle θ = 2π(i − φ)/N, where the phase φ = (k mod N) + p comes from `sliderStep`, so after N steps the ring is back where it started and frame(N × step) is exactly frame(0). An orbit is a stepped layout (`isSteppedLayout` in `duration.ts`) and shares the slider's rules: `sliderDuration` (N × step, N counting at most the first 6 screenshots, `ORBIT_MAX_SCREENSHOTS`), the step clamp, `fixedShotCamera` (still) and no Camera section. One node per shown screenshot (`orbit:<i>`), so no screenshot appears twice. Its nodes' `opacity` is a strength that the engine mixes with the shot's background, not with the cards behind (`fadeBlendFor(layout) === "background"` in `src/engine/devices/DeviceFade.ts`): the cards overlap, so each card is drawn on its own, back to front, and covers what is behind it.

@@ -43,8 +43,7 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
 };
 
 /**
- * The screenshots a single, pair, trio, slider or orbit layout shows. Other layouts fill from the
- * project.
+ * The screenshots a single, slider or orbit layout shows. Frames fills from the project.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
@@ -59,7 +58,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
       </Section>
     );
   }
-  if (layout.kind !== "single" && layout.kind !== "pair" && layout.kind !== "trio") return null;
+  if (layout.kind !== "single") return null;
 
   return (
     <Section title="Screenshots">
@@ -81,73 +80,9 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           />
         )}
 
-        {layout.kind === "pair" && (
-          <>
-            <AssetField
-              label="Desktop"
-              value={layout.desktopId || ""}
-              images={images}
-              droppable
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "pair") target.layout.desktopId = id;
-                })
-              }
-            />
-            <AssetField
-              label="Mobile"
-              value={layout.mobileId || ""}
-              images={images}
-              droppable
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "pair") target.layout.mobileId = id;
-                })
-              }
-            />
-          </>
-        )}
-
-        {layout.kind === "trio" && (
-          <>
-            <AssetField
-              label="Desktop"
-              value={layout.desktopId || ""}
-              images={images}
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "trio") target.layout.desktopId = id;
-                })
-              }
-            />
-            <AssetField
-              label="Tablet"
-              value={layout.tabletId || ""}
-              images={images}
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "trio") target.layout.tabletId = id || undefined;
-                })
-              }
-            />
-            <AssetField
-              label="Mobile"
-              value={layout.mobileId || ""}
-              images={images}
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "trio") target.layout.mobileId = id;
-                })
-              }
-            />
-          </>
-        )}
-
-        {layout.kind !== "trio" && (
-          <p className="text-[11px] text-[var(--color-text-3)]">
-            Drag a file from Media onto a field to use it.
-          </p>
-        )}
+        <p className="text-[11px] text-[var(--color-text-3)]">
+          Drag a file from Media onto a field to use it.
+        </p>
       </div>
     </Section>
   );

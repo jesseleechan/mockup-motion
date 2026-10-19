@@ -1,4 +1,6 @@
+import { framesLayout, mobileFramesLayout } from "../templates/frames-template";
 import { defaultExport, defaultStyle } from "./defaults";
+import { applyLegacyLook } from "./legacy-layouts";
 import { sanitizeDoc } from "./validate";
 import type {
   Aspect,
@@ -127,11 +129,11 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
 
   const comp = v1.composition;
   const primaryId = comp?.assetIds?.primary || assets[0]?.id || "";
-  const mobileId =
-    comp?.assetIds?.mobile || assets.find((a) => a.role === "mobile")?.id || assets[1]?.id || "";
 
   // Layout migration
+  const aspect: Aspect = (v1.aspectRatio as Aspect) || "16:9";
   let layout: Layout;
+  let presetLook = false;
   const frameType = comp?.frame?.type ?? "browser";
   let singleDevice: DeviceKind = "browser";
   if (frameType === "phone") {
@@ -150,44 +152,19 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
         assetId: primaryId,
       };
       break;
+    // V1 pairs, rows, columns and grids map to the preset looks a saved v2 project of the same
+    // kind loads as (src/doc/legacy-layouts.ts).
     case "pair":
-      layout = {
-        kind: "pair",
-        desktopId: primaryId,
-        mobileId,
-        arrangement: "overlap",
-      };
+      layout = { kind: "single", device: "browser", assetId: primaryId };
       break;
-    case "rows": {
-      const rows = comp.count === 1 || comp.count === 3 ? comp.count : 2;
-      layout = {
-        kind: "rows",
-        assetIds: allAssetIds,
-        rows,
-        device: singleDevice === "card" ? "card" : "browser",
-        tilt: comp.rotation || 12,
-        speed: 0.35,
-      };
-      break;
-    }
-    case "columns": {
-      const columns = [2, 3, 4, 5].includes(comp.count) ? (comp.count as 2 | 3 | 4 | 5) : 3;
-      layout = {
-        kind: "columns",
-        assetIds: allAssetIds,
-        columns,
-        tilt: comp.rotation || 12,
-        speed: 0.35,
-      };
-      break;
-    }
+    case "rows":
     case "grid":
-      layout = {
-        kind: "wall",
-        assetIds: allAssetIds,
-        columns: 4,
-        speed: 0.2,
-      };
+      layout = framesLayout(aspect, allAssetIds);
+      presetLook = true;
+      break;
+    case "columns":
+      layout = mobileFramesLayout(aspect, allAssetIds);
+      presetLook = true;
       break;
     default:
       layout = {
@@ -316,6 +293,8 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     },
   };
 
+  if (presetLook) applyLegacyLook(shot, "frames", aspect);
+
   if (comp?.contentMotion?.enabled) {
     const end = Math.max(0, Math.min(1, comp.contentMotion.end ?? 1));
     shot.scroll = {
@@ -343,7 +322,7 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     name: v1.name || "Migrated project",
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    aspect: (v1.aspectRatio as Aspect) || "16:9",
+    aspect,
     loop: comp?.motion?.loop ?? true,
     assets,
     style,

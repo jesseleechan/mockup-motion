@@ -3,13 +3,7 @@ import { avgRegion, inkBounds, renderAndRead, screenLeaks } from "../helpers/pix
 
 test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
   test("renders all device frames in /lab without errors", async ({ page }) => {
-    const fixtures = [
-      "devices-browser",
-      "devices-phone",
-      "devices-tablet",
-      "devices-laptop",
-      "card-hero",
-    ];
+    const fixtures = ["devices-browser", "devices-phone", "card-hero"];
 
     for (const fix of fixtures) {
       await page.goto(`/lab?fixture=${fix}&t=0&aspect=16:9`);
@@ -116,14 +110,14 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
   test("renders solid bodies at yaw 34° / pitch 28° (isoDrift) with no errors", async ({
     page,
   }) => {
-    await page.goto("/lab?fixture=devices-laptop&t=0&aspect=16:9");
+    await page.goto("/lab?fixture=devices-phone&t=0&aspect=16:9");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
 
     const success = await page.evaluate(async () => {
       const engine = window.__labEngine;
       if (!engine) return false;
 
-      const doc = JSON.parse(JSON.stringify(window.__fixtures?.["devices-laptop"]));
+      const doc = JSON.parse(JSON.stringify(window.__fixtures?.["devices-phone"]));
       doc.shots[0].camera = {
         preset: "isoDrift",
         intensity: 1,
@@ -310,7 +304,14 @@ async function setCardDoc(page: Page, c: CardCase): Promise<void> {
     doc.shots[0].layout =
       c.tilt === null
         ? { kind: "single", device: "card", assetId }
-        : { kind: "rows", rows: 2, device: "card", tilt: c.tilt, speed: 0.35, assetIds: [assetId] };
+        : {
+            kind: "rows",
+            rows: 2,
+            device: "card",
+            tilt: c.tilt,
+            travel: "period",
+            assetIds: [assetId],
+          };
     doc.shots[0].camera = { preset: c.preset, intensity: 1, easing: "smooth", float: 0 };
     if (c.shotFrom) {
       const shot = structuredClone(window.__fixtures?.[c.shotFrom]?.shots[0]);

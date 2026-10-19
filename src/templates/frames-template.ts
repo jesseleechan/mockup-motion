@@ -8,7 +8,7 @@ type RowsLayout = Extract<Layout, { kind: "rows" }>;
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
 
 // The reference loop is 15 s (docs/presets-plan/reference.md); shorter loops feel hurried.
-const FRAMES_MIN_LOOP = 15;
+export const FRAMES_MIN_LOOP = 15;
 // Quality bar §4: Frames needs 4 screenshots; the slots take up to 6.
 const REQUIRED_SLOTS = 4;
 const SLOT_COUNT = 6;
@@ -40,7 +40,6 @@ export function framesLayout(aspect: Aspect, assetIds: string[]): RowsLayout {
     ...(wide ? WIDE_ROWS : TALL_ROWS),
     device: "card",
     tilt: 0,
-    speed: 0.35, // unused: with travel "period" the speed follows the shot duration
     gap: FRAMES_GAP,
     travel: "period",
   };
@@ -54,23 +53,22 @@ export function mobileFramesLayout(aspect: Aspect, assetIds: string[]): ColumnsL
     ...MOBILE_COLUMNS[aspect],
     device: "card",
     tilt: 0,
-    speed: 0.35, // unused: with travel "period" the speed follows the shot duration
     gap: FRAMES_GAP,
     travel: "period",
   };
 }
 
 /**
- * Decision D13: a Frames shot (rows or columns with travel "period") takes the lane count and
- * card size of its preset at the new aspect, keeping its screenshots and other fields. Any
- * other layout comes back unchanged.
+ * Decision D13: a Frames shot (rows or columns) takes the lane count and card size of its preset
+ * at the new aspect, keeping its screenshots and other fields. Any other layout comes back
+ * unchanged.
  */
 export function refitFramesLayout(layout: Layout, aspect: Aspect): Layout {
-  if (layout.kind === "rows" && layout.travel === "period") {
+  if (layout.kind === "rows") {
     const { rows, cardHeight } = framesLayout(aspect, layout.assetIds);
     return { ...layout, rows, cardHeight };
   }
-  if (layout.kind === "columns" && layout.travel === "period") {
+  if (layout.kind === "columns") {
     const { columns, cardWidth } = mobileFramesLayout(aspect, layout.assetIds);
     return { ...layout, columns, cardWidth };
   }

@@ -64,7 +64,8 @@ const upFragmentShader = /* glsl */ `
 /** Width / height of an asset's first viewport: the region the ambient background shows. */
 export function ambientSourceAspect(asset: AssetRef | undefined): number {
   if (asset?.role === "mobile") return screenAspectFor("phone");
-  if (asset?.role === "tablet") return screenAspectFor("tablet");
+  // A tablet screenshot's first viewport is a portrait 3:4 screen.
+  if (asset?.role === "tablet") return 0.75;
   return screenAspectFor("browser", asset);
 }
 

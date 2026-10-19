@@ -271,22 +271,23 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       };
       doc.assets = [desktopAsset, mobileAsset];
       doc.shots[0].layout = {
-        kind: "pair",
-        desktopId: "asset-desktop-1",
-        mobileId: "asset-mobile-1",
-        arrangement: "overlap",
+        kind: "rows",
+        assetIds: ["asset-desktop-1", "asset-mobile-1"],
+        rows: 2,
+        device: "card",
+        tilt: 0,
+        travel: "period",
       };
 
       // Convert doc to template
-      const template = convertDocToUserTemplate(doc, "Responsive Showcase", "Pair layout demo");
+      const template = convertDocToUserTemplate(doc, "Responsive Showcase", "Frames demo");
       expect(template.name).toBe("Responsive Showcase");
 
       // Check slot keys
       const templatedLayout = template.shots[0].layout;
-      expect(templatedLayout.kind).toBe("pair");
-      if (templatedLayout.kind === "pair") {
-        expect(templatedLayout.desktopId).toBe("slot:desktop:0");
-        expect(templatedLayout.mobileId).toBe("slot:mobile:0");
+      expect(templatedLayout.kind).toBe("rows");
+      if (templatedLayout.kind === "rows") {
+        expect(templatedLayout.assetIds).toEqual(["slot:desktop:0", "slot:mobile:0"]);
       }
 
       // Save to IndexedDB
@@ -316,10 +317,9 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       const filled = fillUserTemplateSlots(retrieved!, [newDesktop, newMobile]);
       expect(filled.shots.length).toBe(1);
       const filledLayout = filled.shots[0].layout;
-      expect(filledLayout.kind).toBe("pair");
-      if (filledLayout.kind === "pair") {
-        expect(filledLayout.desktopId).toBe("client-desktop-99");
-        expect(filledLayout.mobileId).toBe("client-mobile-99");
+      expect(filledLayout.kind).toBe("rows");
+      if (filledLayout.kind === "rows") {
+        expect(filledLayout.assetIds).toEqual(["client-desktop-99", "client-mobile-99"]);
       }
 
       // Cleanup

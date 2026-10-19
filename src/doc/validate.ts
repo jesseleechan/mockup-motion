@@ -1,6 +1,7 @@
 import { clampAudioTrack } from "../audio/mix";
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
+import { applyLegacyLook, legacyLook, mapLegacyLayout } from "./legacy-layouts";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -59,7 +60,8 @@ const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
 const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
 const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
-const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
+// Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
+const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
 const VALID_FPS = [24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
@@ -225,12 +227,19 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   };
 
   // Shots
+  const aspect: Aspect = includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9";
   const shots: Shot[] = [];
   if (Array.isArray(d.shots)) {
     for (let i = 0; i < d.shots.length; i++) {
       const s = d.shots[i];
       if (s && typeof s === "object") {
-        const sanitizedShot = sanitizeShot(s as Record<string, unknown>, assetIdSet, warnings, i);
+        const sanitizedShot = sanitizeShot(
+          s as Record<string, unknown>,
+          assetIdSet,
+          aspect,
+          warnings,
+          i,
+        );
         if (sanitizedShot) {
           shots.push(sanitizedShot);
         }
@@ -249,7 +258,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     name: typeof d.name === "string" && d.name.trim() ? d.name.trim() : "Untitled presentation",
     createdAt: typeof d.createdAt === "number" && d.createdAt > 0 ? d.createdAt : Date.now(),
     updatedAt: typeof d.updatedAt === "number" && d.updatedAt > 0 ? d.updatedAt : Date.now(),
-    aspect: includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9",
+    aspect,
     loop: typeof d.loop === "boolean" ? d.loop : true,
     assets,
     style,
@@ -376,10 +385,11 @@ function sanitizeFonts(fonts: unknown, fallback: Style["fonts"]): Style["fonts"]
 function sanitizeShot(
   s: Record<string, unknown>,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Shot | null {
-  const layout = sanitizeLayout(s.layout, assetIds, warnings, shotIndex);
+  const layout = sanitizeLayout(s.layout, assetIds, aspect, warnings, shotIndex);
   if (!layout) {
     warnings.push(`Shot ${shotIndex} had an invalid layout and was dropped.`);
     return null;
@@ -415,6 +425,13 @@ function sanitizeShot(
     transitionIn,
   };
 
+  // A removed layout takes its preset look's camera, entrance, wrap and length.
+  const look =
+    s.layout && typeof s.layout === "object"
+      ? legacyLook(s.layout as Record<string, unknown>)
+      : null;
+  if (look) applyLegacyLook(shot, look, aspect);
+
   if (s.scroll && typeof s.scroll === "object") {
     const sc = s.scroll as Record<string, unknown>;
     shot.scroll = {
@@ -445,6 +462,7 @@ function sanitizeShot(
 function sanitizeLayout(
   layout: unknown,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Layout | null {
@@ -462,6 +480,14 @@ function sanitizeLayout(
     return id;
   };
 
+  const look = legacyLook(l);
+  if (look) {
+    const ids = Array.isArray(l.assetIds)
+      ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+      : [];
+    return mapLegacyLayout(l, aspect, ids, checkAsset(l.desktopId, "desktopId"));
+  }
+
   switch (l.kind) {
     case "single":
       return {
@@ -469,24 +495,6 @@ function sanitizeLayout(
         device: includesValue(VALID_DEVICE_KINDS, l.device) ? l.device : "browser",
         assetId: checkAsset(l.assetId, "assetId"),
       };
-    case "pair":
-      return {
-        kind: "pair",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-        arrangement: l.arrangement === "side" ? "side" : "overlap",
-      };
-    case "trio": {
-      const res: Layout = {
-        kind: "trio",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-      };
-      if (typeof l.tabletId === "string") {
-        res.tabletId = checkAsset(l.tabletId, "tabletId");
-      }
-      return res;
-    }
     case "rows": {
       const res: Layout = {
         kind: "rows",
@@ -495,17 +503,15 @@ function sanitizeLayout(
           : [],
         rows: l.rows === 1 || l.rows === 2 || l.rows === 3 ? l.rows : 2,
         device: l.device === "card" ? "card" : "browser",
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent, so older rows render as before.
       if (typeof l.cardHeight === "number" && Number.isFinite(l.cardHeight)) {
         res.cardHeight = clamp(l.cardHeight, 0.1, 0.8);
       }
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
     case "columns": {
@@ -517,11 +523,10 @@ function sanitizeLayout(
           ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
           : [],
         columns,
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent (or "phone", the default), so older
-      // columns render as before.
+      // "phone", the default, stays unset.
       if (l.device === "card") res.device = "card";
       if (typeof l.cardWidth === "number" && Number.isFinite(l.cardWidth)) {
         res.cardWidth = clamp(l.cardWidth, 0.1, 0.8);
@@ -529,30 +534,8 @@ function sanitizeLayout(
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
-    case "wall": {
-      const cols = Number(l.columns);
-      const columns = cols === 3 || cols === 4 || cols === 5 ? cols : 4;
-      return {
-        kind: "wall",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        columns,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.2, 0, 1),
-      };
-    }
-    case "stack":
-      return {
-        kind: "stack",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        device: l.device === "card" ? "card" : "browser",
-        spread: clamp(typeof l.spread === "number" ? l.spread : 0.3, 0, 1),
-      };
     case "slider": {
       const sliderIds = Array.isArray(l.assetIds)
         ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)

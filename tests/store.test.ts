@@ -189,10 +189,12 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
         {
           ...defaultShot(),
           layout: {
-            kind: "pair",
-            desktopId: assetId,
-            mobileId: keptAssetId,
-            arrangement: "overlap",
+            kind: "rows",
+            assetIds: [assetId, keptAssetId],
+            rows: 2,
+            device: "card",
+            tilt: 0,
+            travel: "period",
           },
           texts: [],
         },
@@ -210,9 +212,8 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
     expect(l0.assetId).toBe("");
     // Text logoAssetId cleared
     expect(doc.shots[0].texts[0].logoAssetId).toBeUndefined();
-    // Desktop in pair layout cleared to "", mobile kept
-    const l1 = doc.shots[1].layout as { desktopId?: string; mobileId?: string };
-    expect(l1.desktopId).toBe("");
-    expect(l1.mobileId).toBe(keptAssetId);
+    // The removed asset leaves the rows layout's list, the kept one stays
+    const l1 = doc.shots[1].layout as { assetIds?: string[] };
+    expect(l1.assetIds).toEqual([keptAssetId]);
   });
 });

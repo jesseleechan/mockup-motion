@@ -6,11 +6,9 @@ import { avgRegion, expectRgbNear, inkBounds, type PixelBuffer } from "../helper
 // Layout entrances (quality-bar §2.5) take 0.8 s on an expoOut curve; stagger delays each
 // further device by 0.1 s (src/motion/layouts).
 const ENTRANCE_DURATION = 0.8;
-const STAGGER_DELAY = 0.1;
 const WIDTH = 1280;
 const HEIGHT = 720;
 const RED = [255, 0, 0] as const;
-const BLUE = [0, 0, 255] as const;
 
 type Rgb = readonly [number, number, number];
 
@@ -157,76 +155,6 @@ test("a rise entrance starts invisible, fades the whole device in as one and ris
     HEIGHT * 0.03 * 0.5 * 0.6,
   );
   expect(drop).toBeLessThan(HEIGHT * 0.03 * 0.5 * 1.4);
-});
-
-test("a staggered stack composites each fading device over the ones behind it", async ({
-  page,
-}) => {
-  await ready(page);
-  // The front device (index 2) is half way in; the two behind it are further along.
-  const t = timeAtOpacity(0.5, 2 * STAGGER_DELAY);
-  const [start, middle, settled] = await renderEntrance(page, {
-    layout: {
-      kind: "stack",
-      device: "browser",
-      assetIds: ["stack-back", "stack-middle", "stack-front"],
-      spread: 0.5,
-    },
-    entrance: "stagger",
-    colors: { "stack-back": "#0000FF", "stack-middle": "#0000FF", "stack-front": "#FF0000" },
-    times: [0, t, 1.5],
-  });
-  const background = avgRegion(settled, 8, 8, 16, 16);
-  expect(inkBounds(start, background, 3), "the stack must be invisible at t = 0").toBeNull();
-
-  const front = colorRegion(settled, RED, 4);
-  expect(front.count, "the settled front screen must show the source colour").toBeGreaterThan(
-    50_000,
-  );
-
-  // Where the front screen covers both blue screens, the expected colour is each layer over
-  // the one behind it, back to front.
-  const back = over(BLUE, entranceOpacity(t), background);
-  const behindFront = over(BLUE, entranceOpacity(t - STAGGER_DELAY), back);
-  const expected = over(RED, entranceOpacity(t - 2 * STAGGER_DELAY), behindFront);
-  const overlap = colorRegion(middle, expected, 4);
-  expect(overlap.count, `front over both screens near ${expected.join(", ")}`).toBeGreaterThan(
-    front.count * 0.3,
-  );
-});
-
-test("a fading phone stays in front of the browser it overlaps under an orbiting camera", async ({
-  page,
-}) => {
-  await ready(page);
-  // Under an orbitRight camera the browser's centre is nearer the camera than the phone's,
-  // although the phone overlaps the browser in front (quality-bar §4), so draw order must
-  // come from the layout, not from the centres' depth.
-  const t = timeAtOpacity(0.5, STAGGER_DELAY);
-  const [middle, settled] = await renderEntrance(page, {
-    layout: {
-      kind: "pair",
-      desktopId: "pair-desktop",
-      mobileId: "pair-phone",
-      arrangement: "overlap",
-    },
-    entrance: "stagger",
-    camera: { preset: "orbitRight", intensity: 0.6, easing: "smooth", float: 0 },
-    colors: { "pair-desktop": "#0000FF", "pair-phone": "#FF0000" },
-    times: [t, 1.5],
-  });
-  const background = avgRegion(settled, 8, 8, 16, 16);
-  const phone = colorRegion(settled, RED, 4);
-  expect(phone.count, "the settled phone screen must show the source colour").toBeGreaterThan(
-    10_000,
-  );
-
-  const desktop = over(BLUE, entranceOpacity(t), background);
-  const expected = over(RED, entranceOpacity(t - STAGGER_DELAY), desktop);
-  const overlap = colorRegion(middle, expected, 4);
-  expect(overlap.count, `phone over the browser near ${expected.join(", ")}`).toBeGreaterThan(
-    phone.count * 0.3,
-  );
 });
 
 test("entrance frames create no GPU objects: the fade layer is allocated with the document", async ({

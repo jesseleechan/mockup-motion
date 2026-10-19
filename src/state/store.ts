@@ -69,7 +69,7 @@ export interface EditorStoreState {
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
-  /** Adds a screenshot to a layout that shows a list of them (rows, columns, wall, stack, slider). */
+  /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
@@ -444,20 +444,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
-          } else if (layout.kind === "pair") {
-            if (slotKeyOrNodeId.includes("mobile")) {
-              layout.mobileId = assetId;
-            } else {
-              layout.desktopId = assetId;
-            }
-          } else if (layout.kind === "trio") {
-            if (slotKeyOrNodeId.includes("mobile")) {
-              layout.mobileId = assetId;
-            } else if (slotKeyOrNodeId.includes("tablet")) {
-              layout.tabletId = assetId;
-            } else {
-              layout.desktopId = assetId;
-            }
           } else if (isSteppedLayout(layout)) {
             // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
             // are a ring of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
@@ -467,12 +453,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               const at = match && shown > 0 ? (parseInt(match[1], 10) % shown) + 1 : shown;
               layout.assetIds.splice(at, 0, assetId);
             }
-          } else if (
-            layout.kind === "rows" ||
-            layout.kind === "columns" ||
-            layout.kind === "wall" ||
-            layout.kind === "stack"
-          ) {
+          } else if (layout.kind === "rows" || layout.kind === "columns") {
             // Find target index in assetIds
             let targetIdx = -1;
             const match = slotKeyOrNodeId.match(/(\d+)/);

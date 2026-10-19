@@ -41,7 +41,6 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
     rows: 2,
     device: "card",
     tilt: 0,
-    speed: 0.35,
     cardHeight: 0.42,
     gap: 0.065,
     travel: "period",
@@ -51,7 +50,6 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
     columns: 5,
     device: "card",
     tilt: 0,
-    speed: 0.35,
     cardWidth: 0.269,
     gap: 0.065,
     travel: "period",
@@ -98,7 +96,7 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
 
 /**
  * A four-shot reel with every inspector layout: a title card with a label and a title, a single
- * browser, a browser-and-phone pair and a closing title card. No built-in template has more
+ * browser, a phone and a closing title card. No built-in template has more
  * than one shot, so it is built on Scroll Story's demo screenshot through the store.
  */
 async function openReel(page: Page) {
@@ -129,17 +127,12 @@ async function openReel(page: Page) {
       layout: { kind: "title" as const },
       texts: [text("txt-intro", "label", "INTRODUCING"), text("txt-title", "title", "Studio")],
     };
-    const pair = {
+    const phone = {
       ...structuredClone(single),
-      id: "shot-pair",
-      layout: {
-        kind: "pair" as const,
-        desktopId: assetId,
-        mobileId: assetId,
-        arrangement: "overlap" as const,
-      },
+      id: "shot-phone",
+      layout: { kind: "single" as const, device: "phone" as const, assetId },
     };
-    pair.camera.preset = "orbitRight";
+    phone.camera.preset = "orbitRight";
     const closing = {
       ...structuredClone(single),
       id: "shot-outro",
@@ -147,14 +140,14 @@ async function openReel(page: Page) {
       texts: [text("txt-end", "title", "Studio"), text("txt-sub", "subtitle", "studio.example")],
     };
     closing.camera.preset = "pullBack";
-    // Launch Reel's durations. With four equal shots the pair card's layout label clips at
+    // Launch Reel's durations. With four equal shots a shot card's layout label clips at
     // 1280 px (docs/plan/follow-ups.md).
     single.duration = 4;
-    pair.duration = 4;
+    phone.duration = 4;
     opening.duration = 2.5;
     closing.duration = 2.5;
     store.getState().apply((draft) => {
-      draft.shots = [opening, single, pair, closing];
+      draft.shots = [opening, single, phone, closing];
     });
   });
 }
@@ -279,7 +272,7 @@ test.describe("F08 overflow guard", () => {
         await inspector.getByRole("switch", { name: "Show cursor" }).click();
         await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
 
-        // Each shot in turn: single, pair and title layouts show different sections.
+        // Each shot in turn: single and title layouts show different sections.
         for (const [index, shot] of doc.shots.entries()) {
           await select(page, { kind: "shot", id: shot.id });
           await expect(inspector.getByText(`Shot ${index + 1}`, { exact: true })).toBeVisible();
@@ -333,8 +326,8 @@ test.describe("F08 overflow guard", () => {
 const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS, TEXT_ANIMATION_LABELS, TEXT_ROLE_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
-// Layout node ids, e.g. "row1:item3", "wall:c2:item1", "pair:desktop", "single:0".
-const NODE_ID = String.raw`\b(?:single|pair|trio|stack|wall|row\d+|col\d+):[a-z0-9]+`;
+// Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
+const NODE_ID = String.raw`\b(?:single|row\d+|col\d+):[a-z0-9]+`;
 const RAW_ID = new RegExp(
   String.raw`pushIn|heroTilt|isoDrift|row\d+:col\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`,
 );

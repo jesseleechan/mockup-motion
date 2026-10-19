@@ -9,9 +9,7 @@ import {
   buildCardDevice,
   cardCornerRadius,
   buildDevice,
-  buildLaptopDevice,
   buildPhoneDevice,
-  buildTabletDevice,
 } from "../src/engine/devices";
 
 function makeMockNode(device: DeviceKind, width = 0.8, height = 0.5): LayoutNode {
@@ -40,10 +38,7 @@ describe("Device frames proportions and geometry (quality-bar §3)", () => {
     // Phone: 0.4615 (9:19.5)
     expect(screenAspectFor("phone")).toBeCloseTo(0.4615, 4);
 
-    // Tablet: 0.75 (4:3)
-    expect(screenAspectFor("tablet")).toBeCloseTo(0.75, 4);
-
-    // Card / Browser / Laptop short desktop screenshot (imgAspect >= 1.25): clamp(aspect, 1.25, 2.0)
+    // Card / Browser short desktop screenshot (imgAspect >= 1.25): clamp(aspect, 1.25, 2.0)
     expect(screenAspectFor("browser", { width: 1600, height: 1000 })).toBeCloseTo(1.6, 2);
     expect(screenAspectFor("browser", { width: 2500, height: 1000 })).toBeCloseTo(2.0, 2);
     expect(screenAspectFor("browser", { width: 1300, height: 1000 })).toBeCloseTo(1.3, 2);
@@ -116,37 +111,6 @@ describe("Device frames proportions and geometry (quality-bar §3)", () => {
     dev.dispose();
   });
 
-  it("Tablet device matches quality-bar §3.4 proportions within ±0.05% of width", () => {
-    const width = 0.54;
-    const height = 0.72;
-    const node = makeMockNode("tablet", width, height);
-    const dev = buildTabletDevice(node, defaultStyle(), mockCtx);
-
-    // Bezel: 4% of width, corner radius 6.5%
-    const bezel = width * 0.04;
-    const bodyRadius = width * 0.065;
-    const screenRadius = bodyRadius - bezel;
-    expect(screenRadius).toBeCloseTo(0.025 * width, 4);
-
-    dev.dispose();
-  });
-
-  it("Laptop device has screen lid and keyboard base at pitch angle", () => {
-    const width = 0.7;
-    const height = 0.44;
-    const node = makeMockNode("laptop", width, height);
-    const dev = buildLaptopDevice(node, defaultStyle(), mockCtx);
-
-    // Bezel 1.8% of lid width
-    const bezel = width * 0.018;
-    expect(bezel).toBeCloseTo(0.018 * width, 4);
-
-    // Has lid and base meshes in group
-    expect(dev.object3d.children.length).toBeGreaterThanOrEqual(3);
-
-    dev.dispose();
-  });
-
   it("Card device has 1.6% corner radius and solid backing", () => {
     const width = 0.8;
     const height = 0.5;
@@ -158,7 +122,7 @@ describe("Device frames proportions and geometry (quality-bar §3)", () => {
   });
 
   it("buildDevice dispatches to appropriate builder for every DeviceKind", () => {
-    const kinds: DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
+    const kinds: DeviceKind[] = ["browser", "phone", "card"];
     for (const kind of kinds) {
       const node = makeMockNode(kind);
       const dev = buildDevice(node, defaultStyle(), mockCtx);

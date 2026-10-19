@@ -149,10 +149,10 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [03](wp/WP-03-engine-core.md)                  | three.js engine core, preview, worker export, `/lab`             | M1        | 00                                                   | L    | Done (fixed in [F01][f01], [F02][f02], [F03][f03], [F04][f04], [F05][f05], [F09][f09]) |
 | [04](wp/WP-04-demo-content-and-capture.md)     | Demo sites, captured screenshots, capture CLI                    | M1        | 00                                                   | M    | Done (fixed in [F04][f04], [F12][f12])                                                 |
 | [05](wp/WP-05-design-system.md)                | Design system and UI primitives                                  | M2        | 00                                                   | M    | Done (fixed in [F08][f08])                                                             |
-| [06](wp/WP-06-device-frames.md)                | Device frames                                                    | M1        | 03                                                   | M    | Done (fixed in [F01][f01], [F11][f11])                                                 |
+| [06](wp/WP-06-device-frames.md)                | Device frames                                                    | M1        | 03                                                   | M    | Done (fixed in [F01][f01], [F11][f11]); laptop and tablet cut in [#61][c1]             |
 | [07](wp/WP-07-backgrounds-and-atmosphere.md)   | Backgrounds, palettes, atmosphere                                | M1        | 03                                                   | M    | Done (fixed in [F01][f01], [F02][f02], [F11][f11])                                     |
 | [08](wp/WP-08-shadows-and-post.md)             | Shadows, anti-aliasing, final pass, motion blur                  | M1        | 03                                                   | M    | Done (fixed in [F02][f02], [F09][f09], [F11][f11])                                     |
-| [09](wp/WP-09-layouts.md)                      | Layouts and camera framing                                       | M1        | 02, 03, 06                                           | L    | Done (fixed in [F03][f03], [F11][f11])                                                 |
+| [09](wp/WP-09-layouts.md)                      | Layouts and camera framing                                       | M1        | 02, 03, 06                                           | L    | Done (fixed in [F03][f03], [F11][f11]); unused layouts cut in [#61][c1]                |
 | [10](wp/WP-10-text-and-typography.md)          | Text and typography                                              | M2        | 02, 03                                               | M    | Done (fixed in [F01][f01], [F02][f02])                                                 |
 | [11](wp/WP-11-templates-and-gallery.md)        | Templates, slot filling, previews, contact sheet                 | M1 → M2   | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L    | Done (fixed in [F04][f04], [F06][f06], [F07][f07], [F11][f11])                         |
 | [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Done (fixed in [F05][f05], [F06][f06], [F08][f08])                                     |
@@ -178,6 +178,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 [f12]: https://github.com/jesseleechan/mockup-motion/pull/14
 [f13]: https://github.com/jesseleechan/mockup-motion/pull/15
 [f14]: https://github.com/jesseleechan/mockup-motion/pull/17
+[c1]: https://github.com/jesseleechan/mockup-motion/pull/61
 
 "Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI: unit and visual tests on every pull request; e2e tests on every pull request that touches an e2e trigger path (`CLAUDE.md`, Commands), on every push to `main` and nightly. The `perf` project (`tests/perf`) needs a real GPU and isn't in CI.
 
@@ -193,10 +194,10 @@ Every WP above is marked Done (decided 7 Oct 2026). These are the acceptance cri
 - **WP-04:** `public/demo/aurelia.png` still ships unused. The fixed-element branch of `--unstick` isn't exercised.
 - **WP-07:** `BackgroundRenderer.ts` is 408 lines.
 - **WP-08:** no one has reviewed a 1080p export for banding (WP-08 "Banding" criterion, quality bar §8).
-- **WP-09:** marquee rows, columns and the wall exceed quality bar §2.5's speed limit once 3 or more screenshots are used, and speed up with every screenshot added. No test checks the limit. Pair, trio and stack are small at 9:16. Tilted phone columns (the since-removed Phone Parade) are sparse at 16:9. Quiet-hero is under §4's 84–90% width at 1:1 and 9:16 until late in its push-in.
+- **WP-09:** Quiet-hero is under §4's 84–90% width at 1:1 and 9:16 until late in its push-in. (The marquees, the wall, pair, trio and stack were cut on 19 October 2026, [#61][c1].)
 - **WP-10:** custom font upload has no UI. The font menu lacks Geist / Geist. Logos are never drawn. Linux Chromium spaces tracked captions unevenly. Text anchors don't stack.
-- **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots. Tilted browser rows (the since-removed Portfolio Rows) read busy.
-- **WP-12:** the Layout select only switches between a single device and a title card. The editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
+- **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots.
+- **WP-12:** the editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
 - **WP-13:** Media tab cards show an icon instead of the screenshot. Duplicating a project doesn't copy its thumbnail.
 - **WP-15:** section detection precision is about 25%. The mobile ground truth in `sections.test.ts` is loose.
 - **WP-16:** GIF export runs on the main thread and is far over the WP-16 size target. The dialog doesn't remember settings. `probe.canExport4K` is unused. Cached text rasters are transferred to the worker. X has no card of its own.

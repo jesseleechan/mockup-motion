@@ -22,12 +22,8 @@ import type { TemplateCategory } from "../templates";
 
 export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   single: "Single device",
-  pair: "Responsive pair",
-  trio: "Responsive trio",
-  rows: "Marquee rows",
-  columns: "Phone columns",
-  wall: "Isometric wall",
-  stack: "Cascading stack",
+  rows: "Desktop frames",
+  columns: "Mobile frames",
   slider: "Slider",
   orbit: "Orbit",
   title: "Title card",
@@ -36,8 +32,6 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
   browser: "Browser",
   phone: "Phone",
-  tablet: "Tablet",
-  laptop: "Laptop",
   card: "Card",
 };
 
@@ -192,7 +186,5 @@ export function shotSummary(shot: Shot): string {
 /** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
 function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
-  if (layout.kind === "rows" && layout.travel === "period") return "Desktop frames";
-  if (layout.kind === "columns" && layout.device === "card") return "Mobile frames";
   return LAYOUT_LABELS[layout.kind];
 }
