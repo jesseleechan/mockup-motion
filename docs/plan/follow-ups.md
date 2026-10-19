@@ -47,7 +47,6 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
 | The export transfers the cached URL pill rasters to the worker. A second export at the same resolution (a bundle's second file) may get detached bitmaps. Images were fixed in F09 by sending clones; URL rasters need the same. Not reproduced. | F09, F11 |
 | `probe.canExport4K` is computed but unused by the dialog.                                                                                                                                                                                        | F09      |
-| X has no destination card of its own; "LinkedIn & X" uses the LinkedIn preset.                                                                                                                                                                   | F09      |
 
 ## Demo content and capture
 
