@@ -102,8 +102,7 @@ export const EditorShell: React.FC = () => {
   // Move the selection to the first shot instead of leaving the inspector empty (F06).
   useEffect(() => {
     if (selection.kind === "video") return;
-    const shotId = selection.kind === "shot" ? selection.id : selection.shotId;
-    if (doc.shots.some((s) => s.id === shotId)) return;
+    if (doc.shots.some((s) => s.id === selection.id)) return;
     const first = doc.shots[0];
     setSelection(first ? { kind: "shot", id: first.id } : { kind: "video" });
   }, [doc.shots, selection, setSelection]);
@@ -175,53 +174,6 @@ export const EditorShell: React.FC = () => {
       if (cmdKey && e.key.toLowerCase() === "e") {
         e.preventDefault();
         setExportOpen(true);
-        return;
-      }
-
-      // Cmd+D: Duplicate Shot
-      if (cmdKey && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        if (selection.kind === "shot") {
-          const target = doc.shots.find((s) => s.id === selection.id);
-          if (target) {
-            const copy = { ...structuredClone(target), id: crypto.randomUUID() };
-            apply(
-              (draft) => {
-                const idx = draft.shots.findIndex((s) => s.id === selection.id);
-                draft.shots.splice(idx + 1, 0, copy);
-              },
-              { label: "Duplicate shot" },
-            );
-            setSelection({ kind: "shot", id: copy.id });
-          }
-        }
-        return;
-      }
-
-      // Delete / Backspace: Remove selected shot or text
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (selection.kind === "shot" && doc.shots.length > 1) {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              draft.shots = draft.shots.filter((s) => s.id !== selection.id);
-            },
-            { label: "Delete shot" },
-          );
-          setSelection({ kind: "video" });
-        } else if (selection.kind === "text") {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              const targetShot = draft.shots.find((s) => s.id === selection.shotId);
-              if (targetShot) {
-                targetShot.texts = targetShot.texts.filter((t) => t.id !== selection.id);
-              }
-            },
-            { label: "Delete text layer" },
-          );
-          setSelection({ kind: "shot", id: selection.shotId });
-        }
         return;
       }
 

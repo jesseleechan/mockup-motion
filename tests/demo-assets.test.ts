@@ -139,7 +139,9 @@ describe("F04 demo asset map", () => {
     expect(resolveLabAssetUrl("demo-studio-kova-desktop-full")).toBe(
       "/demo/studio-kova/desktop-full.webp",
     );
-    expect(resolveLabAssetUrl("/demo/aurelia.png")).toBe("/demo/aurelia.png");
+    expect(resolveLabAssetUrl("/demo/aurelia/desktop-full.webp")).toBe(
+      "/demo/aurelia/desktop-full.webp",
+    );
     expect(resolveLabAssetUrl("blob:http://localhost/abc")).toBe("blob:http://localhost/abc");
   });
 });

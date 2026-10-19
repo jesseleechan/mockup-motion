@@ -9,10 +9,6 @@ export interface EngineCanvasProps {
   assets: AssetProvider;
   time?: number;
   onEngineReady?: (engine: Engine) => void;
-  onCanvasClick?: (
-    e: React.MouseEvent<HTMLCanvasElement>,
-    pickResult: { nodeId: string; u: number; v: number } | null,
-  ) => void;
   className?: string;
   style?: React.CSSProperties;
   /** Override device pixel ratio. Visual stills pass 1. */
@@ -21,6 +17,8 @@ export interface EngineCanvasProps {
   supersample?: 1 | 1.5 | 2;
   /** Isolated lab fixtures only; does not change CameraMove or saved projects. */
   cameraDistanceOverride?: number;
+  /** Isolated lab fixtures only: draws the background without the document's devices. */
+  hideDevices?: boolean;
 }
 
 const DEFAULT_SUPERSAMPLE = 1.5;
@@ -52,12 +50,12 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   assets,
   time,
   onEngineReady,
-  onCanvasClick,
   className,
   style,
   pixelRatio,
   supersample,
   cameraDistanceOverride,
+  hideDevices,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +92,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
       height: devicePixels(container.clientHeight || 450, ratio),
       supersample: supersampleRef.current,
       cameraDistanceOverride,
+      hideDevices,
     }).then((next) => {
       if (disposed) {
         next.dispose();
@@ -240,26 +239,13 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
     };
   }, [engine, playing]);
 
-  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!onCanvasClick || !canvas || !engine) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    onCanvasClick(e, engine.pick(x, y));
-  };
-
   return (
     <div
       ref={containerRef}
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={style}
     >
-      <canvas
-        ref={canvasRef}
-        onClick={handleClick}
-        className="w-full h-full block cursor-crosshair"
-      />
+      <canvas ref={canvasRef} className="w-full h-full block" />
     </div>
   );
 };

@@ -27,18 +27,11 @@
       "color": "#F1EDE6"
     },
     "frameAppearance": "light",
-    "deviceFinish": "graphite",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "soft",
     "grain": 0.25,
-    "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "",
-    "accent": "#000000"
+    "vignette": 0.06
   },
   "shots": [
     {
@@ -50,13 +43,12 @@
         "assetId": "demo-aurelia-desktop-hero"
       },
       "camera": {
-        "preset": "heroTilt",
+        "preset": "static",
         "intensity": 1,
         "easing": "smooth",
         "float": 0
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "cut",
         "duration": 0,

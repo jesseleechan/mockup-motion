@@ -1,14 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
-import { quadrantCentroids, type PixelBuffer } from "../helpers/pixels";
 import { keepResourceTimings } from "../helpers/resource-timing";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // The specs below find the app's Mediabunny module in the resource-timing entries.
 test.beforeEach(async ({ page }) => {
   await keepResourceTimings(page);
 });
 
-// F09: export correctness (multi-device exports, every destination preset) and the
+// F09: export correctness (every destination preset) and the
 // export dialog (layout, truthful summary, cancel).
 
 interface Media {
@@ -73,133 +73,9 @@ async function loadMediabunny(page: Page) {
   });
 }
 
-async function openLab(page: Page) {
-  await page.goto("/lab?fixture=device-card-frontal&t=0&aspect=16:9");
-  await page.waitForFunction(() => (window as unknown as LabWindow).__labReady === true);
-  await loadMediabunny(page);
-}
-
-test.describe("F09 export correctness", () => {
-  test("a pair export is upright and fills the phone screen", async ({ page }) => {
-    test.setTimeout(300_000);
-    await openLab(page);
-    const frame = await page.evaluate(async () => {
-      const w = window as unknown as LabWindow;
-      const media = w.__f09Media;
-      const images = w.__labTestImages;
-      const base = structuredClone(w.__fixtures?.["device-card-frontal"]);
-      const pair = structuredClone(w.__fixtures?.["pair"]);
-      if (
-        !media ||
-        !images ||
-        !base ||
-        !pair ||
-        !w.__exportWithEngine ||
-        !w.__createLabAssetProvider
-      )
-        throw new Error("Lab export hooks are unavailable");
-      const desktop = {
-        id: "f09-desktop",
-        kind: "image",
-        name: "desktop.png",
-        mime: "image/png",
-        bytes: 1,
-        width: 1600,
-        height: 1000,
-        role: "desktop",
-      };
-      const mobile = {
-        id: "f09-mobile",
-        kind: "image",
-        name: "mobile.png",
-        mime: "image/png",
-        bytes: 1,
-        width: 360,
-        height: 780,
-        role: "mobile",
-      };
-      const doc = {
-        ...base,
-        assets: [desktop, mobile],
-        // No URL in the pill: only the test images' colours are counted below.
-        style: { ...pair.style, browserUrl: "" },
-        shots: pair.shots,
-        loop: false,
-      } as ProjectDoc;
-      const layout = doc.shots[0].layout;
-      if (layout.kind !== "pair") throw new Error(`Expected a pair layout, got ${layout.kind}`);
-      layout.desktopId = desktop.id;
-      layout.mobileId = mobile.id;
-      doc.shots[0].duration = 3;
-      const bitmaps: Record<string, ImageBitmap> = {
-        [desktop.id]: await images.quadrants(1600, 1000),
-        // The phone screen: magenta top half, cyan bottom half
-        [mobile.id]: await images.bands(360, 780, ["#FF00FF", "#00FFFF"]),
-      };
-      const labProvider = w.__createLabAssetProvider();
-      const provider = {
-        ...labProvider,
-        getImage: async (id: string, maxWidth: number) =>
-          bitmaps[id] ?? labProvider.getImage(id, maxWidth),
-      };
-      const exported = await w.__exportWithEngine(doc, provider, {
-        destination: "custom",
-        resolution: 360,
-        fps: 30,
-        quality: "high",
-        format: "webm",
-        supersample: 1,
-      });
-      const input = new media.Input({
-        source: new media.BlobSource(exported.blob),
-        formats: media.ALL_FORMATS,
-      });
-      try {
-        const track = await input.getPrimaryVideoTrack();
-        if (!track) throw new Error("Export has no video track");
-        const decoded = await new media.CanvasSink(track).getCanvas(1.5);
-        if (!decoded) throw new Error("No decoded frame at 1.5s");
-        const ctx = decoded.canvas.getContext("2d") as CanvasRenderingContext2D | null;
-        if (!ctx) throw new Error("Decoded frame has no 2D context");
-        const { width, height } = decoded.canvas;
-        return { width, height, data: Array.from(ctx.getImageData(0, 0, width, height).data) };
-      } finally {
-        input.dispose();
-      }
-    });
-    expect([frame.width, frame.height]).toEqual([640, 360]);
-    const pixels: PixelBuffer = { ...frame, data: new Uint8Array(frame.data) };
-
-    // Desktop browser: the four source quadrants keep their places (F01).
-    const q = quadrantCentroids(pixels);
-    for (const [name, point] of Object.entries(q)) {
-      expect(point.count, `${name} quadrant visible`).toBeGreaterThan(50);
-    }
-    expect(q.red.y, "red (top-left) above blue (bottom-left)").toBeLessThan(q.blue.y);
-    expect(q.green.y, "green (top-right) above yellow (bottom-right)").toBeLessThan(q.yellow.y);
-    expect(q.red.x, "red (top-left) left of green (top-right)").toBeLessThan(q.green.x);
-    expect(q.blue.x, "blue (bottom-left) left of yellow (bottom-right)").toBeLessThan(q.yellow.x);
-
-    // Phone: its screenshot is loaded (not the empty fill) and upright (magenta above cyan).
-    let magenta = { y: 0, count: 0 };
-    let cyan = { y: 0, count: 0 };
-    for (let y = 0; y < pixels.height; y++) {
-      for (let x = 0; x < pixels.width; x++) {
-        const i = (y * pixels.width + x) * 4;
-        const [r, g, b] = [pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]];
-        if (r > 140 && g < 100 && b > 140) magenta = { y: magenta.y + y, count: magenta.count + 1 };
-        if (r < 100 && g > 140 && b > 140) cyan = { y: cyan.y + y, count: cyan.count + 1 };
-      }
-    }
-    expect(magenta.count, "phone screen top half (magenta) visible").toBeGreaterThan(200);
-    expect(cyan.count, "phone screen bottom half (cyan) visible").toBeGreaterThan(200);
-    expect(magenta.y / magenta.count, "phone screen is upright").toBeLessThan(cyan.y / cyan.count);
-  });
-});
-
-/** Clears the project database from /lab/ui, then opens the editor with demo content. */
+/** Clears the project database from a blank page, then opens the editor with demo content. */
 async function openEditorWithDemo(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

@@ -87,23 +87,6 @@ export async function garbageCollectBlobs(): Promise<number> {
     for (const asset of project.assets) {
       referencedAssetIds.add(asset.id);
     }
-    if (project.style.background.kind === "ambient" && project.style.background.assetId) {
-      referencedAssetIds.add(project.style.background.assetId);
-    }
-    if (project.style.background.kind === "image" && project.style.background.assetId) {
-      referencedAssetIds.add(project.style.background.assetId);
-    }
-  }
-
-  // Also protect brand kit logo assets
-  const brandKits = await db.getAll("brandKits");
-  for (const kit of brandKits) {
-    if (kit.logoLightAssetId) referencedAssetIds.add(kit.logoLightAssetId);
-    if (kit.logoDarkAssetId) referencedAssetIds.add(kit.logoDarkAssetId);
-    // Legacy field compatibility
-    if ((kit as unknown as { logoAssetId?: string }).logoAssetId) {
-      referencedAssetIds.add((kit as unknown as { logoAssetId?: string }).logoAssetId!);
-    }
   }
 
   const allBlobKeys = await listBlobKeys();

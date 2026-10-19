@@ -1,99 +1,53 @@
 import React, { useRef, useState } from "react";
-import type { Layout, Shot, TextLayer } from "../../doc/types";
+import type { Layout, Shot } from "../../doc/types";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
   Icon,
-  Tooltip,
 } from "../../ui";
 import {
-  Copy,
-  Laptop,
-  Layers,
   LayoutGrid,
   Monitor,
-  Scissors,
   Smartphone,
-  Tablet,
-  Trash2,
-  Type,
   Maximize2,
-  Columns,
   GalleryHorizontal,
   GalleryVertical,
   Orbit,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
-import { LAYOUT_LABELS, shotSummary } from "../labels";
+import { shotSummary } from "../labels";
 
 export interface ShotCardProps {
   shot: Shot;
   index: number;
   isSelected: boolean;
   widthPx: number;
-  startSec: number;
-  endSec: number;
   pxPerSecond: number;
-  playhead: number;
-  canDelete: boolean;
   onSelect: () => void;
   onDurationChange: (newDuration: number) => void;
-  onReorder: (fromIndex: number, toIndex: number) => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onSplit: (splitLocalT: number) => void;
   onChangeLayout: (layout: Layout) => void;
-  onSelectText: (textId: string) => void;
-  onTextDelayChange: (textId: string, delay: number) => void;
-  onNavigateLeft?: () => void;
-  onNavigateRight?: () => void;
 }
-
-const TEXT_LANE_ROW_PX = 12;
-// Beyond three texts the rows repeat; the card body would get too short otherwise.
-const MAX_TEXT_LANE_ROWS = 3;
 
 export const ShotCard: React.FC<ShotCardProps> = ({
   shot,
   index,
   isSelected,
   widthPx,
-  startSec,
-  endSec,
   pxPerSecond,
-  playhead,
-  canDelete,
   onSelect,
   onDurationChange,
-  onReorder,
-  onDuplicate,
-  onDelete,
-  onSplit,
   onChangeLayout,
-  onSelectText,
-  onTextDelayChange,
-  onNavigateLeft,
-  onNavigateRight,
 }) => {
   const [isResizing, setIsResizing] = useState(false);
   const [dragDuration, setDragDuration] = useState<number | null>(null);
-  const [dragOverSide, setDragOverSide] = useState<"left" | "right" | null>(null);
 
   const resizeStartXRef = useRef(0);
   const initialDurationRef = useRef(shot.duration);
-
-  // Text pill dragging state
-  const textDragRef = useRef<{
-    layerId: string;
-    startX: number;
-    initialDelay: number;
-  } | null>(null);
 
   const layout = shot.layout;
   const layoutKind = layout.kind;
@@ -102,10 +56,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   // Active duration (either while dragging or committed)
   const currentDuration = dragDuration ?? shot.duration;
   const cardWidth = dragDuration !== null ? dragDuration * pxPerSecond : widthPx;
-
-  // Split eligibility
-  const isPlayheadInShot = playhead >= startSec + 0.49 && playhead <= endSec - 0.49;
-  const splitLocalT = playhead - startSec;
 
   // --- Duration resize handle handlers ---
   const handleResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -152,95 +102,9 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     }
   };
 
-  // --- Text pill drag handlers ---
-  const handleTextPointerDown = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    e.stopPropagation();
-    if (e.button !== 0) return;
-    onSelectText(textLayer.id);
-    textDragRef.current = {
-      layerId: textLayer.id,
-      startX: e.clientX,
-      initialDelay: textLayer.delay,
-    };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleTextPointerMove = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    if (!textDragRef.current || textDragRef.current.layerId !== textLayer.id) return;
-    const dx = e.clientX - textDragRef.current.startX;
-    const dDelay = dx / pxPerSecond;
-    let nextDelay = textDragRef.current.initialDelay + dDelay;
-    const snap = e.shiftKey ? 0.5 : 0.1;
-    nextDelay = Math.round(nextDelay / snap) * snap;
-    nextDelay = Math.max(0, Math.min(shot.duration - 0.2, nextDelay));
-    onTextDelayChange(textLayer.id, Number(nextDelay.toFixed(2)));
-  };
-
-  const handleTextPointerUp = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    if (textDragRef.current?.layerId === textLayer.id) {
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-      textDragRef.current = null;
-    }
-  };
-
-  // --- Drag and Drop Reordering ---
-  const handleDragStart = (e: React.DragEvent) => {
-    if (isResizing) {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.setData("application/x-mockupmotion-shot-index", index.toString());
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes("application/x-mockupmotion-shot-index")) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const midX = rect.left + rect.width / 2;
-    setDragOverSide(e.clientX < midX ? "left" : "right");
-  };
-
-  const handleDragLeave = () => {
-    setDragOverSide(null);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverSide(null);
-    const fromIndexStr = e.dataTransfer.getData("application/x-mockupmotion-shot-index");
-    if (!fromIndexStr) return;
-    const fromIndex = parseInt(fromIndexStr, 10);
-    if (isNaN(fromIndex) || fromIndex === index) return;
-
-    let targetIndex = index;
-    if (dragOverSide === "right" && fromIndex < index) {
-      targetIndex = index;
-    } else if (dragOverSide === "left" && fromIndex > index) {
-      targetIndex = index;
-    }
-    onReorder(fromIndex, targetIndex);
-  };
-
-  // --- Keyboard navigation ---
+  // --- Keyboard selection ---
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      onNavigateLeft?.();
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      onNavigateRight?.();
-    } else if (e.key === "Enter" || e.key === " ") {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSelect();
     }
@@ -249,21 +113,11 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   // Header icon for device/layout
   const getLayoutIcon = () => {
     switch (layoutKind) {
-      case "title":
-        return <Icon icon={Type} size={13} />;
       case "single":
         if (device === "phone") return <Icon icon={Smartphone} size={13} />;
-        if (device === "tablet") return <Icon icon={Tablet} size={13} />;
-        if (device === "laptop") return <Icon icon={Laptop} size={13} />;
         return <Icon icon={Monitor} size={13} />;
-      case "pair":
-        return <Icon icon={Columns} size={13} />;
-      case "trio":
-        return <Icon icon={Layers} size={13} />;
       case "rows":
       case "columns":
-      case "wall":
-      case "stack":
         return <Icon icon={LayoutGrid} size={13} />;
       case "slider":
         return <Icon icon={layout.axis === "y" ? GalleryVertical : GalleryHorizontal} size={13} />;
@@ -275,7 +129,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   };
 
   const subLabel = shotSummary(shot);
-  const laneRows = Math.min(shot.texts.length, MAX_TEXT_LANE_ROWS);
 
   return (
     <ContextMenu>
@@ -287,22 +140,11 @@ export const ShotCard: React.FC<ShotCardProps> = ({
           aria-label={`Shot ${index + 1}: ${subLabel}, duration ${currentDuration.toFixed(1)} seconds`}
           onClick={onSelect}
           onKeyDown={handleKeyDown}
-          draggable={!isResizing}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
           style={{ width: `${Math.max(120, cardWidth)}px` }}
           className={`group relative h-full shrink-0 flex flex-col justify-between rounded-lg border transition-all cursor-pointer select-none outline-none overflow-hidden ${
             isSelected
               ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/20 shadow-xs ring-1 ring-[var(--color-accent)]/50"
               : "border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)]"
-          } ${
-            dragOverSide === "left"
-              ? "border-l-4 border-l-[var(--color-accent)]"
-              : dragOverSide === "right"
-                ? "border-r-4 border-r-[var(--color-accent)]"
-                : ""
           }`}
         >
           {/* Main Card Body: the shot at its local midpoint (F07), details beside it */}
@@ -313,7 +155,7 @@ export const ShotCard: React.FC<ShotCardProps> = ({
             />
 
             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-              {/* Top row: Shot title, device icon, quick actions */}
+              {/* Top row: Shot title, device icon, duration */}
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-[11px] font-semibold text-[var(--color-text)] truncate">
@@ -323,82 +165,15 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                   <span className="text-[10px] font-mono text-[var(--color-text-3)] shrink-0">
                     {currentDuration.toFixed(1)}s
                   </span>
-                </div>
-
-                {/* Quick actions hover */}
-                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
-                  <Tooltip content="Duplicate shot">
-                    <button
-                      type="button"
-                      aria-label="Duplicate shot"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicate();
-                      }}
-                      className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] rounded hover:bg-[var(--color-hover)]"
-                    >
-                      <Icon icon={Copy} size={11} />
-                    </button>
-                  </Tooltip>
-                  {canDelete && (
-                    <Tooltip content="Delete shot">
-                      <button
-                        type="button"
-                        aria-label="Delete shot"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete();
-                        }}
-                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-danger)] rounded hover:bg-[var(--color-hover)]"
-                      >
-                        <Icon icon={Trash2} size={11} />
-                      </button>
-                    </Tooltip>
-                  )}
-                </div>
+                </div>{" "}
               </div>
 
-              {/* Footer: device or layout, and camera move. Two lines in all, so the card
-                  body still fits above two text-lane rows. */}
+              {/* Footer: device or layout, and camera move. */}
               <div className="text-[10px] text-[var(--color-text-3)] font-mono min-w-0 truncate">
                 {subLabel}
               </div>
             </div>
           </div>
-
-          {/* Text Lanes (at bottom of card) */}
-          {shot.texts.length > 0 && (
-            <div
-              className="shrink-0 bg-[var(--color-bg)]/80 border-t border-[var(--color-line)]/50 relative px-1 overflow-hidden"
-              style={{ height: `${laneRows * TEXT_LANE_ROW_PX + 4}px` }}
-            >
-              {shot.texts.map((t, i) => {
-                const leftPct = (t.delay / shot.duration) * 100;
-                const widthPct = Math.max(10, ((shot.duration - t.delay) / shot.duration) * 100);
-                return (
-                  <div
-                    key={t.id}
-                    onPointerDown={(e) => handleTextPointerDown(e, t)}
-                    onPointerMove={(e) => handleTextPointerMove(e, t)}
-                    onPointerUp={(e) => handleTextPointerUp(e, t)}
-                    onPointerCancel={(e) => handleTextPointerUp(e, t)}
-                    style={{
-                      left: `${leftPct}%`,
-                      width: `${widthPct}%`,
-                      // One row per text so pills that start together don't cover each other.
-                      top: `${2 + (i % laneRows) * TEXT_LANE_ROW_PX}px`,
-                    }}
-                    title={`Text: "${t.text || "Untitled"}" · Delay ${t.delay.toFixed(1)}s`}
-                    className="absolute h-2.5 rounded-full bg-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/60 border border-[var(--color-accent)] text-[8px] font-mono text-[var(--color-text)] flex items-center px-1 truncate cursor-ew-resize select-none"
-                  >
-                    <span data-truncate className="truncate leading-none">
-                      {t.text || "Text"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
           {/* Right Duration Resize Handle. A slider's or orbit's length is screenshots × step. */}
           {layoutKind !== "slider" && layoutKind !== "orbit" && (
@@ -428,18 +203,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
 
       {/* Context Menu */}
       <ContextMenuContent>
-        <ContextMenuItem icon={<Icon icon={Copy} size={13} />} onClick={onDuplicate}>
-          Duplicate
-        </ContextMenuItem>
-
-        {canDelete && (
-          <ContextMenuItem danger icon={<Icon icon={Trash2} size={13} />} onClick={onDelete}>
-            Delete
-          </ContextMenuItem>
-        )}
-
-        <ContextMenuSeparator />
-
         {/* Change layout submenu */}
         <ContextMenuSub>
           <ContextMenuSubTrigger icon={<Icon icon={LayoutGrid} size={13} />}>
@@ -459,124 +222,13 @@ export const ShotCard: React.FC<ShotCardProps> = ({
               Phone
             </ContextMenuItem>
             <ContextMenuItem
-              icon={<Icon icon={Tablet} size={12} />}
-              onClick={() => onChangeLayout({ kind: "single", device: "tablet", assetId: "" })}
-            >
-              Tablet
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Laptop} size={12} />}
-              onClick={() => onChangeLayout({ kind: "single", device: "laptop", assetId: "" })}
-            >
-              Laptop
-            </ContextMenuItem>
-            <ContextMenuItem
               icon={<Icon icon={Maximize2} size={12} />}
               onClick={() => onChangeLayout({ kind: "single", device: "card", assetId: "" })}
             >
               Card
             </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={Columns} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "pair",
-                  desktopId: "",
-                  mobileId: "",
-                  arrangement: "overlap",
-                })
-              }
-            >
-              {LAYOUT_LABELS.pair}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Layers} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "trio",
-                  desktopId: "",
-                  mobileId: "",
-                })
-              }
-            >
-              {LAYOUT_LABELS.trio}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={LayoutGrid} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "rows",
-                  assetIds: [],
-                  rows: 2,
-                  device: "browser",
-                  tilt: 20,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.rows}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Columns} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "columns",
-                  assetIds: [],
-                  columns: 3,
-                  tilt: 15,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.columns}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={LayoutGrid} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "wall",
-                  assetIds: [],
-                  columns: 4,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.wall}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Layers} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "stack",
-                  assetIds: [],
-                  device: "browser",
-                  spread: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.stack}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={Type} size={12} />}
-              onClick={() => onChangeLayout({ kind: "title" })}
-            >
-              {LAYOUT_LABELS.title}
-            </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
-
-        <ContextMenuSeparator />
-
-        <ContextMenuItem
-          disabled={!isPlayheadInShot}
-          icon={<Icon icon={Scissors} size={13} />}
-          onClick={() => onSplit(splitLocalT)}
-        >
-          Split here
-        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

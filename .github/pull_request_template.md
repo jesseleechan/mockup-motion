@@ -18,7 +18,6 @@
 - [ ] No reversing motion. Each shot has one dominant move, and the easing comes from §2.1.
 - [ ] Safe margins (§4) hold at all 5 aspects. Checked on the contact sheet.
 - [ ] Shadow, grain, and vignette are within §5 ranges. No banding visible on the gradient frame at 1080p export.
-- [ ] Text is at least 1.6% of frame height, with contrast that passes.
 - [ ] The loop is seamless: frame(0) equals frame(total) (unit test), and there is no visible pop when watching 3 loops.
 - [ ] No shimmer on screenshot text during camera moves in a 1080p30 export.
 
