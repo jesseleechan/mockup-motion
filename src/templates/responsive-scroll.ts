@@ -27,7 +27,6 @@ export const responsiveScrollTemplate: Template = {
   ],
   samePage: ["desktop1", "mobile1"],
   defaultDuration: 10,
-  toneSwitch: true,
   build: (ctx: TemplateBuildContext) => {
     const desktop = ctx.slots.desktop1;
     const mobile = ctx.slots.mobile1;

@@ -82,14 +82,22 @@ export function useTemplateActions() {
     await addAssets(refs, blobs, Object.keys(replace).length > 0 ? replace : undefined);
   }, []);
 
-  /** Demo screenshots for the empty required slots of the current (or default) template. */
-  const fillWithDemoContent = useCallback(async () => {
+  /**
+   * Applies a template and fills its empty required slots with demo screenshots, in one step.
+   * The selection stays as it is, as for "Try with demo content" on the stage.
+   */
+  const applyTemplateWithDemo = useCallback(async (template: Template) => {
     const { doc, addAssetsAndApplyTemplate } = useEditorStore.getState();
-    const template = demoContentTemplate(doc);
     await addAssetsAndApplyTemplate(demoAssetsToFill(template, doc.assets), template.id, (d) =>
       applyTemplate(template, d),
     );
   }, []);
 
-  return { applyTemplateById, addScreenshots, fillWithDemoContent };
+  /** Demo screenshots for the empty required slots of the current (or default) template. */
+  const fillWithDemoContent = useCallback(
+    () => applyTemplateWithDemo(demoContentTemplate(useEditorStore.getState().doc)),
+    [applyTemplateWithDemo],
+  );
+
+  return { applyTemplateById, applyTemplateWithDemo, addScreenshots, fillWithDemoContent };
 }
