@@ -41,8 +41,9 @@ function centresDiffer(a: ScreenSample, b: ScreenSample): boolean | null {
 }
 
 test("F04: Frames shows different demo sites on its screens", async ({ page }) => {
-  // Start asset-free so the engine's texture cache cannot hold images from the first render.
-  await page.goto("/lab?fixture=text-title&t=0&aspect=16:9");
+  // Start on a generated test image so the engine's texture cache cannot hold demo images from
+  // the first render.
+  await page.goto("/lab?fixture=color-bands&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const result = await page.evaluate(async () => {
     // Frames' rows of cards at 16:9.

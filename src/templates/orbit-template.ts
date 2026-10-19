@@ -68,9 +68,7 @@ export function orbitTemplate(spec: OrbitTemplateSpec): Template {
       shot.duration = sliderDuration(layout);
       // After N steps the ring is back where it started, so the loop is native.
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
-      shot.entrance = "none";
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      shot.texts = [];
 
       return { style, shots: [shot], loop: true };
     },

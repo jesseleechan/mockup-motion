@@ -51,8 +51,8 @@ export function createLabAssetProvider(): AssetProvider {
       return bmp;
     },
 
-    async getText(layer, style, frameHeightPx): Promise<TextRaster> {
-      return rasterizeText(layer, style, frameHeightPx);
+    async getText(line, frameHeightPx): Promise<TextRaster> {
+      return rasterizeText(line, frameHeightPx);
     },
   };
 }

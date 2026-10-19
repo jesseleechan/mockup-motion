@@ -1,4 +1,6 @@
+import { framesLayout, mobileFramesLayout } from "../templates/frames-template";
 import { defaultExport, defaultStyle } from "./defaults";
+import { applyLegacyLook } from "./legacy-layouts";
 import { sanitizeDoc } from "./validate";
 import type {
   Aspect,
@@ -6,7 +8,6 @@ import type {
   Background,
   CameraMove,
   CameraPresetId,
-  DeviceFinish,
   DeviceKind,
   ExportSettings,
   Layout,
@@ -14,7 +15,6 @@ import type {
   ShadowPreset,
   Shot,
   Style,
-  TextLayer,
 } from "./types";
 
 // V1 types copied verbatim so migrate.ts has zero dependencies on legacy src/types.ts
@@ -127,11 +127,11 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
 
   const comp = v1.composition;
   const primaryId = comp?.assetIds?.primary || assets[0]?.id || "";
-  const mobileId =
-    comp?.assetIds?.mobile || assets.find((a) => a.role === "mobile")?.id || assets[1]?.id || "";
 
   // Layout migration
+  const aspect: Aspect = (v1.aspectRatio as Aspect) || "16:9";
   let layout: Layout;
+  let presetLook = false;
   const frameType = comp?.frame?.type ?? "browser";
   let singleDevice: DeviceKind = "browser";
   if (frameType === "phone") {
@@ -150,44 +150,19 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
         assetId: primaryId,
       };
       break;
+    // V1 pairs, rows, columns and grids map to the preset looks a saved v2 project of the same
+    // kind loads as (src/doc/legacy-layouts.ts).
     case "pair":
-      layout = {
-        kind: "pair",
-        desktopId: primaryId,
-        mobileId,
-        arrangement: "overlap",
-      };
+      layout = { kind: "single", device: "browser", assetId: primaryId };
       break;
-    case "rows": {
-      const rows = comp.count === 1 || comp.count === 3 ? comp.count : 2;
-      layout = {
-        kind: "rows",
-        assetIds: allAssetIds,
-        rows,
-        device: singleDevice === "card" ? "card" : "browser",
-        tilt: comp.rotation || 12,
-        speed: 0.35,
-      };
-      break;
-    }
-    case "columns": {
-      const columns = [2, 3, 4, 5].includes(comp.count) ? (comp.count as 2 | 3 | 4 | 5) : 3;
-      layout = {
-        kind: "columns",
-        assetIds: allAssetIds,
-        columns,
-        tilt: comp.rotation || 12,
-        speed: 0.35,
-      };
-      break;
-    }
+    case "rows":
     case "grid":
-      layout = {
-        kind: "wall",
-        assetIds: allAssetIds,
-        columns: 4,
-        speed: 0.2,
-      };
+      layout = framesLayout(aspect, allAssetIds);
+      presetLook = true;
+      break;
+    case "columns":
+      layout = mobileFramesLayout(aspect, allAssetIds);
+      presetLook = true;
       break;
     default:
       layout = {
@@ -200,11 +175,8 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
   // Camera Move migration
   let cameraPreset: CameraPresetId;
   const motionType = comp?.motion?.type ?? "zoom";
-  if (motionType === "drift") {
-    cameraPreset = "riseUp";
-  } else if (motionType === "glide") {
-    cameraPreset = layout.kind === "single" ? "dollyRight" : "static";
-  } else if (motionType === "still") {
+  // v1 "drift" and "glide" mapped to Rise and Dolly right, which were removed; they load still.
+  if (motionType === "still" || motionType === "drift" || motionType === "glide") {
     cameraPreset = "static";
   } else {
     cameraPreset = "pushIn";
@@ -229,11 +201,8 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
       angleConvention: "css",
     };
   } else if (bgType === "image") {
-    background = {
-      kind: "image",
-      assetId: comp.background.imageId || "",
-      dim: 0,
-    };
+    // Image backgrounds were removed: they become the flat Ash fill (quality-bar §6).
+    background = { kind: "solid", color: "#DFE1E3" };
   } else {
     background = {
       kind: "solid",
@@ -246,22 +215,10 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
   const shadow: ShadowPreset =
     shadowVal > 40 ? "dramatic" : shadowVal > 15 ? "medium" : shadowVal > 0 ? "soft" : "none";
 
-  // Device finish
-  const finishMap: Record<V1DeviceFrameFinish, DeviceFinish> = {
-    midnight: "graphite",
-    titanium: "silver",
-    silver: "silver",
-    gold: "sand",
-  };
-  const deviceFinish: DeviceFinish = comp?.frame?.finish
-    ? finishMap[comp.frame.finish] || "silver"
-    : "silver";
-
   const style: Style = {
     ...defaultStyle(),
     background,
     frameAppearance: comp?.frame?.appearance === "dark" ? "dark" : "light",
-    deviceFinish,
     browserChrome: frameType === "none" ? "none" : "standard",
     browserUrl: comp?.frame?.title || "",
     shadow,
@@ -269,52 +226,20 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     vignette: 0.06,
   };
 
-  // Text layers from brand
-  const texts: TextLayer[] = [];
-  if (comp?.brand?.title) {
-    texts.push({
-      id: crypto.randomUUID(),
-      text: comp.brand.title,
-      role: "title",
-      font: "display",
-      size: comp.brand.size ? comp.brand.size * 0.1 : 6,
-      anchor: comp.brand.position === "bottom" ? "bottom" : "top",
-      align: "center",
-      color: comp.brand.color || "",
-      animation: "fadeUp",
-      delay: 0.2,
-      logoAssetId: comp.brand.logoId || undefined,
-    });
-  }
-  if (comp?.brand?.subtitle) {
-    texts.push({
-      id: crypto.randomUUID(),
-      text: comp.brand.subtitle,
-      role: "subtitle",
-      font: "body",
-      size: comp.brand.size ? comp.brand.size * 0.05 : 3,
-      anchor: comp.brand.position === "bottom" ? "bottom" : "top",
-      align: "center",
-      color: comp.brand.color || "",
-      animation: "fadeUp",
-      delay: 0.4,
-    });
-  }
-
   // Shot construction
   const shot: Shot = {
     id: crypto.randomUUID(),
     duration: Math.max(1, Math.min(30, comp?.motion?.duration ?? 5)),
     layout,
     camera,
-    entrance: "none",
-    texts,
     transitionIn: {
       kind: "cut",
       duration: 0,
       easing: "quintInOut",
     },
   };
+
+  if (presetLook) applyLegacyLook(shot, "frames", aspect);
 
   if (comp?.contentMotion?.enabled) {
     const end = Math.max(0, Math.min(1, comp.contentMotion.end ?? 1));
@@ -343,7 +268,7 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     name: v1.name || "Migrated project",
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    aspect: (v1.aspectRatio as Aspect) || "16:9",
+    aspect,
     loop: comp?.motion?.loop ?? true,
     assets,
     style,

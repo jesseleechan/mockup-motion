@@ -6,7 +6,6 @@ export interface BuiltinPalette {
   name: string;
   background: Background;
   frameAppearance: FrameAppearance;
-  textColor: string;
   shadowTint: string;
 }
 
@@ -23,13 +22,6 @@ export function shadowTintFor(background: Background): string {
       break;
     case "gradient":
       sampleColor = background.stops[0] ?? "#F1EDE6";
-      break;
-    case "mesh":
-      sampleColor = background.colors[0] ?? "#1B1B2F";
-      break;
-    case "ambient":
-    case "image":
-      sampleColor = "#141417";
       break;
   }
 
@@ -50,7 +42,7 @@ export function shadowTintFor(background: Background): string {
 }
 
 /**
- * 10 Built-in curated palettes from quality-bar §6.
+ * 8 built-in curated palettes from quality-bar §6.
  * Low chroma (C <= 0.09 for light, C <= 0.12 for dark) creates calm, premium presentation backgrounds.
  */
 export const BUILTIN_PALETTES: BuiltinPalette[] = [
@@ -65,7 +57,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#1C1917",
     shadowTint: shadowTintFor({ kind: "solid", color: "#E3DCD0" }),
   },
   // 2. Fog (Cool Light Grey) - OKLCH C ~0.01
@@ -79,7 +70,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#0F172A",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D9DFE6" }),
   },
   // 3. Graphite (Deep Neutral Charcoal) - OKLCH C ~0.01
@@ -93,7 +83,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "dark",
-    textColor: "#F4F4F5",
     shadowTint: shadowTintFor({ kind: "solid", color: "#141417" }),
   },
   // 4. Ink (Atmospheric Midnight Navy) - OKLCH C ~0.04
@@ -107,7 +96,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "dark",
-    textColor: "#F8FAFC",
     shadowTint: shadowTintFor({ kind: "solid", color: "#0D1424" }),
   },
   // 5. Sage (Soft Organic Green) - OKLCH C ~0.02
@@ -121,7 +109,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#1B221B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#C9D3C4" }),
   },
   // 6. Clay (Warm Earthen Terracotta) - OKLCH C ~0.03
@@ -135,54 +122,23 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#261914",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D2B8A6" }),
   },
-  // 7. Dusk (Moody Warm Twilight Mesh) - OKLCH C ~0.04-0.06
-  {
-    id: "dusk",
-    name: "Dusk",
-    background: {
-      kind: "mesh",
-      colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-      drift: 0.05,
-      seed: 42,
-    },
-    frameAppearance: "dark",
-    textColor: "#FAF5FF",
-    shadowTint: shadowTintFor({ kind: "solid", color: "#1B1B2F" }),
-  },
-  // 8. Mist (Ethereal Morning Pastel Mesh) - OKLCH C ~0.02
-  {
-    id: "mist",
-    name: "Mist",
-    background: {
-      kind: "mesh",
-      colors: ["#E9EEF5", "#D7E0EE", "#EDE3F0", "#F6EFE6"],
-      drift: 0.04,
-      seed: 108,
-    },
-    frameAppearance: "light",
-    textColor: "#18181B",
-    shadowTint: shadowTintFor({ kind: "solid", color: "#D7E0EE" }),
-  },
-  // 9. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
+  // 7. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
   {
     id: "ash",
     name: "Ash",
     background: { kind: "solid", color: "#DFE1E3" },
     frameAppearance: "light",
-    textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#DFE1E3" }),
   },
-  // 10. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
+  // 8. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
   // slider and Frames presets - OKLCH C ~0.005
   {
     id: "onyx",
     name: "Onyx",
     background: { kind: "solid", color: "#141417" },
     frameAppearance: "dark",
-    textColor: "#F4F4F5",
     shadowTint: shadowTintFor({ kind: "solid", color: "#141417" }),
   },
 ];
