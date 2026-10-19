@@ -1,5 +1,6 @@
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
+import { applyLegacyLook, legacyLook, mapLegacyLayout } from "./legacy-layouts";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -16,7 +17,6 @@ import type {
   CameraMove,
   CameraPresetId,
   CaptureSection,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   ExportSettings,
@@ -39,37 +39,18 @@ const VALID_EASINGS: readonly EasingId[] = [
   "spring",
   "slide",
 ];
-const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "riseUp",
-  "dollyLeft",
-  "dollyRight",
-  "isoDrift",
-  "heroTilt",
-];
+const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = ["static", "pushIn"];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
-const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
-const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
+const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
+// Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
+const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
 const VALID_FPS = [24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
 const VALID_FORMATS = ["mp4", "webm"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
-const VALID_TRANSITIONS: readonly Transition["kind"][] = [
-  "cut",
-  "fade",
-  "blur",
-  "push",
-  "zoom",
-  "wipe",
-];
+// Saved blur, push, zoom and wipe transitions (cut with reels on 19 Oct 2026) load as fades.
+const LEGACY_TRANSITIONS = ["blur", "push", "zoom", "wipe"];
 function clamp(val: number, min: number, max: number): number {
   if (Number.isNaN(val) || typeof val !== "number") return min;
   return Math.max(min, Math.min(max, val));
@@ -152,9 +133,8 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   const style: Style = {
     background: sanitizeBackground(rawStyle.background),
     frameAppearance: rawStyle.frameAppearance === "dark" ? "dark" : "light",
-    deviceFinish: includesValue(VALID_DEVICE_FINISHES, rawStyle.deviceFinish)
-      ? rawStyle.deviceFinish
-      : defaults.style.deviceFinish,
+    // Device finishes were removed: a saved `deviceFinish` is dropped, so every phone loads in
+    // the one finish (quality-bar §3.3). The removed `minimal` chrome loads as `standard`.
     browserChrome: includesValue(VALID_BROWSER_CHROMES, rawStyle.browserChrome)
       ? rawStyle.browserChrome
       : defaults.style.browserChrome,
@@ -192,16 +172,28 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   };
 
   // Shots
+  const aspect: Aspect = includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9";
+  // A document has one shot. Multi-shot reels were cut on 19 Oct 2026: a saved reel keeps its
+  // first shot, whose transitionIn is the loop wrap (docs/cuts-plan/README.md).
   const shots: Shot[] = [];
   if (Array.isArray(d.shots)) {
-    for (let i = 0; i < d.shots.length; i++) {
+    for (let i = 0; i < d.shots.length && shots.length === 0; i++) {
       const s = d.shots[i];
       if (s && typeof s === "object") {
-        const sanitizedShot = sanitizeShot(s as Record<string, unknown>, assetIdSet, warnings, i);
+        const sanitizedShot = sanitizeShot(
+          s as Record<string, unknown>,
+          assetIdSet,
+          aspect,
+          warnings,
+          i,
+        );
         if (sanitizedShot) {
           shots.push(sanitizedShot);
         }
       }
+    }
+    if (d.shots.length > 1) {
+      warnings.push(`Kept the first of ${d.shots.length} shots: a video has one shot.`);
     }
   }
 
@@ -223,7 +215,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     name: typeof d.name === "string" && d.name.trim() ? d.name.trim() : "Untitled presentation",
     createdAt: typeof d.createdAt === "number" && d.createdAt > 0 ? d.createdAt : Date.now(),
     updatedAt: typeof d.updatedAt === "number" && d.updatedAt > 0 ? d.updatedAt : Date.now(),
-    aspect: includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9",
+    aspect,
     loop: typeof d.loop === "boolean" ? d.loop : true,
     assets,
     style,
@@ -284,6 +276,7 @@ function sanitizeBackground(bg: unknown): Background {
 function sanitizeShot(
   s: Record<string, unknown>,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Shot | null {
@@ -295,16 +288,13 @@ function sanitizeShot(
     );
     return null;
   }
-  const layout = sanitizeLayout(s.layout, assetIds, warnings, shotIndex);
+  const layout = sanitizeLayout(s.layout, assetIds, aspect, warnings, shotIndex);
   if (!layout) {
     warnings.push(`Shot ${shotIndex} had an invalid layout and was dropped.`);
     return null;
   }
 
   const camera: CameraMove = sanitizeCamera(s.camera);
-  const entrance = ["none", "rise", "scale", "stagger"].includes(s.entrance as string)
-    ? (s.entrance as Shot["entrance"])
-    : "none";
 
   const transitionIn: Transition = sanitizeTransition(s.transitionIn);
 
@@ -317,9 +307,15 @@ function sanitizeShot(
     layout,
     // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
-    entrance,
     transitionIn,
   };
+
+  // A removed layout takes its preset look's camera, wrap and length.
+  const look =
+    s.layout && typeof s.layout === "object"
+      ? legacyLook(s.layout as Record<string, unknown>)
+      : null;
+  if (look) applyLegacyLook(shot, look, aspect);
 
   if (s.scroll && typeof s.scroll === "object") {
     const sc = s.scroll as Record<string, unknown>;
@@ -355,6 +351,7 @@ function sanitizeShot(
 function sanitizeLayout(
   layout: unknown,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Layout | null {
@@ -372,6 +369,14 @@ function sanitizeLayout(
     return id;
   };
 
+  const look = legacyLook(l);
+  if (look) {
+    const ids = Array.isArray(l.assetIds)
+      ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+      : [];
+    return mapLegacyLayout(l, aspect, ids, checkAsset(l.desktopId, "desktopId"));
+  }
+
   switch (l.kind) {
     case "single":
       return {
@@ -379,30 +384,12 @@ function sanitizeLayout(
         device: includesValue(VALID_DEVICE_KINDS, l.device) ? l.device : "browser",
         assetId: checkAsset(l.assetId, "assetId"),
       };
-    case "pair":
-      return {
-        kind: "pair",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-        arrangement: l.arrangement === "side" ? "side" : "overlap",
-      };
     case "responsive":
       return {
         kind: "responsive",
         desktopId: checkAsset(l.desktopId, "desktopId"),
         mobileId: checkAsset(l.mobileId, "mobileId"),
       };
-    case "trio": {
-      const res: Layout = {
-        kind: "trio",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-      };
-      if (typeof l.tabletId === "string") {
-        res.tabletId = checkAsset(l.tabletId, "tabletId");
-      }
-      return res;
-    }
     case "rows": {
       const res: Layout = {
         kind: "rows",
@@ -411,17 +398,15 @@ function sanitizeLayout(
           : [],
         rows: l.rows === 1 || l.rows === 2 || l.rows === 3 ? l.rows : 2,
         device: l.device === "card" ? "card" : "browser",
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent, so older rows render as before.
       if (typeof l.cardHeight === "number" && Number.isFinite(l.cardHeight)) {
         res.cardHeight = clamp(l.cardHeight, 0.1, 0.8);
       }
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
     case "columns": {
@@ -433,11 +418,10 @@ function sanitizeLayout(
           ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
           : [],
         columns,
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent (or "phone", the default), so older
-      // columns render as before.
+      // "phone", the default, stays unset.
       if (l.device === "card") res.device = "card";
       if (typeof l.cardWidth === "number" && Number.isFinite(l.cardWidth)) {
         res.cardWidth = clamp(l.cardWidth, 0.1, 0.8);
@@ -445,30 +429,8 @@ function sanitizeLayout(
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
-    case "wall": {
-      const cols = Number(l.columns);
-      const columns = cols === 3 || cols === 4 || cols === 5 ? cols : 4;
-      return {
-        kind: "wall",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        columns,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.2, 0, 1),
-      };
-    }
-    case "stack":
-      return {
-        kind: "stack",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        device: l.device === "card" ? "card" : "browser",
-        spread: clamp(typeof l.spread === "number" ? l.spread : 0.3, 0, 1),
-      };
     case "slider": {
       const sliderIds = Array.isArray(l.assetIds)
         ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
@@ -514,7 +476,8 @@ function sanitizeCamera(camera: unknown): CameraMove {
   if (!camera || typeof camera !== "object") return defaultCameraMove();
   const c = camera as Record<string, unknown>;
   return {
-    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "pushIn",
+    // A removed move (orbit, tilt, dolly, ...) or an unknown one loads as a still camera.
+    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "static",
     intensity: clamp(typeof c.intensity === "number" ? c.intensity : 0.5, 0, 1),
     easing: includesValue(VALID_EASINGS, c.easing) ? c.easing : "smooth",
     float: clamp(typeof c.float === "number" ? c.float : 0.3, 0, 1),
@@ -526,14 +489,11 @@ function sanitizeTransition(trans: unknown): Transition {
     return { kind: "cut", duration: 0, easing: "quintInOut" };
   }
   const t = trans as Record<string, unknown>;
-  const kind = includesValue(VALID_TRANSITIONS, t.kind) ? t.kind : "cut";
+  const kind = t.kind === "fade" || LEGACY_TRANSITIONS.includes(t.kind as string) ? "fade" : "cut";
   return {
     kind,
     duration: clamp(typeof t.duration === "number" ? t.duration : 0.7, 0, 5),
     easing: includesValue(VALID_EASINGS, t.easing) ? t.easing : "quintInOut",
-    direction: ["left", "right", "up", "down"].includes(t.direction as string)
-      ? (t.direction as Transition["direction"])
-      : undefined,
   };
 }
 

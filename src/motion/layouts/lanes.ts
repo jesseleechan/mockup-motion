@@ -1,10 +1,10 @@
-import type { AssetRef, DeviceKind, Shot } from "../../doc/types";
-import { ease } from "../easing";
+import type { AssetRef, DeviceKind } from "../../doc/types";
 import { MAX_SHOT_DURATION } from "./limits";
-import { FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND } from "./marquee";
 import { type LayoutNode, screenAspectFor } from "./types";
 
-const ENTRANCE_DURATION = 0.8;
+// Quality-bar §2.5: Frames moves at most 0.20 frame heights (stage units) per second along the
+// lane, so a whole asset period fits in one loop at every aspect.
+export const FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND = 0.2;
 
 /**
  * The axis lanes move on. "x": the lanes are rows moving sideways (Desktop Frames). "y": the
@@ -38,7 +38,6 @@ export interface LaneOptions {
   tilt: number;
   shotT: number;
   shotDuration: number;
-  entrance: Shot["entrance"];
 }
 
 /**
@@ -133,16 +132,6 @@ export function resolveLanes(options: LaneOptions): LayoutNode[] {
       const y2 = y1 * Math.cos(rx) - z1 * Math.sin(rx);
       const z2 = y1 * Math.sin(rx) + z1 * Math.cos(rx);
 
-      // Entrance calculation
-      let opacity = 1.0;
-      let entranceScale = 1.0;
-      if (options.entrance !== "none") {
-        const p = Math.max(0, Math.min(1, shotT / ENTRANCE_DURATION));
-        const e = ease("expoOut", p);
-        opacity = e;
-        entranceScale = 0.97 + 0.03 * e;
-      }
-
       nodes.push({
         id: `${idPrefix}${r}:item${j}`,
         device,
@@ -157,9 +146,9 @@ export function resolveLanes(options: LaneOptions): LayoutNode[] {
           rx,
           ry: 0,
           rz,
-          scale: entranceScale,
+          scale: 1,
         },
-        opacity,
+        opacity: 1,
         scroll: 0,
         depthOrder: r * totalCount + j,
       });

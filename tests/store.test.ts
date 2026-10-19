@@ -156,7 +156,7 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
     expect(store.getState().doc.assets).toEqual([sampleAsset]);
   });
 
-  it("removeAsset clears all references across layouts and text layers in 1 step", async () => {
+  it("removeAsset clears its layout references in 1 step", async () => {
     const store = createEditorStore();
     const assetId = "to-delete";
     const keptAssetId = "stay-here";
@@ -169,15 +169,13 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
       draft.shots = [
         {
           ...defaultShot(),
-          layout: { kind: "single", device: "browser", assetId },
-        },
-        {
-          ...defaultShot(),
           layout: {
-            kind: "pair",
-            desktopId: assetId,
-            mobileId: keptAssetId,
-            arrangement: "overlap",
+            kind: "rows",
+            assetIds: [assetId, keptAssetId],
+            rows: 2,
+            device: "card",
+            tilt: 0,
+            travel: "period",
           },
         },
       ];
@@ -189,12 +187,8 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
 
     const doc = store.getState().doc;
     expect(doc.assets.map((a) => a.id)).toEqual([keptAssetId]);
-    // Layout reference in single layout cleared to ""
-    const l0 = doc.shots[0].layout as { assetId?: string };
-    expect(l0.assetId).toBe("");
-    // Desktop in pair layout cleared to "", mobile kept
-    const l1 = doc.shots[1].layout as { desktopId?: string; mobileId?: string };
-    expect(l1.desktopId).toBe("");
-    expect(l1.mobileId).toBe(keptAssetId);
+    // The removed asset leaves the rows layout's list, the kept one stays
+    const l0 = doc.shots[0].layout as { assetIds?: string[] };
+    expect(l0.assetIds).toEqual([keptAssetId]);
   });
 });

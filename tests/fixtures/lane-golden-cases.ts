@@ -1,4 +1,4 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../src/doc/types";
+import type { Aspect, AssetRef, Layout } from "../../src/doc/types";
 import { framesDuration, type LayoutNode, resolveLayout } from "../../src/motion/layouts";
 import { framesLayout } from "../../src/templates/frames";
 
@@ -19,24 +19,12 @@ const desktop = (n: number): AssetRef => ({
   role: "desktop",
 });
 
-const mobile = (n: number): AssetRef => ({
-  id: `m${n}`,
-  kind: "image",
-  name: `Mobile ${n}`,
-  mime: "image/png",
-  bytes: 100,
-  width: 1170,
-  height: 2532,
-  role: "mobile",
-});
-
 export interface GoldenCase {
   name: string;
   aspect: Aspect;
   layout: Layout;
   assets: AssetRef[];
   duration: number;
-  entrance: Shot["entrance"];
   times: number[];
 }
 
@@ -60,7 +48,6 @@ function framesCases(): GoldenCase[] {
         layout,
         assets,
         duration,
-        entrance: "none",
         times: [0, 0.8, 2.4, duration / 2, duration - 0.1, duration],
       });
     }
@@ -68,81 +55,14 @@ function framesCases(): GoldenCase[] {
   return cases;
 }
 
-// Times for the 8 s tilted marquees, which loop by wrap crossfade.
-const STEPS_DURATION = 8;
-const STEPS_TIMES = [0, 0.8, 4, 7.9, 8];
-
-/** Today's tilted phone columns (Phone Parade's layout): 2 and 3 columns, N = 3 and 5. */
-function columnsStepsCases(): GoldenCase[] {
-  const cases: GoldenCase[] = [];
-  for (const aspect of GOLDEN_ASPECTS) {
-    for (const columns of [2, 3] as const) {
-      for (const count of [3, 5]) {
-        // An entrance at one aspect covers the opacity and scale path too.
-        const entrances = aspect === "16:9" ? (["none", "rise"] as const) : (["none"] as const);
-        for (const entrance of entrances) {
-          const assets = Array.from({ length: count }, (_, i) => mobile(i + 1));
-          cases.push({
-            name: `columns steps ${aspect} cols=${columns} N=${count} ${entrance}`,
-            aspect,
-            layout: {
-              kind: "columns",
-              assetIds: assets.map((a) => a.id),
-              columns,
-              tilt: 12,
-              speed: 0.4,
-            },
-            assets,
-            duration: STEPS_DURATION,
-            entrance,
-            times: STEPS_TIMES,
-          });
-        }
-      }
-    }
-  }
-  return cases;
-}
-
-/** Today's tilted browser rows (Portfolio Rows' layout), which share `rows.ts` with Frames. */
-function rowsStepsCases(): GoldenCase[] {
-  const cases: GoldenCase[] = [];
-  for (const aspect of ["16:9", "9:16"] as const) {
-    for (const rows of [1, 2, 3] as const) {
-      for (const count of [3]) {
-        const assets = Array.from({ length: count }, (_, i) => desktop(i + 1));
-        cases.push({
-          name: `rows steps ${aspect} rows=${rows} N=${count}`,
-          aspect,
-          layout: {
-            kind: "rows",
-            assetIds: assets.map((a) => a.id),
-            rows,
-            device: "browser",
-            tilt: 8,
-            speed: 0.35,
-          },
-          assets,
-          duration: STEPS_DURATION,
-          entrance: "rise",
-          times: STEPS_TIMES,
-        });
-      }
-    }
-  }
-  return cases;
-}
-
-export function goldenCases(): Record<"frames" | "columnsSteps" | "rowsSteps", GoldenCase[]> {
+export function goldenCases(): Record<"frames", GoldenCase[]> {
   return {
     frames: framesCases(),
-    columnsSteps: columnsStepsCases(),
-    rowsSteps: rowsStepsCases(),
   };
 }
 
 export function goldenNodes(c: GoldenCase, t: number): LayoutNode[] {
-  return resolveLayout(c.layout, c.aspect, c.assets, t, c.duration, c.entrance);
+  return resolveLayout(c.layout, c.aspect, c.assets, t, c.duration);
 }
 
 // A frame's nodes in a compact form that keeps every value exact. Fields with one value for every

@@ -36,13 +36,11 @@ export type Background =
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type FrameAppearance = "light" | "dark";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: FrameAppearance;
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string;      // shown in URL pill; "" hides text
   shadow: ShadowPreset;
@@ -50,23 +48,21 @@ export interface Style {
   vignette: number;        // 0..1
 }
 
-export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
+export type DeviceKind = "browser" | "phone" | "card";
 
 export type Layout =
   | { kind: "single"; device: DeviceKind; assetId: string }
-  | { kind: "pair"; desktopId: string; mobileId: string; arrangement: "overlap" | "side" }
-  | { kind: "trio"; desktopId: string; tabletId?: string; mobileId: string }
-  | { kind: "rows"; assetIds: string[]; rows: 1 | 2 | 3; device: "browser" | "card"; tilt: number; speed: number;
-      cardHeight?: number; gap?: number; travel?: "steps" | "period" }
-  | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number; speed: number;
-      device?: "phone" | "card"; cardWidth?: number; gap?: number; travel?: "steps" | "period" }
-  | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
-  | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
+  | { kind: "rows"; assetIds: string[]; rows: 1 | 2 | 3; device: "browser" | "card"; tilt: number;
+      cardHeight?: number; gap?: number; travel: "period" }
+  | { kind: "columns"; assetIds: string[]; columns: 2 | 3 | 4 | 5; tilt: number;
+      device?: "phone" | "card"; cardWidth?: number; gap?: number; travel: "period" }
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
   | { kind: "responsive"; desktopId: string; mobileId: string };
-// tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
+// rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
+// asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
+// whole group (the presets use 0).
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
@@ -78,26 +74,23 @@ export type Layout =
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
-// rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
-// cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
-// today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
-// shot duration and `speed` is ignored.
-// columns.device (default "phone") and columns.cardWidth, gap and travel mirror rows, turned 90°:
-// unset fields are today's tilted phone marquee. "card" draws portrait cards at the phone screen
-// aspect 0.4615, whatever the image's own aspect. cardWidth: stage units (card height =
-// cardWidth / 0.4615). gap: stage units between cards and columns. travel "period" is the Frames
-// loop on columns (Mobile Frames).
+// rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
+// cards and rows (default: 0.14 × width across, 0.06 down).
+// columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"
+// draws portrait cards at the phone screen aspect 0.4615, whatever the image's own aspect.
+// cardWidth: stage units (card height = cardWidth / 0.4615). gap: stage units between cards and
+// columns.
+// travel: always "period". Saved rows and columns from before 19 Oct 2026 without it were tilted
+// marquees; loading maps them to Frames (src/doc/legacy-layouts.ts).
 
-export type CameraPresetId =
-  | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
-  | "riseUp" | "dollyLeft" | "dollyRight" | "isoDrift" | "heroTilt";
+// The other ten moves were removed on 19 October 2026; a saved one loads as "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;
   intensity: number;       // 0..1, scales the preset's delta (quality-bar §2 limits apply at 1)
   easing: EasingId;
   float: number;           // 0..1 subtle ambient sway layered on top (quality-bar §2.4)
-  progressRange?: [number, number]; // [0..1] range of preset progress covered by this shot
 }
 
 export interface CameraPose {
@@ -119,11 +112,12 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
+// The loop wrap: a cut, or a fade from the shot's end into its start (contracts.md §5). Blur,
+// push, zoom and wipe went with multi-shot reels on 19 Oct 2026; saved ones load as fades.
 export interface Transition {
-  kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
-  duration: number;        // seconds, overlaps the previous shot (see §5)
+  kind: "cut" | "fade";
+  duration: number;        // seconds the wrap fade overlaps the end of the shot
   easing: EasingId;
-  direction?: "left" | "right" | "up" | "down";
 }
 
 export interface Shot {
@@ -131,9 +125,8 @@ export interface Shot {
   duration: number;        // seconds, 1..30
   layout: Layout;
   camera: CameraMove;
-  entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
-  transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
+  transitionIn: Transition;// the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
 
@@ -162,7 +155,7 @@ export interface ProjectDoc {
   loop: boolean;
   assets: AssetRef[];
   style: Style;
-  shots: Shot[];           // length >= 1
+  shots: Shot[];           // exactly one (multi-shot reels were cut on 19 Oct 2026)
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }

@@ -273,13 +273,8 @@ test("slider frames create no GPU objects: the fade targets are allocated with t
     const setDoc = window.__labSetDoc;
     const doc = structuredClone(window.__fixtures?.["slider-x"]);
     if (!engine || !setDoc || !doc) throw new Error("Lab hooks are unavailable");
-    // The slider is the second shot, so the warm-up render at t = 0 doesn't draw it.
-    const slider = doc.shots[0];
-    const intro = structuredClone(slider);
-    intro.id = "intro";
-    intro.duration = 2;
-    intro.layout = { kind: "single", device: "card", assetId: doc.assets[0].id };
-    doc.shots = [intro, slider];
+    // A document has one shot since reels were cut, so setDocument's warm-up render at t = 0
+    // already draws the faded neighbours (docs/plan/follow-ups.md).
     doc.loop = false;
     await setDoc(doc);
     // The engine's renderer is private; the context is reached through it.
@@ -363,7 +358,7 @@ test.describe("slider editing", () => {
 
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
     await openMobileSlider(page);
-    await expect(page.getByRole("group", { name: "Camera move" })).toHaveCount(0);
+    await expect(page.getByRole("radiogroup", { name: "Camera move" })).toHaveCount(0);
     await expect(page.getByRole("slider", { name: "Float" })).toHaveCount(0);
     const camera = await page.evaluate(
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].camera,

@@ -49,14 +49,7 @@ export function textureWidths(doc: ProjectDoc, opts: TextureSizingOptions): Map<
 
   doc.shots.forEach((shot, shotIndex) => {
     const distance = opts.cameraDistanceOverride ?? smallestCameraDistance(doc, shotIndex);
-    const nodes = resolveLayout(
-      shot.layout,
-      doc.aspect,
-      doc.assets,
-      0,
-      shot.duration,
-      shot.entrance ?? "none",
-    );
+    const nodes = resolveLayout(shot.layout, doc.aspect, doc.assets, 0, shot.duration);
     for (const node of nodes) {
       const onScreenPx = ((node.width * node.transform.scale) / stageWidthUnits) * framePx;
       want(node.assetId, (onScreenPx / distance) * oversample);

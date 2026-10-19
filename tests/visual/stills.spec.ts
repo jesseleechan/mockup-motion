@@ -7,9 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
-const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
+const DEVICES = ["browser", "phone", "card"];
 const BACKGROUNDS = ["solid", "gradient"];
-const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
 
 interface Still {
   name: string;
@@ -93,12 +92,6 @@ for (const device of DEVICES) {
     aspect: "16:9",
     t: 1,
   });
-  STILLS.push({
-    name: `device-${device}-tilted`,
-    fixture: `device-${device}-tilted`,
-    aspect: "16:9",
-    t: 4.2,
-  });
 }
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
@@ -120,14 +113,6 @@ STILLS.push({
   aspect: "16:9",
   t: 2.05,
 });
-for (const kind of TRANSITIONS) {
-  STILLS.push({
-    name: `transition-${kind}`,
-    fixture: `transition-${kind}`,
-    aspect: "16:9",
-    t: 3.6,
-  });
-}
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
   STILLS.push({ name: `orient-${device}`, fixture: `orient-${device}`, aspect: "16:9", t: 1 });
