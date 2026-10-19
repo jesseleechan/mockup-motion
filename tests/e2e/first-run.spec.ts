@@ -3,6 +3,7 @@ import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 declare global {
   interface Window {
@@ -19,7 +20,7 @@ interface UIStoreHandle {
 }
 
 async function resetAndOpen(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

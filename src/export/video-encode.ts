@@ -11,8 +11,7 @@ import { type AssetProvider, Engine } from "../engine/Engine";
 import { schedule } from "../motion";
 import type { ExportProgress } from "./engine-export";
 import type { FromWorker, ToWorker } from "./engine-worker";
-import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
-import { addAudioTrackToOutput, writeAudio } from "./audio-mux";
+import { keyframeIntervalFor } from "./destinations";
 
 // Video encoding for MP4/WebM exports: in a module worker where OffscreenCanvas exists,
 // otherwise the same loop on the main thread.
@@ -82,11 +81,10 @@ export function encodeInWorker(
       if (finish()) reject(new Error(`Export worker failed: ${event.message}`));
     };
 
-    // Transfer ImageBitmap and audio buffer ownership to worker
+    // Transfer ImageBitmap ownership to worker
     const transferList: Transferable[] = [
       ...Object.values(start.images),
       ...Object.values(start.texts).map((t) => t.bitmap),
-      ...(start.audio ? start.audio.mix.channels.map((c) => c.buffer) : []),
     ];
     worker.postMessage(start, transferList);
   });
@@ -126,7 +124,7 @@ async function encodeFrames(
   signal?: AbortSignal,
   onProgress?: (p: ExportProgress) => void,
 ): Promise<{ blob: Blob; mime: string }> {
-  const { settings, codec, container, bitrate, audio } = start;
+  const { settings, codec, container, bitrate } = start;
   await engine.setDocument(doc, provider);
 
   const { total: duration } = schedule(doc);
@@ -146,18 +144,13 @@ async function encodeFrames(
   });
 
   output.addVideoTrack(source, { frameRate: fps });
-  const audioSource = audio ? addAudioTrackToOutput(output, audio) : null;
   await output.start();
 
   for (let frame = 0; frame < totalFrames; frame++) {
     signal?.throwIfAborted();
 
     const t = frame / fps;
-    if (settings.motionBlur) {
-      engine.renderAccumulated(t, motionBlurShutter(fps), MOTION_BLUR_SAMPLES);
-    } else {
-      engine.renderAt(t);
-    }
+    engine.renderAt(t);
 
     await source.add(t, 1 / fps);
 
@@ -173,7 +166,6 @@ async function encodeFrames(
   }
 
   onProgress?.({ stage: "finishing", frame: totalFrames, total: totalFrames, percentage: 100 });
-  if (audio && audioSource) await writeAudio(audioSource, audio);
   await output.finalize();
 
   const mime = container === "mp4" ? "video/mp4" : "video/webm";

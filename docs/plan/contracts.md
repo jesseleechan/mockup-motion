@@ -8,25 +8,25 @@ This file is the source of truth for shared types and module APIs. WP-00 copies 
 src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
-  storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
-  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts · fonts.ts
+  storage/     db.ts (idb) · projects.ts · blobs.ts · user-templates.ts
+  assets/      decode.ts · roles.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
-               framing.ts · timeline.ts (scheduling, transitions, loop wrap) · scroll.ts
-               text-anim.ts · cursor.ts · evaluate.ts (doc, t) → FrameState
+               framing.ts · timeline.ts (scheduling, loop wrap) · scroll.ts
+               evaluate.ts (doc, t) → FrameState
   engine/      three.js, no React (except react/)
                Engine.ts · stage.ts (camera fit) · devices/ · backgrounds/ · shadows/ · materials/
-               textures/ (tiling, downscale cache) · text/ (screen-space text pass)
-               compositor.ts (shots → RT → transition) · post/ (final pass, motion blur)
+               textures/ (tiling, downscale cache) · text/ (browser URL pill rasters)
+               compositor.ts (shots → RT → transition) · post/ (composite, final pass)
                react/EngineCanvas.tsx (thin preview wrapper)
-  text/        rasterize.ts (main thread only: text layer → ImageBitmap + word boxes)
+  text/        rasterize.ts (main thread only: one line of Inter → ImageBitmap, for the URL pill)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
-               verify.ts · bundle.ts · gif.ts
+               verify.ts · bundle.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
-  editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
-               Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
-  lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
+  editor/      Shell · TopBar · Library/ (Templates, Media) · Stage/ · Timeline/
+               Inspector/ (VideoPanel, ShotPanel) · dialogs/
+  lab/         dev-only render lab (/lab): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
 demo-sites/    static HTML/CSS sources for demo screenshots (WP-04)
 ```
@@ -43,14 +43,13 @@ export type EasingId =
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font"; // saved "audio" assets (music, removed October 2026) are dropped on load
   name: string;
   mime: string;
   bytes: number;
   width?: number; // image px
   height?: number; // image px
   role?: AssetRole; // auto-detected (assets/roles.ts), user-editable
-  palette?: string[]; // image: 5 dominant colours, hex, most-to-least prominent
   meta?: {
     tall?: boolean;
     hasStatusBar?: boolean;
@@ -59,71 +58,49 @@ export interface AssetRef {
     page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
   };
   family?: string; // font: CSS family name registered via FontFace
-  durationSec?: number; // audio
-  peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
-}
-
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string; // builtin family name or AssetRef.family
-  weight: number; // 100..900
 }
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // 2-3 stops, OKLCH-interpolated
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number } // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number } // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // 2-3 stops, OKLCH-interpolated
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: "light" | "dark";
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string; // shown in URL pill; "" hides text
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string; // default text colour; "" = auto contrast vs background
-  accent: string; // cursor, highlights
 }
 
-export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
+export type DeviceKind = "browser" | "phone" | "card";
 
 export type Layout =
   | { kind: "single"; device: DeviceKind; assetId: string }
-  | { kind: "pair"; desktopId: string; mobileId: string; arrangement: "overlap" | "side" }
-  | { kind: "trio"; desktopId: string; tabletId?: string; mobileId: string }
   | {
       kind: "rows";
       assetIds: string[];
       rows: 1 | 2 | 3;
       device: "browser" | "card";
       tilt: number;
-      speed: number;
       cardHeight?: number;
       gap?: number;
-      travel?: "steps" | "period";
+      travel: "period";
     }
   | {
       kind: "columns";
       assetIds: string[];
       columns: 2 | 3 | 4 | 5;
       tilt: number;
-      speed: number;
       device?: "phone" | "card";
       cardWidth?: number;
       gap?: number;
-      travel?: "steps" | "period";
+      travel: "period";
     }
-  | { kind: "wall"; assetIds: string[]; columns: 3 | 4 | 5; speed: number }
-  | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
   | {
       kind: "slider";
       assetIds: string[];
@@ -133,18 +110,16 @@ export type Layout =
       arrangement?: "carousel" | "deck";
     }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string }
-  | { kind: "title" };
-// tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
-// rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
-// cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
-// today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
-// shot duration and `speed` is ignored (§5).
-// columns.device (default "phone") and columns.cardWidth, gap and travel mirror rows, turned 90°:
-// unset fields are today's tilted phone marquee. "card" draws portrait cards at the phone screen
-// aspect 0.4615, whatever the image's own aspect. cardWidth: stage units (card height =
-// cardWidth / 0.4615). gap: stage units between cards and columns. travel "period" is the Frames
-// loop on columns (Mobile Frames, §5).
+  | { kind: "responsive"; desktopId: string; mobileId: string };
+// rows and columns are Frames (Desktop Frames, Mobile Frames, §5): lanes that each move exactly one
+// asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
+// whole group (the presets use 0). travel is always "period" (see "Removed layouts" below).
+// rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
+// cards and rows (default: 0.14 × width across, 0.06 down).
+// columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"
+// draws portrait cards at the phone screen aspect 0.4615, whatever the image's own aspect.
+// cardWidth: stage units (card height = cardWidth / 0.4615). gap: stage units between cards and
+// columns.
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
@@ -158,19 +133,9 @@ export type Layout =
 // scroll together (Responsive Scroll, quality-bar §4). Side by side at 16:9, 4:3 and 1:1, stacked
 // at 4:5 and 9:16.
 
-export type CameraPresetId =
-  | "static"
-  | "pushIn"
-  | "pullBack"
-  | "orbitLeft"
-  | "orbitRight"
-  | "tiltUp"
-  | "tiltDown"
-  | "riseUp"
-  | "dollyLeft"
-  | "dollyRight"
-  | "isoDrift"
-  | "heroTilt";
+// Since 19 October 2026. A saved project with a removed move (pullBack, orbitLeft, orbitRight,
+// tiltUp, tiltDown, riseUp, dollyLeft, dollyRight, isoDrift, heroTilt) loads with "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;
@@ -197,49 +162,11 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor =
-  | "top-left"
-  | "top"
-  | "top-right"
-  | "left"
-  | "center"
-  | "right"
-  | "bottom-left"
-  | "bottom"
-  | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number; // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string; // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number; // seconds from shot start
-  logoAssetId?: string; // render a logo above the text
-}
-
+// The loop wrap: a cut, or a fade from the shot's end into its start (§5).
 export interface Transition {
-  kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
-  duration: number; // seconds, overlaps the previous shot (see §5)
+  kind: "cut" | "fade";
+  duration: number; // seconds the wrap fade overlaps the end of the shot
   easing: EasingId;
-  direction?: "left" | "right" | "up" | "down";
-}
-
-export interface CursorKey {
-  t: number;
-  x: number;
-  y: number;
-  click?: boolean;
-} // x,y 0..1 of device screen
-export interface CursorSpec {
-  enabled: boolean;
-  style: "arrow" | "pointer" | "dot";
-  keys: CursorKey[];
 }
 
 export interface Shot {
@@ -247,20 +174,9 @@ export interface Shot {
   duration: number; // seconds, 1..30
   layout: Layout;
   camera: CameraMove;
-  entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec; // honoured for single-device and responsive layouts
-  cursor?: CursorSpec; // honoured only for single-device layouts
-  texts: TextLayer[];
-  transitionIn: Transition; // for shots[0], used as the loop wrap transition when doc.loop
+  transitionIn: Transition; // the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
-}
-
-export interface AudioTrack {
-  assetId: string;
-  volume: number;
-  fadeIn: number;
-  fadeOut: number;
-  offset: number;
 }
 
 export type DestinationId =
@@ -280,7 +196,6 @@ export interface ExportSettings {
   quality: "web" | "high" | "master";
   format: "mp4" | "webm";
   supersample: 1 | 1.5 | 2;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -293,21 +208,27 @@ export interface ProjectDoc {
   loop: boolean;
   assets: AssetRef[];
   style: Style;
-  shots: Shot[]; // length >= 1
-  audio?: AudioTrack;
+  shots: Shot[]; // exactly one
   export: ExportSettings;
   templateId?: string; // last applied template (informational)
 }
 ```
 
+**Removed layouts (19 October 2026, `docs/cuts-plan/README.md`).** `pair`, `trio`, the tilted `stack` fan, `wall`, the tilted `rows` and `columns` marquees (`travel: "steps"` or unset) and the `laptop` and `tablet` devices are gone. `sanitizeDoc` loads a saved one as the nearest preset look (`src/doc/legacy-layouts.ts`), so no shot is dropped: `pair` and `trio` become a single browser with the desktop screenshot; `stack` the Desktop Stack deck (`slider`, `axis: "y"`, `shape: "desktop"`, `arrangement: "deck"`); `wall` and tilted `rows` Desktop Frames; tilted `columns` Mobile Frames; a laptop or tablet a browser. A shot mapped to Frames or the deck also takes the preset's still camera and a cut wrap, and a Frames shot lasts at least 15 s. The V1 migration and saved user templates map the same way. The `tablet` asset role stays: it is a screenshot's detected size.
+
+**Removed reels (19 October 2026, `docs/cuts-plan/README.md`).** A video has one shot: `sanitizeDoc` keeps a saved reel's first shot and drops the others, and a saved user template applies its first shot. Shot entrances (`Shot.entrance`), shot-to-shot transitions and the `blur`, `push`, `zoom` and `wipe` kinds, `Transition.direction` and `CameraMove.progressRange` (split shots) are gone. Shot 0's `transitionIn` is the loop wrap: a saved `blur`, `push`, `zoom` or `wipe` loads as a `fade` with the same duration and easing.
+
 Gradient angles use CSS direction in normalized frame coordinates: 0° runs bottom to top, 90° left to right, 180° top to bottom. New gradients carry `angleConvention: "css"`; unmarked persisted v2 gradients retain their legacy direction through a one-time angle migration at load.
+
+Mesh, ambient and image backgrounds were removed on 19 October 2026. `sanitizeDoc` loads a saved mesh as a gradient from its first to its last colour (315°, CSS), and a saved ambient or image background as the Ash solid `#DFE1E3`. The v1 migration turns a v1 image background into Ash too.
+
+Device finishes and the `minimal` browser chrome were removed on 19 October 2026. `sanitizeDoc` drops a saved `deviceFinish`, so every device loads in its one finish (the phone in Silver, `quality-bar.md` §3.3), and loads a saved `minimal` chrome as `standard`.
 
 ## 3. Stage, units and camera
 
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
 - **Fit distance.** `d_fit = 0.5 / tan(fov/2)`. A camera with `distance = 1`, `yaw = pitch = roll = 0`, `pan = 0` sees exactly the stage. Because `distance` is a multiple of `d_fit`, changing `fov` at the same `distance` keeps the framing constant and only changes the amount of perspective.
 - **Orbit.** The camera orbits the target point `(panX, panY, 0)` by yaw and pitch at radius `distance × d_fit`, looking at the target, then rolls.
-- **Text and overlays** render in screen space (§6), not in the 3D scene, so camera moves never distort typography.
 
 ## 4. Layout resolution (`src/motion/layouts.ts`)
 
@@ -321,7 +242,7 @@ export interface LayoutNode {
   height: number;
   screenAspect: number; // width/height of the visible screen viewport
   transform: { x: number; y: number; z: number; rx: number; ry: number; rz: number; scale: number };
-  opacity: number; // 0..1 (entrances)
+  opacity: number; // 0..1 (slider neighbours, a deck's entering card)
   scroll: number; // 0..1 of scrollable range (0 when scroll disabled)
   depthOrder: number; // tie-breaker for transparent sorting
 }
@@ -330,26 +251,23 @@ export function resolveLayout(
   layout: Layout,
   aspect: Aspect,
   assets: AssetRef[],
-  shotT: number, // local shot time, for marquee offsets and entrances
+  shotT: number, // local shot time, for lane offsets
   shotDuration: number,
 ): LayoutNode[];
 ```
 
-Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, desktop browser/laptop `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` or `orbit` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule. A `responsive` layout emits a desktop card at `1.6` and a mobile card at `0.4615`, whatever the images' aspects, so tall pages scroll.
+Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), desktop browser `clamp(imageAspect, 1.25, 2.0)` when the image is short, else `1.6`. A `slider` or `orbit` with `shape: "mobile"` and a `columns` layout with `device: "card"` emit `card` nodes at the phone aspect `0.4615`; every other card follows the desktop rule. A `responsive` layout emits a desktop card at `1.6` and a mobile card at `0.4615`, whatever the images' aspects, so tall pages scroll.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 
-- Shot `i` starts at `s_0 = 0` and `s_{i+1} = s_i + duration_i − transitionIn_{i+1}.duration` (a `cut` has duration 0). A transition overlaps the end of the previous shot.
-- `totalDuration = s_last + duration_last`. When `doc.loop` is true and the doc has more than one shot **or** `shots[0].transitionIn.kind !== "cut"`: `totalDuration −= shots[0].transitionIn.duration`, and in `[total − d0, total)` the last shot blends into shot 0 with shot-0 local time `t − total`, clamped to 0 (shot 0 holds its first pose while fading in). So frame(total) ≡ frame(0) for every loop.
-- A single looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade).
-- In a looping doc, shot 0 has no entrance (`evaluate` treats it as `"none"`). Its first frame is also the frame the loop wraps into, so an entrance there would dissolve the last shot into an empty canvas, or pop out at a cut wrap, on every loop. Later shots keep their entrances, and a doc that does not loop plays shot 0's entrance from t = 0. `loopSkipsEntrance(doc, index)` in `motion/evaluate.ts` is the rule; the editor uses it to say so under shot 0's Entrance select.
-- Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade, except Frames (`rows` or `columns` with `travel: "period"`, below). At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
-- **Frames** (`rows` or `columns` with `travel: "period"`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. `Layout.speed` is ignored: the speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
+- A document has one shot (multi-shot reels were cut on 19 October 2026). It runs from 0 to `duration`.
+- `totalDuration = duration`. When `doc.loop` is true and `shots[0].transitionIn` is a `fade`: `totalDuration −= transitionIn.duration` (d0), and in `[total − d0, total)` the shot's end blends into its start, with the incoming layer's local time `t − total` clamped to 0 (it holds its first pose while fading in). So frame(total) ≡ frame(0) for every loop.
+- A looping shot with a moving camera therefore loops by **wrap crossfade** (default 0.8 s fade).
+- **Frames** (`rows` or `columns`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. Given a wrap crossfade instead, a single looping shot's lanes travel one period per `totalDuration`, and during the wrap the incoming lanes run on their unclamped time `t − total` (`ActiveShot.wrapT`) while camera and text keep the clamped time, so both layers show the same cards in the same places. The speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
 - **Sliders** (`slider`) loop natively. Step `k` moves every card one slot over `[k × step, k × step + 1.85]` on the `slide` curve, then holds; after N steps (N = `assetIds.length`) the arrangement is back where it started. The shot lasts `sliderDuration(layout) = max(1, N) × step`, so a single looping slider shot with a `cut` wrap has frame(total) ≡ frame(0) with no crossfade. A shot fits in 30 s: N counts at most the first 18 screenshots (`SLIDER_MAX_SCREENSHOTS`; later ones are not shown) and the step is at most `sliderStepMax(N)` = min(4.0, 30 / N) in 0.1 s steps. `src/motion/layouts/duration.ts` holds these rules beside `minShotDuration`; `sanitizeDoc` and the editor store apply them after every edit, so a slider's `Shot.duration` always equals `sliderDuration`. A slider's camera is still: `fixedShotCamera` sets `preset: "static"`, `intensity: 0` and `float: 0` in the same places, and the Shot inspector shows no Camera section for a slider. When fewer screenshots than visible slots are lit, the lit window is centred on the active card: N slots, or N − 1 when N is even (N > 2).
-- **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light like an entrance; only the carousel's faded neighbours mix in sRGB.
+- **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light; only the carousel's faded neighbours mix in sRGB.
 - **Orbits** (`orbit`, the Desktop Orbit and Mobile Orbit presets, `docs/orbit-plan/README.md`) loop natively on the slider's step timing. Card i sits at ring angle θ = 2π(i − φ)/N, where the phase φ = (k mod N) + p comes from `sliderStep`, so after N steps the ring is back where it started and frame(N × step) is exactly frame(0). An orbit is a stepped layout (`isSteppedLayout` in `duration.ts`) and shares the slider's rules: `sliderDuration` (N × step, N counting at most the first 6 screenshots, `ORBIT_MAX_SCREENSHOTS`), the step clamp, `fixedShotCamera` (still) and no Camera section. One node per shown screenshot (`orbit:<i>`), so no screenshot appears twice. Its nodes' `opacity` is a strength that the engine mixes with the shot's background, not with the cards behind (`fadeBlendFor(layout) === "background"` in `src/engine/devices/DeviceFade.ts`): the cards overlap, so each card is drawn on its own, back to front, and covers what is behind it.
 - **Responsive Scroll** (`responsive`) loops by the 0.8 s wrap crossfade: a scroll never reverses. Both screens stop together. With section data on both assets (`AssetRef.meta.sections`) and `ScrollSpec.sections` naming sections both pages have, stop k puts that section's top at the top of both screens (a page that can't scroll that far stops at its bottom); the first stop is the top of both pages. Otherwise both screens use the same `stops` fractions of their own scrollable range. Each move takes the time the screen that travels further needs at 0.9 screen heights per second on average, eased `smooth`; each stop holds `ScrollSpec.hold`. The layout sets the shot length (`fixedShotDuration`: holds plus moves plus the 0.8 s the wrap crossfade overlaps, at most 30 s; later stops are left out) and keeps the camera still (`fixedShotCamera`). A loop therefore lasts holds plus moves, and the wrap crossfade falls inside the last hold.
-- Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts
 export interface ScheduledShot {
@@ -368,21 +286,13 @@ export interface ShotFrame {
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
-  cursor?: { x: number; y: number; pressed: number; nodeId: string }; // pressed 0..1 ripple
   style: Style; // resolved (doc.style + overrides)
-}
-export interface TextFrame {
-  layerId: string;
-  words: { index: number; opacity: number; dy: number; blur: number; clip: number }[]; // dy in % frame height
-  opacity: number;
 }
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number; // 0..1, loop-safe
-  layers: { frame: ShotFrame; weight: number }[]; // 1 entry, or 2 during a transition
-  transition?: { kind: Transition["kind"]; progress: number; direction?: Transition["direction"] };
+  layers: { frame: ShotFrame; weight: number }[]; // 1 entry, or 2 during the wrap crossfade
+  transition?: { kind: Transition["kind"]; progress: number };
 }
 export function evaluate(doc: ProjectDoc, t: number): FrameState;
 ```
@@ -401,20 +311,27 @@ export interface EngineOptions {
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
   cameraDistanceOverride?: number; // isolated fixture override, not serialized
+  hideDevices?: boolean; // lab/test fixture: draw the background only; not serialized
 }
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
+}
+/** One line of Inter: the browser URL pill's domain. */
+export interface TextLine {
+  id: string; // raster key, used to hand rasters to the export worker
+  text: string;
+  size: number; // % of frame height
+  color: string; // #RRGGBB
 }
 export interface TextRaster {
   bitmap: ImageBitmap;
-  words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
-  color?: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
+  color: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
 }
 
 export class Engine {
@@ -424,7 +341,6 @@ export class Engine {
   renderAt(t: number): void; // synchronous; deterministic
   /** Active layers and transition blend into a linear target; no vignette, encoding or grain. */
   renderComposite(t: number, target: THREE.WebGLRenderTarget): FrameState | null;
-  renderAccumulated(t: number, shutter: number, samples: number): void; // motion blur (export)
   resize(width: number, height: number): void;
   /** Hit-test output-pixel coordinates; returns the LayoutNode id and screen UV (0..1), or null. */
   pick(x: number, y: number): { nodeId: string; u: number; v: number } | null;
@@ -442,15 +358,15 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
-Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
+Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and the wrap crossfade into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
-Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation averages `renderComposite` results (transitions included) in a linear half-float target, then runs the final pass once. Exports use 8 samples over a 180° shutter (`0.5 / fps`).
+Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision.
 
-`TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
-`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
+`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract. `EngineOptions.hideDevices` is the same kind of override: the development-only `devices=0` URL parameter draws the background alone, for tests of backgrounds, transitions and grain.
 
 ## 8. Templates (`src/templates/`)
 
@@ -466,7 +382,7 @@ export interface TemplateBuildContext {
   aspect: Aspect;
   slots: Record<string, AssetRef | undefined>;
   projectName: string;
-  style?: Partial<Style>; // keep user's brand style when re-applying
+  style?: Partial<Style>; // keep the user's browser chrome when re-applying
 }
 export interface Template {
   id: string;
@@ -516,4 +432,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises all text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.

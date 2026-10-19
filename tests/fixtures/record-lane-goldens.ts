@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { encodeFrame, goldenCases, goldenNodes } from "./lane-golden-cases";
 
 // Records the lane goldens (PF02): `npx tsx tests/fixtures/record-lane-goldens.ts`. Run it only
-// to record a deliberate change in Frames or the tilted marquees; the golden test exists to
+// to record a deliberate change in Frames; the golden test exists to
 // catch every other one.
 
 // One frame per line keeps the file diffable without a line per number.
