@@ -11,6 +11,7 @@ import {
 } from "./shell/panel-layout";
 import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
+import { UseMyScreenshotsBanner } from "./stage/UseMyScreenshotsBanner";
 import { TransportBar } from "./transport/TransportBar";
 import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
@@ -287,6 +288,7 @@ export const EditorShell: React.FC = () => {
               {/* Center Stage & Transport */}
               <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
                 <Stage showSafeMargins={showSafeMargins} />
+                <UseMyScreenshotsBanner />
                 <TransportBar
                   showSafeMargins={showSafeMargins}
                   onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
