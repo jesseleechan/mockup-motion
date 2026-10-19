@@ -35,7 +35,7 @@ export function parseCaptureJson(name: string, text: string): CaptureJson {
   } catch {
     throw new Error(`${name}: this file isn't valid JSON.`);
   }
-  const notCapture = new Error(`${name}: this isn't a capture file from mockup-motion-capture.`);
+  const notCapture = new Error(`${name}: this isn't a capture file from npm run capture.`);
   if (!raw || typeof raw !== "object") throw notCapture;
   const r = raw as Record<string, unknown>;
   if (

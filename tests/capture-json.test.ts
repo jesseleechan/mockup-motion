@@ -29,7 +29,7 @@ describe("capture JSON (Responsive Scroll R02)", () => {
       "bad.json: this file isn't valid JSON.",
     );
     expect(() => parseCaptureJson("other.json", '{"name":"x"}')).toThrow(
-      "other.json: this isn't a capture file from mockup-motion-capture.",
+      "other.json: this isn't a capture file from npm run capture.",
     );
   });
 

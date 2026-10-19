@@ -1,5 +1,5 @@
 export const USAGE = `
-Usage: npx mockup-motion-capture <url> [options]
+Usage: npm run capture -- <url> [options]
 
 Options:
   --out <dir>           Output directory (default: captures/)

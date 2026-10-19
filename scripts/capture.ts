@@ -1,7 +1,7 @@
 /**
- * The capture lives in the `mockup-motion-capture` package (packages/capture), which anyone can
- * run with `npx mockup-motion-capture <url>`. `npm run capture` runs the same package, and this
- * module re-exports it for the repo's scripts and tests.
+ * The capture lives in the `mockup-motion-capture` package (packages/capture). `npm run capture`
+ * runs it, and this module re-exports it for the repo's scripts and tests. The package isn't on
+ * npm yet; its README has the publish steps.
  */
 export {
   captureBaseNames,

@@ -2,11 +2,13 @@
 
 Captures a website for [MockupMotion](https://github.com/jesseleechan/mockup-motion): desktop and mobile full-page screenshots, each with a JSON file of where the page's sections are. MockupMotion uses the section data to frame and scroll the screenshots.
 
+From the MockupMotion repository:
+
 ```sh
-npx mockup-motion-capture https://your-site.com
+npm run capture -- https://your-site.com
 ```
 
-It needs Node 20 or later and no other setup when Chrome or Edge is installed.
+It needs Node 20 or later and no other setup when Chrome or Edge is installed. The package isn't published to npm yet (see [Publishing](#publishing-not-done-yet)).
 
 ## Output
 
@@ -42,7 +44,7 @@ Drop the `captures` folder onto the editor. The screenshots are imported with th
 ## Options
 
 ```
-npx mockup-motion-capture <url> [options]
+npm run capture -- <url> [options]
 
   --out <dir>           Output directory (default: captures/)
   --desktop <width>     Desktop viewport width (default: 1440)
@@ -74,16 +76,16 @@ npx playwright@<version> install chromium
 To use a specific Chromium binary, set `PW_CHROMIUM_EXECUTABLE` to its path:
 
 ```sh
-PW_CHROMIUM_EXECUTABLE=/path/to/chrome npx mockup-motion-capture https://your-site.com
+PW_CHROMIUM_EXECUTABLE=/path/to/chrome npm run capture -- https://your-site.com
 ```
 
-## Publishing
+## Publishing (not done yet)
 
-For the package owner. These steps publish from `packages/capture` in the MockupMotion repo.
+The package isn't on npm: publishing is deferred while MockupMotion is for personal use. Once it is published, anyone can run `npx mockup-motion-capture https://your-site.com` without the repo. These steps publish from `packages/capture` in the MockupMotion repo.
 
 1. Create an account on [npmjs.com](https://www.npmjs.com/signup) if you don't have one, and turn on two-factor authentication.
 2. Log in from the terminal: `npm login`, then check with `npm whoami`.
-3. Check that the name is still free: `npm view mockup-motion-capture`. A 404 means it is free. If it's taken, change `name` in `package.json` (and the `bin` name, this README and the editor's capture dialog in `src/editor/dialogs/CaptureHelpModal.tsx`).
+3. Check that the name is still free: `npm view mockup-motion-capture`. A 404 means it is free. If it's taken, change `name` in `package.json` (and the `bin` name, this README and the editor's capture dialog in `src/editor/dialogs/CaptureHelpModal.tsx`, which can then show the `npx` line).
 4. Go to the package: `cd packages/capture`.
 5. Set the version. The first release can stay at `0.1.0`; later releases bump it with `npm version patch` (or `minor`, `major`).
 6. Look at what will ship: `npm pack --dry-run`. It should list `bin/`, `src/`, `README.md` and `package.json` only.

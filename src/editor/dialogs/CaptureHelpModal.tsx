@@ -23,10 +23,10 @@ export const CaptureHelpModal: React.FC<CaptureHelpModalProps> = ({ open, onOpen
               <span>Capture command (recommended)</span>
             </div>
             <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed">
-              Run this in a terminal. It needs Node.js 20 or later.
+              Run this in the MockupMotion repository. It needs Node.js 20 or later.
             </p>
             <div className="p-2 rounded bg-black/60 font-mono text-[11px] text-[var(--color-accent)] select-all border border-[var(--color-line)]">
-              npx mockup-motion-capture https://your-site.com
+              npm run capture https://your-website.com
             </div>
             <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed">
               It writes a <span className="font-mono">captures</span> folder with desktop and mobile
