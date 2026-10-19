@@ -45,3 +45,33 @@ export function xToTime(x: number, loop: number, width: number, steps: number[],
   }
   return time;
 }
+
+// One frame at the editor's 30 fps preview, as the stage's frame-step buttons use.
+const FRAME = 1 / 30;
+// Times closer than this count as the same time, so a step under the playhead is "here".
+const EPSILON = 1e-6;
+
+/**
+ * Where a key press on the scrubber moves the playhead, or null for a key it doesn't handle.
+ * Arrows move to the previous or next step where the preset has steps, otherwise one frame;
+ * with Shift they move one second. Home and End go to the start and the loop end.
+ */
+export function scrubberKeyTime(
+  key: string,
+  shift: boolean,
+  playhead: number,
+  loop: number,
+  steps: number[],
+): number | null {
+  const clamp = (time: number) => Math.min(Math.max(time, 0), loop);
+  if (key === "Home") return 0;
+  if (key === "End") return loop;
+  if (key !== "ArrowLeft" && key !== "ArrowRight") return null;
+  const forward = key === "ArrowRight";
+  if (shift) return clamp(playhead + (forward ? 1 : -1));
+  if (steps.length > 1) {
+    if (forward) return steps.find((time) => time > playhead + EPSILON) ?? loop;
+    return [...steps].reverse().find((time) => time < playhead - EPSILON) ?? 0;
+  }
+  return clamp(playhead + (forward ? FRAME : -FRAME));
+}

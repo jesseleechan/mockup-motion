@@ -6,7 +6,7 @@ import { schedule } from "../../motion";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
 import { shotSummary } from "../labels";
 import { formatSeconds } from "../loop-length";
-import { timeToX, timelineMarks, xToTime } from "./marks";
+import { scrubberKeyTime, timeToX, timelineMarks, xToTime } from "./marks";
 
 // A step tick within this distance of the pointer catches a scrub, so a step is easy to land on.
 const STEP_SNAP_PX = 6;
@@ -58,6 +58,16 @@ export const TimelineContainer: React.FC = () => {
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const next = scrubberKeyTime(e.key, e.shiftKey, playhead, total, marks.steps);
+    if (next === null) return;
+    // The editor's global arrow and Home/End shortcuts would move the playhead a second time.
+    e.preventDefault();
+    e.stopPropagation();
+    setPlaying(false);
+    setPlayhead(next);
+  };
+
   const progress = total > 0 ? Math.min(1, Math.max(0, playhead / total)) : 0;
   const stepLabel = marks.steps.length > 1 ? `${marks.steps.length} steps` : null;
 
@@ -94,7 +104,7 @@ export const TimelineContainer: React.FC = () => {
       <div
         ref={trackRef}
         role="slider"
-        aria-label="Playhead"
+        aria-label="Timeline scrubber"
         aria-valuemin={0}
         aria-valuemax={Number(total.toFixed(2))}
         aria-valuenow={Number(playhead.toFixed(2))}
@@ -105,7 +115,8 @@ export const TimelineContainer: React.FC = () => {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="group relative flex-1 min-w-0 h-full cursor-pointer outline-none"
+        onKeyDown={onKeyDown}
+        className="group relative flex-1 min-w-0 h-full cursor-pointer outline-none touch-none"
       >
         <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--color-line-strong)]" />
         <div

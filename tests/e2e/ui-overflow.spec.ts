@@ -22,10 +22,14 @@ interface UIStoreHandle {
 type Theme = "dark" | "light";
 
 const PANELS = ["library", "inspector", "timeline"] as const;
+// The fewest rendered elements each panel has; fewer means it failed to render. The slim
+// timeline without steps has exactly 10 before its thumbnail <img> loads: the root, the shot
+// button, its thumbnail box and label, the scrubber with its track, progress and playhead, and
+// the loop length with its value. Every one is checked for overflow.
 const MIN_CHECKED: Record<(typeof PANELS)[number], number> = {
-  library: 20,
-  inspector: 20,
-  timeline: 8,
+  library: 21,
+  inspector: 21,
+  timeline: 10,
 };
 
 // Desktop Frames and Mobile Frames at 16:9 (src/templates/frames-template.ts), without assets.
@@ -199,11 +203,11 @@ async function expectNoOverflow(
 ) {
   const reports = await overflowReport(page, panels);
   for (const report of reports) {
-    // A panel that renders almost nothing would pass trivially. The slim timeline is one row (shot,
-    // scrubber, loop length) of about a dozen elements; the side panels hold far more.
-    expect(report.checked, `${context}: elements checked in ${report.panel}`).toBeGreaterThan(
-      MIN_CHECKED[report.panel as (typeof PANELS)[number]],
-    );
+    // A panel that renders almost nothing would pass trivially (MIN_CHECKED).
+    expect(
+      report.checked,
+      `${context}: elements checked in ${report.panel}`,
+    ).toBeGreaterThanOrEqual(MIN_CHECKED[report.panel as (typeof PANELS)[number]]);
     expect(report.offenders, `${context}: overflow in ${report.panel}`).toEqual([]);
   }
 }
