@@ -403,12 +403,12 @@ function sanitizeShot(
 
   const shot: Shot = {
     id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
-    // A slider sets its own length (N × step), so its loop stays native (contracts.md §5).
+    // A slider or orbit sets its own length (N × step), so its loop stays native (contracts.md §5).
     duration:
       fixedShotDuration(layout) ??
       clamp(typeof s.duration === "number" ? s.duration : 5, 1, MAX_SHOT_DURATION),
     layout,
-    // A slider's camera is still, so its loop stays native (quality bar §4).
+    // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
     entrance,
     texts,
@@ -567,6 +567,25 @@ function sanitizeLayout(
         step: clampSliderStep(
           typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
           sliderIds.length,
+        ),
+        // Unset is the carousel; saved sliders from before the deck have no arrangement.
+        ...(l.arrangement === "deck" || l.arrangement === "carousel"
+          ? { arrangement: l.arrangement }
+          : {}),
+      };
+    }
+    case "orbit": {
+      const orbitIds = Array.isArray(l.assetIds)
+        ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+        : [];
+      return {
+        kind: "orbit",
+        assetIds: orbitIds,
+        shape: l.shape === "desktop" ? "desktop" : "mobile",
+        // The slider's step range (quality bar §2.2).
+        step: clampSliderStep(
+          typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
+          orbitIds.length,
         ),
       };
     }
