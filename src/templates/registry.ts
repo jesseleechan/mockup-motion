@@ -8,10 +8,12 @@ import { framesTemplate } from "./frames";
 import { mobileFramesTemplate } from "./mobile-frames";
 import { desktopStackTemplate } from "./desktop-stack";
 import { mobileStackTemplate } from "./mobile-stack";
+import { desktopOrbitTemplate } from "./desktop-orbit";
+import { mobileOrbitTemplate } from "./mobile-orbit";
 
 /**
- * Gallery order (Frames plan D12, stack plan D5): the Slider pair, the Frames pair, the Stack
- * pair, each desktop first, then Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
+ * Gallery order (Frames plan D12, stack plan D5, orbit plan): the Slider, Frames, Stack and
+ * Orbit pairs, each desktop first, then Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
@@ -20,6 +22,8 @@ export const BUILTIN_TEMPLATES: Template[] = [
   mobileFramesTemplate,
   desktopStackTemplate,
   mobileStackTemplate,
+  desktopOrbitTemplate,
+  mobileOrbitTemplate,
   scrollStoryTemplate,
 ];
 

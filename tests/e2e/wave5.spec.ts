@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
+import AxeBuilder from "@axe-core/playwright";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 
-/** The gallery tab of one size lists that size's templates in registry order. */
+// Each gallery tab lists the templates of its size, in registry order.
 const idsOf = (category: "desktop" | "mobile") =>
   BUILTIN_TEMPLATES.filter((t) => t.category === category).map((t) => t.id);
-import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
   test.beforeEach(async ({ page }) => {

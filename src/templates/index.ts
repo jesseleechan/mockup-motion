@@ -11,3 +11,5 @@ export { mobileSliderTemplate } from "./mobile-slider";
 export { desktopSliderTemplate } from "./desktop-slider";
 export { desktopStackTemplate } from "./desktop-stack";
 export { mobileStackTemplate } from "./mobile-stack";
+export { desktopOrbitTemplate } from "./desktop-orbit";
+export { mobileOrbitTemplate } from "./mobile-orbit";

@@ -18,15 +18,21 @@ export interface DeviceDraw {
  * How a faded layer mixes with what is behind it. `linear` blends in linear light, like every
  * other pass. `srgb` mixes the encoded sRGB values, the way the slider reference fades its
  * neighbours (docs/presets-plan/reference.md: a pixel of 15 at 65% over 223 shows 88).
+ * `background` mixes the same way, but with the shot's background instead of what is drawn so
+ * far, and covers what is behind: an orbit's cards overlap, and a faded card must not show the
+ * cards behind it through itself (quality bar §3.1).
  */
-export type FadeBlend = "linear" | "srgb";
+export type FadeBlend = "linear" | "srgb" | "background";
 
 /**
- * The blend a shot's fades use. Only the carousel's faded neighbours mix in sRGB (quality bar
- * §3.1); a deck's entering card and every entrance blend in linear light.
+ * The fade blend a shot's layout uses (quality bar §3.1): the carousel's neighbours and the
+ * orbit's cards are mixed in sRGB; a deck's entering card and every entrance blend in linear
+ * light.
  */
-export function fadeBlendFor(layout: Layout): FadeBlend {
-  return layout.kind === "slider" && layout.arrangement !== "deck" ? "srgb" : "linear";
+export function fadeBlendFor(layout: Layout | undefined): FadeBlend {
+  if (layout?.kind === "slider") return layout.arrangement === "deck" ? "linear" : "srgb";
+  if (layout?.kind === "orbit") return "background";
+  return "linear";
 }
 
 // Opacities within half an 8-bit step of 0 or 1 draw as hidden or opaque.
@@ -52,6 +58,7 @@ export class DeviceFadePass {
   // it is drawn to.
   private backdrop: THREE.WebGLRenderTarget | null = null;
   private srgbMaterial: THREE.ShaderMaterial;
+  private backgroundMaterial: THREE.ShaderMaterial;
   private copyMaterial: THREE.ShaderMaterial;
 
   constructor() {
@@ -115,6 +122,48 @@ export class DeviceFadePass {
       depthTest: false,
       depthWrite: false,
     });
+    this.backgroundMaterial = new THREE.ShaderMaterial({
+      vertexShader: FULLSCREEN_VERTEX,
+      // The layer is premultiplied linear colour and the backdrop is the shot's background alone.
+      // Each device is mixed with the background as encoded sRGB values, then put over the
+      // target with the layer's coverage, so it hides whatever is behind it.
+      fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform sampler2D map;
+        uniform sampler2D backdrop;
+        uniform float uOpacity;
+        vec3 toSrgb(vec3 c) {
+          c = clamp(c, 0.0, 1.0);
+          return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+        }
+        vec3 toLinear(vec3 c) {
+          c = clamp(c, 0.0, 1.0);
+          return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+        }
+        void main() {
+          vec4 layer = texture2D(map, vUv);
+          if (layer.a <= 0.0) discard;
+          vec3 back = texture2D(backdrop, vUv).rgb;
+          vec3 device = layer.rgb / layer.a;
+          vec3 mixed = toLinear(mix(toSrgb(back), toSrgb(device), uOpacity));
+          gl_FragColor = vec4(mixed * layer.a, layer.a);
+        }
+      `,
+      uniforms: {
+        map: { value: null },
+        backdrop: { value: null },
+        uOpacity: { value: 1.0 },
+      },
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      blendSrcAlpha: THREE.OneFactor,
+      blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
     this.copyMaterial = new THREE.ShaderMaterial({
       vertexShader: FULLSCREEN_VERTEX,
       fragmentShader: /* glsl */ `
@@ -154,7 +203,13 @@ export class DeviceFadePass {
       return;
     }
 
-    for (const run of this.runsBackToFront(shown)) {
+    if (blend === "background") {
+      // The target holds only the background so far; keep a copy to mix the faded devices with.
+      this.copyTo(renderer, target, this.backdropFor(target));
+    }
+    // Overlapping devices with one opacity would mix as one layer and z-fight; `background`
+    // draws each device on its own, back to front, so the nearer one always covers.
+    for (const run of this.runsBackToFront(shown, blend !== "background")) {
       for (const draw of run.draws) draw.object3d.visible = true;
       if (run.opacity >= 1 - OPACITY_EPSILON) {
         renderer.setRenderTarget(target);
@@ -175,12 +230,15 @@ export class DeviceFadePass {
    * browser). The devices' centres can disagree: under an orbit the wide browser's centre
    * comes nearer the camera than the phone's.
    */
-  private runsBackToFront(draws: DeviceDraw[]): { opacity: number; draws: DeviceDraw[] }[] {
+  private runsBackToFront(
+    draws: DeviceDraw[],
+    group: boolean,
+  ): { opacity: number; draws: DeviceDraw[] }[] {
     const sorted = [...draws].sort((a, b) => a.depthOrder - b.depthOrder);
     const runs: { opacity: number; draws: DeviceDraw[] }[] = [];
     for (const draw of sorted) {
       const last = runs[runs.length - 1];
-      if (last && Math.abs(last.opacity - draw.opacity) < 1e-4) last.draws.push(draw);
+      if (group && last && Math.abs(last.opacity - draw.opacity) < 1e-4) last.draws.push(draw);
       else runs.push({ opacity: draw.opacity, draws: [draw] });
     }
     return runs;
@@ -204,13 +262,14 @@ export class DeviceFadePass {
     renderer.render(scene, camera);
     renderer.setClearColor(this.clearColor, prevClearAlpha);
 
-    if (blend === "srgb") {
-      // Every render into the multisampled target resolves it, so its texture is current.
+    if (blend === "background") {
+      this.mesh.material = this.backgroundMaterial;
+      this.backgroundMaterial.uniforms.map.value = layer.texture;
+      this.backgroundMaterial.uniforms.backdrop.value = this.backdropFor(target).texture;
+      this.backgroundMaterial.uniforms.uOpacity.value = opacity;
+    } else if (blend === "srgb") {
       const backdrop = this.backdropFor(target);
-      this.mesh.material = this.copyMaterial;
-      this.copyMaterial.uniforms.map.value = target.texture;
-      renderer.setRenderTarget(backdrop);
-      renderer.render(this.scene, this.camera);
+      this.copyTo(renderer, target, backdrop);
 
       this.mesh.material = this.srgbMaterial;
       this.srgbMaterial.uniforms.map.value = layer.texture;
@@ -225,8 +284,22 @@ export class DeviceFadePass {
     renderer.render(this.scene, this.camera);
   }
 
+  /** Copies the target's current contents into `backdrop`. */
+  private copyTo(
+    renderer: THREE.WebGLRenderer,
+    target: THREE.WebGLRenderTarget,
+    backdrop: THREE.WebGLRenderTarget,
+  ): void {
+    // Every render into the multisampled target resolves it, so its texture is current.
+    this.mesh.material = this.copyMaterial;
+    this.copyMaterial.uniforms.map.value = target.texture;
+    renderer.setRenderTarget(backdrop);
+    renderer.render(this.scene, this.camera);
+  }
+
   /**
-   * Allocates the targets for a document whose devices can fade (`srgb`: with that blend), or
+   * Allocates the targets for a document whose devices can fade (`srgb`: with the `srgb` or
+   * `background` blend, which need a backdrop), or
    * frees them for one whose devices never do, so rendering a frame never creates GPU objects.
    */
   prepare(
@@ -288,6 +361,7 @@ export class DeviceFadePass {
     this.mesh.geometry.dispose();
     this.material.dispose();
     this.srgbMaterial.dispose();
+    this.backgroundMaterial.dispose();
     this.copyMaterial.dispose();
   }
 }

@@ -7,6 +7,7 @@ const SIZE_PAIRS: readonly (readonly [desktop: string, mobile: string])[] = [
   ["desktop-slider", "mobile-slider"],
   ["frames", "mobile-frames"],
   ["desktop-stack", "mobile-stack"],
+  ["desktop-orbit", "mobile-orbit"],
 ];
 
 const SCREENSHOT_ROLES: readonly AssetRole[] = ["desktop", "mobile", "tablet"];

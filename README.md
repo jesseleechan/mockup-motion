@@ -30,7 +30,7 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 ## Choose a template
 
-Start with a template, or try the demo content. Seven templates: Desktop Slider, Mobile Slider, Desktop Frames, Mobile Frames, Desktop Stack, Mobile Stack and Scroll Story. Each pair is one effect in a desktop and a mobile size.
+Start with a template, or try the demo content. Nine templates: Desktop Slider, Mobile Slider, Desktop Frames, Mobile Frames, Desktop Stack, Mobile Stack, Desktop Orbit, Mobile Orbit and Scroll Story. Each pair is one effect in a desktop and a mobile size.
 
 Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
 
