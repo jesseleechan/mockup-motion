@@ -264,7 +264,7 @@ describe("Orbit shots set their own length and keep a still camera", () => {
     const layout = doc.shots[0].layout as OrbitLayout;
     layout.step = 9;
     doc.shots[0].duration = 3;
-    doc.shots[0].camera = { preset: "orbitLeft", intensity: 1, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
     const { doc: clean } = sanitizeDoc(doc);
     expect(clean.shots[0].layout).toEqual({ ...layout, step: 4 });
     expect(clean.shots[0].duration).toBe(20);
@@ -275,7 +275,7 @@ describe("Orbit shots set their own length and keep a still camera", () => {
 describe("Desktop Orbit and Mobile Orbit templates", () => {
   it("are a built-in desktop and mobile pair with 6 slots, the first 4 required", () => {
     const ids = BUILTIN_TEMPLATES.map((t) => t.id);
-    expect(ids.indexOf("desktop-orbit")).toBe(ids.indexOf("mobile-frames") + 1);
+    expect(ids.indexOf("desktop-orbit")).toBe(ids.indexOf("mobile-stack") + 1);
     expect(ids.indexOf("mobile-orbit")).toBe(ids.indexOf("desktop-orbit") + 1);
     expect(pairedTemplateId("desktop-orbit")).toBe("mobile-orbit");
     expect(pairedTemplateId("mobile-orbit")).toBe("desktop-orbit");

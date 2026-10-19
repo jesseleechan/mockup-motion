@@ -11,33 +11,20 @@ import { cameraPose } from "./camera";
 import { frameDistance } from "./framing";
 import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
 import { scrollableFramesFor, scrollPosition } from "./scroll";
-import { textFrame, type TextFrame } from "./text-anim";
+import { responsiveScreens, responsiveScrollAt } from "./responsive-scroll";
 import { activeLayers, schedule } from "./timeline";
-import { evaluateCursorMotion } from "./cursor";
 
 export interface ShotFrame {
   shotId: string;
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
-  cursor?: {
-    x: number;
-    y: number;
-    pressed: number;
-    nodeId: string;
-    scale?: number;
-    rippleRadius?: number;
-    rippleOpacity?: number;
-    style?: "arrow" | "pointer" | "dot";
-  };
   style: Style;
 }
 
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number;
   layers: { frame: ShotFrame; weight: number }[];
   transition?: {
     kind: Transition["kind"];
@@ -77,37 +64,17 @@ function evaluateNodes(
     }
   }
 
-  return nodes;
-}
-
-function evaluateTexts(shot: Shot, localT: number): TextFrame[] {
-  if (!shot.texts || shot.texts.length === 0) {
-    return [];
+  // Responsive Scroll: both screens stop on the same sections (contracts.md §5)
+  if (shot.scroll?.enabled && shot.layout.kind === "responsive" && nodes.length === 2) {
+    const screens = responsiveScreens(shot.layout, assets);
+    if (screens) {
+      const [desktop, mobile] = responsiveScrollAt(shot.scroll, screens, localT);
+      nodes[0].scroll = desktop;
+      nodes[1].scroll = mobile;
+    }
   }
-  return shot.texts.map((layer) => {
-    const wordCount = layer.text ? layer.text.trim().split(/\s+/).filter(Boolean).length : 0;
-    return textFrame(layer, wordCount, localT);
-  });
-}
 
-function evaluateCursor(
-  shot: Shot,
-  localT: number,
-  firstNodeId: string,
-): ShotFrame["cursor"] | undefined {
-  const result = evaluateCursorMotion(shot.cursor, localT);
-  if (!result) return undefined;
-
-  return {
-    x: result.x,
-    y: result.y,
-    pressed: result.pressed,
-    nodeId: firstNodeId,
-    scale: result.scale,
-    rippleRadius: result.ripple?.radius,
-    rippleOpacity: result.ripple?.opacity,
-    style: result.style,
-  };
+  return nodes;
 }
 
 /**
@@ -129,7 +96,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   }
 
   const active = activeLayers(doc, normT);
-  const backgroundPhase = total > 0 ? normT / total : 0;
 
   const layers = active.layers.map((activeShot) => {
     const shot = activeShot.shot;
@@ -154,7 +120,7 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar
     // §4), so they are full bleed.
     let camera = baseCamera;
-    const isFullBleed = frames || shot.layout.kind === "title" || isSteppedLayout(shot.layout);
+    const isFullBleed = frames || isSteppedLayout(shot.layout);
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {
@@ -165,12 +131,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       }
     }
 
-    // Text frames
-    const texts = evaluateTexts(shot, localT);
-
-    // Cursor
-    const cursor = evaluateCursor(shot, localT, nodes[0]?.id ?? "");
-
     // Resolved style
     const style: Style = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
 
@@ -179,8 +139,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       localT,
       camera,
       nodes,
-      texts,
-      cursor,
       style,
     };
 
@@ -193,7 +151,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   return {
     t: normT,
     total,
-    backgroundPhase,
     layers,
     transition: active.transition,
   };

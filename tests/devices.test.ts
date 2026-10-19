@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { defaultStyle } from "../src/doc/defaults";
 import type { DeviceKind, LayoutNode } from "../src/motion";
 import { screenAspectFor } from "../src/motion";
-import { DeviceFadePass } from "../src/engine/devices/DeviceFade";
+import type { Layout } from "../src/doc/types";
+import { DeviceFadePass, fadeBlendFor } from "../src/engine/devices/DeviceFade";
 import {
   buildBrowserDevice,
   buildCardDevice,
@@ -169,6 +170,14 @@ describe("Portrait cards and slider fades (presets P02)", () => {
     dev.dispose();
     const left = [...resources].filter((resource) => !disposed.has(resource));
     expect(left.map((r) => r.constructor.name)).toEqual([]);
+  });
+
+  it("mixes only the carousel's fades in sRGB; a deck's entering card blends in linear light", () => {
+    const slider: Layout = { kind: "slider", assetIds: [], axis: "x", shape: "mobile", step: 2 };
+    expect(fadeBlendFor(slider)).toBe("srgb");
+    expect(fadeBlendFor({ ...slider, arrangement: "carousel" })).toBe("srgb");
+    expect(fadeBlendFor({ ...slider, arrangement: "deck" })).toBe("linear");
+    expect(fadeBlendFor({ kind: "single", device: "card", assetId: "a" })).toBe("linear");
   });
 
   it("allocates the sRGB backdrop only for slider docs and frees it on dispose", () => {

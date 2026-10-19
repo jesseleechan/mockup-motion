@@ -1,12 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { CameraPresetId, Layout, ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
-import {
-  CAMERA_LABELS,
-  EASING_LABELS,
-  TEXT_ANIMATION_LABELS,
-  TEXT_ROLE_LABELS,
-} from "../../src/editor/labels";
+import { CAMERA_LABELS, EASING_LABELS } from "../../src/editor/labels";
+import { BLANK_PAGE } from "../helpers/blank-page";
+import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc };
@@ -18,12 +15,7 @@ interface EditorStoreHandle {
 
 interface UIStoreHandle {
   getState: () => {
-    setSelection: (
-      selection:
-        | { kind: "video" }
-        | { kind: "shot"; id: string }
-        | { kind: "text"; shotId: string; id: string },
-    ) => void;
+    setSelection: (selection: { kind: "video" } | { kind: "shot"; id: string }) => void;
   };
 }
 
@@ -57,7 +49,7 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
 ];
 
 async function resetAndOpen(page: Page, theme: Theme) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async (theme) => {
     localStorage.clear();
     sessionStorage.clear();
@@ -94,9 +86,9 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
     .toBeGreaterThan(0);
 }
 
-/** The shot looks the inspector shows: a single browser, a phone and a title card. */
-type ShotLook = "browser" | "phone" | "title";
-const SHOT_LOOKS: ShotLook[] = ["browser", "phone", "title"];
+/** The shot looks the inspector shows: a single browser and a phone. */
+type ShotLook = "browser" | "phone";
+const SHOT_LOOKS: ShotLook[] = ["browser", "phone"];
 
 /** Scroll Story with its demo screenshot: one single-browser shot. */
 async function openStory(page: Page) {
@@ -104,8 +96,8 @@ async function openStory(page: Page) {
 }
 
 /**
- * Gives the video's one shot `look`, keeping its screenshot. A title card gets a label and a
- * title. Set through the store, as no template builds a phone or a title card.
+ * Gives the video's one shot `look`, keeping its screenshot. Set through the store, as no
+ * template builds a phone.
  */
 async function setShotLook(page: Page, look: ShotLook, camera?: CameraPresetId) {
   await page.evaluate(
@@ -115,28 +107,7 @@ async function setShotLook(page: Page, look: ShotLook, camera?: CameraPresetId) 
       store.getState().apply((draft) => {
         const shot = draft.shots[0];
         const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
-        const text = (id: string, role: "title" | "label", value: string) => ({
-          id,
-          role,
-          text: value,
-          color: "",
-          font: "display" as const,
-          size: role === "title" ? 6 : 2.2,
-          anchor: "center" as const,
-          align: "center" as const,
-          animation: "fadeUp" as const,
-          delay: 0.2,
-        });
-        if (look === "title") {
-          shot.layout = { kind: "title" };
-          shot.texts = [
-            text("txt-intro", "label", "INTRODUCING"),
-            text("txt-title", "title", "Studio"),
-          ];
-        } else {
-          shot.layout = { kind: "single", device: look, assetId };
-          shot.texts = [];
-        }
+        shot.layout = { kind: "single", device: look, assetId };
         if (camera) shot.camera.preset = camera;
       });
     },
@@ -151,11 +122,7 @@ async function currentDoc(page: Page): Promise<ProjectDoc> {
   });
 }
 
-async function select(
-  page: Page,
-  selection:
-    { kind: "video" } | { kind: "shot"; id: string } | { kind: "text"; shotId: string; id: string },
-) {
+async function select(page: Page, selection: { kind: "video" } | { kind: "shot"; id: string }) {
   await page.evaluate((selection) => {
     const ui = (window as unknown as { __uiStore?: UIStoreHandle }).__uiStore;
     if (!ui) throw new Error("__uiStore is unavailable");
@@ -255,15 +222,14 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll and the cursor.
+        // Every section of a single-device shot: Scroll Story's shot already scrolls.
         const shotId = (await currentDoc(page)).shots[0].id;
         await select(page, { kind: "shot", id: shotId });
-        await inspector.getByRole("switch", { name: "Scroll through page" }).click();
-        await inspector.getByRole("switch", { name: "Show cursor" }).click();
-        await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
-        await expectNoOverflow(page, "Shot inspector, scroll and cursor");
+        await expect(inspector.getByRole("switch", { name: "Scroll through page" })).toBeChecked();
+        await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
+        await expectNoOverflow(page, "Shot inspector, scroll");
 
-        // Each look in turn: single devices and title cards show different sections.
+        // Each look in turn: a browser and a phone show different sections.
         for (const look of SHOT_LOOKS) {
           await setShotLook(page, look);
           await select(page, { kind: "shot", id: shotId });
@@ -271,16 +237,9 @@ test.describe("F08 overflow guard", () => {
           await expectNoOverflow(page, `${look} shot inspector`);
         }
 
-        // The title card's text layer.
-        await select(page, { kind: "text", shotId, id: "txt-intro" });
-        await expect(inspector.getByText("Text layer", { exact: true })).toBeVisible();
-        await expectNoOverflow(page, "Text inspector");
-
-        // The other library tabs.
-        for (const tab of ["Media", "Brand"]) {
-          await page.getByRole("tab", { name: tab }).click();
-          await expectNoOverflow(page, `${tab} tab`);
-        }
+        // The other library tab.
+        await page.getByRole("tab", { name: "Media" }).click();
+        await expectNoOverflow(page, "Media tab");
 
         // Both Frames presets, whose speed row holds the loop length chips: the shot takes a
         // Desktop Frames, then a Mobile Frames layout with six screenshots. The inspector only.
@@ -313,14 +272,12 @@ test.describe("F08 overflow guard", () => {
 });
 
 // Enum ids that are camelCase can only reach the UI by mistake (e.g. "pushIn").
-const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS, TEXT_ANIMATION_LABELS, TEXT_ROLE_LABELS]
+const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
 // Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
-const NODE_ID = String.raw`\b(?:single|row\d+|col\d+):[a-z0-9]+`;
-const RAW_ID = new RegExp(
-  String.raw`pushIn|heroTilt|isoDrift|row\d+:col\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`,
-);
+const NODE_ID = String.raw`\\b(?:single|row\\d+|col\\d+):[a-z0-9]+`;
+const RAW_ID = new RegExp(String.raw`pushIn|row\\d+:col\\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`);
 
 async function expectNoRawIds(page: Page, context: string) {
   const text = await page.evaluate(() => document.body.innerText);
@@ -341,26 +298,20 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   const timeline = page.locator('[data-panel="timeline"]');
   const inspector = page.locator('[data-panel="inspector"]');
   for (const [look, camera] of [
-    ["browser", "heroTilt"],
-    ["phone", "isoDrift"],
-    ["title", "pushIn"],
+    ["browser", "pushIn"],
+    ["phone", "static"],
   ] as const) {
     await setShotLook(page, look, camera);
     await select(page, { kind: "shot", id: shotId });
     await expectNoRawIds(page, `${look} shot inspector`);
   }
-  await select(page, { kind: "text", shotId, id: "txt-intro" });
-  await expectNoRawIds(page, "Text inspector");
 
   // The human labels are the ones the task names.
-  await setShotLook(page, "browser", "heroTilt");
-  await expect(timeline.getByText("Browser · Hero tilt")).toBeVisible();
-  await setShotLook(page, "phone", "isoDrift");
+  await setShotLook(page, "browser", "pushIn");
+  await expect(timeline.getByText("Browser · Push in")).toBeVisible();
+  await setShotLook(page, "phone", "static");
   await select(page, { kind: "shot", id: shotId });
-  await expect(inspector.getByRole("button", { name: "Isometric drift" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(inspector.getByRole("radio", { name: "Still", exact: true })).toBeChecked();
 
   // The drop hint over a Frames row, whose nodes are "row1:item0" and so on.
   await resetAndOpen(page, "dark");
@@ -370,35 +321,44 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await expect(canvas).toBeVisible();
   const hint = page.getByTestId("drop-hint");
   await expect
-    .poll(async () => {
-      // Drag a Media item over a Frames card. The stage centre can fall between cards (at 16:9
-      // it is the gap between the two rows), so ask the engine for a point on a row card.
-      return canvas.evaluate((el, assetId) => {
-        const engine = (window as unknown as { __editorEngine?: Engine }).__editorEngine;
-        if (!engine || !(el instanceof HTMLCanvasElement)) return false;
-        const rect = el.getBoundingClientRect();
-        let target: { x: number; y: number } | null = null;
-        for (let y = el.height * 0.1; y < el.height * 0.9 && !target; y += el.height / 20) {
-          for (let x = el.width * 0.1; x < el.width * 0.9 && !target; x += el.width / 20) {
-            if (engine.pick(x, y)?.nodeId.startsWith("row")) target = { x, y };
+    .poll(
+      async () => {
+        // Drag a Media item over a Frames card. The stage centre can fall between cards (at
+        // 16:9 it is the gap between the two rows), so ask the engine for a point on a row card.
+        // The result names what the poll is still waiting for, so a timeout says which.
+        return canvas.evaluate((el, assetId) => {
+          const engine = (window as unknown as { __editorEngine?: Engine }).__editorEngine;
+          if (!engine || !(el instanceof HTMLCanvasElement)) return "the stage engine is not ready";
+          const rect = el.getBoundingClientRect();
+          let target: { x: number; y: number } | null = null;
+          for (let y = el.height * 0.1; y < el.height * 0.9 && !target; y += el.height / 20) {
+            for (let x = el.width * 0.1; x < el.width * 0.9 && !target; x += el.width / 20) {
+              if (engine.pick(x, y)?.nodeId.startsWith("row")) target = { x, y };
+            }
           }
-        }
-        if (!target) return false;
-        const dataTransfer = new DataTransfer();
-        dataTransfer.setData("application/x-mockup-asset-id", assetId);
-        el.dispatchEvent(
-          new DragEvent("dragover", {
-            bubbles: true,
-            cancelable: true,
-            clientX: rect.left + (target.x * rect.width) / el.width,
-            clientY: rect.top + (target.y * rect.height) / el.height,
-            dataTransfer,
-          }),
-        );
-        return true;
-      }, assetId);
-    })
-    .toBe(true);
+          if (!target) return "no Frames card on the stage yet";
+          const dataTransfer = new DataTransfer();
+          dataTransfer.setData("application/x-mockup-asset-id", assetId);
+          el.dispatchEvent(
+            new DragEvent("dragover", {
+              bubbles: true,
+              cancelable: true,
+              clientX: rect.left + (target.x * rect.width) / el.width,
+              clientY: rect.top + (target.y * rect.height) / el.height,
+              dataTransfer,
+            }),
+          );
+          return "dragged over a Frames card";
+        }, assetId);
+      },
+      {
+        // The engine picks Frames cards once its first frame is drawn, which the CI runner's
+        // SwiftShader reaches about 5x later than a laptop (tests/helpers/ci.ts).
+        timeout: ciTimeout(5000),
+        message: "the engine finds a Frames row card to drag over",
+      },
+    )
+    .toBe("dragged over a Frames card");
   await expect(hint).toBeVisible();
   await expectNoRawIds(page, "Stage drop hint");
   await expect(hint).toHaveText("Drop to use this screenshot");

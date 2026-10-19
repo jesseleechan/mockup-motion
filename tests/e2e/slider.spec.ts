@@ -4,6 +4,7 @@ import sharp from "sharp";
 import type { AssetRef, Layout, ProjectDoc } from "../../src/doc/types";
 import { resolveSliderLayout, type LayoutNode } from "../../src/motion";
 import { avgRegion, expectRgbNear, type PixelBuffer } from "../helpers/pixels";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // A 4:5 frame, as in the reference (docs/presets-plan/reference.md). Stage height = HEIGHT px.
 const WIDTH = 1200;
@@ -329,7 +330,7 @@ test.describe("slider editing", () => {
   /** First run → gallery → Mobile Slider → demo content, with shot 1 selected. */
   async function openMobileSlider(page: Page): Promise<void> {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();
@@ -357,7 +358,7 @@ test.describe("slider editing", () => {
 
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
     await openMobileSlider(page);
-    await expect(page.getByRole("group", { name: "Camera move" })).toHaveCount(0);
+    await expect(page.getByRole("radiogroup", { name: "Camera move" })).toHaveCount(0);
     await expect(page.getByRole("slider", { name: "Float" })).toHaveCount(0);
     const camera = await page.evaluate(
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].camera,

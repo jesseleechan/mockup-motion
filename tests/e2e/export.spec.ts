@@ -1,14 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
 import { keepResourceTimings } from "../helpers/resource-timing";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // The specs below find the app's Mediabunny module in the resource-timing entries.
 test.beforeEach(async ({ page }) => {
   await keepResourceTimings(page);
 });
 
-// F09: export correctness (every
-// destination preset) and the export dialog (layout, truthful summary, cancel).
+// F09: export correctness (every destination preset) and the
+// export dialog (layout, truthful summary, cancel).
 
 interface Media {
   ALL_FORMATS: unknown;
@@ -44,7 +45,6 @@ interface LabWindow {
   __createLabAssetProvider?: () => {
     getImage(id: string, maxWidth: number): Promise<ImageBitmap>;
     getText: unknown;
-    getAudio?: unknown;
   };
   __labTestImages?: {
     quadrants(w: number, h: number): Promise<ImageBitmap>;
@@ -73,9 +73,9 @@ async function loadMediabunny(page: Page) {
   });
 }
 
-/** Clears the project database from /lab/ui, then opens the editor with demo content. */
+/** Clears the project database from a blank page, then opens the editor with demo content. */
 async function openEditorWithDemo(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

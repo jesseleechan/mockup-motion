@@ -5,10 +5,11 @@ import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
 import { unfilledSlots, useTemplateActions } from "../template-actions";
 import type { AssetRef } from "../../doc/types";
-import { aspectRatioValue, schedule } from "../../motion";
+import { aspectRatioValue } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 import { validateAndDecodeAsset } from "../../assets/decode";
+import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "../library/capture-import";
 import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
 import { FillTemplateOverlay } from "./FillTemplateOverlay";
 
@@ -29,14 +30,12 @@ interface StageProps {
 
 export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   const doc = useEditorStore((s) => s.doc);
-  const apply = useEditorStore((s) => s.apply);
   const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
   const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
   const { addScreenshots, fillWithDemoContent } = useTemplateActions();
 
   const stageZoom = useUIStore((s) => s.stageZoom);
   const selection = useUIStore((s) => s.selection);
-  const playhead = useUIStore((s) => s.playhead);
   const selectedShotIndex = useMemo(() => {
     if (selection.kind === "shot") {
       const idx = doc.shots.findIndex((s) => s.id === selection.id);
@@ -78,7 +77,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
       const newRefs: AssetRef[] = [];
       const blobs: Record<string, Blob> = {};
 
-      for (const file of files) {
+      const { images, captures, errors } = await splitCaptureFiles(files);
+      for (const file of images) {
         try {
           const result = await validateAndDecodeAsset(file, file.name);
           newRefs.push(result.ref);
@@ -88,8 +88,10 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         }
       }
 
+      const attached = applyCaptures(newRefs, captures);
+      for (const message of [...errors, ...attached.errors]) toast(message);
       // Fills the template when it is waiting for screenshots (F06).
-      if (newRefs.length > 0) await addScreenshots(newRefs, blobs);
+      if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
     },
     [addScreenshots, toast],
   );
@@ -129,50 +131,6 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     };
   }, [handleFiles]);
 
-  const handleCanvasClick = (
-    e: React.MouseEvent<HTMLCanvasElement>,
-    pick: { nodeId: string; u: number; v: number } | null,
-  ) => {
-    const activeShot = doc.shots[selectedShotIndex];
-    if (
-      !pick ||
-      !activeShot ||
-      activeShot.layout.kind !== "single" ||
-      !activeShot.cursor?.enabled
-    ) {
-      return;
-    }
-
-    const isClick = e.altKey;
-    const { shots: schedShots } = schedule(doc);
-    const sched = schedShots[selectedShotIndex];
-    const localT = sched
-      ? Math.max(0, Math.min(activeShot.duration, playhead - sched.start))
-      : playhead;
-
-    apply(
-      (draft) => {
-        const target = draft.shots.find((s) => s.id === activeShot.id);
-        if (!target) return;
-        if (!target.cursor) {
-          target.cursor = { enabled: true, style: "arrow", keys: [] };
-        }
-        const newKey = {
-          t: Number(localT.toFixed(2)),
-          x: Number(pick.u.toFixed(3)),
-          y: Number(pick.v.toFixed(3)),
-          click: isClick,
-        };
-        target.cursor.keys = (target.cursor.keys || []).filter(
-          (k) => Math.abs(k.t - newKey.t) > 0.05,
-        );
-        target.cursor.keys.push(newKey);
-        target.cursor.keys.sort((a, b) => a.t - b.t);
-      },
-      { label: isClick ? "Add cursor click" : "Add cursor key" },
-    );
-  };
-
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
   const showEmptyState = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
   // A template is applied but some required slot has no screenshot yet (F06).
@@ -193,7 +151,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept={SCREENSHOT_ACCEPT}
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
@@ -306,7 +264,6 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
                   engineRef.current = engine;
                   if (import.meta.env.DEV) window.__editorEngine = engine;
                 }}
-                onCanvasClick={handleCanvasClick}
               />
             </Suspense>
 

@@ -1,5 +1,5 @@
 import { createDoc, defaultShot, defaultStyle } from "../doc/defaults";
-import type { AssetRef, Background, DeviceKind, ProjectDoc, TextAnimId } from "../doc/types";
+import type { AssetRef, Background, DeviceKind, ProjectDoc } from "../doc/types";
 import { demoAssetRef } from "./demo-assets";
 import { labTestBandsId, labTestQuadrantsId } from "./test-images";
 
@@ -39,22 +39,17 @@ function singleShot(
   shot.duration = 5;
   shot.camera = camera;
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-  shot.texts = [];
   doc.shots = [shot];
   return shot;
 }
 
-/** Frontal (static) and tilted (settled hero tilt) stills for every device. */
+/** A frontal (static) still for every device. */
 export function deviceFixtures(): Record<string, ProjectDoc> {
   const out: Record<string, ProjectDoc> = {};
   for (const device of DEVICES) {
     const frontal = stillDoc(`device-${device}-frontal`);
     singleShot(frontal, device, { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`device-${device}-frontal`] = frontal;
-
-    const tilted = stillDoc(`device-${device}-tilted`);
-    singleShot(tilted, device, { preset: "heroTilt", intensity: 1, easing: "smooth", float: 0 });
-    out[`device-${device}-tilted`] = tilted;
   }
   return out;
 }
@@ -62,9 +57,6 @@ export function deviceFixtures(): Record<string, ProjectDoc> {
 const BACKGROUNDS: Record<string, Background> = {
   solid: { kind: "solid", color: "#141417" },
   gradient: { kind: "gradient", stops: ["#F1EDE6", "#E3DCD0"], angle: 290, angleConvention: "css" },
-  mesh: { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.2, seed: 3 },
-  ambient: { kind: "ambient", assetId: DESKTOP.id, blur: 0.55, dim: 0.35 },
-  image: { kind: "image", assetId: DESKTOP.id, dim: 0.15 },
 };
 
 export function backgroundFixtures(): Record<string, ProjectDoc> {
@@ -74,56 +66,10 @@ export function backgroundFixtures(): Record<string, ProjectDoc> {
     doc.style = {
       ...doc.style,
       background,
-      frameAppearance: name === "solid" || name === "mesh" ? "dark" : "light",
+      frameAppearance: name === "solid" ? "dark" : "light",
     };
     singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`bg-${name}`] = doc;
-  }
-  return out;
-}
-
-/** Reveal animations are 0.75s; midpoint is 0.375. Typewriter midpoint for two words is 0.15. */
-export const TEXT_ANIM_T: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
-
-const TEXT_ANIMS: TextAnimId[] = ["fadeUp", "maskReveal", "blurIn", "wordStagger", "typewriter"];
-
-export function textAnimFixtures(): Record<string, ProjectDoc> {
-  const out: Record<string, ProjectDoc> = {};
-  for (const animation of TEXT_ANIMS) {
-    const doc = stillDoc(`text-${animation}`);
-    doc.style = {
-      ...doc.style,
-      background: { kind: "solid", color: "#141417" },
-      frameAppearance: "dark",
-      textColor: "#F4F1EA",
-    };
-    const shot = defaultShot({ kind: "title" });
-    shot.id = `text-${animation}-shot`;
-    shot.duration = 4;
-    shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
-    shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-    shot.texts = [
-      {
-        id: `text-${animation}-layer`,
-        text: "Quiet studio",
-        role: "title",
-        font: "display",
-        size: 6,
-        anchor: "center",
-        align: "center",
-        color: "",
-        animation,
-        delay: 0,
-      },
-    ];
-    doc.shots = [shot];
-    out[`text-${animation}`] = doc;
   }
   return out;
 }
@@ -164,7 +110,6 @@ export function orientationFixtures(): Record<string, ProjectDoc> {
     shot.duration = 5;
     shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
     shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-    shot.texts = [];
     doc.shots = [shot];
     out[`orient-${device}`] = doc;
   }
@@ -190,7 +135,6 @@ export function colorFixtures(): Record<string, ProjectDoc> {
   shot.duration = 5;
   shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-  shot.texts = [];
   doc.shots = [shot];
   return { "color-bands": doc };
 }
@@ -198,7 +142,6 @@ export function colorFixtures(): Record<string, ProjectDoc> {
 export const VISUAL_FIXTURES: Record<string, ProjectDoc> = {
   ...deviceFixtures(),
   ...backgroundFixtures(),
-  ...textAnimFixtures(),
   ...orientationFixtures(),
   ...colorFixtures(),
 };

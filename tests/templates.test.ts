@@ -99,27 +99,32 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
   ];
 
   it("exports the built-in templates with unique IDs, categories, and slots", () => {
+    // No literal count (CLAUDE.md, Tests): the gallery order below pins the set.
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
-    // Gallery order (Frames plan D12, orbit plan): Desktop Slider, Mobile Slider, Desktop
-    // Frames, Mobile Frames, Desktop Orbit, Mobile Orbit, Scroll Story. The first entry is the
-    // first-run default (presets plan D1).
+    // Gallery order (Frames plan D12, stack plan D5, orbit plan): the Slider, Frames, Stack,
+    // Orbit and Scroll Story pairs, then Responsive Scroll. The first entry is the first-run
+    // default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
       "mobile-frames",
+      "desktop-stack",
+      "mobile-stack",
       "desktop-orbit",
       "mobile-orbit",
       "scroll-story",
+      "mobile-scroll-story",
+      "responsive-scroll",
     ]);
 
     for (const t of BUILTIN_TEMPLATES) {
       expect(t.name).toBeTruthy();
       expect(t.description).toBeTruthy();
       expect(t.defaultDuration).toBeGreaterThan(0);
-      expect(["desktop", "mobile"]).toContain(t.category);
+      expect(["desktop", "mobile", "both"]).toContain(t.category);
       expect(t.slots.length).toBeGreaterThanOrEqual(1);
     }
   });
@@ -130,12 +135,19 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-slider": "mobile",
       frames: "desktop",
       "mobile-frames": "mobile",
+      "desktop-stack": "desktop",
+      "mobile-stack": "mobile",
       "desktop-orbit": "desktop",
       "mobile-orbit": "mobile",
       "scroll-story": "desktop",
+      "mobile-scroll-story": "mobile",
+      "responsive-scroll": "both",
     });
     for (const t of BUILTIN_TEMPLATES) {
-      for (const slot of t.slots) expect(slot.role).toBe(t.category);
+      // A desktop + mobile template (Responsive Scroll) has a slot of each size.
+      const roles = t.category === "both" ? ["desktop", "mobile"] : [t.category];
+      for (const slot of t.slots) expect(roles).toContain(slot.role);
+      expect(new Set(t.slots.map((slot) => slot.role)).size).toBe(roles.length);
     }
   });
 
@@ -206,16 +218,15 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       expect(validateTemplateRequirements(mobileFrames, [...mobile, fourth]).valid).toBe(true);
     });
 
-    it("applyTemplate preserves user's brand styling", () => {
-      const template = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
+    it("applyTemplate preserves the user's browser chrome", () => {
+      // Scroll Story sets its own chrome; the slider keeps the document's.
+      const template = BUILTIN_TEMPLATES.find((t) => t.id === "desktop-slider")!;
       const doc = createDoc();
       doc.assets = sampleAssets;
-      doc.style.textColor = "#123456";
-      doc.style.accent = "#FF5500";
+      doc.style.browserChrome = "none";
 
       const applied = applyTemplate(template, doc);
-      expect(applied.style.textColor).toBe("#123456");
-      expect(applied.style.accent).toBe("#FF5500");
+      expect(applied.style.browserChrome).toBe("none");
     });
   });
 
@@ -298,12 +309,15 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
+  // The Stack presets are slider decks (stack plan D4): the same seam check applies.
+  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider", "desktop-stack", "mobile-stack"];
   // An orbit loops natively with a cut: after N steps the ring is back where it started.
   const ORBIT_TEMPLATES = ["desktop-orbit", "mobile-orbit"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
+  // Responsive Scroll can't reverse its scroll, so it loops by the wrap crossfade (contracts §5).
+  const WRAP_SCROLL_TEMPLATES = ["responsive-scroll"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
@@ -318,7 +332,12 @@ describe("Template loop seam", () => {
 
   it("covers every looping single-shot template", () => {
     expect([...LOOPING_SINGLE_SHOT].sort()).toEqual(
-      [...NATIVE_MARQUEE_TEMPLATES, ...SLIDER_TEMPLATES, ...ORBIT_TEMPLATES].sort(),
+      [
+        ...NATIVE_MARQUEE_TEMPLATES,
+        ...SLIDER_TEMPLATES,
+        ...ORBIT_TEMPLATES,
+        ...WRAP_SCROLL_TEMPLATES,
+      ].sort(),
     );
   });
 

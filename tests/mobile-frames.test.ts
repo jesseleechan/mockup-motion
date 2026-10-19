@@ -297,7 +297,7 @@ describe("Changing the aspect re-fits Frames shots (Frames plan D13)", () => {
   const others: Layout[] = [
     { kind: "single", device: "browser", assetId: "d1" },
     { kind: "slider", assetIds: ["m1", "m2", "m3"], axis: "x", shape: "mobile", step: 2 },
-    { kind: "title" },
+    { kind: "responsive", desktopId: "d1", mobileId: "m1" },
   ];
 
   it("gives Mobile Frames the layout and duration it is built with at the new aspect", () => {

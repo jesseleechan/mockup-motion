@@ -2,8 +2,7 @@ import { create } from "zustand";
 import { produce } from "immer";
 import { createDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type { AssetRef, AssetRole, AudioTrack, ProjectDoc, Shot, Style } from "../doc/types";
-import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
+import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -15,7 +14,6 @@ import {
   steppedAssetIds,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
-import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -58,6 +56,8 @@ export interface EditorStoreState {
   replaceAsset: (id: string, ref: AssetRef, blob?: Blob) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
   setAssetRole: (id: string, role: AssetRole) => void;
+  /** Merges capture section data into library screenshots (Responsive Scroll). */
+  setAssetCaptures: (updates: { id: string; meta: Pick<AssetMeta, "sections" | "page"> }[]) => void;
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
@@ -76,19 +76,9 @@ export interface EditorStoreState {
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
   /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
   moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
-  applyBrandKit: (kit: BrandKit) => void;
-
-  // Music track (WP-17)
-  setMusic: (ref: AssetRef, blob: Blob) => Promise<void>;
-  updateMusic: (
-    patch: Partial<Omit<AudioTrack, "assetId">>,
-    opts?: { coalesceKey?: string },
-  ) => void;
-  removeMusic: () => void;
 
   // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
-  setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
@@ -109,9 +99,17 @@ const COALESCE_WINDOW_MS = 800;
  * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
  * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
  * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
+ * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
  */
-function fitSliderShots(draft: ProjectDoc): void {
+function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
+    if (shot.layout.kind === "responsive") {
+      const duration = fixedShotDuration(shot.layout, shot.scroll, draft.assets);
+      if (duration !== null && duration !== shot.duration) shot.duration = duration;
+      const camera = fixedShotCamera(shot.layout, shot.camera);
+      if (camera !== shot.camera) shot.camera = camera;
+      continue;
+    }
     if (!isSteppedLayout(shot.layout)) continue;
     shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
     shot.duration = sliderDuration(shot.layout);
@@ -139,7 +137,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       const current = get().doc;
       const next = produce(current, (draft) => {
         recipe(draft);
-        fitSliderShots(draft);
+        fitFixedShots(draft);
       });
 
       // No-op if doc reference didn't change (no modifications)
@@ -322,63 +320,13 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
-          if (draft.audio?.assetId === id) delete draft.audio;
-          // Sanitize references to removed asset across layouts/texts
+          // Sanitize references to the removed asset across layouts and backgrounds
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
           draft.shots = doc.shots;
         },
         { label: "Remove asset" },
       );
-    },
-
-    setMusic: async (ref: AssetRef, blob: Blob) => {
-      const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
-      await putBlob(ref.id, blob);
-      if (previousId && previousId !== ref.id) {
-        try {
-          await deleteBlob(previousId);
-        } catch (error) {
-          console.error(`Failed to remove replaced audio blob ${previousId}:`, error);
-        }
-      }
-      get().apply(
-        (draft) => {
-          // One music track per project: replace any previous audio asset.
-          draft.assets = draft.assets.filter((a) => a.kind !== "audio");
-          draft.assets.push(ref);
-          draft.audio = defaultAudioTrack(ref.id);
-        },
-        { label: "Add music" },
-      );
-    },
-
-    updateMusic: (patch, opts) => {
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          draft.audio = clampAudioTrack({ ...draft.audio, ...patch });
-        },
-        { label: "Edit music", coalesceKey: opts?.coalesceKey },
-      );
-    },
-
-    removeMusic: () => {
-      const id = get().doc.audio?.assetId;
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          const assetId = draft.audio.assetId;
-          delete draft.audio;
-          draft.assets = draft.assets.filter((a) => a.id !== assetId);
-        },
-        { label: "Remove music" },
-      );
-      if (id) {
-        void deleteBlob(id).catch((error) => {
-          console.error(`Failed to remove stored audio blob ${id}:`, error);
-        });
-      }
     },
 
     setAssetRole: (id: string, role: AssetRole) => {
@@ -390,6 +338,19 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: `Set role to ${role}` },
+      );
+    },
+
+    setAssetCaptures: (updates) => {
+      if (updates.length === 0) return;
+      get().apply(
+        (draft) => {
+          for (const { id, meta } of updates) {
+            const asset = draft.assets.find((a) => a.id === id);
+            if (asset) asset.meta = { ...asset.meta, ...meta };
+          }
+        },
+        { label: "Add page sections" },
       );
     },
 
@@ -450,6 +411,12 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
+          } else if (layout.kind === "responsive") {
+            if (slotKeyOrNodeId.includes("mobile")) {
+              layout.mobileId = assetId;
+            } else {
+              layout.desktopId = assetId;
+            }
           } else if (isSteppedLayout(layout)) {
             // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
             // are a ring of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
@@ -533,47 +500,12 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    applyBrandKit: (kit: BrandKit) => {
-      get().apply(
-        (draft) => {
-          if (kit.colors[0]) {
-            draft.style.textColor = kit.colors[0];
-          }
-          if (kit.colors[1]) {
-            draft.style.accent = kit.colors[1];
-          }
-          if (kit.browserUrl !== undefined) {
-            draft.style.browserUrl = kit.browserUrl;
-          }
-          if (kit.fontDisplay) {
-            draft.style.fonts.display.family = kit.fontDisplay;
-          }
-          if (kit.fontBody) {
-            draft.style.fonts.body.family = kit.fontBody;
-          }
-          // Update logo on text layers if kit defines one
-          const logoId = kit.logoDarkAssetId || kit.logoLightAssetId;
-          if (logoId) {
-            for (const shot of draft.shots) {
-              if (shot.texts) {
-                for (const text of shot.texts) {
-                  if (text.role === "title" || text.logoAssetId) {
-                    text.logoAssetId = logoId;
-                  }
-                }
-              }
-            }
-          }
-        },
-        { label: `Apply brand kit "${kit.name}"` },
-      );
-    },
-
     // Timeline actions
     setShotDuration: (index: number, duration: number) => {
       // A slider sets its own length; skip it so the edit leaves no empty undo step.
-      const current = get().doc.shots[index];
-      if (current && fixedShotDuration(current.layout) !== null) return;
+      const { doc } = get();
+      const current = doc.shots[index];
+      if (current && fixedShotDuration(current.layout, current.scroll, doc.assets) !== null) return;
       get().apply(
         (draft) => {
           const shot = draft.shots[index];
@@ -583,20 +515,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: "Change shot duration" },
-      );
-    },
-
-    setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot) return;
-          const text = shot.texts.find((t) => t.id === textLayerId);
-          if (text) {
-            text.delay = Math.max(0, Math.min(shot.duration, delay));
-          }
-        },
-        { label: "Change text delay" },
       );
     },
 

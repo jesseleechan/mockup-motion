@@ -1,4 +1,3 @@
-import { clampAudioTrack } from "../audio/mix";
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
 import { applyLegacyLook, legacyLook, mapLegacyLayout } from "./legacy-layouts";
@@ -10,25 +9,22 @@ import {
 } from "../motion/layouts/duration";
 import type {
   Aspect,
+  AssetMeta,
   AssetRef,
-  AudioTrack,
   AssetRole,
   Background,
   BrowserChrome,
   CameraMove,
   CameraPresetId,
-  DeviceFinish,
+  CaptureSection,
   DeviceKind,
   EasingId,
   ExportSettings,
-  FontRef,
   Layout,
   ProjectDoc,
   ShadowPreset,
   Shot,
   Style,
-  TextAnimId,
-  TextLayer,
   Transition,
 } from "./types";
 
@@ -43,23 +39,9 @@ const VALID_EASINGS: readonly EasingId[] = [
   "spring",
   "slide",
 ];
-const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "riseUp",
-  "dollyLeft",
-  "dollyRight",
-  "isoDrift",
-  "heroTilt",
-];
+const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = ["static", "pushIn"];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
-const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
+const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
 // Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
@@ -69,26 +51,6 @@ const VALID_FORMATS = ["mp4", "webm"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
 // Saved blur, push, zoom and wipe transitions (cut with reels on 19 Oct 2026) load as fades.
 const LEGACY_TRANSITIONS = ["blur", "push", "zoom", "wipe"];
-const VALID_TEXT_ANIMS: readonly TextAnimId[] = [
-  "none",
-  "fadeUp",
-  "maskReveal",
-  "blurIn",
-  "wordStagger",
-  "typewriter",
-];
-const VALID_ANCHORS: readonly TextLayer["anchor"][] = [
-  "top-left",
-  "top",
-  "top-right",
-  "left",
-  "center",
-  "right",
-  "bottom-left",
-  "bottom",
-  "bottom-right",
-];
-
 function clamp(val: number, min: number, max: number): number {
   if (Number.isNaN(val) || typeof val !== "number") return min;
   return Math.max(min, Math.min(max, val));
@@ -134,8 +96,11 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   if (Array.isArray(d.assets)) {
     for (const a of d.assets) {
       if (a && typeof a === "object" && typeof a.id === "string" && a.id.trim()) {
+        // Music was removed (October 2026). Drop saved audio assets, or they would
+        // come back below as broken images.
+        if (a.kind === "audio") continue;
         const id = a.id.trim();
-        const kind = a.kind === "font" || a.kind === "audio" ? a.kind : "image";
+        const kind = a.kind === "font" ? a.kind : "image";
         const ref: AssetRef = {
           id,
           kind,
@@ -151,14 +116,8 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (typeof a.width === "number") ref.width = a.width;
         if (typeof a.height === "number") ref.height = a.height;
         if (typeof a.role === "string") ref.role = a.role as AssetRole;
-        if (Array.isArray(a.palette))
-          ref.palette = a.palette.filter((p: unknown): p is string => typeof p === "string");
-        if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
+        if (a.meta && typeof a.meta === "object") ref.meta = sanitizeAssetMeta(a.meta);
         if (typeof a.family === "string") ref.family = a.family;
-        if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;
-        if (Array.isArray(a.peaks)) {
-          ref.peaks = a.peaks.filter((p: unknown): p is number => typeof p === "number");
-        }
 
         assets.push(ref);
         assetIdSet.add(id);
@@ -172,11 +131,10 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     unknown
   >;
   const style: Style = {
-    background: sanitizeBackground(rawStyle.background, assetIdSet, warnings),
+    background: sanitizeBackground(rawStyle.background),
     frameAppearance: rawStyle.frameAppearance === "dark" ? "dark" : "light",
-    deviceFinish: includesValue(VALID_DEVICE_FINISHES, rawStyle.deviceFinish)
-      ? rawStyle.deviceFinish
-      : defaults.style.deviceFinish,
+    // Device finishes were removed: a saved `deviceFinish` is dropped, so every phone loads in
+    // the one finish (quality-bar §3.3). The removed `minimal` chrome loads as `standard`.
     browserChrome: includesValue(VALID_BROWSER_CHROMES, rawStyle.browserChrome)
       ? rawStyle.browserChrome
       : defaults.style.browserChrome,
@@ -190,12 +148,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
       0,
       1,
     ),
-    fonts: sanitizeFonts(rawStyle.fonts, defaults.style.fonts),
-    textColor: typeof rawStyle.textColor === "string" ? rawStyle.textColor : "",
-    accent:
-      typeof rawStyle.accent === "string" && rawStyle.accent
-        ? rawStyle.accent
-        : defaults.style.accent,
   };
 
   // Export
@@ -217,7 +169,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     supersample: includesValue(VALID_SUPERSAMPLES, rawExport.supersample)
       ? rawExport.supersample
       : 1.5,
-    motionBlur: Boolean(rawExport.motionBlur),
   };
 
   // Shots
@@ -251,6 +202,13 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     shots.push(defaultShot());
   }
 
+  // A scrolling responsive layout lasts its holds plus moves, which depend on its screenshots
+  // (contracts.md §5), so its length is set once the assets are known.
+  for (const shot of shots) {
+    const fixed = fixedShotDuration(shot.layout, shot.scroll, assets);
+    if (fixed !== null) shot.duration = fixed;
+  }
+
   const doc: ProjectDoc = {
     version: 2,
     id: typeof d.id === "string" && d.id ? d.id : crypto.randomUUID(),
@@ -269,30 +227,23 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     doc.templateId = d.templateId;
   }
 
-  const audio = sanitizeAudio(d.audio, assets, warnings);
-  if (audio) doc.audio = audio;
-
   return { doc, warnings };
 }
 
-function sanitizeAudio(raw: unknown, assets: AssetRef[], warnings: string[]): AudioTrack | null {
-  if (!raw || typeof raw !== "object") return null;
-  const a = raw as Record<string, unknown>;
-  const assetId = typeof a.assetId === "string" ? a.assetId : "";
-  if (!assets.some((x) => x.id === assetId && x.kind === "audio")) {
-    warnings.push(`Music asset '${assetId}' not found. Removed the music track.`);
-    return null;
-  }
-  return clampAudioTrack({
-    assetId,
-    volume: typeof a.volume === "number" ? a.volume : 0.8,
-    fadeIn: typeof a.fadeIn === "number" ? a.fadeIn : 0.5,
-    fadeOut: typeof a.fadeOut === "number" ? a.fadeOut : 1.5,
-    offset: typeof a.offset === "number" ? a.offset : 0,
-  });
+// The Ash palette's fill (quality-bar §6), which removed screenshot backgrounds load as.
+const ASH = "#DFE1E3";
+
+function meshToGradient(colors: unknown): Background {
+  const hexes = Array.isArray(colors)
+    ? colors.filter((c): c is string => typeof c === "string")
+    : [];
+  const first = hexes[0] ?? "#1B1B2F";
+  const last = hexes[hexes.length - 1] ?? first;
+  // The angle and convention of the light built-in gradients (quality-bar §6).
+  return { kind: "gradient", stops: [first, last], angle: 315, angleConvention: "css" };
 }
 
-function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string[]): Background {
+function sanitizeBackground(bg: unknown): Background {
   if (!bg || typeof bg !== "object") {
     return defaultStyle().background;
   }
@@ -311,74 +262,15 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
         ...(b.angleConvention === "css" ? { angleConvention: "css" as const } : {}),
       });
     case "mesh":
-      return {
-        kind: "mesh",
-        colors:
-          Array.isArray(b.colors) && b.colors.length >= 3
-            ? b.colors.slice(0, 5).map((c) => (typeof c === "string" ? c : "#F1EDE6"))
-            : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-        drift: clamp(typeof b.drift === "number" ? b.drift : 0.05, 0, 1),
-        seed: typeof b.seed === "number" ? b.seed : 42,
-      };
-    case "ambient": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(
-          `Background ambient screenshot asset '${assetId}' not found. Cleared asset reference.`,
-        );
-        return {
-          kind: "ambient",
-          assetId: "",
-          blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-        };
-      }
-      return {
-        kind: "ambient",
-        assetId,
-        blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-      };
-    }
-    case "image": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(`Background image asset '${assetId}' not found. Cleared asset reference.`);
-        return {
-          kind: "image",
-          assetId: "",
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-        };
-      }
-      return {
-        kind: "image",
-        assetId,
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-      };
-    }
+      // Mesh backgrounds were removed: keep their colours as a gradient from first to last.
+      return meshToGradient(b.colors);
+    case "ambient":
+    case "image":
+      // Ambient and image backgrounds were removed: they load as the flat Ash fill.
+      return { kind: "solid", color: ASH };
     default:
       return defaultStyle().background;
   }
-}
-
-function sanitizeFonts(fonts: unknown, fallback: Style["fonts"]): Style["fonts"] {
-  if (!fonts || typeof fonts !== "object") return fallback;
-  const f = fonts as Record<string, unknown>;
-
-  const cleanFontRef = (r: unknown, def: FontRef): FontRef => {
-    if (!r || typeof r !== "object") return def;
-    const ref = r as Record<string, unknown>;
-    return {
-      source: ref.source === "asset" ? "asset" : "builtin",
-      family: typeof ref.family === "string" && ref.family ? ref.family : def.family,
-      weight: typeof ref.weight === "number" ? clamp(ref.weight, 100, 900) : def.weight,
-    };
-  };
-
-  return {
-    display: cleanFontRef(f.display, fallback.display),
-    body: cleanFontRef(f.body, fallback.body),
-  };
 }
 
 function sanitizeShot(
@@ -388,6 +280,14 @@ function sanitizeShot(
   warnings: string[],
   shotIndex: number,
 ): Shot | null {
+  // Title cards and text layers were removed (October 2026). A saved title card has no
+  // screenshot to show, so it is dropped; text layers on other shots are dropped silently.
+  if ((s.layout as { kind?: unknown } | undefined)?.kind === "title") {
+    warnings.push(
+      `Shot ${shotIndex} was a title card, which is no longer supported, and was dropped.`,
+    );
+    return null;
+  }
   const layout = sanitizeLayout(s.layout, assetIds, aspect, warnings, shotIndex);
   if (!layout) {
     warnings.push(`Shot ${shotIndex} had an invalid layout and was dropped.`);
@@ -398,15 +298,6 @@ function sanitizeShot(
 
   const transitionIn: Transition = sanitizeTransition(s.transitionIn);
 
-  const texts: TextLayer[] = [];
-  if (Array.isArray(s.texts)) {
-    for (const t of s.texts) {
-      if (t && typeof t === "object") {
-        texts.push(sanitizeTextLayer(t as Record<string, unknown>, assetIds));
-      }
-    }
-  }
-
   const shot: Shot = {
     id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
     // A slider or orbit sets its own length (N × step), so its loop stays native (contracts.md §5).
@@ -416,7 +307,6 @@ function sanitizeShot(
     layout,
     // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
-    texts,
     transitionIn,
   };
 
@@ -437,6 +327,12 @@ function sanitizeShot(
       hold: clamp(typeof sc.hold === "number" ? sc.hold : 0.8, 0, 10),
       easing: includesValue(VALID_EASINGS, sc.easing) ? sc.easing : "smooth",
     };
+    // Responsive Scroll's section stops: keys in page order; unset means the default stops.
+    if (Array.isArray(sc.sections)) {
+      shot.scroll.sections = sc.sections.filter(
+        (key): key is string => typeof key === "string" && key !== "",
+      );
+    }
   }
 
   if (s.styleOverrides && typeof s.styleOverrides === "object") {
@@ -445,9 +341,7 @@ function sanitizeShot(
     const overrides = s.styleOverrides as Partial<Style>;
     shot.styleOverrides = {
       ...overrides,
-      ...(overrides.background
-        ? { background: sanitizeBackground(overrides.background, assetIds, warnings) }
-        : {}),
+      ...(overrides.background ? { background: sanitizeBackground(overrides.background) } : {}),
     };
   }
 
@@ -489,6 +383,12 @@ function sanitizeLayout(
         kind: "single",
         device: includesValue(VALID_DEVICE_KINDS, l.device) ? l.device : "browser",
         assetId: checkAsset(l.assetId, "assetId"),
+      };
+    case "responsive":
+      return {
+        kind: "responsive",
+        desktopId: checkAsset(l.desktopId, "desktopId"),
+        mobileId: checkAsset(l.mobileId, "mobileId"),
       };
     case "rows": {
       const res: Layout = {
@@ -567,8 +467,6 @@ function sanitizeLayout(
         ),
       };
     }
-    case "title":
-      return { kind: "title" };
     default:
       return null;
   }
@@ -578,7 +476,8 @@ function sanitizeCamera(camera: unknown): CameraMove {
   if (!camera || typeof camera !== "object") return defaultCameraMove();
   const c = camera as Record<string, unknown>;
   return {
-    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "pushIn",
+    // A removed move (orbit, tilt, dolly, ...) or an unknown one loads as a still camera.
+    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "static",
     intensity: clamp(typeof c.intensity === "number" ? c.intensity : 0.5, 0, 1),
     easing: includesValue(VALID_EASINGS, c.easing) ? c.easing : "smooth",
     float: clamp(typeof c.float === "number" ? c.float : 0.3, 0, 1),
@@ -598,25 +497,30 @@ function sanitizeTransition(trans: unknown): Transition {
   };
 }
 
-function sanitizeTextLayer(t: Record<string, unknown>, assetIds: Set<string>): TextLayer {
-  const layer: TextLayer = {
-    id: typeof t.id === "string" && t.id ? t.id : crypto.randomUUID(),
-    text: typeof t.text === "string" ? t.text : "",
-    role: ["title", "subtitle", "caption", "label"].includes(t.role as string)
-      ? (t.role as TextLayer["role"])
-      : "title",
-    font: t.font === "body" ? "body" : "display",
-    size: clamp(typeof t.size === "number" ? t.size : 6, 1.6, 20),
-    anchor: includesValue(VALID_ANCHORS, t.anchor) ? t.anchor : "center",
-    align: t.align === "left" || t.align === "right" ? t.align : "center",
-    color: typeof t.color === "string" ? t.color : "",
-    animation: includesValue(VALID_TEXT_ANIMS, t.animation) ? t.animation : "none",
-    delay: clamp(typeof t.delay === "number" ? t.delay : 0, 0, 30),
-  };
-
-  if (typeof t.logoAssetId === "string" && assetIds.has(t.logoAssetId)) {
-    layer.logoAssetId = t.logoAssetId;
+/**
+ * Keeps well-formed section data on a stored asset's meta and drops the rest: sections need a
+ * string id and a top ≥ 0, sorted ascending; page must be a string.
+ */
+function sanitizeAssetMeta(meta: AssetMeta): AssetMeta {
+  const clean: AssetMeta = { ...meta };
+  if (Array.isArray(meta.sections)) {
+    const sections = (meta.sections as unknown[])
+      .filter(
+        (s): s is CaptureSection =>
+          !!s &&
+          typeof s === "object" &&
+          typeof (s as CaptureSection).id === "string" &&
+          (s as CaptureSection).id !== "" &&
+          Number.isFinite((s as CaptureSection).top) &&
+          (s as CaptureSection).top >= 0,
+      )
+      .map((s) => ({ id: s.id, top: s.top }))
+      .sort((a, b) => a.top - b.top);
+    if (sections.length > 0) clean.sections = sections;
+    else delete clean.sections;
+  } else {
+    delete clean.sections;
   }
-
-  return layer;
+  if (typeof meta.page !== "string") delete clean.page;
+  return clean;
 }

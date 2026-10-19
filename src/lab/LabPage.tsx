@@ -16,7 +16,6 @@ import cardScrollFixture from "./fixtures/card-scroll.json";
 import orbitLoopFixture from "./fixtures/orbit-loop.json";
 import devicesBrowserFixture from "./fixtures/devices-browser.json";
 import devicesPhoneFixture from "./fixtures/devices-phone.json";
-import textTitleFixture from "./fixtures/text-title.json";
 import sliderXFixture from "./fixtures/slider-x.json";
 import sliderYFixture from "./fixtures/slider-y.json";
 
@@ -28,6 +27,7 @@ import {
 } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
+import { RESPONSIVE_FIXTURES } from "./responsive-fixtures";
 import { presetToneStyle } from "../templates/looks";
 
 declare global {
@@ -52,7 +52,6 @@ const FIXTURES: Record<string, ProjectDoc> = {
   "orbit-loop": orbitLoopFixture as unknown as ProjectDoc,
   "devices-browser": devicesBrowserFixture as unknown as ProjectDoc,
   "devices-phone": devicesPhoneFixture as unknown as ProjectDoc,
-  "text-title": textTitleFixture as unknown as ProjectDoc,
   "slider-x": sliderXFixture as unknown as ProjectDoc,
   "slider-y": sliderYFixture as unknown as ProjectDoc,
 };
@@ -63,7 +62,7 @@ for (const t of BUILTIN_TEMPLATES) {
   FIXTURES[`template-${t.id}`] = pDoc;
   FIXTURES[t.id] = pDoc;
 }
-Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES);
+Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES, RESPONSIVE_FIXTURES);
 
 // Both Frames presets also get a fixture per aspect, because their lane count depends on the
 // aspect: the `frames` and `mobile-frames` fixtures above are built at 16:9. Use
@@ -72,6 +71,24 @@ for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
   const suffix = aspect.replace(":", "x");
   FIXTURES[`frames-${suffix}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
   FIXTURES[`mobile-frames-${suffix}`] = buildTemplatePreviewDoc(mobileFramesTemplate, aspect);
+}
+
+// The deck arrangement on the slider fixtures (stack plan S02): /lab?fixture=deck-y&aspect=16:9.
+// `deck-x-dark` and `deck-y-dark` are the Onyx option.
+for (const axis of ["x", "y"] as const) {
+  const base = FIXTURES[`slider-${axis}`];
+  const shots = base.shots.map((shot) =>
+    shot.layout.kind === "slider"
+      ? { ...shot, layout: { ...shot.layout, arrangement: "deck" as const } }
+      : shot,
+  );
+  FIXTURES[`deck-${axis}`] = { ...base, id: `fixture-deck-${axis}`, shots };
+  FIXTURES[`deck-${axis}-dark`] = {
+    ...base,
+    id: `fixture-deck-${axis}-dark`,
+    shots,
+    style: { ...base.style, ...presetToneStyle("dark") },
+  };
 }
 
 // The dark option of the slider and Frames presets: `<id>-dark-<aspect>`, e.g.
@@ -171,7 +188,6 @@ export const LabPage: React.FC = () => {
               return images[assetId] ?? provider.getImage(assetId, maxWidth);
             },
             getText: provider.getText.bind(provider),
-            getAudio: provider.getAudio?.bind(provider),
           };
           await engine.setDocument(nextDoc, testProvider);
           engine.renderAt(0);
@@ -268,6 +284,8 @@ export const LabPage: React.FC = () => {
   }, [aspect]);
 
   const still = urlParams.get("still") === "1";
+  // `devices=0` draws the background alone, for tests of backgrounds, transitions and grain.
+  const hideDevices = import.meta.env.DEV && urlParams.get("devices") === "0";
   const stillW = Number(urlParams.get("w")) || 640;
   const stillH = Math.max(1, Math.round(stillW / aspectRatioOf(aspect)));
 
@@ -285,6 +303,7 @@ export const LabPage: React.FC = () => {
               ? Number(urlParams.get("cameraDistance"))
               : undefined
           }
+          hideDevices={hideDevices}
           onEngineReady={handleEngineReady}
           className="w-full h-full"
         />
@@ -367,6 +386,7 @@ export const LabPage: React.FC = () => {
             doc={doc}
             assets={provider}
             time={playing ? undefined : time}
+            hideDevices={hideDevices}
             onEngineReady={handleEngineReady}
             className="w-full h-full"
           />

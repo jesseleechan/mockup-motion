@@ -3,52 +3,49 @@ export type AssetRole = "desktop" | "mobile" | "tablet" | "logo" | "background" 
 export type EasingId =
   | "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring" | "slide";
 
+/** A section of a captured page: its key (`id`, else `tag.class`) and top edge in image px. */
+export interface CaptureSection {
+  id: string;
+  top: number;
+}
+
+export interface AssetMeta {
+  tall?: boolean;          // image analysis (WP-13)
+  hasStatusBar?: boolean;  // image analysis (WP-06)
+  bottomColor?: string;    // image analysis (WP-06)
+  sections?: CaptureSection[]; // from the capture's JSON, ascending (Responsive Scroll)
+  page?: string;           // the capture's URL: pairs a desktop and a mobile capture of one page
+}
+
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font";
   name: string;
   mime: string;
   bytes: number;
   width?: number;          // image px
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
-  palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
-  meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
+  meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
-  durationSec?: number;    // audio
-  peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
-}
-
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string;          // builtin family name or AssetRef.family
-  weight: number;          // 100..900
 }
 
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number }    // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number }   // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type FrameAppearance = "light" | "dark";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: FrameAppearance;
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string;      // shown in URL pill; "" hides text
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string;       // default text colour; "" = auto contrast vs background
-  accent: string;          // cursor, highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "card";
@@ -62,7 +59,7 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "title" };
+  | { kind: "responsive"; desktopId: string; mobileId: string };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
 // whole group (the presets use 0).
@@ -75,6 +72,8 @@ export type Layout =
 // orbit: the screenshots on a ring seen from slightly above, cards always facing the camera. Each
 // step turns the next card (from the right) to the front. shape and step as for slider; at most
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
+// responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
+// (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
 // cards and rows (default: 0.14 × width across, 0.06 down).
 // columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"
@@ -84,9 +83,8 @@ export type Layout =
 // travel: always "period". Saved rows and columns from before 19 Oct 2026 without it were tilted
 // marquees; loading maps them to Frames (src/doc/legacy-layouts.ts).
 
-export type CameraPresetId =
-  | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
-  | "riseUp" | "dollyLeft" | "dollyRight" | "isoDrift" | "heroTilt";
+// The other ten moves were removed on 19 October 2026; a saved one loads as "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;
@@ -108,26 +106,10 @@ export interface CameraPose {
 export interface ScrollSpec {
   enabled: boolean;        // opt-in; never auto-enabled
   stops: number[];         // 0..1 positions in scrollable range, ascending, first is 0
+  sections?: string[];     // responsive: section keys to stop at after the top, in page order.
+                           // Unset = the default stops; `stops` is the fallback without section data
   hold: number;            // seconds held at each stop
   easing: EasingId;
-}
-
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor = "top-left" | "top" | "top-right" | "left" | "center" | "right"
-  | "bottom-left" | "bottom" | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number;            // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string;           // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number;           // seconds from shot start
-  logoAssetId?: string;    // render a logo above the text
 }
 
 // The loop wrap: a cut, or a fade from the shot's end into its start (contracts.md §5). Blur,
@@ -138,28 +120,21 @@ export interface Transition {
   easing: EasingId;
 }
 
-export interface CursorKey { t: number; x: number; y: number; click?: boolean } // x,y 0..1 of device screen
-export interface CursorSpec { enabled: boolean; style: "arrow" | "pointer" | "dot"; keys: CursorKey[] }
-
 export interface Shot {
   id: string;
   duration: number;        // seconds, 1..30
   layout: Layout;
   camera: CameraMove;
-  scroll?: ScrollSpec;     // honoured only for single-device layouts
-  cursor?: CursorSpec;     // honoured only for single-device layouts
-  texts: TextLayer[];
+  scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
   transitionIn: Transition;// the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
-
-export interface AudioTrack { assetId: string; volume: number; fadeIn: number; fadeOut: number; offset: number }
 
 export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
   | "linkedin" | "x" | "presentation-4k";
 
 export type ExportQuality = "web" | "high" | "master";
-export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "png";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -168,7 +143,6 @@ export interface ExportSettings {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -182,7 +156,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[];           // exactly one (multi-shot reels were cut on 19 Oct 2026)
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }

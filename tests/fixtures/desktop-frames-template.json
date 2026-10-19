@@ -6,26 +6,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -47,7 +32,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -64,26 +48,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -105,7 +74,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -122,26 +90,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -163,7 +116,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -180,26 +132,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -221,7 +158,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -238,26 +174,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -279,7 +200,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -296,26 +216,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -337,7 +242,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -354,26 +258,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -395,7 +284,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -412,26 +300,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -453,7 +326,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -470,26 +342,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -511,7 +368,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -528,26 +384,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -569,7 +410,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -586,26 +426,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -627,7 +452,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -644,26 +468,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -685,7 +494,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -702,26 +510,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -743,7 +536,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -760,26 +552,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -801,7 +578,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -818,26 +594,11 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
       "grain": 0,
-      "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
-      "accent": "#7C93FF"
+      "vignette": 0
     },
     "shots": [
       {
@@ -859,7 +620,6 @@
           "easing": "smooth",
           "float": 0
         },
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,

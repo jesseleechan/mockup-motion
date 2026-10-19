@@ -107,37 +107,11 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
     expect(magentaCountNear(bounds.x + bounds.width - 7)).toBeGreaterThan(0);
   });
 
-  test("renders solid bodies at yaw 34° / pitch 28° (isoDrift) with no errors", async ({
-    page,
-  }) => {
-    await page.goto("/lab?fixture=devices-phone&t=0&aspect=16:9");
-    await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
-
-    const success = await page.evaluate(async () => {
-      const engine = window.__labEngine;
-      if (!engine) return false;
-
-      const doc = JSON.parse(JSON.stringify(window.__fixtures?.["devices-phone"]));
-      doc.shots[0].camera = {
-        preset: "isoDrift",
-        intensity: 1,
-        easing: "smooth",
-        float: 0,
-      };
-
-      await engine.setDocument(doc, window.__createLabAssetProvider!());
-      engine.renderAt(1.5);
-      return true;
-    });
-
-    expect(success).toBe(true);
-  });
-
   // Card screens showed a light dotted diagonal or a light line through the middle (P02, P04
   // evidence). It was not z-fighting: where the rounded box's distance is flat across a 2 × 2
   // pixel quad (its medial axis), fwidth(d) is 0, smoothstep(-0, 0, d) is undefined, SwiftShader
   // returned 1 and the screen discarded the quad, so the slab behind showed through. The frontal
-  // frames leaked before the fix; the tilted ones check that it holds off-axis.
+  // frames leaked before the fix; the tilted rows check that it holds off-axis.
   test("card screens hide the slab behind them, frontal and tilted", async ({ page }) => {
     await openCardLab(page);
     const cases: CardCase[] = [
@@ -188,19 +162,19 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
         t: 0.5,
       },
       {
-        name: "single card, heroTilt start",
+        name: "single card, push in start",
         aspect: "16:9",
         width: 1200,
         tilt: null,
-        preset: "heroTilt",
+        preset: "pushIn",
         t: 0,
       },
       {
-        name: "single card, heroTilt end",
+        name: "single card, push in end",
         aspect: "16:9",
         width: 1200,
         tilt: null,
-        preset: "heroTilt",
+        preset: "pushIn",
         t: 5,
       },
       { name: "card rows, tilt 8°", aspect: "16:9", width: 1200, tilt: 8, preset: "static", t: 2 },
@@ -262,7 +236,7 @@ interface CardCase {
   tilt: number | null;
   /** A lab fixture whose first shot replaces that layout, with grey screenshots. */
   shotFrom?: string;
-  preset: "static" | "heroTilt";
+  preset: "static" | "pushIn";
   t: number;
 }
 

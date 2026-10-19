@@ -1,13 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createDoc, defaultShot } from "../src/doc/defaults";
-import type {
-  Aspect,
-  CameraPose,
-  CameraPresetId,
-  EasingId,
-  ScrollSpec,
-  TextLayer,
-} from "../src/doc/types";
+import type { Aspect, CameraPose, CameraPresetId, EasingId, ScrollSpec } from "../src/doc/types";
 import {
   PRESET_POSES,
   activeLayers,
@@ -24,7 +17,6 @@ import {
   scrollPosition,
   sliderDuration,
   sliderStep,
-  textFrame,
 } from "../src/motion";
 
 function assertDeepCloseTo(a: unknown, b: unknown, epsilon = 1e-5, path = ""): void {
@@ -142,22 +134,9 @@ describe("RNG (src/motion/rng.ts)", () => {
 });
 
 describe("Camera (src/motion/camera.ts)", () => {
-  const ALL_PRESETS: CameraPresetId[] = [
-    "static",
-    "pushIn",
-    "pullBack",
-    "orbitLeft",
-    "orbitRight",
-    "tiltUp",
-    "tiltDown",
-    "riseUp",
-    "dollyLeft",
-    "dollyRight",
-    "isoDrift",
-    "heroTilt",
-  ];
+  const ALL_PRESETS: CameraPresetId[] = ["static", "pushIn"];
 
-  it("PRESET_POSES exports all 12 camera presets", () => {
+  it("PRESET_POSES exports every camera preset", () => {
     for (const preset of ALL_PRESETS) {
       expect(PRESET_POSES[preset]).toBeDefined();
       expect(PRESET_POSES[preset].from).toBeDefined();
@@ -410,53 +389,6 @@ describe("Scroll (src/motion/scroll.ts)", () => {
   });
 });
 
-describe("Text Animation (src/motion/text-anim.ts)", () => {
-  it("handles empty words, delays, and all animations", () => {
-    const baseLayer: TextLayer = {
-      id: "txt-1",
-      text: "Design in motion",
-      role: "title",
-      font: "display",
-      size: 6,
-      anchor: "center",
-      align: "center",
-      color: "",
-      animation: "none",
-      delay: 0.5,
-    };
-
-    // Before delay
-    const fBefore = textFrame(baseLayer, 3, 0.2);
-    expect(fBefore.opacity).toBe(0);
-
-    // Empty wordCount
-    const fEmpty = textFrame(baseLayer, 0, 1.0);
-    expect(fEmpty.words.length).toBe(0);
-    expect(fEmpty.opacity).toBe(1);
-
-    // fadeUp
-    const fFade = textFrame({ ...baseLayer, animation: "fadeUp" }, 3, 1.0);
-    expect(fFade.opacity).toBeGreaterThan(0);
-    expect(fFade.words.length).toBe(3);
-
-    // maskReveal
-    const fMask = textFrame({ ...baseLayer, animation: "maskReveal" }, 3, 1.0);
-    expect(fMask.words[0].clip).toBeLessThan(1);
-
-    // blurIn
-    const fBlur = textFrame({ ...baseLayer, animation: "blurIn" }, 3, 1.0);
-    expect(fBlur.words[0].blur).toBeLessThan(12);
-
-    // wordStagger
-    const fStagger = textFrame({ ...baseLayer, animation: "wordStagger" }, 3, 1.0);
-    expect(fStagger.words.length).toBe(3);
-
-    // typewriter
-    const fType = textFrame({ ...baseLayer, animation: "typewriter" }, 3, 0.8);
-    expect(fType.words.length).toBe(3);
-  });
-});
-
 describe("Layouts (src/motion/layouts.ts)", () => {
   it("resolves single layout with screen aspect", () => {
     const doc = createDoc();
@@ -474,10 +406,6 @@ describe("Layouts (src/motion/layouts.ts)", () => {
       5,
     );
     expect(phoneNodes[0].screenAspect).toBeCloseTo(0.4615);
-  });
-
-  it('supports layout.kind === "title"', () => {
-    expect(resolveLayout({ kind: "title" }, "16:9", [], 0, 5)).toEqual([]);
   });
 });
 
@@ -498,10 +426,10 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     const schedPush = schedule(docPushIn);
     assertDeepCloseTo(evaluate(docPushIn, 0), evaluate(docPushIn, schedPush.total));
 
-    // 3. Single orbitLeft + loop + float
+    // 3. Single pushIn + loop + float
     const docOrbit = createDoc();
     docOrbit.loop = true;
-    docOrbit.shots[0].camera = { preset: "orbitLeft", intensity: 1, easing: "smooth", float: 0.5 };
+    docOrbit.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 };
     docOrbit.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
     const schedOrbit = schedule(docOrbit);
     assertDeepCloseTo(evaluate(docOrbit, 0), evaluate(docOrbit, schedOrbit.total));
@@ -511,7 +439,7 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     const rng = mulberry32(987654);
 
     const aspects: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-    const presets: CameraPresetId[] = ["static", "pushIn", "pullBack", "orbitLeft", "tiltUp"];
+    const presets: CameraPresetId[] = ["static", "pushIn"];
     const easings: EasingId[] = ["smooth", "gentle", "expoOut", "quintInOut"];
 
     for (let i = 0; i < 1000; i++) {

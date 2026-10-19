@@ -3,19 +3,15 @@
  * "pushIn" or "row1:col3"; every control, card and hint reads its copy from here.
  */
 import type {
-  Anchor,
   AssetRole,
   BrowserChrome,
   CameraPresetId,
   DestinationId,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   Layout,
   Shot,
   ShadowPreset,
-  TextAnimId,
-  TextLayer,
 } from "../doc/types";
 import type { TemplateCategory } from "../templates";
 
@@ -25,7 +21,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   columns: "Mobile frames",
   slider: "Slider",
   orbit: "Orbit",
-  title: "Title card",
+  responsive: "Responsive scroll",
 };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
@@ -35,51 +31,11 @@ export const DEVICE_LABELS: Record<DeviceKind, string> = {
 };
 
 export const CAMERA_LABELS: Record<CameraPresetId, string> = {
-  static: "Static",
+  static: "Still",
   pushIn: "Push in",
-  pullBack: "Pull back",
-  orbitLeft: "Orbit left",
-  orbitRight: "Orbit right",
-  tiltUp: "Tilt up",
-  tiltDown: "Tilt down",
-  riseUp: "Rise",
-  dollyLeft: "Dolly left",
-  dollyRight: "Dolly right",
-  isoDrift: "Isometric drift",
-  heroTilt: "Hero tilt",
 };
 
-/** Picker order: the calm moves first, then the directional pairs, then the showcase angles. */
-export const CAMERA_PRESET_ORDER: CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "riseUp",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "dollyLeft",
-  "dollyRight",
-  "heroTilt",
-  "isoDrift",
-];
-
-export const TEXT_ANIMATION_LABELS: Record<TextAnimId, string> = {
-  none: "None",
-  fadeUp: "Fade up",
-  maskReveal: "Mask reveal",
-  blurIn: "Blur in",
-  wordStagger: "Word stagger",
-  typewriter: "Typewriter",
-};
-
-export const TEXT_ROLE_LABELS: Record<TextLayer["role"], string> = {
-  title: "Title",
-  subtitle: "Subtitle",
-  caption: "Caption",
-  label: "Label",
-};
+export const CAMERA_PRESET_ORDER: CameraPresetId[] = ["static", "pushIn"];
 
 export const EASING_LABELS: Record<EasingId, string> = {
   smooth: "Smooth",
@@ -101,15 +57,7 @@ export const SHADOW_LABELS: Record<ShadowPreset, string> = {
 
 export const BROWSER_CHROME_LABELS: Record<BrowserChrome, string> = {
   standard: "Standard",
-  minimal: "Minimal",
   none: "None",
-};
-
-export const DEVICE_FINISH_LABELS: Record<DeviceFinish, string> = {
-  graphite: "Graphite",
-  silver: "Silver",
-  black: "Black",
-  sand: "Sand",
 };
 
 export const ASSET_ROLE_LABELS: Record<AssetRole, string> = {
@@ -119,18 +67,6 @@ export const ASSET_ROLE_LABELS: Record<AssetRole, string> = {
   logo: "Logo",
   background: "Background",
   other: "Other",
-};
-
-export const ANCHOR_LABELS: Record<Anchor, string> = {
-  "top-left": "Top left",
-  top: "Top",
-  "top-right": "Top right",
-  left: "Left",
-  center: "Center",
-  right: "Right",
-  "bottom-left": "Bottom left",
-  bottom: "Bottom",
-  "bottom-right": "Bottom right",
 };
 
 /** Short names for the export destination picker. LinkedIn and X share one preset. */
@@ -149,6 +85,7 @@ export const DESTINATION_LABELS: Record<DestinationId, string> = {
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   desktop: "Desktop",
   mobile: "Mobile",
+  both: "Desktop + mobile",
 };
 
 /** Select options for the given values, labelled from one of the maps above. */
@@ -162,12 +99,14 @@ export function optionsFor<T extends string>(
 /** One-line description of a shot for the timeline card: "Browser · Push in". */
 export function shotSummary(shot: Shot): string {
   const { layout } = shot;
-  if (layout.kind === "title") return LAYOUT_LABELS.title;
   return `${shotSubject(layout)} · ${CAMERA_LABELS[shot.camera.preset]}`;
 }
 
 /** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
-function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
+function shotSubject(layout: Layout): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
+  if (layout.kind === "slider" && layout.arrangement === "deck") {
+    return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";
+  }
   return LAYOUT_LABELS[layout.kind];
 }

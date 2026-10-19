@@ -9,18 +9,11 @@ export function defaultStyle(): Style {
       angleConvention: "css",
     },
     frameAppearance: "light",
-    deviceFinish: "silver",
     browserChrome: "standard",
     browserUrl: "",
     shadow: "soft",
     grain: 0.25,
     vignette: 0.06,
-    fonts: {
-      display: { source: "builtin", family: "Inter Display", weight: 600 },
-      body: { source: "builtin", family: "Inter", weight: 400 },
-    },
-    textColor: "",
-    accent: "#7C93FF",
   };
 }
 
@@ -32,7 +25,6 @@ export function defaultExport(): ExportSettings {
     quality: "high",
     format: "mp4",
     supersample: 1.5,
-    motionBlur: false,
   };
 }
 
@@ -55,7 +47,6 @@ export function defaultShot(layout?: Layout): Shot {
       assetId: "",
     },
     camera: defaultCameraMove(),
-    texts: [],
     transitionIn: {
       kind: "cut",
       duration: 0,

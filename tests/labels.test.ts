@@ -16,7 +16,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
     duration: 4,
     layout,
     camera: { preset, intensity: 1, easing: "smooth", float: 0 },
-    texts: [],
     transitionIn: { kind: "cut", duration: 0, easing: "smooth" },
   };
 }
@@ -24,19 +23,15 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
 describe("editor labels (F08)", () => {
   it("covers every map the UI uses", () => {
     expect(LABEL_MAPS.map(([name]) => name).sort()).toEqual([
-      "ANCHOR_LABELS",
       "ASSET_ROLE_LABELS",
       "BROWSER_CHROME_LABELS",
       "CAMERA_LABELS",
       "DESTINATION_LABELS",
-      "DEVICE_FINISH_LABELS",
       "DEVICE_LABELS",
       "EASING_LABELS",
       "LAYOUT_LABELS",
       "SHADOW_LABELS",
       "TEMPLATE_CATEGORY_LABELS",
-      "TEXT_ANIMATION_LABELS",
-      "TEXT_ROLE_LABELS",
     ]);
   });
 
@@ -65,9 +60,8 @@ describe("editor labels (F08)", () => {
       labels.shotSummary(shot({ kind: "single", device: "browser", assetId: "a" }, "pushIn")),
     ).toBe("Browser · Push in");
     expect(
-      labels.shotSummary(shot({ kind: "single", device: "phone", assetId: "a" }, "isoDrift")),
-    ).toBe("Phone · Isometric drift");
-    expect(labels.shotSummary(shot({ kind: "title" }, "heroTilt"))).toBe("Title card");
+      labels.shotSummary(shot({ kind: "single", device: "phone", assetId: "a" }, "static")),
+    ).toBe("Phone · Still");
   });
 
   it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {
@@ -80,7 +74,7 @@ describe("editor labels (F08)", () => {
       device: "card" as const,
       travel: "period" as const,
     };
-    expect(labels.shotSummary(shot(mobile, "static"))).toBe("Mobile frames · Static");
+    expect(labels.shotSummary(shot(mobile, "static"))).toBe("Mobile frames · Still");
     const desktop = {
       kind: "rows" as const,
       assetIds: ids,
@@ -89,7 +83,25 @@ describe("editor labels (F08)", () => {
       tilt: 0,
       travel: "period" as const,
     };
-    expect(labels.shotSummary(shot(desktop, "static"))).toBe("Desktop frames · Static");
+    expect(labels.shotSummary(shot(desktop, "static"))).toBe("Desktop frames · Still");
+  });
+
+  it("names a deck slider as the Stack preset of its card shape (stack plan S03)", () => {
+    const deck = {
+      kind: "slider" as const,
+      assetIds: ["a", "b", "c"],
+      axis: "y" as const,
+      shape: "desktop" as const,
+      step: 2,
+      arrangement: "deck" as const,
+    };
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Still");
+    expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
+      "Mobile stack · Still",
+    );
+    expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
+      "Slider · Still",
+    );
   });
 
   it("builds select options in the given order", () => {

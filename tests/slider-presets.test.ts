@@ -220,7 +220,7 @@ describe("Editing a slider keeps its loop seamless", () => {
   it("a loaded slider with a camera move gets a still camera", () => {
     const doc = sliderDoc(4);
     doc.shots[0].camera = {
-      preset: "orbitLeft",
+      preset: "pushIn",
       intensity: 0.8,
       easing: "gentle",
       float: 0.3,

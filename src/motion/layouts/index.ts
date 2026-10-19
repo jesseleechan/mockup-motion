@@ -1,11 +1,11 @@
 import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
+import { resolveResponsiveLayout } from "./responsive";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
 import { resolveSliderLayout } from "./slider";
-import { resolveTitleLayout } from "./title";
 import type { LayoutNode } from "./types";
 
 export * from "./types";
@@ -33,7 +33,12 @@ export type { SteppedLayout } from "./duration";
 export { columnsGeometry, resolveColumnsLayout } from "./columns";
 export { lanesAssetIds, lanesDuration, resolveLanes } from "./lanes";
 export type { LaneAxis, LaneGeometry, LaneOptions } from "./lanes";
-export { resolveTitleLayout } from "./title";
+export {
+  RESPONSIVE_DESKTOP_ASPECT,
+  RESPONSIVE_MOBILE_ASPECT,
+  resolveResponsiveLayout,
+  responsiveGeometry,
+} from "./responsive";
 export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
 export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
@@ -59,8 +64,8 @@ export function resolveLayout(
         : resolveSliderLayout(layout, aspect, assets, shotT);
     case "orbit":
       return resolveOrbitLayout(layout, aspect, assets, shotT);
-    case "title":
-      return resolveTitleLayout();
+    case "responsive":
+      return resolveResponsiveLayout(layout, aspect);
     default: {
       const _exhaustive: never = layout;
       return [];

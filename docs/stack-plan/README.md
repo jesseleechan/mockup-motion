@@ -1,6 +1,6 @@
 # Stack plan: Desktop Stack and Mobile Stack
 
-**Status: decided; S01 next.** Written 18 October 2026. The owner answered D1–D7 the same day: "all as recommended".
+**Status: done.** Written 18 October 2026. The owner answered D1–D7 the same day: "all as recommended". On 19 October 2026 the owner approved the S04 contact sheet and the 10 baseline stills, with the 0.86 deck-height cap: "I approve the stills and baselines you're waiting on. Go with your recommendation on every open decision." S00–S04 are [#46](https://github.com/jesseleechan/mockup-motion/pull/46), [#51](https://github.com/jesseleechan/mockup-motion/pull/51), [#53](https://github.com/jesseleechan/mockup-motion/pull/53), [#56](https://github.com/jesseleechan/mockup-motion/pull/56) and [#57](https://github.com/jesseleechan/mockup-motion/pull/57).
 
 On 18 October 2026 the owner reviewed five preset proposals with live previews ([shortlist](https://claude.ai/artifact/Sh1TVUML9ToqKKfWmSNC9Y)) and approved four, each built in its own session. This plan covers one pair:
 
@@ -52,13 +52,13 @@ The Orbit session also builds on the slider's step timing. If it adds an arrange
 
 ## 4. Tasks
 
-| Task                                     | Title                                                                                      | Size | Depends on | Status      |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ---------- | ----------- |
-| [S00](tasks/S00-decisions-and-rules.md)  | Plan, reference, decisions; record them in the quality bar, contracts and follow-ups       | S    | —          | In progress |
-| [S01](tasks/S01-deck-motion.md)          | The deck arrangement (motion only, unit-tested)                                            | M    | S00        | To do       |
-| [S02](tasks/S02-deck-rendering.md)       | Rendering, the entering-card fade, lab fixtures, stills                                    | S    | S01        | To do       |
-| [S03](tasks/S03-stack-templates.md)      | Desktop Stack and Mobile Stack templates, gallery, editor support                          | M    | S02        | To do       |
-| [S04](tasks/S04-review-and-baselines.md) | Previews, contact sheet at all five aspects, loop check, baselines (**owner review gate**) | S    | S03        | To do       |
+| Task                                     | Title                                                                                      | Size | Depends on | Status                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ---------- | -------------------------------------------------------------------------------------------- |
+| [S00](tasks/S00-decisions-and-rules.md)  | Plan, reference, decisions; record them in the quality bar, contracts and follow-ups       | S    | —          | In progress                                                                                  |
+| [S01](tasks/S01-deck-motion.md)          | The deck arrangement (motion only, unit-tested)                                            | M    | S00        | Done: [#51](https://github.com/jesseleechan/mockup-motion/pull/51), [evidence](evidence/S01) |
+| [S02](tasks/S02-deck-rendering.md)       | Rendering, the entering-card fade, lab fixtures, stills                                    | S    | S01        | Done: [#53](https://github.com/jesseleechan/mockup-motion/pull/53), [evidence](evidence/S02) |
+| [S03](tasks/S03-stack-templates.md)      | Desktop Stack and Mobile Stack templates, gallery, editor support                          | M    | S02        | Done: [#56](https://github.com/jesseleechan/mockup-motion/pull/56), [evidence](evidence/S03) |
+| [S04](tasks/S04-review-and-baselines.md) | Previews, contact sheet at all five aspects, loop check, baselines (**owner review gate**) | S    | S03        | Done: [#57](https://github.com/jesseleechan/mockup-motion/pull/57), [evidence](evidence/S04) |
 
 Three other sessions add presets at the same time and touch the same shared files (`registry.ts`, `pairs.ts`, `templates/index.ts`, `tests/templates.test.ts`, `tests/visual/stills.spec.ts`, `scripts/e2e-shards.ts`, `scripts/template-previews.ts`, `public/templates/`, `quality-bar.md`, `contracts.md`, `docs/plan/README.md`, `README.md`). Edits there stay small and additive; merge `main` before each push and keep both sides of a conflict.
 

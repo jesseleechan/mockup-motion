@@ -1,9 +1,10 @@
 import { resolveShotStyle } from "../../doc/assets";
-import type { ProjectDoc, Style, TextLayer } from "../../doc/types";
+import type { ProjectDoc, Style } from "../../doc/types";
 import { resolveLayout } from "../../motion";
+import type { TextLine } from "../../text/rasterize";
 import type { AssetProvider, TextRaster } from "../Engine";
 
-/** Synthetic text-layer id prefix for the browser URL pill (never a document layer). */
+/** Raster id prefix for the browser URL pill. */
 export const CHROME_URL_LAYER_ID = "chrome-url";
 
 // Quality-bar §3.2: toolbar 4.2% of window width (at least 0.028 stage units), domain
@@ -14,7 +15,7 @@ export const URL_TEXT_FRACTION = 0.42;
 // The raster is drawn at twice the largest on-screen size so the pill text stays crisp
 // under camera push-ins; mipmaps take it down.
 const RASTER_OVERSAMPLE = 2;
-// rasterizeText never draws smaller than 1.6% of the frame height (quality-bar §7).
+// rasterizeText never draws smaller than 1.6% of the frame height.
 const MIN_RASTER_SIZE = 1.6;
 
 export function toolbarHeightFor(windowWidth: number): number {
@@ -28,14 +29,13 @@ export function chromeUrlKey(style: Pick<Style, "browserUrl" | "frameAppearance"
 
 export interface ChromeUrlRequest {
   key: string;
-  layer: TextLayer;
-  style: Style;
+  line: TextLine;
   /** Glyph size of the raster in px when rasterized at `frameHeightPx`. */
   fontPx(frameHeightPx: number): number;
 }
 
 /**
- * One synthetic text layer per distinct URL (and frame appearance) that a standard-chrome browser shows. Its
+ * One text line per distinct URL (and frame appearance) that a standard-chrome browser shows. Its
  * size (percent of frame height) is the largest toolbar's URL text times the oversample,
  * so the raster resolution follows the biggest browser in the document.
  */
@@ -56,19 +56,13 @@ export function chromeUrlRequests(doc: ProjectDoc): ChromeUrlRequest[] {
 
   return [...largest].map(([key, { toolbar, style }]) => {
     const size = Math.max(MIN_RASTER_SIZE, toolbar * URL_TEXT_FRACTION * RASTER_OVERSAMPLE * 100);
-    const layer: TextLayer = {
+    const line: TextLine = {
       id: `${CHROME_URL_LAYER_ID}:${key}`,
       text: style.browserUrl,
-      role: "caption",
-      font: "body",
       size,
-      anchor: "center",
-      align: "center",
       color: style.frameAppearance === "dark" ? "#F5F5F7" : "#1D1D1F",
-      animation: "none",
-      delay: 0,
     };
-    return { key, layer, style, fontPx: (frameHeightPx) => (size / 100) * frameHeightPx };
+    return { key, line, fontPx: (frameHeightPx) => (size / 100) * frameHeightPx };
   });
 }
 
@@ -86,7 +80,7 @@ export async function loadChromeUrlRasters(
   const loaded = new Map<string, LoadedChromeUrl>();
   await Promise.all(
     chromeUrlRequests(doc).map(async (request) => {
-      const raster = await assets.getText(request.layer, request.style, frameHeightPx);
+      const raster = await assets.getText(request.line, frameHeightPx);
       loaded.set(request.key, { raster, fontPx: request.fontPx(frameHeightPx) });
     }),
   );

@@ -4,8 +4,8 @@ import type { Style } from "../../doc/types";
 // Render targets hold linear-light sRGB-primaries values (sRGB byte targets
 // encode on write and decode on sampling). Only this final pass explicitly
 // converts to sRGB; grain and dither follow that conversion. No colorspace include.
-// Its input is one linear composite (CompositePass output or the motion-blur
-// accumulation), so every frame is finished exactly once.
+// Its input is one linear composite (CompositePass output), so every frame is
+// finished exactly once.
 
 const finalVertexShader = /* glsl */ `
   varying vec2 vUv;
