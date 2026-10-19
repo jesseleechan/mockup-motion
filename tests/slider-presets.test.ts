@@ -149,7 +149,6 @@ describe("Mobile Slider and Desktop Slider templates", () => {
           expect(shot.duration, label).toBe(n * 2);
           expect(shot.transitionIn.kind, label).toBe("cut");
           expect(shot.camera, label).toMatchObject({ preset: "static", intensity: 0, float: 0 });
-          expect(shot.entrance, label).toBe("none");
           expect(doc.loop, label).toBe(true);
           expect(doc.style, label).toMatchObject({
             background: { kind: "solid", color: "#DFE1E3" },
@@ -219,11 +218,10 @@ describe("Editing a slider keeps its loop seamless", () => {
   it("a loaded slider with a camera move gets a still camera", () => {
     const doc = sliderDoc(4);
     doc.shots[0].camera = {
-      preset: "orbitLeft",
+      preset: "pushIn",
       intensity: 0.8,
       easing: "gentle",
       float: 0.3,
-      progressRange: [0.2, 0.8],
     };
     const { doc: repaired } = sanitizeDoc(doc);
     expect(repaired.shots[0].camera).toEqual({

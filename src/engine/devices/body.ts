@@ -1,12 +1,4 @@
 import * as THREE from "three";
-import type { DeviceFinish } from "../../doc/types";
-
-export const DEVICE_FINISH_COLORS: Record<DeviceFinish, string> = {
-  graphite: "#3A3B3F",
-  silver: "#D9DADD",
-  black: "#121214",
-  sand: "#CBBBA0",
-};
 
 /**
  * Creates a 2D rounded rectangle shape centered at (0, 0).
@@ -55,16 +47,4 @@ export function createRoundedExtrudeGeometry(
   // Center along Z so front face is at z = 0, back face is at z = -depth
   geo.translate(0, 0, -depth);
   return geo;
-}
-
-/**
- * Creates standard PBR material for a device finish.
- */
-export function createBodyMaterial(finish: DeviceFinish): THREE.MeshStandardMaterial {
-  const hex = DEVICE_FINISH_COLORS[finish] ?? DEVICE_FINISH_COLORS.graphite;
-  return new THREE.MeshStandardMaterial({
-    color: new THREE.Color(hex),
-    roughness: 0.35,
-    metalness: 0.5,
-  });
 }

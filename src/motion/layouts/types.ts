@@ -17,7 +17,7 @@ export interface LayoutNode {
     rz: number; // in radians
     scale: number;
   };
-  opacity: number; // 0..1 (entrances)
+  opacity: number; // 0..1 (slider neighbours, a deck's entering card)
   scroll: number; // 0..1 of scrollable range (0 when scroll disabled)
   depthOrder: number; // tie-breaker for transparent sorting
 }
@@ -25,8 +25,7 @@ export interface LayoutNode {
 /**
  * Computes screen viewport aspect ratio (width / height) for a device and asset per quality-bar §3.1.
  * - Phone: 0.4615 (9:19.5)
- * - Tablet: 0.75 (4:3)
- * - Desktop browser, laptop, card: clamp(imageAspect, 1.25, 2.0) when image is short, else 1.6
+ * - Desktop browser, card: clamp(imageAspect, 1.25, 2.0) when image is short, else 1.6
  */
 export function screenAspectFor(
   device: DeviceKind,
@@ -34,9 +33,6 @@ export function screenAspectFor(
 ): number {
   if (device === "phone") {
     return PHONE_SCREEN_ASPECT;
-  }
-  if (device === "tablet") {
-    return 0.75;
   }
   if (asset?.width && asset?.height && asset.height > 0) {
     const imgAspect = asset.width / asset.height;
