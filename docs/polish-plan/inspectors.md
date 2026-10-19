@@ -6,13 +6,13 @@ Decisions (owner, 19 October 2026, via the coordinating session): the P1 proposa
 
 Polish what remains after the cuts, not what is being deleted. Each PR is built as a draft stacked on the cut branch it needs, and retargeted to `main` once that cut merges.
 
-| #   | Item                           | Waits for                                                                        | Status           |
-| --- | ------------------------------ | -------------------------------------------------------------------------------- | ---------------- |
-| P1  | One background control         | Backgrounds cut (#64), chrome/finishes and camera-moves cuts, typography cut     | In review        |
-| P2  | Show only what applies         | Same as P1                                                                       | In review: #96   |
-| P3  | The screenshot list            | Cursor cut (#62), typography cut, camera-moves cut, layouts and reels cuts (#61) | Waiting for cuts |
-| P4  | Hide sections that can't apply | Same as P3                                                                       | Waiting for cuts |
-| P5  | One pace control               | Stack (#53 to #57), Responsive Scroll (#58, #59), reels cut (#74)                | Waiting for cuts |
+| #   | Item                           | Waits for                                                                        | Status      |
+| --- | ------------------------------ | -------------------------------------------------------------------------------- | ----------- |
+| P1  | One background control         | Backgrounds cut (#64), chrome/finishes and camera-moves cuts, typography cut     | Merged: #82 |
+| P2  | Show only what applies         | Same as P1                                                                       | Merged: #96 |
+| P3  | The screenshot list            | Cursor cut (#62), typography cut, camera-moves cut, layouts and reels cuts (#61) | Merged: #89 |
+| P4  | Hide sections that can't apply | Same as P3                                                                       | Merged: #97 |
+| P5  | One pace control               | Stack (#53 to #57), Responsive Scroll (#58, #59), reels cut (#74)                | Merged: #98 |
 
 ## P1. One background control
 
