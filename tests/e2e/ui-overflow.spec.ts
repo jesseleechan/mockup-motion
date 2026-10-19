@@ -299,12 +299,14 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await resetAndOpen(page, "dark");
   await openReel(page);
 
-  // Shots on both camera moves, Still and Push in.
+  // Shots on both camera moves, Still and Push in; only the middle browser pushes in, so its
+  // timeline label is unique (the opening shot is a copy of it).
   // Set through the store, so the checks below don't depend on finding the labels first.
   await page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
     if (!store) throw new Error("__editorStore is unavailable");
     store.getState().apply((draft) => {
+      draft.shots[0].camera.preset = "static";
       draft.shots[1].camera.preset = "pushIn";
       draft.shots[2].camera.preset = "static";
     });
