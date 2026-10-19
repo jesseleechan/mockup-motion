@@ -3,13 +3,14 @@ import { collectAssetIds, resolveShotStyle } from "../doc/assets";
 import type { DeviceKind, ProjectDoc, Style, TextLayer } from "../doc/types";
 import {
   evaluate,
+  isSteppedLayout,
   shotEntrance,
   type FrameState,
   type LayoutNode,
   type ShotFrame,
 } from "../motion";
 import { BackgroundRenderer } from "./background/BackgroundRenderer";
-import { DeviceFadePass, type DeviceDraw, fadeBlendFor } from "./devices/DeviceFade";
+import { DeviceFadePass, fadeBlendFor, type DeviceDraw } from "./devices/DeviceFade";
 import { DevicePool } from "./devices/DevicePool";
 import { applyCameraPose } from "./stage";
 import { textureWidths } from "./textures/sizing";
@@ -306,12 +307,12 @@ export class Engine {
     this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
-    // Slider neighbours and a deck's entering card are faded cards (quality bar §3.1); the
-    // carousel's neighbours mix in sRGB like the reference.
-    const hasSlider = doc.shots.some((shot) => shot.layout.kind === "slider");
+    // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
+    // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference.
+    const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
     this.deviceFade.prepare(this.renderer, this.targetA, {
-      fade: hasSlider || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
-      srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) === "srgb"),
+      fade: hasStepped || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
+      srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) !== "linear"),
     });
 
     // Warm-up compilation
@@ -380,7 +381,7 @@ export class Engine {
 
     // 4. Render the devices into the MSAA target with their opacity
     const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
-    const blend = shot ? fadeBlendFor(shot.layout) : "linear";
+    const blend = fadeBlendFor(shot?.layout);
     this.deviceFade.render(this.renderer, this.scene, this.camera, target, draws, blend);
 
     // 5. Render screen-space text overlay into MSAA target

@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
@@ -262,7 +263,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
   }) => {
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(5);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
     // Every card rests on its poster.
     const posters = await cards.evaluateAll((els) =>
@@ -318,18 +319,18 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(5);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
     const posters = page.locator('[data-testid="template-card"] [data-testid="template-poster"]');
-    await expect(posters).toHaveCount(5);
+    await expect(posters).toHaveCount(BUILTIN_TEMPLATES.length);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
 
   test("Library template cards show their posters", async ({ page }) => {
     const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(5);
-    for (let i = 0; i < 5; i++) {
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
+    for (let i = 0; i < BUILTIN_TEMPLATES.length; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);
