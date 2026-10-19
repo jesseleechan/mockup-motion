@@ -1,18 +1,12 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
+import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
-import { ease } from "../easing";
 import { PHONE_BODY_ASPECT } from "../phone-spec";
 import { type LayoutNode, screenAspectFor } from "./types";
-
-const ENTRANCE_DURATION = 0.8;
 
 export function resolveSingleLayout(
   layout: Extract<Layout, { kind: "single" }>,
   aspect: Aspect,
   assets: AssetRef[],
-  shotT: number,
-  _shotDuration: number,
-  entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
   const { device, assetId } = layout;
   const asset = assets.find((a) => a.id === assetId);
@@ -45,32 +39,7 @@ export function resolveSingleLayout(
     }
   }
 
-  // Entrance handling
-  let opacity: number;
   const transform = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0, scale: 1.0 };
-
-  const p = Math.max(0, Math.min(1, shotT / ENTRANCE_DURATION));
-  const e = ease("expoOut", p);
-
-  switch (entrance) {
-    case "rise":
-      opacity = e;
-      transform.y = -(1 - e) * 0.03;
-      break;
-    case "scale":
-      opacity = e;
-      transform.scale = 0.97 + 0.03 * e;
-      break;
-    case "stagger":
-      opacity = e;
-      transform.y = -(1 - e) * 0.03;
-      transform.scale = 0.97 + 0.03 * e;
-      break;
-    case "none":
-    default:
-      opacity = 1.0;
-      break;
-  }
 
   return [
     {
@@ -81,7 +50,7 @@ export function resolveSingleLayout(
       height,
       screenAspect,
       transform,
-      opacity,
+      opacity: 1,
       scroll: 0,
       depthOrder: 0,
     },

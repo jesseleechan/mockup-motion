@@ -1,5 +1,5 @@
 import { createDoc, defaultShot, defaultStyle } from "../doc/defaults";
-import type { AssetRef, Background, DeviceKind, ProjectDoc, Transition } from "../doc/types";
+import type { AssetRef, Background, DeviceKind, ProjectDoc } from "../doc/types";
 import { demoAssetRef } from "./demo-assets";
 import { labTestBandsId, labTestQuadrantsId } from "./test-images";
 
@@ -37,7 +37,6 @@ function singleShot(
   const shot = defaultShot({ kind: "single", device, assetId: screenAssetId(device) });
   shot.id = `${doc.name}-shot`;
   shot.duration = 5;
-  shot.entrance = "none";
   shot.camera = camera;
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
   doc.shots = [shot];
@@ -71,43 +70,6 @@ export function backgroundFixtures(): Record<string, ProjectDoc> {
     };
     singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`bg-${name}`] = doc;
-  }
-  return out;
-}
-
-/** Two-shot docs whose transition midpoint is t = 3.6 (4s shot, 0.8s overlap). */
-export const TRANSITION_MID_T = 3.6;
-
-const TRANSITIONS: Transition["kind"][] = ["fade", "blur", "push", "zoom", "wipe"];
-
-export function transitionFixtures(): Record<string, ProjectDoc> {
-  const out: Record<string, ProjectDoc> = {};
-  for (const kind of TRANSITIONS) {
-    const doc = stillDoc(`transition-${kind}`);
-    const a = defaultShot({ kind: "single", device: "browser", assetId: DESKTOP.id });
-    a.id = `${kind}-a`;
-    a.duration = 4;
-    a.entrance = "none";
-    a.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
-    a.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-
-    const b = defaultShot({ kind: "single", device: "phone", assetId: MOBILE.id });
-    b.id = `${kind}-b`;
-    b.duration = 4;
-    b.entrance = "none";
-    b.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
-    b.transitionIn = {
-      kind,
-      duration: 0.8,
-      easing: "quintInOut",
-      direction: kind === "push" || kind === "wipe" ? "left" : undefined,
-    };
-    b.styleOverrides = {
-      background: { kind: "solid", color: "#1B1B2F" },
-      frameAppearance: "dark",
-    };
-    doc.shots = [a, b];
-    out[`transition-${kind}`] = doc;
   }
   return out;
 }
@@ -146,7 +108,6 @@ export function orientationFixtures(): Record<string, ProjectDoc> {
     const shot = defaultShot({ kind: "single", device, assetId: asset.id });
     shot.id = `orient-${device}-shot`;
     shot.duration = 5;
-    shot.entrance = "none";
     shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
     shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
     doc.shots = [shot];
@@ -172,7 +133,6 @@ export function colorFixtures(): Record<string, ProjectDoc> {
   const shot = defaultShot({ kind: "single", device: "card", assetId: asset.id });
   shot.id = "color-bands-shot";
   shot.duration = 5;
-  shot.entrance = "none";
   shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
   doc.shots = [shot];
@@ -182,7 +142,6 @@ export function colorFixtures(): Record<string, ProjectDoc> {
 export const VISUAL_FIXTURES: Record<string, ProjectDoc> = {
   ...deviceFixtures(),
   ...backgroundFixtures(),
-  ...transitionFixtures(),
   ...orientationFixtures(),
   ...colorFixtures(),
 };

@@ -67,7 +67,6 @@ describe("Saved projects with removed layouts", () => {
       expect(doc.shots[0].layout).toEqual({ kind: "single", device: "browser", assetId: "d1" });
       // A single browser keeps the shot's own camera, entrance and wrap.
       expect(doc.shots[0].camera.preset).toBe("pushIn");
-      expect(doc.shots[0].entrance).toBe("rise");
       expect(doc.shots[0].transitionIn.kind).toBe("fade");
       expectDrawsScreens(doc, ["d1"]);
     }
@@ -93,7 +92,6 @@ describe("Saved projects with removed layouts", () => {
     expect(shot.layout).toEqual(deck);
     expect(shot.duration).toBe(sliderDuration(deck));
     expect(shot.camera).toMatchObject(STILL);
-    expect(shot.entrance).toBe("none");
     expect(shot.transitionIn.kind).toBe("cut");
     expect(schedule(doc).total).toBe(6);
   });
@@ -131,7 +129,6 @@ describe("Saved projects with removed layouts", () => {
         expect(shot.layout, label).toEqual(frames);
         expect(shot.duration, label).toBe(Math.max(15, framesDuration(frames, aspect)));
         expect(shot.camera, label).toMatchObject(STILL);
-        expect(shot.entrance, label).toBe("none");
         expect(shot.transitionIn.kind, label).toBe("cut");
         expect(evaluate(doc, schedule(doc).total), label).toEqual(evaluate(doc, 0));
       }
@@ -237,5 +234,61 @@ describe("Saved user templates with removed layouts", () => {
       assetIds: ["d1", "d2"],
     });
     expect(filled.shots[0].duration).toBe(4);
+  });
+});
+
+describe("Saved multi-shot reels", () => {
+  const shot = (id: string, kind: string, duration = 4) => ({
+    ...defaultShot({ kind: "single", device: "browser", assetId: "d1" }),
+    id,
+    duration,
+    transitionIn: { kind, duration: 0.8, easing: "quintInOut", direction: "left" },
+  });
+
+  it("keeps the first shot and drops the others", () => {
+    const saved = JSON.parse(
+      JSON.stringify(
+        createDoc({
+          assets: ASSETS,
+          shots: [shot("s0", "fade", 3), shot("s1", "push"), shot("s2", "cut")] as never,
+        }),
+      ),
+    );
+    const { doc, warnings } = sanitizeDoc(saved);
+    expect(doc.shots.map((s) => s.id)).toEqual(["s0"]);
+    expect(doc.shots[0].duration).toBe(3);
+    expect(warnings.join(" ")).toContain("first of 3 shots");
+  });
+
+  it("plays a saved blur, push, zoom or wipe wrap as a fade", () => {
+    for (const kind of ["blur", "push", "zoom", "wipe", "fade"]) {
+      const saved = JSON.parse(
+        JSON.stringify(createDoc({ assets: ASSETS, shots: [shot("s0", kind)] as never })),
+      );
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.shots[0].transitionIn, kind).toEqual({
+        kind: "fade",
+        duration: 0.8,
+        easing: "quintInOut",
+      });
+      doc.loop = true;
+      expect(schedule(doc).total, kind).toBeCloseTo(3.2);
+    }
+    const cut = sanitizeDoc(
+      JSON.parse(
+        JSON.stringify(createDoc({ assets: ASSETS, shots: [shot("s0", "cut")] as never })),
+      ),
+    ).doc;
+    expect(cut.shots[0].transitionIn.kind).toBe("cut");
+  });
+
+  it("drops a saved entrance", () => {
+    const saved = JSON.parse(
+      JSON.stringify(createDoc({ assets: ASSETS, shots: [shot("s0", "cut")] as never })),
+    );
+    saved.shots[0].entrance = "rise";
+    const { doc } = sanitizeDoc(saved);
+    expect("entrance" in doc.shots[0]).toBe(false);
+    expect(evaluate(doc, 0).layers[0].frame.nodes[0].opacity).toBe(1);
   });
 });

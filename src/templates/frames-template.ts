@@ -130,7 +130,6 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
       shot.duration = Math.max(FRAMES_MIN_LOOP, framesDuration(layout, ctx.aspect));
       // Every lane travels one whole period per loop, so the loop is native (contracts.md §5).
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
-      shot.entrance = "none";
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
       return { style, shots: [shot], loop: true };

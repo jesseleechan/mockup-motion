@@ -47,7 +47,6 @@ export function defaultShot(layout?: Layout): Shot {
       assetId: "",
     },
     camera: defaultCameraMove(),
-    entrance: "none",
     transitionIn: {
       kind: "cut",
       duration: 0,

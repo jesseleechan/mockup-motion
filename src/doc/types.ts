@@ -91,7 +91,6 @@ export interface CameraMove {
   intensity: number;       // 0..1, scales the preset's delta (quality-bar §2 limits apply at 1)
   easing: EasingId;
   float: number;           // 0..1 subtle ambient sway layered on top (quality-bar §2.4)
-  progressRange?: [number, number]; // [0..1] range of preset progress covered by this shot
 }
 
 export interface CameraPose {
@@ -113,11 +112,12 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
+// The loop wrap: a cut, or a fade from the shot's end into its start (contracts.md §5). Blur,
+// push, zoom and wipe went with multi-shot reels on 19 Oct 2026; saved ones load as fades.
 export interface Transition {
-  kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
-  duration: number;        // seconds, overlaps the previous shot (see §5)
+  kind: "cut" | "fade";
+  duration: number;        // seconds the wrap fade overlaps the end of the shot
   easing: EasingId;
-  direction?: "left" | "right" | "up" | "down";
 }
 
 export interface Shot {
@@ -125,9 +125,8 @@ export interface Shot {
   duration: number;        // seconds, 1..30
   layout: Layout;
   camera: CameraMove;
-  entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
-  transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
+  transitionIn: Transition;// the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
 
@@ -156,7 +155,7 @@ export interface ProjectDoc {
   loop: boolean;
   assets: AssetRef[];
   style: Style;
-  shots: Shot[];           // length >= 1
+  shots: Shot[];           // exactly one (multi-shot reels were cut on 19 Oct 2026)
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }

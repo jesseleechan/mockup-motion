@@ -44,7 +44,7 @@ function framesDoc(aspect: Aspect, count: number): ProjectDoc {
 
 const nodesAt = (doc: ProjectDoc, t: number) => {
   const shot = doc.shots[0];
-  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration, shot.entrance);
+  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration);
 };
 // Rounds to 4 decimals without a "-0.0000" for values just below zero.
 const round4 = (v: number) => (Math.round(v * 1e4) / 1e4 + 0).toFixed(4);

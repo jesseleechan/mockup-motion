@@ -29,7 +29,6 @@ export interface FrameState {
   transition?: {
     kind: Transition["kind"];
     progress: number;
-    direction?: Transition["direction"];
   };
 }
 
@@ -45,22 +44,6 @@ function isFrames(shot: Shot): boolean {
   return shot.layout.kind === "rows" || shot.layout.kind === "columns";
 }
 
-/**
- * Whether shot `index` skips its entrance. A loop has no first frame: frame(0) is also the
- * frame the loop wraps into, and the wrap holds shot 0 at local t = 0. Playing shot 0's
- * entrance there would dissolve the last shot into an empty canvas on every loop, so looping
- * docs skip it.
- */
-export function loopSkipsEntrance(doc: ProjectDoc, index: number): boolean {
-  return doc.loop && index === 0;
-}
-
-/** The entrance shot `index` plays (see `loopSkipsEntrance`). */
-export function shotEntrance(doc: ProjectDoc, index: number): Shot["entrance"] {
-  if (loopSkipsEntrance(doc, index)) return "none";
-  return doc.shots[index]?.entrance ?? "none";
-}
-
 function evaluateNodes(
   shot: Shot,
   aspect: Aspect,
@@ -68,9 +51,8 @@ function evaluateNodes(
   localT: number,
   layoutT: number,
   layoutDuration: number,
-  entrance: Shot["entrance"],
 ): LayoutNode[] {
-  const nodes = resolveLayout(shot.layout, aspect, assets, layoutT, layoutDuration, entrance);
+  const nodes = resolveLayout(shot.layout, aspect, assets, layoutT, layoutDuration);
 
   // Scroll calculation (honoured for single-device layouts)
   if (shot.scroll?.enabled && shot.layout.kind === "single" && nodes.length > 0) {
@@ -131,18 +113,8 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     const layoutT = frames ? (activeShot.wrapT ?? localT) : localT;
     const layoutDuration = frames && doc.loop && doc.shots.length === 1 ? total : shot.duration;
 
-    const entrance = shotEntrance(doc, activeShot.index);
-
-    // Nodes evaluation with entrance and scroll
-    const nodes = evaluateNodes(
-      shot,
-      doc.aspect,
-      doc.assets,
-      localT,
-      layoutT,
-      layoutDuration,
-      entrance,
-    );
+    // Nodes evaluation with scroll
+    const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT, layoutT, layoutDuration);
 
     // Auto-framing: keep safe margins under camera moves for bounded layouts. A slider's
     // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar

@@ -67,15 +67,14 @@ export function mapLegacyLayout(
 }
 
 /**
- * The shot fields a preset look sets (the Frames and Stack templates): a still camera, no
- * entrance and a cut wrap, since both loop natively. Frames lasts at least its 15 s reference
+ * The shot fields a preset look sets (the Frames and Stack templates): a still camera and a cut
+ * wrap, since both loop natively. Frames lasts at least its 15 s reference
  * loop. A single browser keeps the saved shot's own.
  */
 export function applyLegacyLook(shot: Shot, look: LegacyLook, aspect: Aspect): void {
   if (look === "single") return;
   const still: CameraMove = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
   shot.camera = still;
-  shot.entrance = "none";
   shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
   if (look === "frames" && (shot.layout.kind === "rows" || shot.layout.kind === "columns")) {
     shot.duration = Math.max(FRAMES_MIN_LOOP, framesDuration(shot.layout, aspect));

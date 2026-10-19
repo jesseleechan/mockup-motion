@@ -55,7 +55,7 @@ function presetDoc(preset: Preset, aspect: Aspect, count: number): ProjectDoc {
 
 const nodesAt = (doc: ProjectDoc, t: number) => {
   const shot = doc.shots[0];
-  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration, shot.entrance);
+  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration);
 };
 const laneOf = (node: LayoutNode) => Number(node.id.match(/^(?:row|col)(\d+):/)![1]);
 const along = (axis: Preset["axis"], node: LayoutNode) =>
