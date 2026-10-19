@@ -106,8 +106,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12, orbit plan): Desktop Slider, Mobile Slider, Desktop
-    // Frames, Mobile Frames, Desktop Orbit, Mobile Orbit, Scroll Story. The first entry is the
-    // first-run default (presets plan D1).
+    // Frames, Mobile Frames, Desktop Orbit, Mobile Orbit, Desktop Scroll Story, Mobile Scroll
+    // Story. The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -116,6 +116,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "desktop-orbit",
       "mobile-orbit",
       "scroll-story",
+      "mobile-scroll-story",
       "responsive-scroll",
     ]);
 
@@ -137,6 +138,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "desktop-orbit": "desktop",
       "mobile-orbit": "mobile",
       "scroll-story": "desktop",
+      "mobile-scroll-story": "mobile",
       "responsive-scroll": "both",
     });
     for (const t of BUILTIN_TEMPLATES) {
