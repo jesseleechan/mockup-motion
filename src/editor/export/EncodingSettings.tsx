@@ -33,11 +33,16 @@ const QUALITY_OPTIONS: { value: ExportQuality; label: string }[] = [
   { value: "master", label: "Master (28 Mbps)" },
 ];
 
-const SUPERSAMPLE_OPTIONS = [
-  { value: "1", label: "Standard (1×)" },
-  { value: "1.5", label: "Crisp (1.5×)" },
-  { value: "2", label: "Sharpest (2×)" },
+const SUPERSAMPLE_NAMES: { value: string; name: string }[] = [
+  { value: "1", name: "Standard" },
+  { value: "1.5", name: "Crisp" },
+  { value: "2", name: "Sharpest" },
 ];
+
+const SUPERSAMPLE_OPTIONS = SUPERSAMPLE_NAMES.map(({ value, name }) => ({
+  value,
+  label: `${name} (${value}×)`,
+}));
 
 interface EncodingSettingsProps {
   settings: ExportSettings;
@@ -47,8 +52,9 @@ interface EncodingSettingsProps {
 /** The closed Advanced row names its values, so a changed setting is never out of sight. */
 function advancedSummary(settings: ExportSettings, isStill: boolean): string {
   if (isStill) return "Not used for still frames";
-  const supersample = SUPERSAMPLE_OPTIONS.find((o) => o.value === String(settings.supersample));
-  return [`${settings.fps} fps`, supersample?.label ?? `${settings.supersample}×`].join(" · ");
+  const name = SUPERSAMPLE_NAMES.find((o) => o.value === String(settings.supersample))?.name;
+  const supersample = `${name ? `${name} ` : ""}${settings.supersample}×`;
+  return [`${settings.fps} fps`, supersample].join(" · ");
 }
 
 /**
