@@ -165,3 +165,93 @@ test.describe("Responsive Scroll: rendering (R04)", () => {
     });
   }
 });
+
+test.describe("Responsive Scroll: template (R05)", () => {
+  async function openGallery(page: Page) {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/lab/ui");
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      await new Promise<void>((resolve, reject) => {
+        const req = indexedDB.deleteDatabase("mockupmotion-v2");
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error("deleteDatabase blocked"));
+      });
+    });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Start with a template" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+  }
+
+  const card = (page: Page) =>
+    page.locator('[data-testid="template-card"][data-template-id="responsive-scroll"]');
+
+  async function currentShot(page: Page) {
+    return page.evaluate(() => {
+      const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
+      if (!store) throw new Error("__editorStore is unavailable");
+      const { doc } = store.getState();
+      return {
+        shot: doc.shots[0],
+        assets: doc.assets.map((a) => a.id),
+        templateId: doc.templateId,
+      };
+    });
+  }
+
+  test("sits under the Desktop and the Mobile tab, labelled Desktop + mobile", async ({ page }) => {
+    await openGallery(page);
+    const gallery = page.getByRole("dialog");
+    await expect(card(page)).toBeVisible();
+    await expect(card(page).getByTestId("template-category")).toHaveText("Desktop + mobile");
+    for (const tab of ["Desktop", "Mobile"]) {
+      await gallery.getByRole("button", { name: tab, exact: true }).click();
+      await expect(card(page), `${tab} tab`).toBeVisible();
+    }
+    // The Mobile tab still leaves out desktop-only presets.
+    await expect(
+      page.locator('[data-testid="template-card"][data-template-id="scroll-story"]'),
+    ).toHaveCount(0);
+  });
+
+  test("applies with demo content: both full pages scroll, and stops change the length", async ({
+    page,
+  }) => {
+    await openGallery(page);
+    await card(page).click();
+    await page.getByRole("button", { name: "Apply template" }).click();
+    await page.getByRole("button", { name: "Use demo content" }).click();
+    await expect.poll(async () => (await currentShot(page)).assets.length).toBe(2);
+
+    const { shot, assets, templateId } = await currentShot(page);
+    expect(templateId).toBe("responsive-scroll");
+    expect(assets).toEqual(["demo-aurelia-desktop-full", "demo-aurelia-mobile-full"]);
+    expect(shot.layout).toEqual({
+      kind: "responsive",
+      desktopId: "demo-aurelia-desktop-full",
+      mobileId: "demo-aurelia-mobile-full",
+    });
+    expect(shot.scroll?.enabled).toBe(true);
+    // 9.4 s loop plus the 0.8 s wrap crossfade (contracts.md §5).
+    expect(shot.duration).toBeCloseTo(10.18, 1);
+
+    const inspector = page.locator('[data-panel="inspector"]');
+    await expect(inspector.getByRole("button", { name: "Scroll stops" })).toBeVisible();
+    await expect(inspector.getByText("Set by the scroll stops")).toBeVisible();
+    await expect(inspector.getByRole("switch", { name: "Stop on Works" })).toBeChecked();
+    await expect(inspector.getByRole("switch", { name: "Stop on Statement" })).not.toBeChecked();
+
+    await inspector.getByRole("switch", { name: "Stop on Statement" }).click();
+    await expect
+      .poll(async () => (await currentShot(page)).shot.scroll?.sections)
+      .toEqual(["statement", "works", "materials", "monograph"]);
+    // One more stop: one more hold, and the moves are split, not shortened.
+    expect((await currentShot(page)).shot.duration).toBeGreaterThan(shot.duration + 0.9);
+
+    await inspector.getByRole("button", { name: "Use default stops" }).click();
+    await expect.poll(async () => (await currentShot(page)).shot.scroll?.sections).toBeUndefined();
+    expect((await currentShot(page)).shot.duration).toBeCloseTo(shot.duration, 6);
+  });
+});

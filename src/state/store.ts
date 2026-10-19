@@ -467,7 +467,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
-          } else if (layout.kind === "pair") {
+          } else if (layout.kind === "pair" || layout.kind === "responsive") {
             if (slotKeyOrNodeId.includes("mobile")) {
               layout.mobileId = assetId;
             } else {

@@ -8,6 +8,7 @@ import { fillSlots, missingRequiredSlots } from "./slots";
 const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
 const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
+const mobileFull = (site: DemoSite) => demoAssetId(site, "mobile", "full");
 
 /**
  * Demo captures per template, in slot order (fillSlots is greedy by role).
@@ -50,6 +51,8 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("aurelia"),
   ],
   "scroll-story": [desktopFull("studio-kova")],
+  // One page at both sizes: Aurelia's full pages, with their capture sections.
+  "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];

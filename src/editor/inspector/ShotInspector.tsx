@@ -9,6 +9,7 @@ import { CameraSection } from "./shot/CameraSection";
 import { EntranceSection } from "./shot/EntranceSection";
 import { TransitionSection } from "./shot/TransitionSection";
 import { ScrollSection } from "./shot/ScrollSection";
+import { ResponsiveScrollSection } from "./shot/ResponsiveScrollSection";
 import { CursorSection } from "./shot/CursorSection";
 import { TextLayersSection } from "./shot/TextLayersSection";
 
@@ -63,13 +64,14 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
     <div className="space-y-4">
       <LayoutSection shot={shot} assets={doc.assets} />
       <AssetsSection shot={shot} assets={doc.assets} />
-      {/* A slider's camera is still (quality bar §4), so it has no camera controls. */}
-      {shot.layout.kind !== "title" && shot.layout.kind !== "slider" && (
-        <CameraSection shot={shot} />
-      )}
+      {/* Slider and Responsive Scroll cameras are still (quality bar §4), so no camera controls. */}
+      {shot.layout.kind !== "title" &&
+        shot.layout.kind !== "slider" &&
+        shot.layout.kind !== "responsive" && <CameraSection shot={shot} />}
       <EntranceSection shot={shot} aspect={doc.aspect} />
       <TransitionSection shot={shot} />
       <ScrollSection shot={shot} assets={doc.assets} />
+      <ResponsiveScrollSection shot={shot} assets={doc.assets} />
       <CursorSection shot={shot} />
       <TextLayersSection shot={shot} />
 

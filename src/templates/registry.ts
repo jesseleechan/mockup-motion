@@ -6,6 +6,7 @@ import { mobileSliderTemplate } from "./mobile-slider";
 import { desktopSliderTemplate } from "./desktop-slider";
 import { framesTemplate } from "./frames";
 import { mobileFramesTemplate } from "./mobile-frames";
+import { responsiveScrollTemplate } from "./responsive-scroll";
 
 /**
  * Gallery order (Frames plan D12): the Slider pair, the Frames pair, each desktop first, then
@@ -17,6 +18,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
   framesTemplate,
   mobileFramesTemplate,
   scrollStoryTemplate,
+  responsiveScrollTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {
