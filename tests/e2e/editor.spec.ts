@@ -220,7 +220,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
 
     // Verify canvas rendered
     await expect(page.locator("canvas")).toBeVisible();
-    await expect(page.locator(".group", { hasText: "Shot 1" })).toBeVisible();
+    await expect(page.getByTestId("shot-card")).toBeVisible();
   });
 
   test("accessibility: Axe reports 0 serious or critical violations", async ({ page }) => {

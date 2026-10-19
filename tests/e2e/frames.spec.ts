@@ -112,7 +112,7 @@ for (const c of CASES) {
     await openEditorWithDemo(page);
     await setFramesShot(page, c, 4, 15);
 
-    await page.locator(".group", { hasText: "Shot 1" }).click();
+    await page.getByTestId("shot-card").click();
     await expect(page.getByText("Speed follows shot length")).toBeVisible();
     await expect(page.getByRole("slider", { name: "Speed" })).toHaveCount(0);
     // Frames has no tilt by design (quality bar §4); the lane count stays editable.
@@ -146,7 +146,7 @@ for (const c of CASES) {
     // Eleven at 4:5: only ten fit 30 s at 0.20 frame heights per second (quality bar §2.2).
     await setFramesShot(page, c, 11, 30);
 
-    await page.locator(".group", { hasText: "Shot 1" }).click();
+    await page.getByTestId("shot-card").click();
     await expect(
       page.getByText("Shows the first 10 screenshots, so the loop fits in 30 s."),
     ).toBeVisible();
@@ -269,7 +269,7 @@ test("loop length chips set a Frames shot's duration in one undo step and explai
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].duration,
     );
 
-  await page.locator(".group", { hasText: "Shot 1" }).click();
+  await page.getByTestId("shot-card").click();
   const chips = page.getByRole("group", { name: "Loop length" });
   const chip = (label: string) => chips.getByRole("button", { name: label, exact: true });
   await expect(chip("30 s")).toHaveAttribute("aria-pressed", "true");
