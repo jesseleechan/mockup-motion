@@ -107,12 +107,12 @@ describe("editor labels (F08)", () => {
       step: 2,
       arrangement: "deck" as const,
     };
-    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Static");
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Still");
     expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
-      "Mobile stack · Static",
+      "Mobile stack · Still",
     );
     expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
-      "Slider · Static",
+      "Slider · Still",
     );
   });
 
