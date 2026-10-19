@@ -3,6 +3,7 @@ import type { ProjectDoc } from "../../src/doc/types";
 import type { AssetProvider, Engine, TextRaster } from "../../src/engine/Engine";
 import type { exportWithEngine } from "../../src/export/engine-export";
 import type { schedule } from "../../src/motion";
+import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import { keepResourceTimings } from "../helpers/resource-timing";
 
 // The specs below find the app's Mediabunny module in the resource-timing entries.
@@ -71,7 +72,9 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "all 6 built-in templates are lab fixtures").toBe(6);
+  expect(results.map((r) => r.id).sort(), "every built-in template is a lab fixture").toEqual(
+    BUILTIN_TEMPLATES.map((t) => t.id).sort(),
+  );
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",
