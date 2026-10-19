@@ -223,7 +223,7 @@ async function openSmallPreview(page: Page) {
   // than a single browser on SwiftShader (P05 evidence).
   await page.getByRole("button", { name: "Browse all templates" }).click();
   const gallery = page.getByRole("dialog");
-  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+  await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
   // Applying selects the first shot; the loop switch lives in the Video inspector.
