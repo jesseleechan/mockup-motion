@@ -3,7 +3,8 @@ import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
-import { unfilledSlots, useTemplateActions } from "../template-actions";
+import { currentTemplate, unfilledSlots, useTemplateActions } from "../template-actions";
+import { templateNeeds } from "../../templates";
 import type { AssetRef } from "../../doc/types";
 import { aspectRatioValue } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
@@ -146,6 +147,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   const showEmptyState = emptyProject && !starting;
   // A template is applied but some required slot has no screenshot yet (F06).
   const showFillOverlay = !emptyProject && unfilledSlots(doc).length > 0;
+  const fillTemplate = showFillOverlay ? currentTemplate(doc) : undefined;
   const preview = stageSize
     ? fitPreview(stageSize.width, stageSize.height, aspectRatioValue(doc.aspect), stageZoom)
     : null;
@@ -312,8 +314,9 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         </div>
       ) : null}
 
-      {showFillOverlay && (
+      {fillTemplate && (
         <FillTemplateOverlay
+          needs={templateNeeds(fillTemplate)}
           onChooseScreenshots={() => fileInputRef.current?.click()}
           onUseDemoContent={fillWithDemoContent}
         />

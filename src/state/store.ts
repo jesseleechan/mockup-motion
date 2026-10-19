@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { produce } from "immer";
-import { createDoc } from "../doc/defaults";
+import { newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
+import { replaceLayoutAssetIds } from "../doc/assets";
 import { readLastExport, writeLastExport } from "../export/last-settings";
 import type {
   AssetMeta,
   AssetRef,
   AssetRole,
+  DeviceKind,
   ExportSettings,
   ProjectDoc,
   Shot,
@@ -55,7 +57,15 @@ export interface EditorStoreState {
    */
   rememberExport: (settings: ExportSettings) => void;
   applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
-  addAssets: (refs: AssetRef[], blobs?: Record<string, Blob>) => Promise<void>;
+  /**
+   * Adds assets. `replace` swaps screen asset ids in every shot (old id to new id) in the same
+   * undo step, such as a full-page screenshot taking a short one's place in Scroll Story.
+   */
+  addAssets: (
+    refs: AssetRef[],
+    blobs?: Record<string, Blob>,
+    replace?: Record<string, string>,
+  ) => Promise<void>;
   /**
    * Adds assets and applies a template in one undo step. `build` receives the document with
    * the new assets already in it, so the template's slots can fill from them.
@@ -112,10 +122,34 @@ function fitFixedShots(draft: ProjectDoc): void {
   }
 }
 
-/** A new project starts from the last export settings used in this browser, if any. */
+/** The screenshot role each single device shows. */
+const DEVICE_ROLE: Partial<Record<DeviceKind, AssetRole>> = {
+  browser: "desktop",
+  phone: "mobile",
+};
+
+/**
+ * Puts the first added screenshot of the device's role on every single-device shot whose screen
+ * is empty, such as a new project's browser, so an upload shows at once. A browser takes a
+ * desktop screenshot and a phone a mobile one; other screenshots only join the library.
+ */
+function fillEmptyScreens(draft: ProjectDoc, refs: AssetRef[]): void {
+  for (const shot of draft.shots) {
+    if (shot.layout.kind !== "single" || shot.layout.assetId) continue;
+    const role = DEVICE_ROLE[shot.layout.device];
+    const match = refs.find((ref) => ref.kind === "image" && ref.role === role);
+    if (match) shot.layout.assetId = match.id;
+  }
+}
+
+/**
+ * A new project: the preset look (`newProjectDoc`), with the last export settings used in this
+ * browser, if any.
+ */
 function createNewProjectDoc(): ProjectDoc {
+  const doc = newProjectDoc();
   const lastExport = readLastExport();
-  return createDoc(lastExport ? { export: lastExport } : undefined);
+  return lastExport ? { ...doc, export: { ...doc.export, ...lastExport } } : doc;
 }
 
 export function createEditorStore(initialDoc?: ProjectDoc) {
@@ -263,7 +297,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    addAssets: async (refs: AssetRef[], blobs?: Record<string, Blob>) => {
+    addAssets: async (refs, blobs, replace) => {
       if (blobs) {
         for (const [id, blob] of Object.entries(blobs)) {
           await putBlob(id, blob);
@@ -276,6 +310,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               draft.assets.push(ref);
             }
           }
+          if (replace) {
+            for (const shot of draft.shots) replaceLayoutAssetIds(shot.layout, replace);
+          }
+          fillEmptyScreens(draft, refs);
         },
         { label: "Add assets" },
       );

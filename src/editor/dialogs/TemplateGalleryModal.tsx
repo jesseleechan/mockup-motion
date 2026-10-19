@@ -8,6 +8,7 @@ import {
   fittingTemplateId,
   getTemplateById,
   templateInCategory,
+  templateNeeds,
   validateTemplateRequirements,
   type Template,
   type TemplateCategory,
@@ -198,7 +199,6 @@ export const TemplateGalleryModal: React.FC = () => {
                   hoveredTemplateId === template.id ||
                   focusedTemplateId === template.id;
                 const validation = validateTemplateRequirements(template, doc.assets);
-                const requiredSlots = template.slots.filter((s) => s.required);
 
                 return (
                   <div
@@ -267,19 +267,21 @@ export const TemplateGalleryModal: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Slots & Validation Status */}
-                      <div className="pt-2 border-t border-[var(--color-line)] flex items-center justify-between">
-                        <span className="text-[10px] text-[var(--color-text-3)]">
-                          {requiredSlots.length === 0
-                            ? "No media required"
-                            : `${requiredSlots.length} slot${requiredSlots.length > 1 ? "s" : ""}`}
-                        </span>
-
-                        {!validation.valid && (
-                          <span className="text-[10px] font-medium text-[var(--color-accent)]">
-                            {validation.reason}
-                          </span>
+                      {/* What the template needs; accent while the library falls short. */}
+                      <div className="pt-2 border-t border-[var(--color-line)] flex items-center gap-1.5">
+                        {validation.valid && (
+                          <Icon icon={Check} size={11} className="text-[var(--color-text-3)]" />
                         )}
+                        <span
+                          data-testid="template-needs"
+                          className={`text-[10px] font-medium ${
+                            validation.valid
+                              ? "text-[var(--color-text-3)]"
+                              : "text-[var(--color-accent)]"
+                          }`}
+                        >
+                          {templateNeeds(template)}
+                        </span>
                       </div>
                     </div>
                   </div>

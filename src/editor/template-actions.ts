@@ -6,6 +6,8 @@ import {
   BUILTIN_TEMPLATES,
   applyTemplate,
   demoAssetsToFill,
+  emptyRequiredSlots,
+  fullPageReplacements,
   getTemplateById,
   missingRequiredSlots,
   type SlotSpec,
@@ -25,11 +27,13 @@ export function unfilledSlots(doc: ProjectDoc): SlotSpec[] {
 
 /**
  * The document's template while it has empty required slots. Otherwise none, so adding
- * screenshots to a filled template never rebuilds its shots.
+ * screenshots to a filled template never rebuilds its shots. A full-page slot holding a short
+ * screenshot isn't empty: a new full-page screenshot takes its place instead
+ * (`fullPageReplacements`).
  */
-function templateToFill(doc: ProjectDoc): Template | undefined {
+export function templateToFill(doc: ProjectDoc): Template | undefined {
   const template = currentTemplate(doc);
-  return template && missingRequiredSlots(template, doc.assets).length > 0 ? template : undefined;
+  return template && emptyRequiredSlots(template, doc.assets).length > 0 ? template : undefined;
 }
 
 /**
@@ -71,9 +75,11 @@ export function useTemplateActions() {
     const template = templateToFill(doc);
     if (template) {
       await addAssetsAndApplyTemplate(refs, template.id, (d) => applyTemplate(template, d), blobs);
-    } else {
-      await addAssets(refs, blobs);
+      return;
     }
+    const current = currentTemplate(doc);
+    const replace = current ? fullPageReplacements(current, doc.assets, refs) : {};
+    await addAssets(refs, blobs, Object.keys(replace).length > 0 ? replace : undefined);
   }, []);
 
   /**
