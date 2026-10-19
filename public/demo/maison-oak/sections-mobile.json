@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:3591/maison-oak/",
+  "viewportWidth": 390,
+  "scale": 2,
+  "pageHeight": 5017,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 54,
+      "height": 71
+    },
+    {
+      "tag": "section",
+      "id": "hero",
+      "className": "hero-section",
+      "top": 126,
+      "height": 889
+    },
+    {
+      "tag": "section",
+      "id": "collection",
+      "className": "collection-section",
+      "top": 1015,
+      "height": 788
+    },
+    {
+      "tag": "section",
+      "id": "spotlight",
+      "className": "spotlight-section",
+      "top": 1803,
+      "height": 869
+    },
+    {
+      "tag": "section",
+      "id": "workshop",
+      "className": "workshop-section",
+      "top": 2672,
+      "height": 533
+    },
+    {
+      "tag": "section",
+      "id": "reviews",
+      "className": "reviews-section",
+      "top": 3205,
+      "height": 1142
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 4348,
+      "height": 669
+    }
+  ]
+}
