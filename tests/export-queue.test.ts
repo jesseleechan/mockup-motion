@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createDoc } from "../src/doc/defaults";
 import type { Aspect } from "../src/doc/types";
+import type { ExportPlan } from "../src/export/plan";
 import {
   docAtAspect,
   EXPORT_ASPECTS,
+  fileNotices,
   orderSizes,
   runExportQueue,
   sizeChoices,
@@ -35,6 +37,22 @@ describe("a document at another aspect", () => {
     expect(post.shots[0].layout).toEqual(framesLayout("4:5", ["d1", "d2", "d3", "d4"]));
     expect(JSON.stringify(doc)).toBe(before);
     expect(docAtAspect(doc, "16:9")).toBe(doc);
+  });
+});
+
+describe("notices", () => {
+  const plan = (notice?: string) => ({ notice }) as ExportPlan;
+  const noMp4 = "MP4 (H.264) isn't available in this browser, so this exports WebM (VP9).";
+
+  it("show every file's notice once, naming its sizes when there are several", () => {
+    expect(fileNotices([{ aspect: "16:9", plan: plan(noMp4) }])).toEqual([noMp4]);
+    expect(
+      fileNotices([
+        { aspect: "16:9", plan: plan() },
+        { aspect: "4:5", plan: plan(noMp4) },
+        { aspect: "9:16", plan: plan(noMp4) },
+      ]),
+    ).toEqual([`4:5, 9:16: ${noMp4}`]);
   });
 });
 

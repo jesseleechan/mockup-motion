@@ -1,5 +1,6 @@
 import { produce } from "immer";
 import type { Aspect, ProjectDoc } from "../../doc/types";
+import type { ExportPlan } from "../../export/plan";
 import { changeAspect } from "../aspect";
 
 /** The sizes one export can write: a site, Dribbble, an Instagram post and a Story. */
@@ -46,4 +47,18 @@ export async function runExportQueue<T>(
     if (signal.aborted) return;
     onFile(aspect, result, index);
   }
+}
+
+/**
+ * Every file's notice (e.g. an encoder this browser lacks), once each. With several sizes,
+ * each notice names the sizes it applies to.
+ */
+export function fileNotices(files: { aspect: Aspect; plan: ExportPlan }[]): string[] {
+  const byNotice = new Map<string, Aspect[]>();
+  for (const { aspect, plan } of files) {
+    if (plan.notice) byNotice.set(plan.notice, [...(byNotice.get(plan.notice) ?? []), aspect]);
+  }
+  return [...byNotice].map(([text, aspects]) =>
+    files.length > 1 ? `${aspects.join(", ")}: ${text}` : text,
+  );
 }

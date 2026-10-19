@@ -16,8 +16,8 @@ import { ExportProgress } from "./ExportProgress";
 import { ExportResult, type ExportOutcome } from "./ExportResult";
 import { ExportFiles, FileList } from "./ExportFiles";
 import { SizePicker } from "./SizePicker";
-import { docAtAspect, orderSizes, runExportQueue } from "./queue";
-import { useExportPlan } from "./useExportPlan";
+import { docAtAspect, fileNotices, orderSizes, runExportQueue } from "./queue";
+import { useExportPlan, type ExportTarget } from "./useExportPlan";
 
 interface ExportModalProps {
   open: boolean;
@@ -28,6 +28,8 @@ function presetSettings(id: DestinationId): ExportSettings {
   const { resolution, fps, quality, format, supersample } = DESTINATION_PRESETS[id];
   return { destination: id, resolution, fps, quality, format, supersample };
 }
+
+const NO_TARGETS: ExportTarget[] = [];
 
 const notice = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs flex items-start gap-2";
 
@@ -63,17 +65,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   }
 
   // Each size renders a copy of the project re-fitted to it, which may change its length.
+  // Only while the dialog is open: re-fitting on every edit of a closed dialog is wasted work.
   const targets = useMemo(
     () =>
-      orderSizes(sizes, doc.aspect).map((aspect) => ({
-        aspect,
-        duration: schedule(docAtAspect(doc, aspect)).total,
-      })),
-    [sizes, doc],
+      open
+        ? orderSizes(sizes, doc.aspect).map((aspect) => ({
+            aspect,
+            duration: schedule(docAtAspect(doc, aspect)).total,
+          }))
+        : NO_TARGETS,
+    [open, sizes, doc],
   );
   const { probing, plans } = useExportPlan(settings, targets, open);
   const files = plans?.flatMap((f) => (f.plan.ok ? [{ aspect: f.aspect, plan: f.plan.plan }] : []));
-  const ready = !!plans && files?.length === plans.length;
+  const ready = !!plans && plans.length > 0 && files?.length === plans.length;
 
   const [progress, setProgress] = useState<Progress | null>(null);
   const [current, setCurrent] = useState<CurrentFile | null>(null);
@@ -194,7 +199,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   };
 
   const showResult = !progress && outcomes.length > 0;
-  const firstPlan = files?.[0]?.plan;
+  const notices = files ? fileNotices(files) : [];
   const progressLabel = current
     ? fileCount > 1
       ? `File ${current.index + 1} of ${fileCount} · ${current.aspect} · ${current.plan.label}`
@@ -237,12 +242,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               <SizePicker projectAspect={doc.aspect} selected={sizes} onChange={setSizes} />
               <EncodingSettings settings={settings} onChange={updateSettings} />
 
-              {firstPlan?.notice && (
-                <div className={`${notice} border-amber-500/30 text-amber-300`} role="status">
+              {notices.map((text) => (
+                <div
+                  key={text}
+                  className={`${notice} border-amber-500/30 text-amber-300`}
+                  role="status"
+                >
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
-                  <span>{firstPlan.notice}</span>
+                  <span>{text}</span>
                 </div>
-              )}
+              ))}
 
               <ExportSummary probing={probing} plans={plans} />
             </>
