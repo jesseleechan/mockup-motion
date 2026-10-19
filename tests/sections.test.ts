@@ -144,9 +144,9 @@ describe("WP-15: Section Detection & Suggested Stops (src/assets/sections.ts)", 
       expect(shot.scroll?.enabled).toBeFalsy();
     }
 
-    // Applying standard templates (other than explicit scroll-story) does not enable scroll
+    // Applying standard templates (other than the two Scroll Story sizes) does not enable scroll
     for (const template of BUILTIN_TEMPLATES) {
-      if (template.id === "scroll-story") continue;
+      if (template.id === "scroll-story" || template.id === "mobile-scroll-story") continue;
       const built = buildTemplate(template, {
         aspect: "16:9",
         assets: store.getState().doc.assets,

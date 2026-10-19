@@ -162,7 +162,7 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   await page.getByRole("button", { name: "Start with a template" }).click();
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
-  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+  await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
 
@@ -337,9 +337,9 @@ test("Frames plan §8: with only mobile screenshots the gallery suggests the mob
   await expect(gallery.getByText("Selected: Mobile Frames")).toBeVisible();
   await expect(hint).toHaveCount(0);
 
-  // Scroll Story has no mobile size, so it keeps its own message.
-  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
-  await expect(hint).toHaveCount(0);
+  // Desktop Scroll Story offers its mobile size too.
+  await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
+  await expect(hint).toHaveText("Mobile Scroll Story fits your screenshots.Switch");
   await gallery.getByRole("button", { name: "Select template Mobile Frames" }).click();
 
   await gallery.getByRole("button", { name: "Apply template" }).click();
