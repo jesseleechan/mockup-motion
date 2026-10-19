@@ -6,9 +6,9 @@ Approved by the owner on 19 October 2026 from the editor audit. One pull request
 
 | Item                 | Waits for                                                                                                                           | Status      |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 3. Smaller windows   | Nothing (editor shell)                                                                                                              | In progress |
-| 1. One transport bar | The audio cut (#63), which removes "Add music" and the music lane                                                                   | Waiting     |
-| 2. A slim timeline   | The reels cut (second PR of "Cut: Legacy layouts, laptop/tablet and reels"), which removes Add shot, split, reorder and transitions | Waiting     |
+| 3. Smaller windows   | Nothing (editor shell)                                                                                                              | Merged: #78 |
+| 1. One transport bar | The audio cut (#63), which removes "Add music" and the music lane                                                                   | Merged: #79 |
+| 2. A slim timeline   | The reels cut (second PR of "Cut: Legacy layouts, laptop/tablet and reels"), which removes Add shot, split, reorder and transitions | Merged: #88 |
 
 ## 3. Smaller windows
 

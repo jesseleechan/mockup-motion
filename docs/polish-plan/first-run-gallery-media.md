@@ -6,14 +6,14 @@ Rules: `CLAUDE.md` (hard rules, "Tests", definition of done) and `docs/fix-plan/
 
 ## Items
 
-| #   | Item                                                                                      | Waits for                                | Status                                                         |
-| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
-| 1   | First run: open on something that moves                                                   | Nothing (option A decided)               | [#90](https://github.com/jesseleechan/mockup-motion/pull/90)   |
-| 2   | Empty-project defaults: the preset look                                                   | Nothing                                  | [#77](https://github.com/jesseleechan/mockup-motion/pull/77)   |
-| 3   | One gallery: the dialog stays, the Library leads to it                                    | Brand-kit cut (#75), dead-code cut (#66) | [#101](https://github.com/jesseleechan/mockup-motion/pull/101) |
-| 4   | Card copy: "Needs 3+ desktop screenshots" instead of "3 slots"                            | Nothing                                  | [#92](https://github.com/jesseleechan/mockup-motion/pull/92)   |
-| 5   | Scroll Story with demo content uses the full-page capture; "Needs a full-page screenshot" | #92                                      | [#93](https://github.com/jesseleechan/mockup-motion/pull/93)   |
-| 6   | Media tab: real thumbnails, full name on hover, a Desktop / Mobile role badge             | Brand-kit cut (#75), dead-code cut (#66) | [#94](https://github.com/jesseleechan/mockup-motion/pull/94)   |
+| #   | Item                                                                                      | Waits for                                | Status                                                                 |
+| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | First run: open on something that moves                                                   | Nothing (option A decided)               | Merged: [#90](https://github.com/jesseleechan/mockup-motion/pull/90)   |
+| 2   | Empty-project defaults: the preset look                                                   | Nothing                                  | Merged: [#77](https://github.com/jesseleechan/mockup-motion/pull/77)   |
+| 3   | One gallery: the dialog stays, the Library leads to it                                    | Brand-kit cut (#75), dead-code cut (#66) | Merged: [#101](https://github.com/jesseleechan/mockup-motion/pull/101) |
+| 4   | Card copy: "Needs 3+ desktop screenshots" instead of "3 slots"                            | Nothing                                  | Merged: [#92](https://github.com/jesseleechan/mockup-motion/pull/92)   |
+| 5   | Scroll Story with demo content uses the full-page capture; "Needs a full-page screenshot" | #92                                      | Merged: [#93](https://github.com/jesseleechan/mockup-motion/pull/93)   |
+| 6   | Media tab: real thumbnails, full name on hover, a Desktop / Mobile role badge             | Brand-kit cut (#75), dead-code cut (#66) | Merged: [#94](https://github.com/jesseleechan/mockup-motion/pull/94)   |
 
 Polish what remains, not what is being deleted: each waiting item starts from a `main` that already has the cuts and presets it depends on. `main` is merged before each push.
 

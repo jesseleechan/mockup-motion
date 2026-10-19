@@ -1,13 +1,13 @@
 # Polish plan: the Export dialog
 
-**Status: done when #87 merges.** Written 19 October 2026 from the editor audit the owner approved that day. On 19 October 2026 the owner approved every recommendation, including the six destination cards in §3, and added §4. The coordinating session reviews these PRs and gives each a turn in the merge queue. Items build on the cuts that edit the same files: #63 (music), #65 (GIF export and motion blur) and #67 (MP4 default).
+**Status: done.** All four items have merged. Written 19 October 2026 from the editor audit the owner approved that day. On 19 October 2026 the owner approved every recommendation, including the six destination cards in §3, and added §4. The coordinating session reviews these PRs and gives each a turn in the merge queue. Items build on the cuts that edit the same files: #63 (music), #65 (GIF export and motion blur) and #67 (MP4 default).
 
 Each item is its own PR, with before and after screenshots of the dialog at 1440 × 900 and 1280 × 800 and a check that nothing in it overflows.
 
 | 1. Advanced section | #80 | Merged |
 | 2. Remember the last choice | #81 | Merged |
 | 3. Destinations | #83 | Merged |
-| 4. Export every size at once | #87 | In review |
+| 4. Export every size at once | #87 | Merged |
 
 ## 1. An Advanced section
 
