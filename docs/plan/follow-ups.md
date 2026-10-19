@@ -71,12 +71,13 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 
 ## Demo content and capture
 
-| Item                                                                                                                        | Source   |
-| --------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `public/demo/aurelia.png` (2 MB) is unreferenced but still ships.                                                           | F04, F12 |
-| `tests/sections.test.ts` builds the mobile ground truth by scaling desktop section tops, so the mobile comparison is loose. | F12      |
-| Section detection precision is about 25% (recall meets the ≥ 80% bar).                                                      | F12      |
-| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                    | F12      |
+| Item                                                                                                                                                                                                         | Source                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `public/demo/aurelia.png` (2 MB) is unreferenced but still ships.                                                                                                                                            | F04, F12                    |
+| `tests/sections.test.ts` builds the mobile ground truth by scaling desktop section tops, so the mobile comparison is loose.                                                                                  | F12                         |
+| Section detection precision is about 25% (recall meets the ≥ 80% bar).                                                                                                                                       | F12                         |
+| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                                                                                                     | F12                         |
+| Vite warns in dev that the demo JSON under `public/demo/` (`manifest.json`, `sections*.json`) can't be imported from JavaScript; dev and build work. Moving the imported JSON under `src/` would silence it. | Responsive Scroll R02 (#52) |
 
 ## Tests and CI
 
@@ -95,7 +96,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 
 ## Done since it was reported
 
-- **Done (flaky drop-hint test): `ui-overflow.spec.ts` "the UI shows human labels"**, reported in F14. It already found a Frames card with `Engine.pick` instead of the stage centre, but it gave that search Playwright's unscaled 5 s while the Frames rows were still being built and the demo screenshots decoded, and it failed that way on main ([run 39186967840](https://github.com/jesseleechan/mockup-motion/actions/runs/39186967840)) and on #48. The poll now waits `ciTimeout(5000)` and returns what it is still waiting for (the engine, or a card), so a timeout names its cause. The assertions are unchanged.
+- **Done (flaky drop-hint test): `ui-overflow.spec.ts` "the UI shows human labels"**, reported in F14. It already found a Frames card with `Engine.pick` instead of the stage centre, but it gave that search Playwright's unscaled 5 s while the engine drew its first Frames frame on the CI runner, and it failed that way on main ([run 39186967840](https://github.com/jesseleechan/mockup-motion/actions/runs/39186967840)) and on #48. R02 ([#52](https://github.com/jesseleechan/mockup-motion/pull/52)) gave the poll `ciTimeout(5000)`, and #68 makes it return what it is still waiting for (the engine, or a card), so a timeout names its cause. The assertions are unchanged.
 - **Done (P05 follow-ups): three slider and Frames items from P02–P04**, decided by the owner in P05 ("lets go with your recommendations"). A slider with an even number of screenshots lights one fewer, so the frame stays balanced (4 screenshots at 16:9 and 4:3 were right-heavy); a slider shot has no Camera section and the store and `sanitizeDoc` keep its camera still; a Frames shot shows only the screenshots that fit 30 s (10 with 3 rows, 8 with 2) and says so in the inspector. See `docs/presets-plan/evidence/P05-follow-ups/`.
 - **Done (P05): Frames' gallery preview didn't fit the preview budget**, reported in P04. At the web bitrate the 18.5 s preview was 889 KB. `scripts/template-previews.ts` now gives a preview whose web bitrate would pass 440 KiB the bitrate that fits it (Frames: 140 kbps, 440,884 bytes); the 500 KB and 450 KB limits and the demo screenshots are unchanged. See `docs/presets-plan/evidence/P05/README.md`.
 - **Done (e2e path filter and shards): the CI `e2e` job took 39–68 min in one job**, reported in F13. The suite now runs on four shards and one aggregating `e2e` check merges their reports; pull requests that touch no e2e trigger path (`scripts/e2e-paths.ts`) skip the suite. See `CLAUDE.md`, Commands.

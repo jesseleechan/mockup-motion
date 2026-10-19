@@ -423,9 +423,12 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
           return "dragged over a Frames card";
         }, assetId);
       },
-      // Building the Frames rows and decoding the demo screenshots compete with SwiftShader for
-      // the CI runner's CPU; the unscaled 5 s ran out on main (run 39186967840) and on #48.
-      { timeout: ciTimeout(5000) },
+      {
+        // The engine picks Frames cards once its first frame is drawn, which the CI runner's
+        // SwiftShader reaches about 5x later than a laptop (tests/helpers/ci.ts).
+        timeout: ciTimeout(5000),
+        message: "the engine finds a Frames row card to drag over",
+      },
     )
     .toBe("dragged over a Frames card");
   await expect(hint).toBeVisible();
