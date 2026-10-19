@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import type { ProjectDoc } from "../../src/doc/types";
 import { ciTimeout } from "../helpers/ci";
 
@@ -262,7 +263,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
   }) => {
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
     // Every card rests on its poster.
     const posters = await cards.evaluateAll((els) =>
@@ -270,10 +271,26 @@ test.describe("F07: template previews in the gallery and Library", () => {
     );
     for (const poster of posters) expect(poster).toMatch(/^\/templates\/[a-z-]+\.webp$/);
 
+    // A rejected play() logs "[TemplatePreview] … failed to play"; report it instead of a timeout.
+    const previewErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error" && msg.text().includes("[TemplatePreview]")) {
+        previewErrors.push(msg.text());
+      }
+    });
+
     const frames = page.locator('[data-testid="template-card"][data-template-id="frames"]');
     await frames.hover();
+    // Starting playback fetches and decodes the WebM, which competes with SwiftShader for the CI
+    // runner's CPU like the poll below (tests/helpers/ci.ts).
     await expect
-      .poll(() => videoState(frames), { timeout: 10_000 })
+      .poll(
+        () => {
+          if (previewErrors.length > 0) throw new Error(previewErrors.join("\n"));
+          return videoState(frames);
+        },
+        { timeout: ciTimeout(10_000) },
+      )
       .toEqual({ paused: false, time: expect.any(Number) });
     // Decoding competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
     await expect
@@ -295,24 +312,25 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await expect.poll(async () => (await videoState(story)).paused).toBe(false);
     await story.blur();
     await expect.poll(() => videoState(story)).toEqual({ paused: true, time: 0 });
+    expect(previewErrors).toEqual([]);
   });
 
   test("reduced motion shows posters only", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.getByRole("button", { name: "Start with a template" }).click();
     const cards = page.locator('[data-testid="template-card"]');
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
     const posters = page.locator('[data-testid="template-card"] [data-testid="template-poster"]');
-    await expect(posters).toHaveCount(7);
+    await expect(posters).toHaveCount(BUILTIN_TEMPLATES.length);
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
 
   test("Library template cards show their posters", async ({ page }) => {
     const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(7);
-    for (let i = 0; i < 7; i++) {
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
+    for (let i = 0; i < BUILTIN_TEMPLATES.length; i++) {
       const img = cards.nth(i).locator("img");
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);

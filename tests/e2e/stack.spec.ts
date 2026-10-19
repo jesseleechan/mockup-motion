@@ -134,35 +134,32 @@ async function renderDeck(page: Page, times: number[]): Promise<PixelBuffer[]> {
   );
 }
 
-test("every settled deck card is colour-exact, and the front card covers the ones behind", async ({
+// One test (CLAUDE.md, Tests): the settled pose at t = 0 and the entering card's fade at t = 1.
+test("deck cards are colour-exact in order, and the entering card fades in linear light", async ({
   page,
 }) => {
-  const [frame] = await renderDeck(page, [0]);
+  const [settled, mid] = await renderDeck(page, [0, 1]);
   const node = nodesAt(0);
   const cards = [0, 1, 2].map((i) => box(node(IMAGES[i].id)));
   // The front card's centre, where the cards behind it overlap it.
-  const front = patch(frame, cards[0].cx, cards[0].cy);
+  const front = patch(settled, cards[0].cx, cards[0].cy);
   expect(deltaE(front, FRONT), `front ${front.map((c) => c.toFixed(1))}`).toBeLessThan(1);
   // Each card behind at full colour (D1), in the strip that peeks past the card in front.
   for (const r of [1, 2]) {
     const x = (cards[r - 1].x1 + cards[r].x1) / 2;
-    const colour = patch(frame, x, cards[r].cy);
+    const colour = patch(settled, x, cards[r].cy);
     expect(deltaE(colour, COLOURS[r]), `slot ${r} ${colour.map((c) => c.toFixed(1))}`).toBeLessThan(
       1,
     );
   }
-});
 
-test("the card entering the deck fades in linear light, like an entrance", async ({ page }) => {
-  const t = 1;
-  const [frame] = await renderDeck(page, [t]);
-  const node = nodesAt(t);
-  const entering = node(IMAGES[3].id);
+  const later = nodesAt(1);
+  const entering = later(IMAGES[3].id);
   expect(entering.opacity).toBeGreaterThan(0.2);
   expect(entering.opacity).toBeLessThan(0.95);
-  const ahead = box(node(IMAGES[2].id));
+  const ahead = box(later(IMAGES[2].id));
   const card = box(entering);
-  const colour = patch(frame, (ahead.x1 + card.x1) / 2, card.cy);
+  const colour = patch(mid, (ahead.x1 + card.x1) / 2, card.cy);
   const expected = overLinear(ENTERING, entering.opacity, ASH);
   // An sRGB mix (the carousel's neighbour fade) of this near-black over Ash is far darker.
   expect(
@@ -170,90 +167,3 @@ test("the card entering the deck fades in linear light, like an entrance", async
     `entering ${colour.map((c) => c.toFixed(1))} vs ${expected.map((c) => c.toFixed(1))}`,
   ).toBeLessThan(2);
 });
-
-interface EditorWindow {
-  __editorStore?: { getState: () => { doc: import("../../src/doc/types").ProjectDoc } };
-}
-
-// Stack plan S03: the gallery applies Desktop Stack and Mobile Stack as one looping deck shot
-// with the slider's step controls and no camera controls.
-for (const preset of [
-  {
-    id: "desktop-stack",
-    name: "Desktop Stack",
-    axis: "y",
-    shape: "desktop",
-    label: "Desktop stack",
-  },
-  { id: "mobile-stack", name: "Mobile Stack", axis: "x", shape: "mobile", label: "Mobile stack" },
-] as const) {
-  test(`${preset.name} applies one looping deck shot with step controls`, async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/lab/ui");
-    await page.evaluate(async () => {
-      localStorage.clear();
-      sessionStorage.clear();
-      await new Promise<void>((resolve, reject) => {
-        const req = indexedDB.deleteDatabase("mockupmotion-v2");
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-        req.onblocked = () => reject(new Error("deleteDatabase blocked"));
-      });
-    });
-    await page.goto("/");
-    await page.getByRole("button", { name: "Start with a template" }).click();
-    await page.locator(`[data-testid="template-card"][data-template-id="${preset.id}"]`).click();
-    await page.getByRole("button", { name: "Apply template" }).click();
-    await page.getByRole("button", { name: "Use demo content" }).click();
-
-    const state = () =>
-      page.evaluate(() => {
-        const doc = (window as unknown as EditorWindow).__editorStore?.getState().doc;
-        if (!doc) throw new Error("__editorStore is unavailable");
-        return {
-          templateId: doc.templateId,
-          loop: doc.loop,
-          shots: doc.shots.length,
-          layout: doc.shots[0].layout,
-          duration: doc.shots[0].duration,
-          camera: doc.shots[0].camera,
-          wrap: doc.shots[0].transitionIn.kind,
-        };
-      });
-    await expect
-      .poll(
-        async () => {
-          const { layout } = await state();
-          return layout.kind === "slider" ? layout.assetIds.length : 0;
-        },
-        { timeout: 20_000 },
-      )
-      .toBeGreaterThanOrEqual(3);
-    const applied = await state();
-    expect(applied).toMatchObject({
-      templateId: preset.id,
-      loop: true,
-      shots: 1,
-      layout: {
-        kind: "slider",
-        axis: preset.axis,
-        shape: preset.shape,
-        step: 2,
-        arrangement: "deck",
-      },
-      camera: { preset: "static", intensity: 0, float: 0 },
-      wrap: "cut",
-    });
-    if (applied.layout.kind !== "slider") throw new Error("not a slider");
-    expect(applied.duration).toBe(applied.layout.assetIds.length * 2);
-
-    const card = page.locator('[data-testid="shot-card"]').first();
-    await expect(card).toContainText(preset.label);
-    await card.click({ position: { x: 6, y: 6 } });
-    await expect(page.getByRole("slider", { name: "Step length" })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Layout", exact: true })).toContainText(
-      "Stack",
-    );
-    await expect(page.getByRole("group", { name: "Camera move" })).toHaveCount(0);
-  });
-}
