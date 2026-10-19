@@ -47,7 +47,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "stage",
     "lab",
     "devices",
-    "ui",
     "preset-tone",
     "orbit",
   ],

@@ -7,6 +7,7 @@ import {
   TEXT_ANIMATION_LABELS,
   TEXT_ROLE_LABELS,
 } from "../../src/editor/labels";
+import { BLANK_PAGE } from "../helpers/blank-page";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
@@ -60,7 +61,7 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
 ];
 
 async function resetAndOpen(page: Page, theme: Theme) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async (theme) => {
     localStorage.clear();
     sessionStorage.clear();

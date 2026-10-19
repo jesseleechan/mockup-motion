@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to lab/ui to cleanly clear storage without locking mockupmotion-v2
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();
@@ -128,13 +128,11 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test("v1 project in legacy DB opens migrated on boot with assets intact", async ({ page }) => {
     // Populate legacy IndexedDB 'mockupmotion' before navigating to editor root
     await page.evaluate(async () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 100;
-      canvas.height = 100;
+      const canvas = new OffscreenCanvas(100, 100);
       const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = "blue";
       ctx.fillRect(0, 0, 100, 100);
-      const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/png"));
+      const blob = await canvas.convertToBlob({ type: "image/png" });
 
       const req = indexedDB.open("mockupmotion", 1);
       req.onupgradeneeded = () => {

@@ -9,7 +9,7 @@ src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
   storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
-  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts · fonts.ts
+  assets/      decode.ts · roles.ts · fonts.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
                framing.ts · timeline.ts (scheduling, transitions, loop wrap) · scroll.ts
@@ -26,7 +26,7 @@ src/
   ui/          design-system primitives (Radix wrappers), tokens, icons
   editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
                Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
-  lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
+  lab/         dev-only render lab (/lab): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
 demo-sites/    static HTML/CSS sources for demo screenshots (WP-04)
 ```
@@ -50,7 +50,6 @@ export interface AssetRef {
   width?: number; // image px
   height?: number; // image px
   role?: AssetRole; // auto-detected (assets/roles.ts), user-editable
-  palette?: string[]; // image: 5 dominant colours, hex, most-to-least prominent
   meta?: {
     tall?: boolean;
     hasStatusBar?: boolean;

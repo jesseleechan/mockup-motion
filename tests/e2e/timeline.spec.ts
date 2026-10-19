@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 test.describe("WP-14 Storyboard Timeline & Transitions", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();

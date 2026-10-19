@@ -2,13 +2,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
 import { ciTimeout } from "../helpers/ci";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
 }
 
 async function resetAndOpen(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();
