@@ -187,7 +187,9 @@ test.describe("F09 export dialog", () => {
     await expectCleanLayout(page, "Result", 0);
   });
 
-  test("the summary shows the probed container, and the file matches it", async ({ page }) => {
+  test("the summary shows the probed container, and the file matches it @smoke", async ({
+    page,
+  }) => {
     test.setTimeout(300_000);
     // This browser "lacks" H.264, and the probe waits until the test releases it.
     await page.addInitScript(() => {

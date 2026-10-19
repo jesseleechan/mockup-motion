@@ -243,6 +243,10 @@ describe("Orbit motion", () => {
     expect(fadeBlendFor(orbit("mobile", 4))).toBe("background");
     expect(fadeBlendFor({ ...orbit("mobile", 4), kind: "slider", axis: "x" })).toBe("srgb");
     expect(fadeBlendFor(undefined)).toBe("linear");
+    // A deck's entering card fades in linear light (quality bar §3.1).
+    expect(
+      fadeBlendFor({ ...orbit("mobile", 4), kind: "slider", axis: "x", arrangement: "deck" }),
+    ).toBe("linear");
   });
 });
 

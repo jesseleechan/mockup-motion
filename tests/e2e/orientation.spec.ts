@@ -101,7 +101,7 @@ async function prepareQuadrants(
 }
 
 for (const device of ["card", "browser", "phone", "tablet", "laptop"] as const) {
-  test(`F01 ${device} screen maps all four source quadrants upright`, async ({ page }) => {
+  test(`F01 ${device} screen maps all four source quadrants upright @smoke`, async ({ page }) => {
     await ready(page);
     const frames = await prepareQuadrants(page, device);
     const first = quadrantCentroids(frames.start);
@@ -234,7 +234,7 @@ test("F01 image background maps its top edge to the source top row", async ({ pa
   expectRgbNear(avgRegion(frame, 990, 565, 996, 571), colors.yellow, 40);
 });
 
-test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page }) => {
+test("F01 decoded WebM frame preserves card quadrant orientation @smoke", async ({ page }) => {
   await ready(page);
   await page.evaluate(async () => {
     const entry = performance

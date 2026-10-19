@@ -43,7 +43,7 @@ declare global {
 // ScreenCompositor's empty-state fill, #18181B.
 const EMPTY_FILL = [0x18, 0x18, 0x1b];
 
-test("F03: every built-in template loads a texture for every screen", async ({ page }) => {
+test("F03: every built-in template loads a texture for every screen @smoke", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
@@ -90,7 +90,7 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
   ).toEqual([]);
 });
 
-test("F03: a pair shows screenshots in both the browser and the phone", async ({ page }) => {
+test("F03: a pair shows screenshots in both the browser and the phone @smoke", async ({ page }) => {
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const centres = await page.evaluate(async () => {

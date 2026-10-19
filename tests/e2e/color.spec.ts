@@ -41,7 +41,7 @@ for (const [hex, rgb] of [
   ["#18191B", [24, 25, 27]],
   ["#F1EDE6", [241, 237, 230]],
 ] as const) {
-  test(`F02 solid ${hex} preserves exact colour`, async ({ page }) => {
+  test(`F02 solid ${hex} preserves exact colour @smoke`, async ({ page }) => {
     await ready(page, BACKGROUND_ONLY);
     const frame = await background(page, { kind: "solid", color: hex });
     expectRgbNear(avgRegion(frame, 600, 320, 680, 400), rgb, 1);
@@ -58,7 +58,9 @@ for (const kind of ["gradient", "mesh"] as const) {
     expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
   });
 }
-test("F02 screenshot band centres preserve RGB in source top-to-bottom order", async ({ page }) => {
+test("F02 screenshot band centres preserve RGB in source top-to-bottom order @smoke", async ({
+  page,
+}) => {
   await ready(page, "&cameraDistance=0.7");
   const pixels = await page.evaluate(async () => {
     const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
@@ -185,7 +187,7 @@ test("F02 dither stays below half an sRGB byte", async ({ page }) => {
   expect([...values]).toEqual([128]);
 });
 
-test("F02 short phone screenshot bottom fill is sRGB exact", async ({ page }) => {
+test("F02 short phone screenshot bottom fill is sRGB exact @smoke", async ({ page }) => {
   await ready(page);
   const frame = await page.evaluate(async () => {
     const doc = structuredClone(window.__fixtures?.["device-phone-frontal"]);
