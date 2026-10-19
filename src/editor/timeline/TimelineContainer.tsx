@@ -5,7 +5,7 @@ import { schedule } from "../../motion";
 import { TimeRuler } from "./TimeRuler";
 import { ShotCard } from "./ShotCard";
 import { Icon, Tooltip } from "../../ui";
-import { Maximize, Pause, Play, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import type { Layout } from "../../doc/types";
 
 export const TimelineContainer: React.FC = () => {
@@ -15,7 +15,6 @@ export const TimelineContainer: React.FC = () => {
 
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
-  const playing = useUIStore((s) => s.playing);
   const setSelection = useUIStore((s) => s.setSelection);
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
@@ -64,14 +63,6 @@ export const TimelineContainer: React.FC = () => {
 
   const isSelected = selection.kind === "shot" && selection.id === shot.id;
 
-  // Time format helper (00:00.0)
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 10);
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}.${ms}`;
-  };
-
   // Wheel zoom with Ctrl / trackpad pinch
   const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -94,41 +85,8 @@ export const TimelineContainer: React.FC = () => {
       style={{ height: 148 }}
       className="bg-[var(--color-panel)] border-t border-[var(--color-line)] flex flex-col select-none shrink-0 z-20 overflow-hidden"
     >
-      {/* Top Toolbar: Time & Zoom controls (28px) */}
-      <div className="h-7 px-3 bg-[var(--color-panel)] border-b border-[var(--color-line)] flex items-center justify-between shrink-0 text-xs">
-        {/* Playback Controls & Time Display */}
-        <div className="flex items-center gap-2">
-          <Tooltip content={playing ? "Pause (Space)" : "Play (Space)"}>
-            <button
-              type="button"
-              aria-label={playing ? "Pause" : "Play"}
-              onClick={() => setPlaying(!playing)}
-              className="p-1 rounded text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
-            >
-              <Icon icon={playing ? Pause : Play} size={14} />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Rewind to start (Home)">
-            <button
-              type="button"
-              aria-label="Rewind to start"
-              onClick={() => {
-                setPlaying(false);
-                setPlayhead(0);
-              }}
-              className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
-            >
-              <Icon icon={RotateCcw} size={13} />
-            </button>
-          </Tooltip>
-
-          <div className="font-mono text-[11px] text-[var(--color-text-2)] pl-1">
-            <span className="text-[var(--color-text)] font-semibold">{formatTime(playhead)}</span>
-            <span className="text-[var(--color-text-3)]"> / {formatTime(total)}</span>
-          </div>
-        </div>
-
+      {/* Top toolbar (28px): zoom only; play and the timecode live in the stage's transport bar. */}
+      <div className="h-7 px-3 bg-[var(--color-panel)] border-b border-[var(--color-line)] flex items-center justify-end shrink-0 text-xs">
         {/* Zoom Controls */}
         <div className="flex items-center gap-1">
           <Tooltip content="Fit timeline to view">
