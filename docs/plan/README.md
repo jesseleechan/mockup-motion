@@ -30,7 +30,7 @@
 | **Shots + storyboard timeline with transitions** (fade, blur, push, zoom, wipe)                                                                                                                            | Case-study reels: title → hero → scroll → responsive → logo. One-shot loops still work.          |
 | **Scroll Story** (explicit template): scroll stops on a tall page with eased segments and holds                                                                                                            | The most natural way to show a whole website. Opt-in only, never automatic.                      |
 | **12 curated templates** with slot auto-fill and real animated previews                                                                                                                                    | The fastest path to a good result. Replaces the 8 presets.                                       |
-| **Atmosphere:** mesh gradients, ambient blurred-screenshot backgrounds, OKLCH palettes, auto palette from the screenshot, film grain, vignette                                                             | Elegant backgrounds. Grain also removes H.264 banding.                                           |
+| **Atmosphere:** mesh gradients, ambient blurred-screenshot backgrounds, OKLCH palettes, film grain, vignette                                                                                                    | Elegant backgrounds. Grain also removes H.264 banding.                                           |
 | **Two-layer soft shadows** tinted by the background, contact shadows on tilted layouts                                                                                                                     | Grounds devices without looking like a drop-shadow filter.                                       |
 | ~~**Typography**~~: removed (owner, 19 October 2026). No text layers, title cards or font pairs                                                                                                            | The product is flat, looping presets; no template used text.                                     |
 | ~~**Brand kit**~~: removed (owner, 19 October 2026)                                                                                                                                                        | Consistency across every video for the studio.                                                   |
@@ -177,7 +177,6 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 [f12]: https://github.com/jesseleechan/mockup-motion/pull/14
 [f13]: https://github.com/jesseleechan/mockup-motion/pull/15
 [f14]: https://github.com/jesseleechan/mockup-motion/pull/17
-
 [cut-text]: https://github.com/jesseleechan/mockup-motion/pull/72
 
 "Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI: unit and visual tests on every pull request; e2e tests on every pull request that touches an e2e trigger path (`CLAUDE.md`, Commands), on every push to `main` and nightly. The `perf` project (`tests/perf`) needs a real GPU and isn't in CI.
@@ -191,14 +190,13 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 Every WP above is marked Done (decided 7 Oct 2026). These are the acceptance criteria and quality-bar rules that are still unmet or unverified, kept here so the statuses don't hide them. Each one is described in [`follow-ups.md`](follow-ups.md). This list holds what F00–F14 found; the F14 pass didn't re-audit every original WP criterion.
 
 - **WP-03:** Spike 3 (a 6 s 1080p export in ≤ 12 s) and the perf budgets run only with `npm run test:perf` on a real GPU, and have not been run. There is no shimmer check. `Engine.ts` is 579 lines. `Engine.dispose()` doesn't force context loss.
-- **WP-04:** `public/demo/aurelia.png` still ships unused. The fixed-element branch of `--unstick` isn't exercised.
+- **WP-04:** the fixed-element branch of `--unstick` isn't exercised.
 - **WP-07:** `BackgroundRenderer.ts` is 408 lines.
 - **WP-08:** no one has reviewed a 1080p export for banding (WP-08 "Banding" criterion, quality bar §8).
 - **WP-09:** marquee rows, columns and the wall exceed quality bar §2.5's speed limit once 3 or more screenshots are used, and speed up with every screenshot added. No test checks the limit. Pair, trio and stack are small at 9:16. Tilted phone columns (the since-removed Phone Parade) are sparse at 16:9. Quiet-hero is under §4's 84–90% width at 1:1 and 9:16 until late in its push-in.
 - **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots. Tilted browser rows (the since-removed Portfolio Rows) read busy.
 - **WP-12:** the Layout select only offers a single device. The editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
 - **WP-13:** Media tab cards show an icon instead of the screenshot. Duplicating a project doesn't copy its thumbnail.
-- **WP-15:** section detection precision is about 25%. The mobile ground truth in `sections.test.ts` is loose.
 - **WP-16:** the dialog doesn't remember settings. `probe.canExport4K` is unused. Cached text rasters are transferred to the worker. X has no card of its own.
 - **WP-18:** Safari, Firefox and Edge have never been run; they are out of scope for now ([`browser-matrix.md`](browser-matrix.md)). Perf numbers on real hardware aren't reported. The loop-watch, banding and shimmer items of quality bar §8 aren't verified for any template ([`quality-review.md`](quality-review.md)). The CI e2e job takes 39–68 min. The visual baselines are 21 MB. Three e2e tests are timing-sensitive on CI. e2e runs rewrite tracked screenshots. No dead-code check (`knip` or `ts-prune`) has been run.
 

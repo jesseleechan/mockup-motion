@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { TEMPLATE_CATEGORY_LABELS } from "../../src/editor/labels";
 import { templateInCategory } from "../../src/templates/category";
 import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 /** The templates a gallery tab shows, in gallery order, and the tab label on each card. */
 const tabTemplates = (tab: "desktop" | "mobile") =>
@@ -13,7 +14,7 @@ const tabLabels = (tab: "desktop" | "mobile") =>
 
 test.describe("Wave 5: Templates & Gallery, Scroll, Export v2", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();

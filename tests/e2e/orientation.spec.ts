@@ -289,7 +289,10 @@ test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page
       if (canvas.width !== 640 || canvas.height !== 360) {
         throw new Error(`Expected a 640x360 export frame, got ${canvas.width}x${canvas.height}`);
       }
-      const context = canvas.getContext("2d");
+      const context = canvas.getContext("2d") as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D
+        | null;
       if (!context) throw new Error("Decoded frame has no 2D context");
       const image = context.getImageData(0, 0, canvas.width, canvas.height);
       return Array.from(image.data);

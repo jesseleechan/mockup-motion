@@ -502,7 +502,8 @@ test.describe("F11 browser URL pill", () => {
       if (!track) throw new Error("The exported WebM has no video track");
       const wrapped = await new media.CanvasSink(track).getCanvas(0);
       if (!wrapped) throw new Error("Could not decode the exported WebM at 0 s");
-      const context = wrapped.canvas.getContext("2d");
+      const context = wrapped.canvas.getContext("2d") as
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
       if (!context) throw new Error("The decoded frame has no 2D context");
       if (wrapped.canvas.width !== width || wrapped.canvas.height !== height)
         throw new Error(`Exported ${wrapped.canvas.width}x${wrapped.canvas.height}`);
