@@ -220,6 +220,15 @@ export async function runDemoCapture() {
         await page.goto(siteUrl, { waitUntil: 'networkidle' });
         await preparePage(page, { unstick: true });
 
+        // Record sections: Responsive Scroll stops both screens on the same section
+        const mobileSections = await recordSectionBoundaries(page, 390, 2);
+        fs.writeFileSync(
+          path.join(siteDir, 'sections-mobile.json'),
+          JSON.stringify(mobileSections, null, 2),
+          'utf-8',
+        );
+        console.log(`  -> Recorded ${mobileSections.sections.length} sections in sections-mobile.json`);
+
         const rawPng = await page.screenshot({ fullPage: true });
         const fullWebpPath = path.join(siteDir, 'mobile-full.webp');
         await sharp(rawPng).webp({ quality: 92 }).toFile(fullWebpPath);
