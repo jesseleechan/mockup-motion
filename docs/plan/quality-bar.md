@@ -83,12 +83,15 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 - `minimal`: no toolbar; traffic lights float inside the top-left corner over a 6% top fade. `none`: the screen only, with radius and border kept.
 - Light toolbar `#F6F6F7`, dark `#1E1E21`.
 
-### 3.3 Phone (generic; no Apple trademarks or exact silhouettes)
+### 3.3 Phone (an iPhone Pro, front on)
 
-- Body aspect 0.488 (about 71.5 × 146.5 mm feel). Corner radius 15.5% of width. Bezel 3.2% of width, uniform. Screen radius equals the body radius minus the bezel.
-- Edge: a thin rim with a 2-stop specular highlight along the top-left (the finish color lightened 18%), and side buttons at 0.6% of width, protruding.
-- Camera pill: 27% of width wide, 7.6% of width tall, centered 2.4% below the screen top. It is drawn **inside** a 5.5%-of-height status-bar safe zone, so content is never covered unless the screenshot already includes a status bar (detected by `assets/roles.ts` from a uniform top strip; when unsure, keep the safe zone).
-- Finishes: `graphite #3A3B3F`, `silver #D9DADD`, `black #121214`, `sand #CBBBA0`.
+The owner decided on 18 October 2026 that the phone looks like a current iPhone Pro: MockupMotion is for presenting their own work, so the earlier "generic, no Apple silhouettes" rule no longer applies. The dimensions live in `src/motion/phone-spec.ts`.
+
+- Body 71.9 × 150 mm: aspect 0.481 with the 0.4615 screen. The border around the screen is uniform, 3.7% of the body width: a metal frame (1.2%) with a rounded-edge highlight and a dark seam, then black glass. Corners are concentric: the screen radius is 15.4% of the screen width (62 pt of 402 pt), and the body radius is that plus the border. Depth 8.75 mm (5.8% of the height), capped at 0.036 stage units so a phone in the pair layout stays in front of the browser.
+- Dynamic Island: 31.3% × 9.2% of the screen width, 2.7% below the screen top, pure black with the front camera lens at its right end.
+- Buttons stand 0.6% of the width proud: the Action button and volume buttons on the left, the side button on the right, at the iPhone's positions.
+- **Status bar.** The top 62 pt of the 874 pt screen (7.1%). A screenshot without a status bar starts below it: the bar shows "9:41", signal, Wi-Fi and a full battery over the screenshot's top-row colour, in black on a light colour and white on a dark one, like iOS. So content is never covered by the island. A screenshot that already includes a status bar (detected by `assets/roles.ts`) fills the whole screen, and its own status bar stays pinned while the page scrolls. Scroll speeds are measured against the viewport below the status bar.
+- Finishes (frame colours): `graphite #45454A` (Black Titanium), `black #232326`, `silver #D9DADC` (Silver), `sand #C2A78F` (Desert Titanium).
 
 ### 3.4 Tablet, laptop, card
 
