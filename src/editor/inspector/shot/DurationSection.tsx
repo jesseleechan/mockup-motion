@@ -1,6 +1,6 @@
 import React from "react";
 import type { Aspect, Shot } from "../../../doc/types";
-import { fixedShotDuration, minShotDuration } from "../../../motion";
+import { fixedShotDuration, minShotDuration, schedule } from "../../../motion";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Slider } from "../../../ui";
 import { useShotUpdate } from "./useShotUpdate";
@@ -11,18 +11,21 @@ import { useShotUpdate } from "./useShotUpdate";
  */
 export const DurationSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot, aspect }) => {
   const update = useShotUpdate(shot.id);
-  const assets = useEditorStore((s) => s.doc.assets);
-  const fixed = fixedShotDuration(shot.layout, shot.scroll, assets) !== null;
+  const doc = useEditorStore((s) => s.doc);
+  const fixed = fixedShotDuration(shot.layout, shot.scroll, doc.assets) !== null;
   // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
   const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
   const seconds = `${shot.duration.toFixed(1)} s`;
 
   if (fixed) {
+    // What plays: a crossfade-wrapped loop (Responsive Scroll) wraps early by its fade, so the
+    // loop is shorter than the shot (contracts.md §5). The transport shows the same total.
+    const { total } = schedule(doc);
     return (
       <Section title="Duration">
-        <Field label="Loop length">
+        <Field label={doc.loop ? "Loop length" : "Length"}>
           <span className="block text-right text-[12px] tabular-nums text-[var(--color-text)]">
-            {seconds}
+            {`${total.toFixed(1)} s`}
           </span>
         </Field>
       </Section>

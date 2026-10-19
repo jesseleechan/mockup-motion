@@ -17,6 +17,7 @@ export {
   fixedShotDuration,
   MAX_SHOT_DURATION,
   isSteppedLayout,
+  isStillCamera,
   minShotDuration,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
