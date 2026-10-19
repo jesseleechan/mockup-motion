@@ -94,7 +94,7 @@ async function prepareQuadrants(
 }
 
 for (const device of ["card", "browser", "phone"] as const) {
-  test(`F01 ${device} screen maps all four source quadrants upright`, async ({ page }) => {
+  test(`F01 ${device} screen maps all four source quadrants upright @smoke`, async ({ page }) => {
     await ready(page);
     const frames = await prepareQuadrants(page, device);
     const first = quadrantCentroids(frames.start);
@@ -186,7 +186,7 @@ test("F01 tall screenshot scroll preserves top-down color bands at both endpoint
   expect(frames.geometriesAfterScroll).toBe(frames.geometriesBeforeScroll);
 });
 
-test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page }) => {
+test("F01 decoded WebM frame preserves card quadrant orientation @smoke", async ({ page }) => {
   await ready(page);
   await page.evaluate(async () => {
     const entry = performance

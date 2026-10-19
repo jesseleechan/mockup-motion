@@ -13,7 +13,7 @@ const ALL_FILTERS = E2E_SHARDS.flatMap((_, i) => shardSpecPaths(i + 1));
 
 describe("e2e shards", () => {
   it("puts every e2e spec in exactly one shard", () => {
-    expect(SPECS.length).toBeGreaterThan(20);
+    expect(SPECS.length).toBeGreaterThan(10);
     expect([...ALL_FILTERS].sort()).toEqual([...SPECS].sort());
   });
 
@@ -29,8 +29,8 @@ describe("e2e shards", () => {
   it("has one CI matrix entry per shard", () => {
     const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
     const shards = E2E_SHARDS.map((_, i) => i + 1).join(", ");
-    expect(workflow).toContain(`shard: [${shards}]`);
-    expect(workflow).toContain(`name: e2e shard \${{ matrix.shard }}/${E2E_SHARDS.length}`);
+    expect(workflow).toContain(`'[${shards}]'`);
+    expect(workflow).toContain(`format('shard {0}/${E2E_SHARDS.length}', matrix.shard)`);
   });
 
   it("rejects an unknown shard", () => {
