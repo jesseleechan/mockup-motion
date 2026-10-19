@@ -1,0 +1,38 @@
+{
+  "name": "mockup-motion-capture",
+  "version": "0.1.0",
+  "description": "Capture desktop and mobile full-page screenshots of a website, with section data, for MockupMotion.",
+  "type": "module",
+  "bin": {
+    "mockup-motion-capture": "bin/mockup-motion-capture.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.d.mts",
+      "default": "./src/index.mjs"
+    }
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "screenshot",
+    "full-page",
+    "playwright",
+    "mockup",
+    "capture"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesseleechan/mockup-motion.git",
+    "directory": "packages/capture"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}

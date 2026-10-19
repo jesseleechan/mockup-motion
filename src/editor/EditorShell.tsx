@@ -11,6 +11,7 @@ import {
 } from "./shell/panel-layout";
 import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
+import { UseMyScreenshotsBanner } from "./stage/UseMyScreenshotsBanner";
 import { TransportBar } from "./transport/TransportBar";
 import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
@@ -25,17 +26,13 @@ import { schedule } from "../motion";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
+import { ImportDropZone } from "./import/ImportDropZone";
+import { isTypingTarget } from "./focus";
 import { Monitor } from "lucide-react";
 
 const ExportModal = lazy(() =>
   import("./export/ExportModal").then((m) => ({ default: m.ExportModal })),
 );
-
-function isInputElement(el: EventTarget | null): boolean {
-  if (!el || !(el instanceof HTMLElement)) return false;
-  const tag = el.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-}
 
 export const EditorShell: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
@@ -140,7 +137,7 @@ export const EditorShell: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
-      if (isInputElement(e.target)) return;
+      if (isTypingTarget(e.target)) return;
 
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const cmdKey = isMac ? e.metaKey : e.ctrlKey;
@@ -291,6 +288,7 @@ export const EditorShell: React.FC = () => {
               {/* Center Stage & Transport */}
               <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
                 <Stage showSafeMargins={showSafeMargins} />
+                <UseMyScreenshotsBanner />
                 <TransportBar
                   showSafeMargins={showSafeMargins}
                   onToggleSafeMargins={() => setShowSafeMargins(!showSafeMargins)}
@@ -323,6 +321,7 @@ export const EditorShell: React.FC = () => {
               </Suspense>
             )}
             <TemplateGalleryModal />
+            <ImportDropZone />
             <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
             <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
           </div>

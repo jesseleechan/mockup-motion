@@ -17,14 +17,13 @@ Open http://localhost:3000.
 
 ## Capture screenshots
 
-Good frames start with a full-page screenshot. Capture one locally:
+Good frames start with a full-page screenshot. From this repo, with Node 20 or later:
 
 ```sh
-npx playwright install chromium
 npm run capture -- https://example.com --unstick
 ```
 
-This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) to `captures/`, both at 2× by default. Each has a first-viewport PNG, a full-page PNG and a JSON file with the page's section positions. `--unstick` flattens sticky and fixed headers so they don't repeat down the full-page capture. Run `npm run capture -- --help` for the other options (`--out`, `--scale`, `--mode`, `--hide`, `--wait`). You can also use the browser's full-page screenshot in DevTools.
+It writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) to `captures/`, both at 2× by default. Each has a first-viewport PNG, a full-page PNG and a JSON file with the page's section positions. Drop the `captures` folder onto the editor to import them all at once. `--unstick` flattens sticky and fixed headers so they don't repeat down the full-page capture. Run it with `--help` for the other options (`--out`, `--scale`, `--mode`, `--hide`, `--wait`). The capture code is a small package in `packages/capture` (see its [README](packages/capture/README.md)); it isn't published to npm. You can also use the browser's full-page screenshot in DevTools.
 
 `npm run demo:capture` rebuilds the built-in demo captures from `demo-sites/`.
 
@@ -32,7 +31,7 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
 
-Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
+Drop PNG, JPEG, WebP or AVIF files or a whole folder anywhere on the editor, paste an image with ⌘V / Ctrl+V, or upload them in the Media tab. A dropped `captures` folder brings each screenshot's role (desktop or mobile) and section data. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. After "Try with demo content", a banner under the stage offers "Use my screenshots": it swaps every demo image in the project for your uploads, desktop for desktop and mobile for mobile, in one undo step.
 
 ## Responsive Scroll
 
