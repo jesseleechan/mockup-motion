@@ -37,7 +37,7 @@ Each JSON file looks like this:
 
 ## Import into MockupMotion
 
-Open the `captures` folder, select all its files and drop them onto the editor. The screenshots are imported with their section data in one step.
+Drop the `captures` folder onto the editor. The screenshots are imported with their roles and section data in one step.
 
 ## Options
 

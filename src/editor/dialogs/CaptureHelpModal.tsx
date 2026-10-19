@@ -30,8 +30,8 @@ export const CaptureHelpModal: React.FC<CaptureHelpModalProps> = ({ open, onOpen
             </div>
             <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed">
               It writes a <span className="font-mono">captures</span> folder with desktop and mobile
-              full-page screenshots and their section data. Select all the files in it and drop them
-              onto the editor to import everything at once.
+              full-page screenshots and their section data. Drop the folder onto the editor to
+              import everything at once.
             </p>
           </div>
 
