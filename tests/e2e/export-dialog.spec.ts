@@ -133,6 +133,9 @@ async function dialogLayout(page: Page): Promise<LayoutReport> {
   });
 }
 
+/** Format, Resolution and Quality, plus Frame rate and Anti-aliasing with Advanced open. */
+const ENCODING_FIELDS = 5;
+
 async function expectCleanLayout(page: Page, context: string, minFields: number) {
   const report = await dialogLayout(page);
   expect(report.width, `${context}: dialog width`).toBe(600);
@@ -154,16 +157,18 @@ test.describe("F09 export dialog", () => {
 
     await expect(summary).not.toContainText("Checking encoder");
     await expect(dialog.getByRole("combobox", { name: "Format" })).toContainText("MP4");
-    await expectCleanLayout(page, "Custom", 5);
+    // Frame rate and anti-aliasing sit under Advanced, which stays open while the dialog is.
+    await dialog.getByRole("button", { name: /^Advanced/ }).click();
+    await expectCleanLayout(page, "Custom", ENCODING_FIELDS);
     for (const card of ["Website", "Dribbble", "Story", "4K presentation", "Custom"]) {
       await dialog.getByRole("button", { name: card, exact: true }).click();
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, card, 5);
+      await expectCleanLayout(page, card, ENCODING_FIELDS);
     }
     for (const format of [/Still frame/, /WebM/]) {
       await choose(page, dialog, "Format", format);
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, `Format ${format.source}`, 5);
+      await expectCleanLayout(page, `Format ${format.source}`, ENCODING_FIELDS);
     }
     // The longest option of every select fits on one line (a still frame disables the
     // video-only fields, so it comes last).
@@ -174,7 +179,7 @@ test.describe("F09 export dialog", () => {
       ["Format", /Still frame/],
     ] as const) {
       await choose(page, dialog, field, option);
-      await expectCleanLayout(page, `${field} ${option.source}`, 5);
+      await expectCleanLayout(page, `${field} ${option.source}`, ENCODING_FIELDS);
     }
 
     await choose(page, dialog, "Format", /WebM/);
