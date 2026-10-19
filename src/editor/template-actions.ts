@@ -44,7 +44,7 @@ export function demoContentTemplate(doc: ProjectDoc): Template {
   return currentTemplate(doc) ?? BUILTIN_TEMPLATES[0];
 }
 
-/** Template flows shared by the gallery, the library, the stage and the media tab. */
+/** Template flows shared by the gallery, the stage and the media tab. */
 export function useTemplateActions() {
   const setSelection = useUIStore((s) => s.setSelection);
 

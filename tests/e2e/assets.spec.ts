@@ -399,7 +399,7 @@ test("PF01: saved projects of removed templates load as Frames with every textur
   }
 
   // The gallery starts on the first template.
-  await page.getByRole("button", { name: "Browse all templates" }).click();
+  await page.getByRole("button", { name: "Templates", exact: true }).click();
   const gallery = page.getByRole("dialog");
   await expect(gallery.getByText("Selected: Desktop Slider")).toBeVisible();
   await expect(gallery.getByText("Active", { exact: true })).toHaveCount(0);

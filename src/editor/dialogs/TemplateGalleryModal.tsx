@@ -8,16 +8,18 @@ import {
   fittingTemplateId,
   getTemplateById,
   templateInCategory,
-  templateNeeds,
   validateTemplateRequirements,
   type Template,
   type TemplateCategory,
 } from "../../templates";
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
-import { TemplatePreview } from "../library/TemplatePreview";
+import { TemplateCard } from "./TemplateCard";
+import { fillUserTemplateSlots, type UserTemplate } from "../../storage/user-templates";
+import { UserTemplateCard } from "./UserTemplateCard";
+import { useUserTemplates } from "./useUserTemplates";
 import {
-  Check,
+  Bookmark,
   Film,
   Monitor,
   Search,
@@ -26,7 +28,11 @@ import {
   UploadCloud,
   Wand2,
   X,
+  type LucideIcon,
 } from "lucide-react";
+
+/** The gallery's tabs: the built-in categories, and the user's saved templates. */
+type GalleryCategory = TemplateCategory | "all" | "yours";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
@@ -34,12 +40,14 @@ export const TemplateGalleryModal: React.FC = () => {
   const open = useUIStore((s) => s.templateGalleryOpen);
   const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
   const requestScreenshotPicker = useUIStore((s) => s.requestScreenshotPicker);
+  const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
+  const userTemplates = useUserTemplates(open);
   const { applyTemplateById, applyTemplateWithDemo } = useTemplateActions();
   const onOpenChange = (next: boolean) => {
     if (!next) closeTemplateGallery();
   };
 
-  const [activeCategory, setActiveCategory] = useState<TemplateCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<GalleryCategory>("all");
   const [searchQuery, setSearchQuery] = useState("");
   // A saved project may name a template that has since been removed; select the first one.
   // When every screenshot is the other size, start on that size's variant instead (Frames plan §8).
@@ -55,25 +63,45 @@ export const TemplateGalleryModal: React.FC = () => {
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) setSelectedTemplateId(initialTemplateId());
+    if (open) {
+      // A saved template the project uses stays selected on Yours; otherwise Yours would show
+      // no selection while Apply used a built-in template.
+      const saved = userTemplates.templates.find((t) => t.id === doc.templateId);
+      if (saved) {
+        setSelectedTemplateId(saved.id);
+      } else {
+        setSelectedTemplateId(initialTemplateId());
+        if (activeCategory === "yours") setActiveCategory("all");
+      }
+    }
   }
 
-  const categories = [
+  const categories: { id: GalleryCategory; label: string; icon: LucideIcon }[] = [
     { id: "all", label: "All", icon: Sparkles },
     { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop, icon: Monitor },
     { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile, icon: Smartphone },
-  ] as const;
+    // Saved templates get their own tab, shown once there is one.
+    ...(userTemplates.templates.length > 0
+      ? [{ id: "yours" as const, label: "Yours", icon: Bookmark }]
+      : []),
+  ];
+  // Deleting the last saved template removes the "Yours" tab.
+  const category =
+    activeCategory === "yours" && userTemplates.templates.length === 0 ? "all" : activeCategory;
 
-  const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {
-    const matchesCategory = templateInCategory(t, activeCategory);
-    const matchesQuery =
-      searchQuery.trim() === "" ||
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesQuery;
-  });
+  const matchesQuery = (t: { name: string; description: string }) =>
+    searchQuery.trim() === "" ||
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTemplates =
+    category === "yours"
+      ? []
+      : BUILTIN_TEMPLATES.filter((t) => templateInCategory(t, category) && matchesQuery(t));
+  const filteredUserTemplates =
+    category === "yours" ? userTemplates.templates.filter(matchesQuery) : [];
 
   const selectedTemplate = BUILTIN_TEMPLATES.find((t) => t.id === selectedTemplateId);
+  const selectedUserTemplate = userTemplates.templates.find((t) => t.id === selectedTemplateId);
   const selectedValidation = selectedTemplate
     ? validateTemplateRequirements(selectedTemplate, doc.assets)
     : { valid: true };
@@ -101,10 +129,23 @@ export const TemplateGalleryModal: React.FC = () => {
     closeTemplateGallery();
     await applyTemplateWithDemo(template);
   };
+  // A saved template fills its slots from the library by role.
+  const handleApplyUserTemplate = (template: UserTemplate) => {
+    applyTemplateResult(fillUserTemplateSlots(template, doc.assets, doc.aspect), template.id);
+    closeTemplateGallery();
+  };
+  const handleDeleteUserTemplate = async (template: UserTemplate) => {
+    await userTemplates.remove(template.id);
+    if (selectedTemplateId === template.id) setSelectedTemplateId(initialTemplateId());
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        // Radix closes on Escape before the rename field sees it; there, Escape cancels the rename.
+        onEscapeKeyDown={(e) => {
+          if ((e.target as HTMLElement | null)?.closest("[data-rename-input]")) e.preventDefault();
+        }}
         // Focus starts on the selected card, the one Apply uses, rather than the close button.
         onOpenAutoFocus={(e) => {
           const card = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
@@ -159,7 +200,7 @@ export const TemplateGalleryModal: React.FC = () => {
         <div className="px-6 py-2.5 border-b border-[var(--color-line)] flex items-center gap-1.5 bg-[var(--color-panel)] shrink-0 overflow-x-auto">
           {categories.map((cat) => {
             const IconComponent = cat.icon;
-            const isSelected = activeCategory === cat.id;
+            const isSelected = category === cat.id;
             return (
               <button
                 key={cat.id}
@@ -181,7 +222,7 @@ export const TemplateGalleryModal: React.FC = () => {
 
         {/* Templates Grid */}
         <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg)]">
-          {filteredTemplates.length === 0 ? (
+          {filteredTemplates.length === 0 && filteredUserTemplates.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center text-center">
               <Film size={32} className="text-[var(--color-text-3)] mb-2 opacity-50" />
               <p className="text-sm font-medium text-[var(--color-text-2)]">No templates found</p>
@@ -191,102 +232,37 @@ export const TemplateGalleryModal: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTemplates.map((template) => {
-                const isSelected = selectedTemplateId === template.id;
-                // The selected card always plays, so something moves as soon as the gallery opens.
-                const isPreviewing =
-                  isSelected ||
-                  hoveredTemplateId === template.id ||
-                  focusedTemplateId === template.id;
-                const validation = validateTemplateRequirements(template, doc.assets);
-
-                return (
-                  <div
-                    key={template.id}
-                    onClick={() => setSelectedTemplateId(template.id)}
-                    onMouseEnter={() => setHoveredTemplateId(template.id)}
-                    onMouseLeave={() => setHoveredTemplateId(null)}
-                    onFocus={() => setFocusedTemplateId(template.id)}
-                    onBlur={() => setFocusedTemplateId(null)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        setSelectedTemplateId(template.id);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Select template ${template.name}`}
-                    data-testid="template-card"
-                    data-template-id={template.id}
-                    className={`flex flex-col rounded-xl border transition-all text-left overflow-hidden group cursor-pointer ${
-                      isSelected
-                        ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/20 bg-[var(--color-raised)]"
-                        : "border-[var(--color-line)] bg-[var(--color-panel)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-raised)]"
-                    }`}
-                  >
-                    {/* Media Preview Box */}
-                    <div className="aspect-video w-full bg-[var(--color-raised)] relative overflow-hidden border-b border-[var(--color-line)]">
-                      <TemplatePreview
-                        templateId={template.id}
-                        active={isPreviewing}
-                        className="block w-full h-full object-cover"
-                      />
-
-                      {/* Top Badges */}
-                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-black/60 backdrop-blur-md text-white/90 shadow-sm">
-                          {template.defaultDuration}s
-                        </span>
-
-                        {doc.templateId === template.id && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-white flex items-center gap-1 shadow-sm">
-                            <Check size={10} />
-                            Active
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-3.5 flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-                            {template.name}
-                          </h4>
-                          <span
-                            data-testid="template-category"
-                            className="text-[10px] font-medium text-[var(--color-text-3)]"
-                          >
-                            {TEMPLATE_CATEGORY_LABELS[template.category]}
-                          </span>
-                        </div>
-
-                        <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed line-clamp-2 mb-3">
-                          {template.description}
-                        </p>
-                      </div>
-
-                      {/* What the template needs; accent while the library falls short. */}
-                      <div className="pt-2 border-t border-[var(--color-line)] flex items-center gap-1.5">
-                        {validation.valid && (
-                          <Icon icon={Check} size={11} className="text-[var(--color-text-3)]" />
-                        )}
-                        <span
-                          data-testid="template-needs"
-                          className={`text-[10px] font-medium ${
-                            validation.valid
-                              ? "text-[var(--color-text-3)]"
-                              : "text-[var(--color-accent)]"
-                          }`}
-                        >
-                          {templateNeeds(template)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {filteredUserTemplates.map((template) => (
+                <UserTemplateCard
+                  key={template.id}
+                  template={template}
+                  selected={selectedTemplateId === template.id}
+                  active={doc.templateId === template.id}
+                  onSelect={() => setSelectedTemplateId(template.id)}
+                  onRename={(name) => userTemplates.rename(template.id, name)}
+                  onDelete={() => handleDeleteUserTemplate(template)}
+                />
+              ))}
+              {filteredTemplates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  assets={doc.assets}
+                  selected={selectedTemplateId === template.id}
+                  active={doc.templateId === template.id}
+                  // The selected card always plays, so something moves as soon as the gallery opens.
+                  previewing={
+                    selectedTemplateId === template.id ||
+                    hoveredTemplateId === template.id ||
+                    focusedTemplateId === template.id
+                  }
+                  onSelect={() => setSelectedTemplateId(template.id)}
+                  onPreviewChange={(reason, on) => {
+                    const set = reason === "hover" ? setHoveredTemplateId : setFocusedTemplateId;
+                    set((current) => (on ? template.id : current === template.id ? null : current));
+                  }}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -294,6 +270,11 @@ export const TemplateGalleryModal: React.FC = () => {
         {/* Footer with Apply Action */}
         <div className="px-6 py-3.5 border-t border-[var(--color-line)] bg-[var(--color-panel)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
+            {selectedUserTemplate && (
+              <span className="text-xs font-medium text-[var(--color-text)]">
+                Selected: {selectedUserTemplate.name}
+              </span>
+            )}
             {selectedTemplate && (
               <>
                 <span className="text-xs font-medium text-[var(--color-text)]">
@@ -347,8 +328,11 @@ export const TemplateGalleryModal: React.FC = () => {
             )}
             <Button
               variant="primary"
-              disabled={!selectedTemplate}
-              onClick={() => selectedTemplate && handleApply(selectedTemplate)}
+              disabled={!selectedTemplate && !selectedUserTemplate}
+              onClick={() => {
+                if (selectedUserTemplate) handleApplyUserTemplate(selectedUserTemplate);
+                else if (selectedTemplate) handleApply(selectedTemplate);
+              }}
               icon={<Icon icon={Sparkles} size={14} />}
             >
               Apply template
