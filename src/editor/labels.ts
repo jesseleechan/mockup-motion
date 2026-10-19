@@ -196,5 +196,8 @@ function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
   if (layout.kind === "rows" && layout.travel === "period") return "Desktop frames";
   if (layout.kind === "columns" && layout.device === "card") return "Mobile frames";
+  if (layout.kind === "slider" && layout.arrangement === "deck") {
+    return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";
+  }
   return LAYOUT_LABELS[layout.kind];
 }

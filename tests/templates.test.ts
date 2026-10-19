@@ -105,14 +105,16 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
-    // Gallery order (Frames plan D12, orbit plan): Desktop Slider, Mobile Slider, Desktop
-    // Frames, Mobile Frames, Desktop Orbit, Mobile Orbit, Desktop Scroll Story, Mobile Scroll
-    // Story. The first entry is the first-run default (presets plan D1).
+    // Gallery order (Frames plan D12, stack plan D5, orbit plan): the Slider, Frames, Stack,
+    // Orbit and Scroll Story pairs, then Responsive Scroll. The first entry is the first-run
+    // default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
       "frames",
       "mobile-frames",
+      "desktop-stack",
+      "mobile-stack",
       "desktop-orbit",
       "mobile-orbit",
       "scroll-story",
@@ -135,6 +137,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-slider": "mobile",
       frames: "desktop",
       "mobile-frames": "mobile",
+      "desktop-stack": "desktop",
+      "mobile-stack": "mobile",
       "desktop-orbit": "desktop",
       "mobile-orbit": "mobile",
       "scroll-story": "desktop",
@@ -308,7 +312,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
 
 describe("Template loop seam", () => {
   const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider"];
+  // The Stack presets are slider decks (stack plan D4): the same seam check applies.
+  const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider", "desktop-stack", "mobile-stack"];
   // An orbit loops natively with a cut: after N steps the ring is back where it started.
   const ORBIT_TEMPLATES = ["desktop-orbit", "mobile-orbit"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period

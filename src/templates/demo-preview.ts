@@ -50,6 +50,22 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("aurelia"),
   ],
+  // Five per stack. The poster (35% of the 10 s loop, 3.5 s) shows the third screenshot in
+  // front with the fourth and fifth behind it: a photographic hero in front.
+  "desktop-stack": [
+    desktopHero("northwind"),
+    desktopHero("field-notes"),
+    desktopHero("maison-oak"),
+    desktopHero("aurelia"),
+    desktopHero("studio-kova"),
+  ],
+  "mobile-stack": [
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("aurelia"),
+    mobileHero("field-notes"),
+    mobileHero("studio-kova"),
+  ],
   // Five per orbit, so the gallery shows a ring. The poster (35% of the 10 s loop) shows the
   // third screenshot settling at the front: Maison Oak's photographic hero, as on the sliders.
   "desktop-orbit": [
