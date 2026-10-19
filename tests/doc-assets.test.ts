@@ -158,7 +158,7 @@ describe("F03: device keys rely on time-independent layout nodes", () => {
         const doc = buildTemplatePreviewDoc(template);
         for (const shot of doc.shots) {
           const signature = (t: number) =>
-            resolveLayout(shot.layout, aspect, doc.assets, t, shot.duration, shot.entrance)
+            resolveLayout(shot.layout, aspect, doc.assets, t, shot.duration)
               .map((n) => `${n.id}|${n.device}|${n.width.toFixed(5)}|${n.height.toFixed(5)}`)
               .sort();
           const atStart = signature(0);

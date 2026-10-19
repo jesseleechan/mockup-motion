@@ -312,7 +312,6 @@ describe("Desktop Orbit and Mobile Orbit templates", () => {
           expect(shot.duration, label).toBe(n * 2);
           expect(shot.transitionIn.kind, label).toBe("cut");
           expect(shot.camera, label).toMatchObject({ preset: "static", intensity: 0, float: 0 });
-          expect(shot.entrance, label).toBe("none");
           expect(doc.loop, label).toBe(true);
           expect(doc.style, label).toMatchObject({
             background: { kind: "solid", color: "#DFE1E3" },

@@ -47,7 +47,7 @@ export const LibraryPanel: React.FC = () => {
   return (
     <aside
       data-panel="library"
-      className="w-[280px] bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col shrink-0 select-none z-20 overflow-hidden"
+      className="w-full min-w-0 bg-[var(--color-panel)] border-r border-[var(--color-line)] flex flex-col select-none overflow-hidden"
     >
       {/* Dialogs */}
       <CaptureHelpModal open={captureModalOpen} onOpenChange={setCaptureModalOpen} />

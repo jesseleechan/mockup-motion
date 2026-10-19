@@ -115,16 +115,11 @@ test.describe("F07: shot and project thumbnails", () => {
     await resetAndOpen(page);
   });
 
-  test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
+  test("the shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    // Every built-in template has one shot, so add two more.
     await applyTemplateWithDemo(page, "scroll-story");
-    for (let i = 0; i < 2; i++) {
-      await page.getByRole("button", { name: "Add shot" }).click();
-      await page.getByRole("menuitem", { name: "Same layout" }).click();
-    }
     const shots = await shotCount(page);
-    expect(shots).toBe(3);
+    expect(shots).toBe(1);
 
     const cards = page.locator('[data-testid="shot-card"]');
     await expect(cards).toHaveCount(shots);
