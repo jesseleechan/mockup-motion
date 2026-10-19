@@ -33,9 +33,7 @@ export const TimelineContainer: React.FC = () => {
   const shot = doc.shots[0];
   const marks = useMemo(() => timelineMarks(shot.layout, total), [shot.layout, total]);
   const summary = shotSummary(shot);
-  const isSelected =
-    (selection.kind === "shot" && selection.id === shot.id) ||
-    (selection.kind === "text" && selection.shotId === shot.id);
+  const isSelected = selection.kind === "shot" && selection.id === shot.id;
 
   const seekTo = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
