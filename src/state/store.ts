@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { produce, current } from "immer";
-import { createDoc, defaultShot } from "../doc/defaults";
+import { defaultShot, newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
 import type {
   AssetRef,
@@ -115,8 +115,23 @@ function fitSliderShots(draft: ProjectDoc): void {
   }
 }
 
+/**
+ * Puts the first added screenshot on every single-device shot whose screen is empty, such as a
+ * new project's shot, so an upload shows at once. A mobile screenshot turns a browser into a
+ * phone.
+ */
+function fillEmptyScreens(draft: ProjectDoc, refs: AssetRef[]): void {
+  const first = refs.find((ref) => ref.kind === "image");
+  if (!first) return;
+  for (const shot of draft.shots) {
+    if (shot.layout.kind !== "single" || shot.layout.assetId) continue;
+    shot.layout.assetId = first.id;
+    if (shot.layout.device === "browser" && first.role === "mobile") shot.layout.device = "phone";
+  }
+}
+
 export function createEditorStore(initialDoc?: ProjectDoc) {
-  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createDoc();
+  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : newProjectDoc();
 
   let transactionSnapshot: ProjectDoc | null = null;
   let lastCoalesceKey: string | null = null;
@@ -234,7 +249,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     newDoc: () => {
-      get().loadDoc(createDoc());
+      get().loadDoc(newProjectDoc());
     },
 
     applyTemplateResult: ({ style, shots, loop }, templateId) => {
@@ -262,6 +277,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               draft.assets.push(ref);
             }
           }
+          fillEmptyScreens(draft, refs);
         },
         { label: "Add assets" },
       );
