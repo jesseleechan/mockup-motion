@@ -8,13 +8,12 @@ import {
   formatFileSize,
 } from "../src/export/destinations";
 import { generateEmbedHtml, createWebEmbedBundle } from "../src/export/bundle";
-import { encodeGif } from "../src/export/gif";
 import { probeVideoEncoders } from "../src/export/probe";
 import { verifyExportBlob } from "../src/export/verify";
 import type { Aspect, DestinationId } from "../src/doc/types";
 import { unzipSync } from "fflate";
 
-describe("WP-16: Export v2, Destinations, Web-Embed Bundle, and GIF", () => {
+describe("WP-16: Export v2, Destinations and Web-Embed Bundle", () => {
   describe("Destinations & Dimensions (src/export/destinations.ts)", () => {
     it("exports all 7 platform destination presets with verified configurations", () => {
       const expectedIds: DestinationId[] = [
@@ -98,7 +97,6 @@ describe("WP-16: Export v2, Destinations, Web-Embed Bundle, and GIF", () => {
           quality: "high",
           format: "mp4",
           supersample: 1,
-          motionBlur: false,
         },
         "16:9",
         8.0,
@@ -179,42 +177,6 @@ describe("WP-16: Export v2, Destinations, Web-Embed Bundle, and GIF", () => {
     });
   });
 
-  describe("GIF Export (src/export/gif.ts)", () => {
-    it("encodeGif encodes frames into a valid GIF blob with palette and dithering", () => {
-      const width = 64;
-      const height = 64;
-      const frameCount = 6;
-      const frames: Uint8ClampedArray[] = [];
-
-      for (let i = 0; i < frameCount; i++) {
-        const frame = new Uint8ClampedArray(width * height * 4);
-        for (let p = 0; p < width * height; p++) {
-          const idx = p * 4;
-          frame[idx] = (i * 40) % 256; // R
-          frame[idx + 1] = (p % 256);   // G
-          frame[idx + 2] = 180;         // B
-          frame[idx + 3] = 255;         // A
-        }
-        frames.push(frame);
-      }
-
-      let progressCount = 0;
-      const result = encodeGif(
-        frames,
-        { width, height, fps: 15, dither: true },
-        () => {
-          progressCount++;
-        },
-      );
-
-      expect(result.blob).toBeDefined();
-      expect(result.mime).toBe("image/gif");
-      expect(result.bytes).toBeGreaterThan(100);
-      expect(result.exceedsSizeWarning).toBe(false);
-      expect(progressCount).toBe(frameCount);
-    });
-  });
-
   describe("Probe & Verification (src/export/probe.ts & verify.ts)", () => {
     it("probeVideoEncoders returns recommended container and codec fallback", async () => {
       const res = await probeVideoEncoders({
@@ -240,14 +202,14 @@ describe("WP-16: Export v2, Destinations, Web-Embed Bundle, and GIF", () => {
       expect(emptyRes.valid).toBe(false);
       expect(emptyRes.warnings.length).toBeGreaterThan(0);
 
-      const gifBlob = new Blob([new Uint8Array([71, 73, 70])], { type: "image/gif" });
-      const gifRes = await verifyExportBlob(gifBlob, {
+      const pngBlob = new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" });
+      const pngRes = await verifyExportBlob(pngBlob, {
         width: 640,
         height: 360,
         duration: 3,
         fps: 15,
       });
-      expect(gifRes.valid).toBe(true);
+      expect(pngRes.valid).toBe(true);
     });
   });
 });

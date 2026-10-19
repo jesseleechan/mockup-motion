@@ -48,9 +48,11 @@ describe("WP-15: Scroll Story timing and opt-in", () => {
       expect(shot.scroll?.enabled).toBeFalsy();
     }
 
-    // Applying standard templates (other than explicit scroll-story) does not enable scroll
+    // Applying standard templates (other than the explicit scroll templates: both Scroll Story
+    // sizes and Responsive Scroll) does not enable scroll
     for (const template of BUILTIN_TEMPLATES) {
-      if (template.id === "scroll-story") continue;
+      if (["scroll-story", "mobile-scroll-story", "responsive-scroll"].includes(template.id))
+        continue;
       const built = buildTemplate(template, {
         aspect: "16:9",
         assets: store.getState().doc.assets,

@@ -163,6 +163,13 @@ describe("F04 template previews use varied demo sites", () => {
     expect(sites("mobile-slider").size).toBeGreaterThanOrEqual(4);
   });
 
+  it("the Stack presets show 4+ different sites of their size", () => {
+    expect(screens("desktop-stack").every((a) => a.role === "desktop")).toBe(true);
+    expect(sites("desktop-stack").size).toBeGreaterThanOrEqual(4);
+    expect(screens("mobile-stack").every((a) => a.role === "mobile")).toBe(true);
+    expect(sites("mobile-stack").size).toBeGreaterThanOrEqual(4);
+  });
+
   it("mobile-frames shows 4+ different mobile sites", () => {
     expect(screens("mobile-frames").every((a) => a.role === "mobile")).toBe(true);
     expect(sites("mobile-frames").size).toBeGreaterThanOrEqual(4);

@@ -30,6 +30,7 @@ import {
 } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
+import { RESPONSIVE_FIXTURES } from "./responsive-fixtures";
 import { presetToneStyle } from "../templates/looks";
 
 declare global {
@@ -67,7 +68,7 @@ for (const t of BUILTIN_TEMPLATES) {
   FIXTURES[`template-${t.id}`] = pDoc;
   FIXTURES[t.id] = pDoc;
 }
-Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES);
+Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES, RESPONSIVE_FIXTURES);
 
 // Both Frames presets also get a fixture per aspect, because their lane count depends on the
 // aspect: the `frames` and `mobile-frames` fixtures above are built at 16:9. Use
@@ -76,6 +77,24 @@ for (const aspect of ["16:9", "9:16", "1:1", "4:5", "4:3"] as const) {
   const suffix = aspect.replace(":", "x");
   FIXTURES[`frames-${suffix}`] = buildTemplatePreviewDoc(framesTemplate, aspect);
   FIXTURES[`mobile-frames-${suffix}`] = buildTemplatePreviewDoc(mobileFramesTemplate, aspect);
+}
+
+// The deck arrangement on the slider fixtures (stack plan S02): /lab?fixture=deck-y&aspect=16:9.
+// `deck-x-dark` and `deck-y-dark` are the Onyx option.
+for (const axis of ["x", "y"] as const) {
+  const base = FIXTURES[`slider-${axis}`];
+  const shots = base.shots.map((shot) =>
+    shot.layout.kind === "slider"
+      ? { ...shot, layout: { ...shot.layout, arrangement: "deck" as const } }
+      : shot,
+  );
+  FIXTURES[`deck-${axis}`] = { ...base, id: `fixture-deck-${axis}`, shots };
+  FIXTURES[`deck-${axis}-dark`] = {
+    ...base,
+    id: `fixture-deck-${axis}-dark`,
+    shots,
+    style: { ...base.style, ...presetToneStyle("dark") },
+  };
 }
 
 // The dark option of the slider and Frames presets: `<id>-dark-<aspect>`, e.g.
@@ -175,7 +194,6 @@ export const LabPage: React.FC = () => {
               return images[assetId] ?? provider.getImage(assetId, maxWidth);
             },
             getText: provider.getText.bind(provider),
-            getAudio: provider.getAudio?.bind(provider),
           };
           await engine.setDocument(nextDoc, testProvider);
           engine.renderAt(0);
