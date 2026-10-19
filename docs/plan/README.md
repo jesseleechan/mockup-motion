@@ -153,7 +153,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [07](wp/WP-07-backgrounds-and-atmosphere.md)   | Backgrounds, palettes, atmosphere                                | M1        | 03                                                   | M    | Done (fixed in [F01][f01], [F02][f02], [F11][f11])                                     |
 | [08](wp/WP-08-shadows-and-post.md)             | Shadows, anti-aliasing, final pass, motion blur                  | M1        | 03                                                   | M    | Done (fixed in [F02][f02], [F09][f09], [F11][f11])                                     |
 | [09](wp/WP-09-layouts.md)                      | Layouts and camera framing                                       | M1        | 02, 03, 06                                           | L    | Done (fixed in [F03][f03], [F11][f11])                                                 |
-| [10](wp/WP-10-text-and-typography.md)          | Text and typography                                              | M2        | 02, 03                                               | M    | Done (fixed in [F01][f01], [F02][f02])                                                 |
+| [10](wp/WP-10-text-and-typography.md)          | Text and typography                                              | M2        | 02, 03                                               | M    | Removed by the owner, 19 Oct 2026 ([#72][cut-text])                                    |
 | [11](wp/WP-11-templates-and-gallery.md)        | Templates, slot filling, previews, contact sheet                 | M1 → M2   | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L    | Done (fixed in [F04][f04], [F06][f06], [F07][f07], [F11][f11])                         |
 | [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Done (fixed in [F05][f05], [F06][f06], [F08][f08])                                     |
 | [13](wp/WP-13-media-library-and-brand-kit.md)  | Media library, roles, brand kit, projects, My templates          | M2        | 01, 05, 12                                           | M    | Done (fixed in [F07][f07], [F08][f08])                                                 |
@@ -178,6 +178,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 [f12]: https://github.com/jesseleechan/mockup-motion/pull/14
 [f13]: https://github.com/jesseleechan/mockup-motion/pull/15
 [f14]: https://github.com/jesseleechan/mockup-motion/pull/17
+[cut-text]: https://github.com/jesseleechan/mockup-motion/pull/72
 
 "Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI: unit and visual tests on every pull request; e2e tests on every pull request that touches an e2e trigger path (`CLAUDE.md`, Commands), on every push to `main` and nightly. The `perf` project (`tests/perf`) needs a real GPU and isn't in CI.
 
