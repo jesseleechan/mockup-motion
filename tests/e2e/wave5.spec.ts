@@ -80,7 +80,8 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
     await searchInput.fill("Scroll");
-    await expect(modal.getByRole("heading", { name: "Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Desktop Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Mobile Scroll Story" })).toBeVisible();
 
     // Clear search
     await searchInput.fill("");
@@ -120,7 +121,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // (presets D1), so switch to Scroll Story's single browser first.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
-    await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+    await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 
