@@ -1,6 +1,6 @@
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import type { SlotSpec, Template } from "./types";
-import { presetToneOf, setPresetTone } from "./looks";
+import { setPresetTone, templateTones } from "./looks";
 
 /** Distinct screenshots a multi-screen template needs. Quality bar §4: Frames and Orbit need 4. */
 const MULTI_ASSET_MINIMUM: Record<string, number> = {
@@ -161,10 +161,11 @@ export function applyTemplate(
     projectName: doc.name,
     style: brandStyle,
   });
-  // A preset with the Light / Dark switch keeps a dark document dark when it is applied again
-  // (say Desktop Frames to Mobile Frames) or rebuilt to fill its slots.
-  if (template.toneSwitch && presetToneOf(doc.style) === "dark") {
-    setPresetTone(result.style, "dark");
+  // A dark document stays dark when a preset is applied again (say Desktop Frames to Mobile
+  // Frames) or rebuilt to fill its slots: it takes the preset's own dark fill. A dark frame look
+  // marks a dark fill, whether it is a preset's Dark or a dark custom colour.
+  if (doc.style.frameAppearance === "dark") {
+    setPresetTone(result.style, "dark", templateTones(template));
   }
   return result;
 }

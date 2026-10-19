@@ -36,7 +36,6 @@ export function orbitTemplate(spec: OrbitTemplateSpec): Template {
     description: spec.description,
     category: spec.role,
     slots,
-    toneSwitch: true,
     // The gallery badge: the five demo screenshots its preview and demo content use.
     defaultDuration: 5 * ORBIT_STEP,
     build: (ctx: TemplateBuildContext) => {

@@ -472,7 +472,7 @@ export interface Template {
   category: "desktop" | "mobile"; // the gallery tab; matches the screenshots' role
   slots: SlotSpec[];
   defaultDuration: number;
-  toneSwitch?: boolean; // Light / Dark background switch in the Video inspector (Ash or Onyx)
+  tones?: PresetTones; // { light, dark } palette ids for the Background control; Ash and Onyx when omitted
   build(ctx: TemplateBuildContext): { style: Style; shots: Shot[]; loop: boolean };
 }
 export function fillSlots(t: Template, assets: AssetRef[]): Record<string, string | undefined>;
@@ -482,7 +482,7 @@ export function fillSlots(t: Template, assets: AssetRef[]): Record<string, strin
 
 The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`), Desktop Orbit (`desktop-orbit`), Mobile Orbit (`mobile-orbit`) and Scroll Story (`scroll-story`). The two sliders are one effect in two sizes, and so are the two Frames presets and the two Orbit presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
 
-The slider, Frames and Orbit presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
+Video inspector > Background offers Light, Dark or Custom (`docs/polish-plan/inspectors.md` P1). Light and Dark are the template's `tones` (`templateTones`): Ash and Onyx for the slider, Frames and Orbit presets and for documents without a template, Fog and Graphite for Scroll Story. The tone is not stored: it is read from `style.background` (`presetToneOf`; a solid by colour, a gradient by stops and angle), so it saves and loads with the style; anything else is Custom. A custom colour is a flat solid; below OKLCH L 0.5 it sets `frameAppearance: "dark"` (`customBackgroundStyle`). `applyTemplate` gives a document whose `frameAppearance` is dark the new template's Dark fill; otherwise every template builds its Light fill.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
 

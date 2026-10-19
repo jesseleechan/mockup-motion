@@ -38,7 +38,6 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
     // A pair's gallery tab is the role of its screenshots.
     category: spec.role,
     slots,
-    toneSwitch: true,
     // The gallery badge: the five demo screenshots its preview and demo content use.
     defaultDuration: 5 * SLIDER_STEP,
     build: (ctx: TemplateBuildContext) => {

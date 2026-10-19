@@ -1,4 +1,5 @@
 import type { Aspect, AssetRef, AssetRole, Shot, Style } from "../doc/types";
+import type { PresetTones } from "./looks";
 
 export interface SlotSpec {
   key: string; // "desktop1", "mobile1", "logo"
@@ -25,8 +26,8 @@ export interface Template {
   category: TemplateCategory;
   slots: SlotSpec[];
   defaultDuration: number;
-  /** Shows the Light / Dark background switch (Ash or Onyx, `presetToneStyle`). */
-  toneSwitch?: boolean;
+  /** The Light and Dark background fills (`presetToneStyle`); Ash and Onyx when omitted. */
+  tones?: PresetTones;
   build: (ctx: TemplateBuildContext) => {
     style: Style;
     shots: Shot[];

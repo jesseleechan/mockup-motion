@@ -1,8 +1,12 @@
 import type { ProjectDoc, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
 import type { Template, TemplateBuildContext } from "./types";
-import { paletteBackground } from "./looks";
+import { presetToneStyle, type PresetTones } from "./looks";
 import { buildTemplatePreviewDoc } from "./demo-preview";
+
+// Fog's designed dark counterpart is Graphite; its first stop is Onyx, so the top of the frame
+// reads like the flat presets' dark (quality-bar §6).
+const SCROLL_STORY_TONES: PresetTones = { light: "fog", dark: "graphite" };
 
 export const scrollStoryTemplate: Template = {
   id: "scroll-story",
@@ -20,15 +24,18 @@ export const scrollStoryTemplate: Template = {
     },
   ],
   defaultDuration: 10,
+  tones: SCROLL_STORY_TONES,
   build: (ctx: TemplateBuildContext) => {
     const asset = ctx.slots.desktop1;
     const isMobileAsset = asset?.role === "mobile";
 
+    // The brand's text colour stays; only the fill and its frame look come from the tone.
+    const { background, frameAppearance } = presetToneStyle("light", SCROLL_STORY_TONES);
     const baseStyle: Style = {
       ...defaultStyle(),
       ...ctx.style,
-      background: paletteBackground("fog"),
-      frameAppearance: "light",
+      background,
+      frameAppearance,
       shadow: "soft",
       browserChrome: "standard",
     };

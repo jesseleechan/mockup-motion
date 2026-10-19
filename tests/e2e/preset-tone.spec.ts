@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
 
-// Suggestion 3 of docs/phone-frames-plan/README.md §8: the slider and Frames presets switch
-// between their flat light (Ash) and dark (Onyx) backgrounds in the Video inspector.
+// Video inspector > Background: each preset switches between its own light and dark fills
+// (docs/polish-plan/inspectors.md P1). The flat presets use Ash and Onyx.
 
 const ASH = [223, 225, 227];
 const ONYX = [20, 20, 23];
@@ -98,8 +98,12 @@ test("Desktop Frames switches to a dark background in one click, and undo brings
   await expect.poll(() => dominantColour(page), { timeout: 20_000 }).toEqual(ASH);
 });
 
-test("documents not made from the four presets have no tone switch", async ({ page }) => {
+test("Scroll Story's Light and Dark are its own Fog and Graphite gradients", async ({ page }) => {
   await openTemplate(page, "scroll-story");
-  await expect(page.getByRole("button", { name: "Bone" })).toBeVisible();
-  await expect(page.getByRole("radiogroup", { name: "Background tone" })).toHaveCount(0);
+  const tone = page.getByRole("radiogroup", { name: "Background tone" });
+  await expect(tone.getByRole("radio", { name: "Light" })).toHaveAttribute("aria-checked", "true");
+  await tone.getByRole("radio", { name: "Dark" }).click();
+  const style = await docStyle(page);
+  expect(style.background).toMatchObject({ kind: "gradient", stops: ["#141417", "#2A2A30"] });
+  expect(style.frameAppearance).toBe("dark");
 });
