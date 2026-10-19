@@ -271,14 +271,13 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll and the cursor.
+        // Every section of a single-device shot: turn on scroll.
         const doc = await currentDoc(page);
         const singleShot = doc.shots.find((s) => s.layout.kind === "single");
         if (!singleShot) throw new Error("the reel has no single-device shot");
         await select(page, { kind: "shot", id: singleShot.id });
         await inspector.getByRole("switch", { name: "Scroll through page" }).click();
-        await inspector.getByRole("switch", { name: "Show cursor" }).click();
-        await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
+        await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
 
         // Each shot in turn: single, pair and title layouts show different sections.
         for (const [index, shot] of doc.shots.entries()) {

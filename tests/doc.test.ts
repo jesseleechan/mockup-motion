@@ -179,6 +179,20 @@ describe("WP-01: Document Defaults and Validation", () => {
     });
   });
 
+  it("loads a shot saved with the removed cursor and drops the cursor", () => {
+    const saved = createDoc();
+    const shot = {
+      ...saved.shots[0],
+      cursor: { enabled: true, style: "pointer", keys: [{ t: 1, x: 0.5, y: 0.5, click: true }] },
+    };
+    const { doc, warnings } = sanitizeDoc({ ...saved, shots: [shot] });
+    expect(warnings).toEqual([]);
+    expect(doc.shots).toHaveLength(1);
+    expect(doc.shots[0].id).toBe(saved.shots[0].id);
+    expect(doc.shots[0].layout).toEqual(saved.shots[0].layout);
+    expect("cursor" in doc.shots[0]).toBe(false);
+  });
+
   describe("v1 to v2 migration produces valid docs for all 8 presets", () => {
     it("maps v1 presets only to built-in templates", () => {
       for (const id of Object.values(LEGACY_PRESET_TO_TEMPLATE)) {

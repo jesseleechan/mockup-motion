@@ -34,7 +34,6 @@
 | **Two-layer soft shadows** tinted by the background, contact shadows on tilted layouts                                                                                                                     | Grounds devices without looking like a drop-shadow filter.                                       |
 | **Typography:** curated font pairs (self-hosted), custom font upload, kinetic text (fade-up, mask reveal, blur-in, word stagger)                                                                           | Titles and end cards with the designer's own brand fonts.                                        |
 | **Brand kit:** logo, colors, fonts saved once and reused                                                                                                                                                   | Consistency across every video for the studio.                                                   |
-| **Cursor overlay** with click ripples (optional, per shot)                                                                                                                                                 | Shows interactions without screen recording.                                                     |
 | **Export v2:** destination presets (Website embed, Dribbble 4:3, Instagram, LinkedIn/X, 4K), supersampling, **web-embed bundle** (MP4 + WebM + poster + `<video>` snippet), PNG (GIF and motion blur: cut) | Built for the designer's actual destinations, especially their own website.                      |
 | **4:3 aspect**                                                                                                                                                                                             | Dribbble's classic shot size (1600 × 1200).                                                      |
 | **Capture CLI** (`npm run capture <url>`): full-page desktop (1440) and mobile (390 @2×) screenshots via Playwright                                                                                        | Getting good full-page screenshots is half the job. This runs locally on the designer's machine. |
@@ -138,7 +137,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | Milestone                      | Outcome you can see                                                                                                                                            |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **M1 · Looks right**           | In `/lab`, every core template renders at Jitter-like quality and exports a crisp, seamless 1080p MP4. The old editor still runs.                              |
-| **M2 · Feels like a pro tool** | The new dark editor with template gallery, media library, storyboard timeline, text, Scroll Story, cursor, and brand kit. The old UI and renderer are deleted. |
+| **M2 · Feels like a pro tool** | The new dark editor with template gallery, media library, storyboard timeline, text, Scroll Story, and brand kit. The old UI and renderer are deleted. |
 | **M3 · Ships**                 | Export destinations, web-embed bundle, GIF, 4K, optional audio, cross-browser QA, and visual regression.                                                       |
 
 | WP                                             | Title                                                            | Milestone | Depends on                                           | Size | Status                                                                                 |
@@ -158,7 +157,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Done (fixed in [F05][f05], [F06][f06], [F08][f08])                                     |
 | [13](wp/WP-13-media-library-and-brand-kit.md)  | Media library, roles, brand kit, projects, My templates          | M2        | 01, 05, 12                                           | M    | Done (fixed in [F07][f07], [F08][f08])                                                 |
 | [14](wp/WP-14-storyboard-timeline.md)          | Storyboard timeline and transitions                              | M2        | 02, 03, 12                                           | L    | Done (fixed in [F02][f02], [F07][f07], [F08][f08])                                     |
-| [15](wp/WP-15-scroll-story-and-cursor.md)      | Scroll Story and cursor overlay                                  | M2        | 09, 12                                               | M    | Done (fixed in [F01][f01])                                                             |
+| [15](wp/WP-15-scroll-story-and-cursor.md)      | Scroll Story and cursor overlay                                  | M2        | 09, 12                                               | M    | Done (fixed in [F01][f01]); cursor removed (audit cut, Oct 2026)                      |
 | [16](wp/WP-16-export-v2.md)                    | Export v2, destinations, web bundle, GIF                         | M3        | 03, 08                                               | M    | Done (fixed in [F09][f09], [F10][f10])                                                 |
 | [17](wp/WP-17-audio.md)                        | Music track (optional)                                           | M3        | 14, 16                                               | S    | Removed on 2026-10-19 (editor cuts)                                                    |
 | [18](wp/WP-18-qa-and-polish.md)                | Visual regression, e2e, performance, cross-browser, final polish | M3        | all                                                  | L    | Done (fixed in [F00][f00], [F13][f13], [F14][f14])                                     |
@@ -231,7 +230,7 @@ graph LR
   WP12 --> WP13[13 Media/Brand kit]
   WP12 --> WP14[14 Timeline]
   WP02 --> WP14
-  WP09 --> WP15[15 Scroll/Cursor]
+  WP09 --> WP15[15 Scroll]
   WP12 --> WP15
   WP08 --> WP16[16 Export v2]
   WP14 --> WP17[17 Audio]
