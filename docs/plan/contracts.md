@@ -17,12 +17,12 @@ src/
   engine/      three.js, no React (except react/)
                Engine.ts · stage.ts (camera fit) · devices/ · backgrounds/ · shadows/ · materials/
                textures/ (tiling, downscale cache) · text/ (screen-space text pass)
-               compositor.ts (shots → RT → transition) · post/ (final pass, motion blur)
+               compositor.ts (shots → RT → transition) · post/ (composite, final pass)
                react/EngineCanvas.tsx (thin preview wrapper)
   text/        rasterize.ts (main thread only: text layer → ImageBitmap + word boxes)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
-               verify.ts · bundle.ts · gif.ts
+               verify.ts · bundle.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
   editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
                Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
@@ -43,7 +43,7 @@ export type EasingId =
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font"; // saved "audio" assets (music, removed October 2026) are dropped on load
   name: string;
   mime: string;
   bytes: number;
@@ -59,8 +59,6 @@ export interface AssetRef {
     page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
   };
   family?: string; // font: CSS family name registered via FontFace
-  durationSec?: number; // audio
-  peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
 }
 
 export interface FontRef {
@@ -242,14 +240,6 @@ export interface Shot {
   styleOverrides?: Partial<Style>;
 }
 
-export interface AudioTrack {
-  assetId: string;
-  volume: number;
-  fadeIn: number;
-  fadeOut: number;
-  offset: number;
-}
-
 export type DestinationId =
   | "custom"
   | "web-embed"
@@ -267,7 +257,6 @@ export interface ExportSettings {
   quality: "web" | "high" | "master";
   format: "mp4" | "webm";
   supersample: 1 | 1.5 | 2;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -281,7 +270,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[]; // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string; // last applied template (informational)
 }
@@ -410,7 +398,6 @@ export class Engine {
   renderAt(t: number): void; // synchronous; deterministic
   /** Active layers and transition blend into a linear target; no vignette, encoding or grain. */
   renderComposite(t: number, target: THREE.WebGLRenderTarget): FrameState | null;
-  renderAccumulated(t: number, shutter: number, samples: number): void; // motion blur (export)
   resize(width: number, height: number): void;
   /** Hit-test output-pixel coordinates; returns the LayoutNode id and screen UV (0..1), or null. */
   pick(x: number, y: number): { nodeId: string; u: number; v: number } | null;
@@ -432,7 +419,7 @@ export class Engine {
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
-Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation averages `renderComposite` results (transitions included) in a linear half-float target, then runs the final pass once. Exports use 8 samples over a 180° shutter (`0.5 / fps`).
+Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision.
 
 `TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
@@ -469,9 +456,11 @@ export function fillSlots(t: Template, assets: AssetRef[]): Record<string, strin
 
 `fillSlots` is greedy by role and `prefer`. It never puts a `mobile`-role asset in a desktop slot or the reverse, and only reuses an asset when there are not enough distinct ones.
 
-The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`), Desktop Orbit (`desktop-orbit`), Mobile Orbit (`mobile-orbit`) and Scroll Story (`scroll-story`). The two sliders are one effect in two sizes, and so are the two Frames presets and the two Orbit presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
+The built-in templates, in gallery order (`docs/phone-frames-plan/README.md`, D2, D3, D12): Desktop Slider (`desktop-slider`, the first-run default), Mobile Slider (`mobile-slider`), Desktop Frames (`frames`), Mobile Frames (`mobile-frames`), Desktop Stack (`desktop-stack`), Mobile Stack (`mobile-stack`; stack plan D5), Desktop Orbit (`desktop-orbit`), Mobile Orbit (`mobile-orbit`), Desktop Scroll Story (`scroll-story`) and Mobile Scroll Story (`mobile-scroll-story`, `docs/mobile-scroll-story-plan/README.md`). The two sliders are one effect in two sizes, and so are the two Frames presets, the two Stack presets (slider decks, §5), the two Orbit presets and the two Scroll Story presets. Removed templates leave their layouts in the engine, so saved projects keep rendering; a saved `templateId` that no longer exists is informational only.
 
-The slider, Frames and Orbit presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
+Responsive Scroll (`responsive-scroll`, `docs/responsive-scroll-plan/README.md`) is last in the gallery. It shows a desktop and a mobile screenshot of one page, so its category is `"both"` and it sits under the Desktop and the Mobile tab (`templateInCategory`). Its two slots are a same-page pair (`Template.samePage`): `fillSlots` fills them with captures of one page (same capture URL, then the same page name in the file names) before the greedy fill.
+
+The slider, Frames, Stack, Orbit and Responsive Scroll presets set `toneSwitch`. Their tone is not stored: it is read from `style.background` (Ash `#DFE1E3` is light, Onyx `#141417` is dark, anything else is neither), so it saves and loads with the style. `applyTemplate` keeps a dark document dark when it applies or rebuilds a `toneSwitch` template; every template still builds Ash by default.
 
 ## 9. Export worker protocol (`src/export/engine-worker.ts`)
 

@@ -200,8 +200,8 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
         }
       }
       playheadRef.current = t;
-      // Publish before rendering: store subscribers (the music preview's sync check) then
-      // see this frame's time at this frame's timestamp, not after a slow render.
+      // Publish before rendering: store subscribers then see this frame's time at this
+      // frame's timestamp, not after a slow render.
       if (!ended && now - lastWriteNow >= STORE_WRITE_INTERVAL_MS) {
         lastWriteNow = now;
         writePlayhead(t);
