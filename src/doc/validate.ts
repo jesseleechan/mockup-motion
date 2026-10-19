@@ -9,6 +9,7 @@ import {
 } from "../motion/layouts/duration";
 import type {
   Aspect,
+  AssetMeta,
   AssetRef,
   AudioTrack,
   AssetRole,
@@ -16,6 +17,7 @@ import type {
   BrowserChrome,
   CameraMove,
   CameraPresetId,
+  CaptureSection,
   DeviceFinish,
   DeviceKind,
   EasingId,
@@ -155,7 +157,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (typeof a.width === "number") ref.width = a.width;
         if (typeof a.height === "number") ref.height = a.height;
         if (typeof a.role === "string") ref.role = a.role as AssetRole;
-        if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
+        if (a.meta && typeof a.meta === "object") ref.meta = sanitizeAssetMeta(a.meta);
         if (typeof a.family === "string") ref.family = a.family;
         if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;
         if (Array.isArray(a.peaks)) {
@@ -642,4 +644,32 @@ function sanitizeTextLayer(t: Record<string, unknown>, assetIds: Set<string>): T
   }
 
   return layer;
+}
+
+/**
+ * Keeps well-formed section data on a stored asset's meta and drops the rest: sections need a
+ * string id and a top ≥ 0, sorted ascending; page must be a string.
+ */
+function sanitizeAssetMeta(meta: AssetMeta): AssetMeta {
+  const clean: AssetMeta = { ...meta };
+  if (Array.isArray(meta.sections)) {
+    const sections = (meta.sections as unknown[])
+      .filter(
+        (s): s is CaptureSection =>
+          !!s &&
+          typeof s === "object" &&
+          typeof (s as CaptureSection).id === "string" &&
+          (s as CaptureSection).id !== "" &&
+          Number.isFinite((s as CaptureSection).top) &&
+          (s as CaptureSection).top >= 0,
+      )
+      .map((s) => ({ id: s.id, top: s.top }))
+      .sort((a, b) => a.top - b.top);
+    if (sections.length > 0) clean.sections = sections;
+    else delete clean.sections;
+  } else {
+    delete clean.sections;
+  }
+  if (typeof meta.page !== "string") delete clean.page;
+  return clean;
 }

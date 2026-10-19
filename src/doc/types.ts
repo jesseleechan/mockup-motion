@@ -3,6 +3,20 @@ export type AssetRole = "desktop" | "mobile" | "tablet" | "logo" | "background" 
 export type EasingId =
   | "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring" | "slide";
 
+/** A section of a captured page: its key (`id`, else `tag.class`) and top edge in image px. */
+export interface CaptureSection {
+  id: string;
+  top: number;
+}
+
+export interface AssetMeta {
+  tall?: boolean;          // image analysis (WP-13)
+  hasStatusBar?: boolean;  // image analysis (WP-06)
+  bottomColor?: string;    // image analysis (WP-06)
+  sections?: CaptureSection[]; // from the capture's JSON, ascending (Responsive Scroll)
+  page?: string;           // the capture's URL: pairs a desktop and a mobile capture of one page
+}
+
 export interface AssetRef {
   id: string;
   kind: "image" | "font" | "audio";
@@ -12,7 +26,7 @@ export interface AssetRef {
   width?: number;          // image px
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
-  meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
+  meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
   durationSec?: number;    // audio
   peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
