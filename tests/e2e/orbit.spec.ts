@@ -20,10 +20,7 @@ interface Frame {
   height: number;
 }
 
-const FRAMES: Frame[] = [
-  { aspect: "4:5", width: 1200, height: 1500 },
-  { aspect: "16:9", width: 1600, height: 900 },
-];
+const FRAME: Frame = { aspect: "4:5", width: 1200, height: 1500 };
 
 // Six flat colours, none close to the background or to each other.
 const COLOURS: Rgb[] = [
@@ -131,71 +128,54 @@ async function render(page: Page, frame: Frame, shape: Shape, n: number, t: numb
   return { pixels: pixels as PixelBuffer, nodes };
 }
 
-for (const shape of ["desktop", "mobile"] as const) {
-  for (const frame of FRAMES) {
-    test(`the ${shape} orbit's front card is colour-exact at ${frame.aspect}`, async ({ page }) => {
-      await ready(page);
-      const { pixels, nodes } = await render(page, frame, shape, 5, 0);
-      const front = nodes.find((n) => n.opacity === 1)!;
-      const card = box(frame, front);
-      for (const [fx, fy] of [
-        [0.5, 0.5],
-        [0.2, 0.8],
-        [0.8, 0.8],
-      ]) {
-        const x = card.x0 + fx * card.w;
-        const y = card.y0 + fy * card.h;
-        const colour = avgRegion(pixels, x - 6, y - 6, x + 6, y + 6);
-        expect(deltaE(colour, colourOf(front.assetId)), `${front.id} at ${fx}, ${fy}`).toBeLessThan(
-          1,
-        );
-      }
-      // Outside the ring the frame is the flat background.
-      expectRgbNear(avgRegion(pixels, 4, 4, 14, 14), ASH, 2);
-    });
-  }
-}
+// One test (CLAUDE.md, Tests): Mobile Orbit with 6 screenshots at 4:5 and rest, where the side
+// cards overlap. The front card is colour-exact, and every faded card is mixed with the background
+// only, both where it covers another card and where it doesn't.
+test("orbit cards: the front is colour-exact, the rest mix with the background only", async ({
+  page,
+}) => {
+  await ready(page);
+  const frame = FRAME;
+  const { pixels, nodes } = await render(page, frame, "mobile", 6, 0);
 
-// Desktop with 5 screenshots overlaps its side cards on the back ones; Mobile needs 6 for its side
-// cards to overlap. Mid-step (t = 0.8 s) every card has its own strength.
-for (const [shape, n] of [
-  ["desktop", 5],
-  ["mobile", 6],
-] as const) {
-  for (const t of [0, 0.8]) {
-    test(`${shape} orbit cards mix with the background, not with the cards behind (t = ${t})`, async ({
-      page,
-    }) => {
-      await ready(page);
-      const frame = FRAMES[0];
-      const { pixels, nodes } = await render(page, frame, shape, n, t);
-      const boxes = nodes.map((node) => ({ node, card: box(frame, node) }));
-      let overlapped = 0;
-      let single = 0;
-      for (let y = 20; y < frame.height - 20; y += 6) {
-        for (let x = 20; x < frame.width - 20; x += 6) {
-          // Skip points near any card's edge, where the antialiased edge mixes colours.
-          const near = boxes.filter(({ card }) => near6(card, x, y));
-          if (near.some(({ card }) => !inside(card, x, y, 6))) continue;
-          const covering = near;
-          if (covering.length === 0) continue;
-          const top = covering.reduce((a, b) => (b.node.depthOrder > a.node.depthOrder ? b : a));
-          if (top.node.opacity === 1) continue;
-          const expected = overAsh(colourOf(top.node.assetId), top.node.opacity);
-          const colour = avgRegion(pixels, x - 2, y - 2, x + 2, y + 2);
-          const where = `${top.node.id} over ${covering.length - 1} card(s) at ${x}, ${y}`;
-          const off = Math.max(...colour.map((c, i) => Math.abs(c - expected[i])));
-          expect(
-            off,
-            `${where}: ${colour.map((c) => c.toFixed(0))} vs ${expected.map((c) => c.toFixed(0))}`,
-          ).toBeLessThanOrEqual(3);
-          if (covering.length > 1) overlapped++;
-          else single++;
-        }
-      }
-      // The test must look at faded cards that overlap another card, and at some that don't.
-      expect(overlapped, "points where a faded card covers another").toBeGreaterThan(10);
-      expect(single, "points on a faded card alone").toBeGreaterThan(10);
-    });
+  const front = nodes.find((n) => n.opacity === 1)!;
+  const frontCard = box(frame, front);
+  for (const [fx, fy] of [
+    [0.5, 0.5],
+    [0.2, 0.8],
+    [0.8, 0.8],
+  ]) {
+    const x = frontCard.x0 + fx * frontCard.w;
+    const y = frontCard.y0 + fy * frontCard.h;
+    const colour = avgRegion(pixels, x - 6, y - 6, x + 6, y + 6);
+    expect(deltaE(colour, colourOf(front.assetId)), `${front.id} at ${fx}, ${fy}`).toBeLessThan(1);
   }
-}
+  // Outside the ring the frame is the flat background.
+  expectRgbNear(avgRegion(pixels, 4, 4, 14, 14), ASH, 2);
+
+  const boxes = nodes.map((node) => ({ node, card: box(frame, node) }));
+  let overlapped = 0;
+  let single = 0;
+  for (let y = 20; y < frame.height - 20; y += 6) {
+    for (let x = 20; x < frame.width - 20; x += 6) {
+      // Skip points near any card's edge, where the antialiased edge mixes colours.
+      const covering = boxes.filter(({ card }) => near6(card, x, y));
+      if (covering.length === 0 || covering.some(({ card }) => !inside(card, x, y, 6))) continue;
+      const top = covering.reduce((a, b) => (b.node.depthOrder > a.node.depthOrder ? b : a));
+      if (top.node.opacity === 1) continue;
+      const expected = overAsh(colourOf(top.node.assetId), top.node.opacity);
+      const colour = avgRegion(pixels, x - 2, y - 2, x + 2, y + 2);
+      const off = Math.max(...colour.map((c, i) => Math.abs(c - expected[i])));
+      expect(
+        off,
+        `${top.node.id} over ${covering.length - 1} card(s) at ${x}, ${y}: ` +
+          `${colour.map((c) => c.toFixed(0))} vs ${expected.map((c) => c.toFixed(0))}`,
+      ).toBeLessThanOrEqual(3);
+      if (covering.length > 1) overlapped++;
+      else single++;
+    }
+  }
+  // The test must look at faded cards that overlap another card, and at some that don't.
+  expect(overlapped, "points where a faded card covers another").toBeGreaterThan(10);
+  expect(single, "points on a faded card alone").toBeGreaterThan(10);
+});

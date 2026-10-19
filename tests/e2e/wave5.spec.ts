@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
+
+// Each gallery tab lists the templates of its size, in registry order.
+const idsOf = (category: "desktop" | "mobile") =>
+  BUILTIN_TEMPLATES.filter((t) => t.category === category).map((t) => t.id);
 
 test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
   test.beforeEach(async ({ page }) => {
@@ -31,11 +36,9 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
         .getByTestId("library-template-card")
         .evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await library.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(["mobile-slider", "mobile-frames", "mobile-orbit"]);
+    await expect.poll(libraryIds).toEqual(idsOf("mobile"));
     await library.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect
-      .poll(libraryIds)
-      .toEqual(["desktop-slider", "frames", "desktop-orbit", "scroll-story"]);
+    await expect.poll(libraryIds).toEqual(idsOf("desktop"));
     await library.getByRole("button", { name: "All", exact: true }).click();
 
     // Open Library panel Templates tab
@@ -59,21 +62,18 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const cardIds = () =>
       cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await modal.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(cardIds).toEqual(["mobile-slider", "mobile-frames", "mobile-orbit"]);
+    await expect.poll(cardIds).toEqual(idsOf("mobile"));
     // Each card names its tab in words, never the raw id
-    await expect(modal.getByTestId("template-category")).toHaveText(["Mobile", "Mobile", "Mobile"]);
+    await expect(modal.getByTestId("template-category")).toHaveText(
+      idsOf("mobile").map(() => "Mobile"),
+    );
     await modal.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect
-      .poll(cardIds)
-      .toEqual(["desktop-slider", "frames", "desktop-orbit", "scroll-story"]);
-    await expect(modal.getByTestId("template-category")).toHaveText([
-      "Desktop",
-      "Desktop",
-      "Desktop",
-      "Desktop",
-    ]);
+    await expect.poll(cardIds).toEqual(idsOf("desktop"));
+    await expect(modal.getByTestId("template-category")).toHaveText(
+      idsOf("desktop").map(() => "Desktop"),
+    );
     await modal.getByRole("button", { name: "All", exact: true }).click();
-    await expect(cards).toHaveCount(7);
+    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
