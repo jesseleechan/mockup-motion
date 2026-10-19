@@ -1,12 +1,5 @@
 import { createDoc, defaultShot, defaultStyle } from "../doc/defaults";
-import type {
-  AssetRef,
-  Background,
-  DeviceKind,
-  ProjectDoc,
-  TextAnimId,
-  Transition,
-} from "../doc/types";
+import type { AssetRef, Background, DeviceKind, ProjectDoc, Transition } from "../doc/types";
 import { demoAssetRef } from "./demo-assets";
 import { labTestBandsId, labTestQuadrantsId } from "./test-images";
 
@@ -48,7 +41,6 @@ function singleShot(
   shot.entrance = "none";
   shot.camera = camera;
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-  shot.texts = [];
   doc.shots = [shot];
   return shot;
 }
@@ -106,7 +98,6 @@ export function transitionFixtures(): Record<string, ProjectDoc> {
     a.entrance = "none";
     a.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
     a.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-    a.texts = [];
 
     const b = defaultShot({ kind: "single", device: "phone", assetId: MOBILE.id });
     b.id = `${kind}-b`;
@@ -119,60 +110,12 @@ export function transitionFixtures(): Record<string, ProjectDoc> {
       easing: "quintInOut",
       direction: kind === "push" || kind === "wipe" ? "left" : undefined,
     };
-    b.texts = [];
     b.styleOverrides = {
       background: { kind: "solid", color: "#1B1B2F" },
       frameAppearance: "dark",
     };
     doc.shots = [a, b];
     out[`transition-${kind}`] = doc;
-  }
-  return out;
-}
-
-/** Reveal animations are 0.75s; midpoint is 0.375. Typewriter midpoint for two words is 0.15. */
-export const TEXT_ANIM_T: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
-
-const TEXT_ANIMS: TextAnimId[] = ["fadeUp", "maskReveal", "blurIn", "wordStagger", "typewriter"];
-
-export function textAnimFixtures(): Record<string, ProjectDoc> {
-  const out: Record<string, ProjectDoc> = {};
-  for (const animation of TEXT_ANIMS) {
-    const doc = stillDoc(`text-${animation}`);
-    doc.style = {
-      ...doc.style,
-      background: { kind: "solid", color: "#141417" },
-      frameAppearance: "dark",
-      textColor: "#F4F1EA",
-    };
-    const shot = defaultShot({ kind: "title" });
-    shot.id = `text-${animation}-shot`;
-    shot.duration = 4;
-    shot.entrance = "none";
-    shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
-    shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-    shot.texts = [
-      {
-        id: `text-${animation}-layer`,
-        text: "Quiet studio",
-        role: "title",
-        font: "display",
-        size: 6,
-        anchor: "center",
-        align: "center",
-        color: "",
-        animation,
-        delay: 0,
-      },
-    ];
-    doc.shots = [shot];
-    out[`text-${animation}`] = doc;
   }
   return out;
 }
@@ -216,7 +159,6 @@ export function orientationFixtures(): Record<string, ProjectDoc> {
     shot.entrance = "none";
     shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
     shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-    shot.texts = [];
     doc.shots = [shot];
     out[`orient-${device}`] = doc;
   }
@@ -243,7 +185,6 @@ export function colorFixtures(): Record<string, ProjectDoc> {
   shot.entrance = "none";
   shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
-  shot.texts = [];
   doc.shots = [shot];
   return { "color-bands": doc };
 }
@@ -252,7 +193,6 @@ export const VISUAL_FIXTURES: Record<string, ProjectDoc> = {
   ...deviceFixtures(),
   ...backgroundFixtures(),
   ...transitionFixtures(),
-  ...textAnimFixtures(),
   ...orientationFixtures(),
   ...colorFixtures(),
 };

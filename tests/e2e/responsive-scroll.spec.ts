@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import type { AssetRef, ProjectDoc } from "../../src/doc/types";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc };
@@ -34,7 +35,7 @@ const FILES = {
 };
 
 async function resetAndOpenMedia(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

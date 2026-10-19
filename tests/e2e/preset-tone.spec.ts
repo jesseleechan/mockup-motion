@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Suggestion 3 of docs/phone-frames-plan/README.md §8: the slider and Frames presets switch
 // between their flat light (Ash) and dark (Onyx) backgrounds in the Video inspector.
@@ -16,7 +17,7 @@ interface EditorWindow {
 /** First run → gallery → the template → demo content, then the Video inspector. */
 async function openTemplate(page: Page, templateId: string): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

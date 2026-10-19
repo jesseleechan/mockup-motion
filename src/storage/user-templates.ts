@@ -1,6 +1,7 @@
 import { getDB } from "./db";
 import { normalizeStyleAngles } from "../doc/gradient-angle";
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { defaultShot } from "../doc/defaults";
 import { clampSliderStep, sliderDuration } from "../motion";
 
 export interface UserTemplate {
@@ -100,16 +101,6 @@ export function convertDocToUserTemplate(
       case "orbit":
         layout.assetIds = layout.assetIds.map(remapId);
         break;
-      case "title":
-        break;
-    }
-
-    if (shot.texts) {
-      for (const t of shot.texts) {
-        if (t.logoAssetId) {
-          t.logoAssetId = remapId(t.logoAssetId);
-        }
-      }
     }
 
     return shot;
@@ -181,8 +172,10 @@ export function fillUserTemplateSlots(
     return chosenId;
   };
 
-  const shots: Shot[] = template.shots.map((s) => {
+  const shots: Shot[] = withoutTitleCards(template.shots).map((s) => {
     const shot = structuredClone(s);
+    // Text layers were removed (October 2026); a template saved before then may carry them.
+    delete (shot as { texts?: unknown }).texts;
     const layout = shot.layout;
 
     switch (layout.kind) {
@@ -213,24 +206,24 @@ export function fillUserTemplateSlots(
         shot.duration = sliderDuration(layout);
         break;
       }
-      case "title":
-        break;
-    }
-
-    if (shot.texts) {
-      for (const t of shot.texts) {
-        if (t.logoAssetId) {
-          t.logoAssetId = resolveSlot(t.logoAssetId);
-        }
-      }
     }
 
     return shot;
   });
 
+  const style = structuredClone(template.style);
+  // Typography was removed (October 2026); a template saved before then may carry its fields.
+  delete (style as { fonts?: unknown }).fonts;
+  delete (style as { textColor?: unknown }).textColor;
+
   return {
-    style: structuredClone(template.style),
-    shots,
+    style,
+    shots: shots.length > 0 ? shots : [defaultShot()],
     loop: template.loop,
   };
+}
+
+/** Drops the title cards a template saved before October 2026 may hold. */
+function withoutTitleCards(shots: Shot[]): Shot[] {
+  return shots.filter((shot) => (shot.layout as { kind: string }).kind !== "title");
 }

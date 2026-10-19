@@ -170,21 +170,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
         {
           ...defaultShot(),
           layout: { kind: "single", device: "browser", assetId },
-          texts: [
-            {
-              id: "t1",
-              text: "Hello",
-              role: "title",
-              font: "display",
-              size: 6,
-              anchor: "center",
-              align: "center",
-              color: "",
-              animation: "none",
-              delay: 0,
-              logoAssetId: assetId,
-            },
-          ],
         },
         {
           ...defaultShot(),
@@ -194,7 +179,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
             mobileId: keptAssetId,
             arrangement: "overlap",
           },
-          texts: [],
         },
       ];
     });
@@ -208,8 +192,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
     // Layout reference in single layout cleared to ""
     const l0 = doc.shots[0].layout as { assetId?: string };
     expect(l0.assetId).toBe("");
-    // Text logoAssetId cleared
-    expect(doc.shots[0].texts[0].logoAssetId).toBeUndefined();
     // Desktop in pair layout cleared to "", mobile kept
     const l1 = doc.shots[1].layout as { desktopId?: string; mobileId?: string };
     expect(l1.desktopId).toBe("");

@@ -2,13 +2,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
 import { ciTimeout } from "../helpers/ci";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
 }
 
 async function resetAndOpen(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -117,36 +118,12 @@ test.describe("F07: shot and project thumbnails", () => {
 
   test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    // Every built-in template has one shot, so add a second layout and a title card.
+    // Every built-in template has one shot, so add two more.
     await applyTemplateWithDemo(page, "scroll-story");
-    for (const item of ["Same layout", "Title card"]) {
+    for (let i = 0; i < 2; i++) {
       await page.getByRole("button", { name: "Add shot" }).click();
-      await page.getByRole("menuitem", { name: item }).click();
+      await page.getByRole("menuitem", { name: "Same layout" }).click();
     }
-    // A title card from the menu has no text, so its thumbnail is a flat background. Give it
-    // a title, as the reel templates did.
-    await page.evaluate(() => {
-      const store = (window as unknown as { __editorStore?: StoreHandle }).__editorStore;
-      if (!store) throw new Error("__editorStore is unavailable");
-      store.getState().apply((draft) => {
-        const title = draft.shots.find((s) => s.layout.kind === "title");
-        if (!title) throw new Error("No title card was added");
-        title.texts = [
-          {
-            id: "txt-title",
-            role: "title",
-            text: "Studio Kova",
-            color: "",
-            font: "display",
-            size: 8,
-            anchor: "center",
-            align: "center",
-            animation: "fadeUp",
-            delay: 0,
-          },
-        ];
-      });
-    });
     const shots = await shotCount(page);
     expect(shots).toBe(3);
 

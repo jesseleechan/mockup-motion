@@ -1,7 +1,6 @@
 import { create } from "zustand";
 
-export type UISelection =
-  { kind: "video" } | { kind: "shot"; id: string } | { kind: "text"; shotId: string; id: string };
+export type UISelection = { kind: "video" } | { kind: "shot"; id: string };
 
 export interface UIState {
   selection: UISelection;

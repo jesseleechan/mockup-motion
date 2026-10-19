@@ -231,23 +231,18 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       const initialDoc = createDoc({ name: "Brand Test Doc" });
       store.getState().loadDoc(initialDoc);
 
-      const beforeTextColor = store.getState().doc.style.textColor;
       const beforeAccent = store.getState().doc.style.accent;
 
       store.getState().applyBrandKit(kit1);
-      expect(store.getState().doc.style.textColor).toBe("#111111");
       expect(store.getState().doc.style.accent).toBe("#FF5500");
       expect(store.getState().doc.style.browserUrl).toBe("acme.io");
-      expect(store.getState().doc.style.fonts.display.family).toBe("Fraunces");
 
       // Undo restores the previous state in one step
       store.getState().undo();
-      expect(store.getState().doc.style.textColor).toBe(beforeTextColor);
       expect(store.getState().doc.style.accent).toBe(beforeAccent);
 
       // Redo reapplies
       store.getState().redo();
-      expect(store.getState().doc.style.textColor).toBe("#111111");
       expect(store.getState().doc.style.accent).toBe("#FF5500");
     });
 

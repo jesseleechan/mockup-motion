@@ -19,24 +19,15 @@ export interface AssetMeta {
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font";
   name: string;
   mime: string;
   bytes: number;
   width?: number;          // image px
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
-  palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
   meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
-  durationSec?: number;    // audio
-  peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
-}
-
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string;          // builtin family name or AssetRef.family
-  weight: number;          // 100..900
 }
 
 export type Background =
@@ -60,9 +51,7 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string;       // default text colour; "" = auto contrast vs background
-  accent: string;          // cursor, highlights
+  accent: string;          // highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
@@ -80,8 +69,7 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string }
-  | { kind: "title" };
+  | { kind: "responsive"; desktopId: string; mobileId: string };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
@@ -135,33 +123,12 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor = "top-left" | "top" | "top-right" | "left" | "center" | "right"
-  | "bottom-left" | "bottom" | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number;            // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string;           // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number;           // seconds from shot start
-  logoAssetId?: string;    // render a logo above the text
-}
-
 export interface Transition {
   kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
   duration: number;        // seconds, overlaps the previous shot (see §5)
   easing: EasingId;
   direction?: "left" | "right" | "up" | "down";
 }
-
-export interface CursorKey { t: number; x: number; y: number; click?: boolean } // x,y 0..1 of device screen
-export interface CursorSpec { enabled: boolean; style: "arrow" | "pointer" | "dot"; keys: CursorKey[] }
 
 export interface Shot {
   id: string;
@@ -170,19 +137,15 @@ export interface Shot {
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
-  cursor?: CursorSpec;     // honoured only for single-device layouts
-  texts: TextLayer[];
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
-
-export interface AudioTrack { assetId: string; volume: number; fadeIn: number; fadeOut: number; offset: number }
 
 export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
   | "linkedin" | "x" | "presentation-4k";
 
 export type ExportQuality = "web" | "high" | "master";
-export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "png";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -191,7 +154,6 @@ export interface ExportSettings {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {
@@ -205,7 +167,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[];           // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string;     // last applied template (informational)
 }
