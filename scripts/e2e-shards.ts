@@ -21,7 +21,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "assets",
     "orientation",
     "art-direction",
-    "timeline",
     "wave5",
     "first-run",
     "spike",
@@ -30,7 +29,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
   ["editor", "color", "ui-overflow", "polish", "demo-assets", "library", "shadows-post", "stack"],
   [
     "export-dialog",
-    "entrance",
     "thumbnails",
     "stage",
     "lab",

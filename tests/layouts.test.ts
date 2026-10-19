@@ -129,7 +129,7 @@ describe("WP-09 Layouts and Camera Framing", () => {
 
           for (const tf of timeFractions) {
             const localT = tf * duration;
-            const nodes = resolveLayout(layout, aspect, mockAssets, localT, duration, "none");
+            const nodes = resolveLayout(layout, aspect, mockAssets, localT, duration);
             const p = tf;
             const basePose = cameraPose(
               { preset, intensity: 1.0, easing: "smooth", float: 0 },
@@ -191,7 +191,6 @@ describe("WP-09 Layouts and Camera Framing", () => {
         assets,
         0,
         5,
-        "none",
       );
 
       // In each row, collect visible items (|x| <= W/2 + itemWidth)

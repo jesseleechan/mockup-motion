@@ -35,7 +35,6 @@ test.describe("F11 browser URL pill", () => {
       const doc = structuredClone(base);
       const id = doc.shots[0].layout.kind === "single" ? doc.shots[0].layout.assetId : "";
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      doc.shots[0].entrance = "none";
       doc.style.grain = 0;
       doc.style.vignette = 0;
       doc.style.frameAppearance = "light";
@@ -125,7 +124,6 @@ test.describe("F11 browser URL pill", () => {
       const makeDoc = (url: string) => {
         const doc = structuredClone(base);
         doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-        doc.shots[0].entrance = "none";
         doc.style.grain = 0;
         doc.style.vignette = 0;
         doc.style.browserUrl = url;
@@ -186,7 +184,6 @@ test.describe("F11 browser URL pill", () => {
         {
           ...doc.shots[0],
           duration: 0.5,
-          entrance: "none",
           camera: { preset: "static", intensity: 0, easing: "smooth", float: 0 },
         },
       ];
@@ -289,7 +286,6 @@ test.describe("F11 screens and grain", () => {
       ];
       doc.shots[0].layout = { kind: "single", device: "browser", assetId: id };
       doc.shots[0].camera = { preset: "static", intensity: 1, easing: "smooth", float: 0 };
-      doc.shots[0].entrance = "none";
       doc.style.grain = 0;
       doc.style.vignette = 0;
       await setDoc(doc, { [id]: bitmap });

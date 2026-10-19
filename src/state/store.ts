@@ -1,17 +1,8 @@
 import { create } from "zustand";
-import { produce, current } from "immer";
-import { createDoc, defaultShot } from "../doc/defaults";
+import { produce } from "immer";
+import { createDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type {
-  AssetMeta,
-  AssetRef,
-  AssetRole,
-  Layout,
-  ProjectDoc,
-  Shot,
-  Style,
-  Transition,
-} from "../doc/types";
+import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -74,14 +65,8 @@ export interface EditorStoreState {
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
 
-  // Timeline / storyboard actions
-  addShot: (layout?: Layout, insertAfterIndex?: number) => void;
-  duplicateShot: (index: number) => void;
-  removeShot: (index: number) => void;
-  moveShot: (fromIndex: number, toIndex: number) => void;
+  // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
-  setTransition: (shotIndex: number, transition: Transition) => void;
-  splitShot: (index: number, splitLocalT: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
@@ -470,75 +455,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    // Timeline / storyboard actions
-    addShot: (layout?: Layout, insertAfterIndex?: number) => {
-      get().apply(
-        (draft) => {
-          const newS = defaultShot();
-          if (layout) {
-            newS.layout = layout;
-          } else if (draft.shots.length > 0) {
-            newS.layout = structuredClone(draft.shots[draft.shots.length - 1].layout);
-          }
-          newS.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          newS.duration = 4.0;
-
-          if (
-            insertAfterIndex !== undefined &&
-            insertAfterIndex >= 0 &&
-            insertAfterIndex < draft.shots.length
-          ) {
-            draft.shots.splice(insertAfterIndex + 1, 0, newS);
-          } else {
-            draft.shots.push(newS);
-          }
-        },
-        { label: "Add shot" },
-      );
-    },
-
-    duplicateShot: (index: number) => {
-      get().apply(
-        (draft) => {
-          const original = draft.shots[index];
-          if (!original) return;
-          const copy = structuredClone(current(original));
-          copy.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          draft.shots.splice(index + 1, 0, copy);
-        },
-        { label: "Duplicate shot" },
-      );
-    },
-
-    removeShot: (index: number) => {
-      get().apply(
-        (draft) => {
-          if (draft.shots.length <= 1) return; // Do not delete the last shot
-          draft.shots.splice(index, 1);
-        },
-        { label: "Delete shot" },
-      );
-    },
-
-    moveShot: (fromIndex: number, toIndex: number) => {
-      get().apply(
-        (draft) => {
-          if (
-            fromIndex < 0 ||
-            fromIndex >= draft.shots.length ||
-            toIndex < 0 ||
-            toIndex >= draft.shots.length ||
-            fromIndex === toIndex
-          ) {
-            return;
-          }
-          const [moved] = draft.shots.splice(fromIndex, 1);
-          draft.shots.splice(toIndex, 0, moved);
-        },
-        { label: "Reorder shots" },
-      );
-    },
-
+    // Timeline actions
     setShotDuration: (index: number, duration: number) => {
       // A slider sets its own length; skip it so the edit leaves no empty undo step.
       const { doc } = get();
@@ -553,49 +470,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: "Change shot duration" },
-      );
-    },
-
-    setTransition: (shotIndex: number, transition: Transition) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (shot) {
-            shot.transitionIn = structuredClone(transition);
-          }
-        },
-        { label: "Change transition" },
-      );
-    },
-
-    splitShot: (index: number, splitLocalT: number) => {
-      get().apply(
-        (draft) => {
-          const original = draft.shots[index];
-          if (!original) return;
-          const totalDur = original.duration;
-          const t = Math.max(0.5, Math.min(totalDur - 0.5, splitLocalT));
-
-          // Shot A
-          original.duration = t;
-
-          // Shot B
-          const shotB = structuredClone(current(original));
-          shotB.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          shotB.duration = totalDur - t;
-          shotB.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
-
-          // Maintain camera continuity between Shot A and Shot B
-          const alpha = t / totalDur;
-          const [p0, p1] = original.camera.progressRange ?? [0, 1];
-          const splitProgress = p0 + alpha * (p1 - p0);
-
-          original.camera.progressRange = [p0, splitProgress];
-          shotB.camera.progressRange = [splitProgress, p1];
-
-          draft.shots.splice(index + 1, 0, shotB);
-        },
-        { label: "Split shot" },
       );
     },
 

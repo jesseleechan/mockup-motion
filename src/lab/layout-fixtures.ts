@@ -15,7 +15,6 @@ function singleBrowserFixture(): ProjectDoc {
   const shot = defaultShot({ kind: "single", device: "browser", assetId: assets[0].id });
   shot.duration = 6;
   shot.transitionIn = loopWrapCrossfade();
-  shot.entrance = "rise";
   shot.camera = { preset: "pushIn", intensity: 0.7, easing: "smooth", float: 0.1 };
   return {
     ...createDoc(),

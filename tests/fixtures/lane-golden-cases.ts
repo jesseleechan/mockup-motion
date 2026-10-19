@@ -1,4 +1,4 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../src/doc/types";
+import type { Aspect, AssetRef, Layout } from "../../src/doc/types";
 import { framesDuration, type LayoutNode, resolveLayout } from "../../src/motion/layouts";
 import { framesLayout } from "../../src/templates/frames";
 
@@ -25,7 +25,6 @@ export interface GoldenCase {
   layout: Layout;
   assets: AssetRef[];
   duration: number;
-  entrance: Shot["entrance"];
   times: number[];
 }
 
@@ -49,7 +48,6 @@ function framesCases(): GoldenCase[] {
         layout,
         assets,
         duration,
-        entrance: "none",
         times: [0, 0.8, 2.4, duration / 2, duration - 0.1, duration],
       });
     }
@@ -64,7 +62,7 @@ export function goldenCases(): Record<"frames", GoldenCase[]> {
 }
 
 export function goldenNodes(c: GoldenCase, t: number): LayoutNode[] {
-  return resolveLayout(c.layout, c.aspect, c.assets, t, c.duration, c.entrance);
+  return resolveLayout(c.layout, c.aspect, c.assets, t, c.duration);
 }
 
 // A frame's nodes in a compact form that keeps every value exact. Fields with one value for every
