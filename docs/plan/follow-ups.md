@@ -16,7 +16,6 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | `Engine.ts` is 579 lines and `BackgroundRenderer.ts` 408, over the ~400-line guideline.                                                                                                                                                                                 | F09, F11              |
 | `Engine.dispose()` doesn't call `renderer.forceContextLoss()`, so a disposed engine's WebGL context lives until garbage collection.                                                                                                                                     | F07                   |
 | `Engine.pick()` returns the phone for much of the desktop screen in the pair overlap layout, and returns meaningless UVs for meshes other than screens.                                                                                                                 | F04, F06              |
-| The module-level cursor textures in `CursorSprites.ts` are never disposed (small and shared).                                                                                                                                                                           | F01                   |
 | The screen material ignores device `material.opacity`.                                                                                                                                                                                                                  | F02                   |
 
 ## Templates and layouts

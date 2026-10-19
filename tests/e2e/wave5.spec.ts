@@ -6,7 +6,7 @@ import { BUILTIN_TEMPLATES } from "../../src/templates";
 const idsOf = (category: "desktop" | "mobile") =>
   BUILTIN_TEMPLATES.filter((t) => t.category === category).map((t) => t.id);
 
-test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
+test.describe("Wave 5: Templates & Gallery, Scroll, Export v2", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/lab/ui");
     await page.evaluate(async () => {
@@ -107,14 +107,12 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     expect(serious).toEqual([]);
   });
 
-  test("WP-15: Scroll Story and Cursor Overlay inspector controls toggle and configure", async ({
-    page,
-  }) => {
+  test("WP-15: Scroll Story inspector controls toggle and configure", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
 
-    // Scroll and cursor are single-device controls, and the first-run demo is Desktop Slider
+    // Scroll is a single-device control, and the first-run demo is Desktop Slider
     // (presets D1), so switch to Scroll Story's single browser first.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
@@ -126,7 +124,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const shot1Card = page.locator(".group", { hasText: "Shot 1" });
     await shot1Card.click();
 
-    // 1. Scroll section
+    // Scroll section
     await expect(page.getByText("Scroll through page")).toBeVisible();
     const scrollSwitch = page.getByRole("switch", { name: "Scroll through page" });
     await expect(scrollSwitch).toBeVisible();
@@ -144,22 +142,6 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await scrollSwitch.click();
     await expect(scrollSwitch).toHaveAttribute("data-state", "checked");
     await expect(page.getByText("Hold", { exact: true })).toBeVisible();
-
-    // 2. Cursor section
-    await expect(page.getByText("Show cursor")).toBeVisible();
-    const cursorSwitch = page.getByRole("switch", { name: "Show cursor" });
-    await expect(cursorSwitch).toBeVisible();
-
-    // Toggle cursor ON
-    await cursorSwitch.click();
-    expect(await cursorSwitch.getAttribute("data-state")).toBe("checked");
-
-    // Cursor Style and Keyframes should be visible
-    await expect(page.getByRole("combobox", { name: "Cursor style" })).toBeVisible();
-    await expect(page.getByText(/Keyframes/i)).toBeVisible();
-
-    // Verify initial keyframe with Click badge is rendered
-    await expect(page.getByText("Click", { exact: true })).toBeVisible();
   });
 
   test("WP-16: Export v2 destination presets switch dimensions, formats, and passes Axe scan", async ({

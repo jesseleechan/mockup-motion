@@ -10,7 +10,6 @@ import { CameraSection } from "./shot/CameraSection";
 import { EntranceSection } from "./shot/EntranceSection";
 import { TransitionSection } from "./shot/TransitionSection";
 import { ScrollSection } from "./shot/ScrollSection";
-import { CursorSection } from "./shot/CursorSection";
 import { TextLayersSection } from "./shot/TextLayersSection";
 
 interface ShotInspectorProps {
@@ -71,7 +70,6 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
       <EntranceSection shot={shot} aspect={doc.aspect} />
       <TransitionSection shot={shot} />
       <ScrollSection shot={shot} assets={doc.assets} />
-      <CursorSection shot={shot} />
       <TextLayersSection shot={shot} />
 
       <div className="pt-2 flex gap-2">

@@ -361,18 +361,13 @@ export class Engine {
         managed = this.textureManager.getLoadedTexture(node.assetId);
       }
 
-      let cursorData = undefined;
-      if (frame.cursor && (frame.cursor.nodeId === node.id || frame.nodes.length === 1)) {
-        cursorData = frame.cursor;
-      }
-
       const asset = node.assetId
         ? this.currentDoc?.assets.find((a) => a.id === node.assetId)
         : null;
       const hasStatusBar = Boolean(asset?.meta?.hasStatusBar);
       const isPhone = node.device === "phone";
 
-      dev.compositor.compose(this.renderer, managed, node.scroll, cursorData, {
+      dev.compositor.compose(this.renderer, managed, node.scroll, {
         hasStatusBar,
         isPhone,
       });

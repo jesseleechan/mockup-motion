@@ -1,22 +1,11 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
-import { getCursorTexture, getRippleTexture, type CursorStyle } from "../cursor/CursorSprites";
 import {
   createTopLeftQuad,
   createTopLeftQuadSubrange,
   releaseTopLeftQuad,
   retainTopLeftQuad,
 } from "../geometry/quads";
-
-export interface ScreenCursorData {
-  x: number;
-  y: number;
-  scale?: number;
-  pressed?: number;
-  rippleRadius?: number;
-  rippleOpacity?: number;
-  style?: "arrow" | "pointer" | "dot";
-}
 
 export interface ScreenCompositorOptions {
   viewportWidthPx: number;
@@ -93,14 +82,11 @@ export class ScreenCompositor {
   private stripMeshes: THREE.Mesh[] = [];
   private fillMesh: THREE.Mesh;
 
-  private cursorMesh: THREE.Mesh | null = null;
-  private rippleMesh: THREE.Mesh | null = null;
   private statusBarMesh: THREE.Mesh | null = null;
 
   private lastScroll = -1;
   // Identity, not asset id: a wider reload of the same asset must recompose.
   private lastManaged: ManagedTexture | null | undefined = undefined;
-  private lastCursorKey = "";
   // On-screen viewport size; the target is this times `targetScale`.
   private baseWidthPx: number;
   private baseHeightPx: number;
@@ -142,27 +128,6 @@ export class ScreenCompositor {
     this.statusBarMesh = new THREE.Mesh(sbGeo, sbMat);
     this.statusBarMesh.visible = false;
     this.orthoScene.add(this.statusBarMesh);
-
-    // Cursor mesh
-    const curGeo = createTopLeftQuad();
-    const curMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      depthTest: false,
-    });
-    this.cursorMesh = new THREE.Mesh(curGeo, curMat);
-    this.cursorMesh.visible = false;
-    this.orthoScene.add(this.cursorMesh);
-
-    // Ripple mesh
-    const ripGeo = createTopLeftQuad();
-    const ripMat = new THREE.MeshBasicMaterial({
-      map: getRippleTexture(),
-      transparent: true,
-      depthTest: false,
-    });
-    this.rippleMesh = new THREE.Mesh(ripGeo, ripMat);
-    this.rippleMesh.visible = false;
-    this.orthoScene.add(this.rippleMesh);
 
     this.material = new THREE.ShaderMaterial({
       vertexShader,
@@ -235,25 +200,15 @@ export class ScreenCompositor {
     renderer: THREE.WebGLRenderer,
     managed: ManagedTexture | null,
     scroll: number,
-    cursor?: ScreenCursorData,
     options?: { hasStatusBar?: boolean; isPhone?: boolean },
   ): void {
-    const cursorKey = cursor
-      ? `${cursor.x.toFixed(3)},${cursor.y.toFixed(3)},${(cursor.scale ?? 1).toFixed(2)},${(cursor.rippleOpacity ?? 0).toFixed(2)},${cursor.style}`
-      : "none";
-
-    // Only skip render if scroll, texture, and cursor have not changed
-    if (
-      this.lastScroll === scroll &&
-      this.lastManaged === managed &&
-      this.lastCursorKey === cursorKey
-    ) {
+    // Skip the render if neither scroll nor texture has changed
+    if (this.lastScroll === scroll && this.lastManaged === managed) {
       return;
     }
 
     this.lastScroll = scroll;
     this.lastManaged = managed;
-    this.lastCursorKey = cursorKey;
 
     if (!managed || managed.strips.length === 0) {
       for (const mesh of this.stripMeshes) mesh.visible = false;
@@ -263,8 +218,6 @@ export class ScreenCompositor {
       this.fillMesh.position.set(0, 0, 0);
       (this.fillMesh.material as THREE.MeshBasicMaterial).color.set(0x18181b);
       if (this.statusBarMesh) this.statusBarMesh.visible = false;
-      if (this.cursorMesh) this.cursorMesh.visible = false;
-      if (this.rippleMesh) this.rippleMesh.visible = false;
 
       const prevTarget = renderer.getRenderTarget();
       renderer.setRenderTarget(this.renderTarget);
@@ -358,52 +311,6 @@ export class ScreenCompositor {
       this.statusBarMesh.visible = false;
     }
 
-    // Cursor rendering (in viewport coordinates, unaffected by scroll)
-    if (cursor && this.cursorMesh) {
-      const cursorSize = Math.max(24, Math.round(this.widthPx * 0.038)) * (cursor.scale ?? 1.0);
-      const style: CursorStyle = cursor.style ?? "arrow";
-      const curMat = this.cursorMesh.material as THREE.MeshBasicMaterial;
-      curMat.map = getCursorTexture(style);
-      curMat.transparent = true;
-      this.cursorMesh.visible = true;
-      this.cursorMesh.scale.set(cursorSize, cursorSize, 1);
-
-      // Place the actual glyph hotspot, including its transparent canvas inset, on the click.
-      let cx = cursor.x * this.widthPx;
-      let cy = this.heightPx - cursor.y * this.heightPx;
-      if (style === "arrow") {
-        cx -= cursorSize * (14 / 128);
-        cy -= cursorSize * (1 - 14 / 128);
-      } else if (style === "pointer") {
-        cx -= cursorSize * (28 / 128);
-        cy -= cursorSize * (1 - 18 / 128);
-      } else {
-        cx -= cursorSize / 2;
-        cy -= cursorSize / 2;
-      }
-      this.cursorMesh.position.set(cx, cy, 0.6);
-
-      // Ripple rendering
-      if (cursor.rippleOpacity && cursor.rippleOpacity > 0.01 && this.rippleMesh) {
-        const rSize = (cursor.rippleRadius ?? 0.02) * this.widthPx * 2;
-        const ripMat = this.rippleMesh.material as THREE.MeshBasicMaterial;
-        ripMat.opacity = cursor.rippleOpacity;
-        ripMat.transparent = true;
-        this.rippleMesh.visible = true;
-        this.rippleMesh.scale.set(rSize, rSize, 1);
-        this.rippleMesh.position.set(
-          cursor.x * this.widthPx - rSize / 2,
-          this.heightPx - cursor.y * this.heightPx - rSize / 2,
-          0.5,
-        );
-      } else if (this.rippleMesh) {
-        this.rippleMesh.visible = false;
-      }
-    } else {
-      if (this.cursorMesh) this.cursorMesh.visible = false;
-      if (this.rippleMesh) this.rippleMesh.visible = false;
-    }
-
     // Render into target
     const prevTarget = renderer.getRenderTarget();
     renderer.setRenderTarget(this.renderTarget);
@@ -422,12 +329,6 @@ export class ScreenCompositor {
     if (this.statusBarMesh) {
       this.statusBarMesh.geometry.dispose();
       (this.statusBarMesh.material as THREE.Material).dispose();
-    }
-    if (this.cursorMesh) {
-      (this.cursorMesh.material as THREE.Material).dispose();
-    }
-    if (this.rippleMesh) {
-      (this.rippleMesh.material as THREE.Material).dispose();
     }
     this.renderTarget.dispose();
     this.material.dispose();

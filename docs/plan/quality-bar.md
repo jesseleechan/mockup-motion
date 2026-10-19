@@ -21,7 +21,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 | `smooth` | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out) | Default camera moves, scroll segments |
 | `expoOut` | cubic-bezier(0.16, 1, 0.3, 1) | Entrances, text reveals |
 | `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1) | Transitions, decisive pushes |
-| `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only (cursor click). Overshoot 3% or less |
+| `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only. Overshoot 3% or less |
 | `spring` | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels |
 | `slide` | cubic-bezier(0.40, 0, 0.05, 1) | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
 | `linear` | — | Marquees only |

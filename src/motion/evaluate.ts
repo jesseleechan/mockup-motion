@@ -13,7 +13,6 @@ import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
 import { scrollPosition } from "./scroll";
 import { textFrame, type TextFrame } from "./text-anim";
 import { activeLayers, schedule } from "./timeline";
-import { evaluateCursorMotion } from "./cursor";
 
 export interface ShotFrame {
   shotId: string;
@@ -21,16 +20,6 @@ export interface ShotFrame {
   camera: CameraPose;
   nodes: LayoutNode[];
   texts: TextFrame[];
-  cursor?: {
-    x: number;
-    y: number;
-    pressed: number;
-    nodeId: string;
-    scale?: number;
-    rippleRadius?: number;
-    rippleOpacity?: number;
-    style?: "arrow" | "pointer" | "dot";
-  };
   style: Style;
 }
 
@@ -113,26 +102,6 @@ function evaluateTexts(shot: Shot, localT: number): TextFrame[] {
   });
 }
 
-function evaluateCursor(
-  shot: Shot,
-  localT: number,
-  firstNodeId: string,
-): ShotFrame["cursor"] | undefined {
-  const result = evaluateCursorMotion(shot.cursor, localT);
-  if (!result) return undefined;
-
-  return {
-    x: result.x,
-    y: result.y,
-    pressed: result.pressed,
-    nodeId: firstNodeId,
-    scale: result.scale,
-    rippleRadius: result.ripple?.radius,
-    rippleOpacity: result.ripple?.opacity,
-    style: result.style,
-  };
-}
-
 /**
  * Pure evaluation function converting document model and time into FrameState.
  * Memoizes base layouts per (shot.id, aspect, assetsSignature).
@@ -201,9 +170,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     // Text frames
     const texts = evaluateTexts(shot, localT);
 
-    // Cursor
-    const cursor = evaluateCursor(shot, localT, nodes[0]?.id ?? "");
-
     // Resolved style
     const style: Style = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
 
@@ -213,7 +179,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
       camera,
       nodes,
       texts,
-      cursor,
       style,
     };
 
