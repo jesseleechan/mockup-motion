@@ -30,8 +30,12 @@ describe("pairedTemplateId", () => {
     expect(pairedTemplateId("removed-template")).toBeUndefined();
   });
 
-  it("pairs every built-in", () => {
-    for (const t of BUILTIN_TEMPLATES) expect(pairedTemplateId(t.id), t.id).toBeDefined();
+  it("pairs every one-size built-in, and no desktop + mobile one", () => {
+    for (const t of BUILTIN_TEMPLATES) {
+      // Responsive Scroll shows both sizes at once, so it has no other size.
+      if (t.category === "both") expect(pairedTemplateId(t.id), t.id).toBeUndefined();
+      else expect(pairedTemplateId(t.id), t.id).toBeDefined();
+    }
   });
 
   it("pairs every paired built-in with a built-in of the other category", () => {

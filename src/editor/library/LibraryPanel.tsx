@@ -4,6 +4,7 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import {
   BUILTIN_TEMPLATES,
+  templateInCategory,
   validateTemplateRequirements,
   type TemplateCategory,
 } from "../../templates";
@@ -41,8 +42,8 @@ export const LibraryPanel: React.FC = () => {
     { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop },
     { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile },
   ] as const;
-  const filteredTemplates = BUILTIN_TEMPLATES.filter(
-    (t) => selectedCategory === "all" || t.category === selectedCategory,
+  const filteredTemplates = BUILTIN_TEMPLATES.filter((t) =>
+    templateInCategory(t, selectedCategory),
   );
 
   return (

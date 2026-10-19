@@ -9,6 +9,7 @@ import { mobileFramesTemplate } from "./mobile-frames";
 import { desktopOrbitTemplate } from "./desktop-orbit";
 import { mobileOrbitTemplate } from "./mobile-orbit";
 import { mobileScrollStoryTemplate } from "./mobile-scroll-story";
+import { responsiveScrollTemplate } from "./responsive-scroll";
 
 /**
  * Gallery order (Frames plan D12, orbit plan): the Slider, Frames and Orbit pairs, then the Scroll
@@ -23,6 +24,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
   mobileOrbitTemplate,
   scrollStoryTemplate,
   mobileScrollStoryTemplate,
+  responsiveScrollTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {
