@@ -28,7 +28,8 @@ async function openTemplate(page: Page, templateId: string): Promise<void> {
     });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Start with a template" }).click();
+  // The editor opens on the gallery when it starts on an empty project.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();

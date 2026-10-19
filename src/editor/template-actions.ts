@@ -76,14 +76,25 @@ export function useTemplateActions() {
     }
   }, []);
 
-  /** Demo screenshots for the empty required slots of the current (or default) template. */
-  const fillWithDemoContent = useCallback(async () => {
-    const { doc, addAssetsAndApplyTemplate } = useEditorStore.getState();
-    const template = demoContentTemplate(doc);
-    await addAssetsAndApplyTemplate(demoAssetsToFill(template, doc.assets), template.id, (d) =>
-      applyTemplate(template, d),
-    );
-  }, []);
+  /** Applies a template and fills its empty required slots with demo screenshots, in one step. */
+  const applyTemplateWithDemo = useCallback(
+    async (template: Template) => {
+      const { doc, addAssetsAndApplyTemplate } = useEditorStore.getState();
+      const result = await addAssetsAndApplyTemplate(
+        demoAssetsToFill(template, doc.assets),
+        template.id,
+        (d) => applyTemplate(template, d),
+      );
+      selectFirstShot(result);
+    },
+    [selectFirstShot],
+  );
 
-  return { applyTemplateById, addScreenshots, fillWithDemoContent };
+  /** Demo screenshots for the empty required slots of the current (or default) template. */
+  const fillWithDemoContent = useCallback(
+    () => applyTemplateWithDemo(demoContentTemplate(useEditorStore.getState().doc)),
+    [applyTemplateWithDemo],
+  );
+
+  return { applyTemplateById, applyTemplateWithDemo, addScreenshots, fillWithDemoContent };
 }

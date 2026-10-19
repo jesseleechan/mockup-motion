@@ -16,6 +16,8 @@ export interface UIState {
   theme: "dark" | "light";
   /** The template gallery is rendered once, in EditorShell; anything may open it (F06). */
   templateGalleryOpen: boolean;
+  /** The gallery was opened by the editor on start, not by the user (`firstRunGallery.ts`). */
+  firstRunGallery: boolean;
 
   // Actions
   setSelection: (selection: UISelection) => void;
@@ -25,6 +27,7 @@ export interface UIState {
   togglePanel: (panel: "library" | "inspector" | "timeline") => void;
   setTheme: (theme: "dark" | "light") => void;
   openTemplateGallery: () => void;
+  openFirstRunGallery: () => void;
   closeTemplateGallery: () => void;
 }
 
@@ -40,6 +43,7 @@ export const useUIStore = create<UIState>((set) => ({
   },
   theme: "dark",
   templateGalleryOpen: false,
+  firstRunGallery: false,
 
   setSelection: (selection) => set({ selection }),
   setPlayhead: (playhead) => set({ playhead }),
@@ -53,6 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
       },
     })),
   setTheme: (theme) => set({ theme }),
-  openTemplateGallery: () => set({ templateGalleryOpen: true }),
-  closeTemplateGallery: () => set({ templateGalleryOpen: false }),
+  openTemplateGallery: () => set({ templateGalleryOpen: true, firstRunGallery: false }),
+  openFirstRunGallery: () => set({ templateGalleryOpen: true, firstRunGallery: true }),
+  closeTemplateGallery: () => set({ templateGalleryOpen: false, firstRunGallery: false }),
 }));

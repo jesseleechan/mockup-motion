@@ -46,6 +46,9 @@ async function resetAndOpenMedia(page: Page) {
     });
   });
   await page.goto("/");
+  // Close the gallery the editor opens on, to add screenshots from the Media tab.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByRole("tab", { name: "Media" }).click();
 }
 

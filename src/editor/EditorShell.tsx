@@ -10,6 +10,7 @@ import { ProjectsModal } from "./dialogs/ProjectsModal";
 import { TemplateGalleryModal } from "./dialogs/TemplateGalleryModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
+import { startFirstRunGallery } from "./first-run-gallery";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
 import { useAudioPreview } from "./audio/useAudioPreview";
@@ -70,6 +71,7 @@ export const EditorShell: React.FC = () => {
 
     // 2. Autosave subscription
     const cancelAutosave = setupAutosave(useEditorStore);
+    const stopFirstRunGallery = startFirstRunGallery();
 
     // 3. V1 Database Migration
     checkAndMigrateV1()
@@ -96,6 +98,7 @@ export const EditorShell: React.FC = () => {
 
     return () => {
       cancelAutosave();
+      stopFirstRunGallery();
       window.removeEventListener("resize", checkMobile);
     };
   }, [loadDoc, setTheme]);

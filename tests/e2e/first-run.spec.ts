@@ -157,10 +157,8 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   test.setTimeout(90_000);
   await resetAndOpen(page);
 
-  // First run: pick a template before there are any screenshots.
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
-  await page.getByRole("button", { name: "Start with a template" }).click();
-  const gallery = page.getByRole("dialog");
+  // First run opens on the gallery: pick a template before there are any screenshots.
+  const gallery = page.getByRole("dialog", { name: /Template gallery/ });
   await expect(gallery).toBeVisible();
   await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
@@ -210,8 +208,7 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   page,
 }) => {
   await resetAndOpen(page);
-  await page.getByRole("button", { name: "Start with a template" }).click();
-  const gallery = page.getByRole("dialog");
+  const gallery = page.getByRole("dialog", { name: /Template gallery/ });
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
   await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
@@ -240,9 +237,10 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
 test("Presets D1: first run → demo content builds Desktop Slider", async ({ page }) => {
   test.setTimeout(90_000);
   await resetAndOpen(page);
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
-  await page.getByRole("button", { name: "Try with demo content" }).click();
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeHidden();
+  const gallery = page.getByRole("dialog", { name: /Template gallery/ });
+  await expect(gallery).toBeVisible();
+  await gallery.getByRole("button", { name: "Try with demo content" }).click();
+  await expect(gallery).toBeHidden();
   await expect
     .poll(async () => (await docState(page)).assetIds.length, { timeout: 20_000 })
     .toBe(5);
@@ -296,6 +294,9 @@ test("Frames plan §8: with only mobile screenshots the gallery suggests the mob
   page,
 }) => {
   await resetAndOpen(page);
+  // Close the gallery the editor opens on, to add screenshots from the Media tab.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByRole("tab", { name: "Media" }).click();
   const files = await Promise.all(
     ["#3366CC", "#8A1E3A"].map(async (background, i) => ({

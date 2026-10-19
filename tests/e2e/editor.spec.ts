@@ -38,8 +38,10 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
       }
     });
 
-    // 1. First run empty state
+    // 1. First run opens on the gallery; closing it shows the empty state
     await page.goto("/");
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Start with a template" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Choose screenshots" })).toBeVisible();
@@ -257,8 +259,10 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
       fs.mkdirSync(screenshotDir, { recursive: true });
     }
 
-    // 1. Empty state dark
+    // 1. Empty state dark, behind the gallery the editor opens on
     await page.goto("/");
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-empty-dark.png") });
 

@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+interface EditorStore {
+  getState: () => {
+    doc: { templateId?: string; assets: { role?: string }[] };
+    past: unknown[];
+  };
+}
+
 async function resetAndOpen(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.evaluate(async () => {
@@ -16,13 +23,37 @@ async function resetAndOpen(page: import("@playwright/test").Page) {
 }
 
 test.describe("WP-18 polish", () => {
-  test("first run opens the template gallery, then demo content", async ({ page }) => {
+  test("first run opens on the gallery; its demo content applies the selected preset", async ({
+    page,
+  }) => {
     await resetAndOpen(page);
+    const gallery = page.getByRole("dialog", { name: /Template gallery/ });
+    await expect(gallery).toBeVisible();
+    // Closing it leaves the empty state, which can open it again.
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await page.getByRole("button", { name: "Start with a template" }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Try with demo content" }).click();
+    await expect(gallery).toBeVisible();
+
+    await gallery.getByRole("button", { name: "Select template Mobile Slider" }).click();
+    await gallery.getByRole("button", { name: "Try with demo content" }).click();
+    await expect(gallery).toBeHidden();
+    // Mobile Slider with the mobile demo screenshots, in one undo step.
+    const state = () =>
+      page.evaluate(() => {
+        const store = (window as unknown as { __editorStore: EditorStore }).__editorStore;
+        const { doc, past } = store.getState();
+        return {
+          templateId: doc.templateId,
+          roles: doc.assets.map((a) => a.role),
+          undoSteps: past.length,
+        };
+      });
+    await expect.poll(async () => (await state()).roles.length).toBeGreaterThanOrEqual(3);
+    const applied = await state();
+    expect(applied.templateId).toBe("mobile-slider");
+    expect(new Set(applied.roles)).toEqual(new Set(["mobile"]));
+    expect(applied.undoSteps).toBe(1);
     await expect(page.locator("canvas").first()).toBeVisible();
   });
 

@@ -4,6 +4,7 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import {
   BUILTIN_TEMPLATES,
+  demoAssetsToFill,
   fittingTemplateId,
   getTemplateById,
   validateTemplateRequirements,
@@ -13,14 +14,14 @@ import {
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
-import { Check, Film, Monitor, Search, Smartphone, Sparkles, X } from "lucide-react";
+import { Check, Film, Monitor, Search, Smartphone, Sparkles, Wand2, X } from "lucide-react";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const open = useUIStore((s) => s.templateGalleryOpen);
   const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
-  const { applyTemplateById } = useTemplateActions();
+  const { applyTemplateById, applyTemplateWithDemo } = useTemplateActions();
   const onOpenChange = (next: boolean) => {
     if (!next) closeTemplateGallery();
   };
@@ -74,9 +75,29 @@ export const TemplateGalleryModal: React.FC = () => {
     closeTemplateGallery();
   };
 
+  // Offered while the selected template is missing screenshots the demo content can fill.
+  const canUseDemo = selectedTemplate
+    ? demoAssetsToFill(selectedTemplate, doc.assets).length > 0
+    : false;
+  const handleApplyWithDemo = async (template: Template) => {
+    closeTemplateGallery();
+    await applyTemplateWithDemo(template);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl">
+      <DialogContent
+        // Focus starts on the selected card, the one Apply uses, rather than the close button.
+        onOpenAutoFocus={(e) => {
+          const card = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+            `[data-template-id="${selectedTemplateId}"]`,
+          );
+          if (!card) return;
+          e.preventDefault();
+          card.focus({ preventScroll: true });
+        }}
+        className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--color-line)] flex items-center justify-between bg-[var(--color-panel)] shrink-0">
           <div>
@@ -154,8 +175,11 @@ export const TemplateGalleryModal: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTemplates.map((template) => {
                 const isSelected = selectedTemplateId === template.id;
+                // The selected card always plays, so something moves as soon as the gallery opens.
                 const isPreviewing =
-                  hoveredTemplateId === template.id || focusedTemplateId === template.id;
+                  isSelected ||
+                  hoveredTemplateId === template.id ||
+                  focusedTemplateId === template.id;
                 const validation = validateTemplateRequirements(template, doc.assets);
                 const requiredSlots = template.slots.filter((s) => s.required);
 
@@ -286,6 +310,15 @@ export const TemplateGalleryModal: React.FC = () => {
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
+            {selectedTemplate && canUseDemo && (
+              <Button
+                variant="secondary"
+                onClick={() => handleApplyWithDemo(selectedTemplate)}
+                icon={<Icon icon={Wand2} size={14} />}
+              >
+                Try with demo content
+              </Button>
+            )}
             <Button
               variant="primary"
               disabled={!selectedTemplate}
