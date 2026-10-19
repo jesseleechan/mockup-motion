@@ -59,8 +59,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
-  const assetIds = useMemo(() => doc.assets.map((asset) => asset.id), [doc.assets]);
-  const assetThumbnails = useAssetUrls(assetIds);
+  const assetThumbnails = useAssetUrls(doc.assets);
 
   // Which shots use this asset?
   const getAssetUsage = (assetId: string): number[] => {

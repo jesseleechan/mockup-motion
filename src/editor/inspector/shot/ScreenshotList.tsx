@@ -1,6 +1,5 @@
 import React, {
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type DragEvent,
@@ -74,8 +73,7 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   const moveAssetInShot = useEditorStore((s) => s.moveAssetInShot);
   const addScreenshotsToShot = useEditorStore((s) => s.addScreenshotsToShot);
   const { toast } = useToast();
-  const imageIds = useMemo(() => images.map((a) => a.id), [images]);
-  const urls = useAssetUrls(imageIds);
+  const urls = useAssetUrls(images);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The gap a dragged row would land in: 0 is before the first row.
   const [dropGap, setDropGap] = useState<number | null>(null);
