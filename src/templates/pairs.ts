@@ -2,12 +2,13 @@ import type { AssetRef, AssetRole } from "../doc/types";
 import type { TemplateCategory } from "./types";
 import { getTemplateById } from "./registry";
 
-/** The presets that come in a desktop and a mobile size (Frames plan D3). Scroll Story has none. */
+/** The presets that come in a desktop and a mobile size (Frames plan D3). */
 const SIZE_PAIRS: readonly (readonly [desktop: string, mobile: string])[] = [
   ["desktop-slider", "mobile-slider"],
   ["frames", "mobile-frames"],
   ["desktop-stack", "mobile-stack"],
   ["desktop-orbit", "mobile-orbit"],
+  ["scroll-story", "mobile-scroll-story"],
 ];
 
 const SCREENSHOT_ROLES: readonly AssetRole[] = ["desktop", "mobile", "tablet"];

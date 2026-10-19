@@ -10,10 +10,13 @@ import { desktopStackTemplate } from "./desktop-stack";
 import { mobileStackTemplate } from "./mobile-stack";
 import { desktopOrbitTemplate } from "./desktop-orbit";
 import { mobileOrbitTemplate } from "./mobile-orbit";
+import { mobileScrollStoryTemplate } from "./mobile-scroll-story";
+import { responsiveScrollTemplate } from "./responsive-scroll";
 
 /**
  * Gallery order (Frames plan D12, stack plan D5, orbit plan): the Slider, Frames, Stack and
- * Orbit pairs, each desktop first, then Scroll Story. The first entry is also the first-run default and the gallery's initial selection.
+ * Orbit pairs, then the Scroll Story pair, each desktop first, then Responsive Scroll. The first
+ * entry is also the first-run default and the gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
@@ -25,6 +28,8 @@ export const BUILTIN_TEMPLATES: Template[] = [
   desktopOrbitTemplate,
   mobileOrbitTemplate,
   scrollStoryTemplate,
+  mobileScrollStoryTemplate,
+  responsiveScrollTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {

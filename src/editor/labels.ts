@@ -173,6 +173,7 @@ export const DESTINATION_LABELS: Record<DestinationId, string> = {
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   desktop: "Desktop",
   mobile: "Mobile",
+  both: "Desktop + mobile",
 };
 
 /** Select options for the given values, labelled from one of the maps above. */
