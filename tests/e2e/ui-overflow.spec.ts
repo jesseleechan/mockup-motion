@@ -221,7 +221,7 @@ const THEMES: Theme[] = ["dark", "light"];
 test.describe("F08 overflow guard", () => {
   for (const viewport of VIEWPORTS) {
     for (const theme of THEMES) {
-      test(`no clipped text in the panels at ${viewport.width}×${viewport.height}, ${theme}`, async ({
+      test(`no clipped text in the panels at ${viewport.width}×${viewport.height}, ${theme}${viewport.width === 1280 ? " @smoke" : ""}`, async ({
         page,
       }) => {
         test.setTimeout(90000);

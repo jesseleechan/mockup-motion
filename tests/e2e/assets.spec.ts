@@ -40,7 +40,7 @@ declare global {
   }
 }
 
-test("F03: every built-in template loads a texture for every screen", async ({ page }) => {
+test("F03: every built-in template loads a texture for every screen @smoke", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
@@ -141,7 +141,7 @@ test("F03: a slower earlier setDocument never replaces the newer document's devi
   expect(nodeIds, "the single browser, none of the Frames cards").toEqual(["single:0"]);
 });
 
-test("F03: every multi-asset layout requests each independent image", async ({ page }) => {
+test("F03: every multi-asset layout requests each independent image @smoke", async ({ page }) => {
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
   await page.waitForFunction(() => window.__labReady === true);
   const missing = await page.evaluate(async () => {

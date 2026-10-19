@@ -17,6 +17,7 @@ export function defaultStyle(): Style {
   };
 }
 
+/** The dialog's default: the Custom preset in `src/export/destinations.ts`, an MP4 at 1080p. */
 export function defaultExport(): ExportSettings {
   return {
     destination: "custom",
@@ -24,7 +25,7 @@ export function defaultExport(): ExportSettings {
     fps: 30,
     quality: "high",
     format: "mp4",
-    supersample: 1.5,
+    supersample: 1,
   };
 }
 
