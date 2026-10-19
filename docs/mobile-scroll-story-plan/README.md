@@ -1,6 +1,6 @@
 # Mobile Scroll Story plan
 
-**Status: in review.** Written 18 October 2026. One implementation PR, stacked on the iPhone PR #50. The owner approved the preset from the shortlist of five presets on 18 October 2026, and its live preview, and answered the decisions in §2 the same day.
+**Status: done.** Written 18 October 2026. One implementation PR, stacked on the iPhone PR #50. The owner approved the preset from the shortlist of five presets on 18 October 2026, and its live preview, and answered the decisions in §2 the same day.
 
 **Mobile Scroll Story** is the mobile size of Scroll Story: one tall mobile screenshot on a phone, read section by section. With it, every effect in the gallery comes in a desktop and a mobile size.
 
@@ -22,7 +22,7 @@ Decided by the owner on 18 October 2026.
 | MS1 | Phone device, or the flat portrait card of the sliders and Frames     | **Phone**, made to look like an iPhone first: "We need to use a more realistic model of the iPhone if we go for the phone instead of the flat card", then "make it look exactly like it". That is its own PR, [#50](https://github.com/jesseleechan/mockup-motion/pull/50) (`docs/iphone-plan/README.md`); this PR is stacked on it.                                                                 |
 | MS2 | Rename Scroll Story to "Desktop Scroll Story", keep id `scroll-story` | **Yes** ("yes rename to Desktop Scroll Story"). Saved projects, `public/templates/scroll-story.*` and the four `scroll-story-*` baselines don't change; only the card text does.                                                                                                                                                                                                                     |
 | MS3 | The camera pill covered page content                                  | **Fixed by #50.** The phone now has a status bar, and a screenshot without one starts below it, so the Dynamic Island never covers the page. The page scrolls in the viewport below the status bar, so the durations are measured against that viewport: Aurelia's mobile page needs 10.2 s (10.5 s shot), Northwind 11.3 s and Field Notes 11.0 s (11.5 s), Maison Oak and Studio Kova fit in 10 s. |
-| MS4 | Visual baselines                                                      | 4 stills, as Scroll Story has: 16:9 and 9:16 at t = 0.8 s and 2.4 s. The first set, rendered with the old phone, was superseded by #50; the stills with the iPhone need the owner's written approval before they land.                                                                                                                                                                               |
+| MS4 | Visual baselines                                                      | 4 stills, as Scroll Story has: 16:9 and 9:16 at t = 0.8 s and 2.4 s. The first set, rendered with the old phone, was superseded by #50. **The owner approved the iPhone set on 19 October 2026** ("I approve the stills and baselines you're waiting on"); they are committed as the Visual baselines workflow wrote them (run 39176369897).                                                         |
 
 ## 3. Evidence
 
