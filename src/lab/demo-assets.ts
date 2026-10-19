@@ -1,5 +1,16 @@
 import type { AssetRef } from "../doc/types";
 import manifest from "../../public/demo/manifest.json" with { type: "json" };
+import aureliaDesktop from "../../public/demo/aurelia/sections.json" with { type: "json" };
+import aureliaMobile from "../../public/demo/aurelia/sections-mobile.json" with { type: "json" };
+import northwindDesktop from "../../public/demo/northwind/sections.json" with { type: "json" };
+import northwindMobile from "../../public/demo/northwind/sections-mobile.json" with { type: "json" };
+import maisonOakDesktop from "../../public/demo/maison-oak/sections.json" with { type: "json" };
+import maisonOakMobile from "../../public/demo/maison-oak/sections-mobile.json" with { type: "json" };
+import fieldNotesDesktop from "../../public/demo/field-notes/sections.json" with { type: "json" };
+import fieldNotesMobile from "../../public/demo/field-notes/sections-mobile.json" with { type: "json" };
+import studioKovaDesktop from "../../public/demo/studio-kova/sections.json" with { type: "json" };
+import studioKovaMobile from "../../public/demo/studio-kova/sections-mobile.json" with { type: "json" };
+import { captureMeta, type CaptureJson } from "../assets/capture-json";
 
 export type DemoSite = "aurelia" | "northwind" | "maison-oak" | "field-notes" | "studio-kova";
 export type DemoDevice = "desktop" | "mobile";
@@ -25,6 +36,15 @@ const SITES: readonly DemoSite[] = [
   "field-notes",
   "studio-kova",
 ];
+
+/** Each site's capture JSON per device: the sections of its full-page screenshots. */
+const CAPTURES: Record<DemoSite, Record<DemoDevice, CaptureJson>> = {
+  aurelia: { desktop: aureliaDesktop, mobile: aureliaMobile },
+  northwind: { desktop: northwindDesktop, mobile: northwindMobile },
+  "maison-oak": { desktop: maisonOakDesktop, mobile: maisonOakMobile },
+  "field-notes": { desktop: fieldNotesDesktop, mobile: fieldNotesMobile },
+  "studio-kova": { desktop: studioKovaDesktop, mobile: studioKovaMobile },
+};
 
 export function demoAssetId(site: DemoSite, device: DemoDevice, capture: DemoCapture): string {
   return `demo-${site}-${device}-${capture}`;
@@ -83,6 +103,10 @@ export function demoAssetRef(id: string): AssetRef {
     width: asset.width,
     height: asset.height,
     role: asset.role,
-    meta: { tall: asset.tall },
+    // A full page carries its capture's sections, as an imported capture does (R02).
+    meta:
+      asset.capture === "full"
+        ? { tall: asset.tall, ...captureMeta(CAPTURES[asset.site][asset.role]) }
+        : { tall: asset.tall },
   };
 }
