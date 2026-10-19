@@ -62,7 +62,6 @@ export const responsiveScrollTemplate: Template = {
       fixedShotDuration(layout, scroll, assets) ?? responsiveScrollTemplate.defaultDuration;
     // A scroll can't reverse, so the loop crossfades back to the top (contracts.md §5).
     shot.transitionIn = loopWrapCrossfade();
-    shot.entrance = "none";
     shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
     return { style, shots: [shot], loop: true };

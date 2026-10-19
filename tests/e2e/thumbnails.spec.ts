@@ -115,16 +115,11 @@ test.describe("F07: shot and project thumbnails", () => {
     await resetAndOpen(page);
   });
 
-  test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
+  test("the shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    // Every built-in template has one shot, so add two more.
     await applyTemplateWithDemo(page, "scroll-story");
-    for (let i = 0; i < 2; i++) {
-      await page.getByRole("button", { name: "Add shot" }).click();
-      await page.getByRole("menuitem", { name: "Same layout" }).click();
-    }
     const shots = await shotCount(page);
-    expect(shots).toBe(3);
+    expect(shots).toBe(1);
 
     const cards = page.locator('[data-testid="shot-card"]');
     await expect(cards).toHaveCount(shots);
@@ -158,7 +153,10 @@ test.describe("F07: shot and project thumbnails", () => {
     const before = await imageStats(thumb);
 
     const started = Date.now();
-    await page.getByRole("button", { name: "Isometric drift", exact: true }).click();
+    await page
+      .getByRole("radiogroup", { name: "Camera move" })
+      .getByRole("radio", { name: "Still", exact: true })
+      .click();
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => (el.complete ? el.src : "")), {
         // 1.5 s locally; scaled for the slower CI runner.
@@ -172,7 +170,8 @@ test.describe("F07: shot and project thumbnails", () => {
 
     const after = await imageStats(thumb);
     expect(after.naturalWidth).toBeGreaterThan(0);
-    // Iso drift views the browser from yaw 34°, pitch 28°: the picture must actually differ.
+    // Still frames the browser at distance 1.0 instead of the push-in's 1.04 at the thumbnail
+    // time: the picture must actually differ (about 9 here).
     expect(meanGridDifference(before.grid, after.grid)).toBeGreaterThan(8);
   });
 

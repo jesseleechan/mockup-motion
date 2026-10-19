@@ -7,24 +7,18 @@ import type {
   BrowserChrome,
   CameraPresetId,
   DestinationId,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   Layout,
   Shot,
   ShadowPreset,
-  Transition,
 } from "../doc/types";
 import type { TemplateCategory } from "../templates";
 
 export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   single: "Single device",
-  pair: "Responsive pair",
-  trio: "Responsive trio",
-  rows: "Marquee rows",
-  columns: "Phone columns",
-  wall: "Isometric wall",
-  stack: "Cascading stack",
+  rows: "Desktop frames",
+  columns: "Mobile frames",
   slider: "Slider",
   orbit: "Orbit",
   responsive: "Responsive scroll",
@@ -33,57 +27,15 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
   browser: "Browser",
   phone: "Phone",
-  tablet: "Tablet",
-  laptop: "Laptop",
   card: "Card",
 };
 
 export const CAMERA_LABELS: Record<CameraPresetId, string> = {
-  static: "Static",
+  static: "Still",
   pushIn: "Push in",
-  pullBack: "Pull back",
-  orbitLeft: "Orbit left",
-  orbitRight: "Orbit right",
-  tiltUp: "Tilt up",
-  tiltDown: "Tilt down",
-  riseUp: "Rise",
-  dollyLeft: "Dolly left",
-  dollyRight: "Dolly right",
-  isoDrift: "Isometric drift",
-  heroTilt: "Hero tilt",
 };
 
-/** Picker order: the calm moves first, then the directional pairs, then the showcase angles. */
-export const CAMERA_PRESET_ORDER: CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "riseUp",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "dollyLeft",
-  "dollyRight",
-  "heroTilt",
-  "isoDrift",
-];
-
-export const TRANSITION_LABELS: Record<Transition["kind"], string> = {
-  cut: "Cut",
-  fade: "Fade",
-  blur: "Blur",
-  push: "Push",
-  zoom: "Zoom",
-  wipe: "Wipe",
-};
-
-export const ENTRANCE_LABELS: Record<Shot["entrance"], string> = {
-  none: "None",
-  rise: "Rise",
-  scale: "Scale up",
-  stagger: "Stagger",
-};
+export const CAMERA_PRESET_ORDER: CameraPresetId[] = ["static", "pushIn"];
 
 export const EASING_LABELS: Record<EasingId, string> = {
   smooth: "Smooth",
@@ -105,15 +57,7 @@ export const SHADOW_LABELS: Record<ShadowPreset, string> = {
 
 export const BROWSER_CHROME_LABELS: Record<BrowserChrome, string> = {
   standard: "Standard",
-  minimal: "Minimal",
   none: "None",
-};
-
-export const DEVICE_FINISH_LABELS: Record<DeviceFinish, string> = {
-  graphite: "Graphite",
-  silver: "Silver",
-  black: "Black",
-  sand: "Sand",
 };
 
 export const ASSET_ROLE_LABELS: Record<AssetRole, string> = {
@@ -161,8 +105,6 @@ export function shotSummary(shot: Shot): string {
 /** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
 function shotSubject(layout: Layout): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
-  if (layout.kind === "rows" && layout.travel === "period") return "Desktop frames";
-  if (layout.kind === "columns" && layout.device === "card") return "Mobile frames";
   if (layout.kind === "slider" && layout.arrangement === "deck") {
     return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";
   }
