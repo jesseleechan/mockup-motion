@@ -189,16 +189,60 @@ function samePagePair(
   return undefined;
 }
 
-/** Required slots that fillSlots cannot fill from these assets. */
-export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
+/** Required slots that fillSlots finds no screenshot of their role for. */
+export function emptyRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
   const filled = fillSlots(t, assets);
-  // A full-page slot holding a short screenshot shows a page that never scrolls, so it still
-  // counts as missing (polish item 5): demo content adds a full-page capture for it.
-  return t.slots.filter(
-    (slot) =>
-      slot.required &&
-      (!filled[slot.key] || (slot.prefer === "tall" && !filled[slot.key]?.meta?.tall)),
-  );
+  return t.slots.filter((slot) => slot.required && !filled[slot.key]);
+}
+
+/**
+ * Required full-page slots that hold a short screenshot, with the screenshot each holds. Such a
+ * page never scrolls, so the slot still counts as missing (polish item 5).
+ */
+function shortFullPageSlots(
+  t: Template,
+  assets: AssetRef[],
+): { slot: SlotSpec; asset: AssetRef }[] {
+  const filled = fillSlots(t, assets);
+  return t.slots.flatMap((slot) => {
+    const asset = filled[slot.key];
+    return slot.required && slot.prefer === "tall" && asset && !asset.meta?.tall
+      ? [{ slot, asset }]
+      : [];
+  });
+}
+
+/**
+ * Required slots the assets can't fill properly: empty ones, and full-page ones holding a short
+ * screenshot. Demo content and the fill overlay offer to fill them.
+ */
+export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
+  const empty = new Set(emptyRequiredSlots(t, assets).map((slot) => slot.key));
+  for (const { slot } of shortFullPageSlots(t, assets)) empty.add(slot.key);
+  return t.slots.filter((slot) => empty.has(slot.key));
+}
+
+/**
+ * Which short screenshots the new screenshots replace: for each full-page slot holding a short
+ * screenshot, the first new full-page screenshot of its role, by asset id. Swapping the ids in
+ * the shots fills the slot without rebuilding the template, so shot edits stay.
+ */
+export function fullPageReplacements(
+  t: Template,
+  assets: AssetRef[],
+  added: AssetRef[],
+): Record<string, string> {
+  const replacements: Record<string, string> = {};
+  const used = new Set<string>();
+  for (const { slot, asset } of shortFullPageSlots(t, assets)) {
+    const tall = added.find(
+      (a) => a.kind === "image" && a.role === slot.role && a.meta?.tall && !used.has(a.id),
+    );
+    if (!tall) continue;
+    replacements[asset.id] = tall.id;
+    used.add(tall.id);
+  }
+  return replacements;
 }
 
 /**

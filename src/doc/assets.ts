@@ -22,6 +22,36 @@ export function layoutAssetIds(layout: Layout): string[] {
   }
 }
 
+/** Swaps screen asset ids in a layout, `from` id to `to` id; ids not in the map stay. */
+export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string>): void {
+  const swap = (id: string) => map[id] ?? id;
+  switch (layout.kind) {
+    case "single":
+      layout.assetId = swap(layout.assetId);
+      return;
+    case "pair":
+    case "responsive":
+      layout.desktopId = swap(layout.desktopId);
+      layout.mobileId = swap(layout.mobileId);
+      return;
+    case "trio":
+      layout.desktopId = swap(layout.desktopId);
+      layout.mobileId = swap(layout.mobileId);
+      if (layout.tabletId) layout.tabletId = swap(layout.tabletId);
+      return;
+    case "rows":
+    case "columns":
+    case "wall":
+    case "stack":
+    case "slider":
+    case "orbit":
+      layout.assetIds = layout.assetIds.map(swap);
+      return;
+    case "title":
+      return;
+  }
+}
+
 /** The image asset a background draws, or null for procedural backgrounds. */
 export function backgroundAssetId(background: Background | undefined): string | null {
   if (!background) return null;
