@@ -1,7 +1,22 @@
-import type { ScrollSpec } from "../doc/types";
+import type { AssetRef, DeviceKind, ScrollSpec } from "../doc/types";
+import { phoneViewportFraction } from "./phone-spec";
 import { ease } from "./easing";
 
 const SPEED_LIMIT_VH_PER_SEC = 0.9;
+
+/**
+ * How far a screenshot scrolls on a device screen, in viewport heights. The viewport is the
+ * screen, or on a phone the screen below the status bar unless the screenshot has its own.
+ */
+export function scrollableFramesFor(
+  device: DeviceKind,
+  screenAspect: number,
+  asset: Pick<AssetRef, "width" | "height" | "meta"> | undefined,
+): number {
+  if (!asset?.width || !asset.height) return 0;
+  const viewport = device === "phone" ? phoneViewportFraction(asset.meta?.hasStatusBar) : 1;
+  return Math.max(0, screenAspect / (asset.width / asset.height) / viewport - 1);
+}
 
 /**
  * Calculates the minimum shot duration required for a scroll specification
