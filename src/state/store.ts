@@ -6,6 +6,7 @@ import type {
   AssetMeta,
   AssetRef,
   AssetRole,
+  DeviceKind,
   Layout,
   ProjectDoc,
   Shot,
@@ -113,18 +114,23 @@ function fitFixedShots(draft: ProjectDoc): void {
   }
 }
 
+/** The screenshot role each single device shows. */
+const DEVICE_ROLE: Partial<Record<DeviceKind, AssetRole>> = {
+  browser: "desktop",
+  phone: "mobile",
+};
+
 /**
- * Puts the first added screenshot on every single-device shot whose screen is empty, such as a
- * new project's shot, so an upload shows at once. A mobile screenshot turns a browser into a
- * phone.
+ * Puts the first added screenshot of the device's role on every single-device shot whose screen
+ * is empty, such as a new project's browser, so an upload shows at once. A browser takes a
+ * desktop screenshot and a phone a mobile one; other screenshots only join the library.
  */
 function fillEmptyScreens(draft: ProjectDoc, refs: AssetRef[]): void {
-  const first = refs.find((ref) => ref.kind === "image");
-  if (!first) return;
   for (const shot of draft.shots) {
     if (shot.layout.kind !== "single" || shot.layout.assetId) continue;
-    shot.layout.assetId = first.id;
-    if (shot.layout.device === "browser" && first.role === "mobile") shot.layout.device = "phone";
+    const role = DEVICE_ROLE[shot.layout.device];
+    const match = refs.find((ref) => ref.kind === "image" && ref.role === role);
+    if (match) shot.layout.assetId = match.id;
   }
 }
 

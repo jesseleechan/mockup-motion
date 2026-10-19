@@ -96,7 +96,6 @@ export function newProjectStyle(): Style {
   return {
     ...defaultStyle(),
     background: structuredClone(ash.background),
-    textColor: ash.textColor,
     frameAppearance: ash.frameAppearance,
     shadow: "none",
     grain: 0,

@@ -50,10 +50,19 @@ describe("New project: the first screenshot fills the empty screen", () => {
     expect(singleLayout(store)).toEqual({ kind: "single", device: "browser", assetId: "home" });
   });
 
-  it("turns the browser into a phone for a mobile screenshot", async () => {
+  it("fills a screen only with a screenshot of its device's role", async () => {
     const store = createEditorStore();
     await store.getState().addAssets([image("home-mobile", "mobile")]);
-    expect(singleLayout(store)).toEqual({
+    expect(singleLayout(store)).toEqual({ kind: "single", device: "browser", assetId: "" });
+    await store.getState().addAssets([image("about-mobile", "mobile"), image("home", "desktop")]);
+    expect(singleLayout(store)).toEqual({ kind: "single", device: "browser", assetId: "home" });
+
+    const phone = createEditorStore();
+    phone.getState().apply((d) => {
+      d.shots[0].layout = { kind: "single", device: "phone", assetId: "" };
+    });
+    await phone.getState().addAssets([image("home", "desktop"), image("home-mobile", "mobile")]);
+    expect(singleLayout(phone)).toEqual({
       kind: "single",
       device: "phone",
       assetId: "home-mobile",
@@ -63,7 +72,7 @@ describe("New project: the first screenshot fills the empty screen", () => {
   it("never replaces a screenshot already on screen", async () => {
     const store = createEditorStore();
     await store.getState().addAssets([image("home", "desktop")]);
-    await store.getState().addAssets([image("about", "mobile")]);
+    await store.getState().addAssets([image("about", "desktop")]);
     expect(singleLayout(store)).toEqual({ kind: "single", device: "browser", assetId: "home" });
   });
 });
