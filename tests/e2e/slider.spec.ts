@@ -378,7 +378,10 @@ test.describe("slider editing", () => {
 
     // A slider sets its own length, so the inspector shows it as a read-out, not a control.
     await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
-    await expect(page.getByText("Loop length", { exact: true })).toBeVisible();
+    const loopLength = page
+      .locator('[data-panel="inspector"] [data-field]')
+      .filter({ hasText: "Loop length" });
+    await expect(loopLength).toContainText(`${(n * 2).toFixed(1)} s`);
 
     // Calm is 2.4 s per step (quality bar §2.2), one edit.
     const pace = page.getByRole("radiogroup", { name: "Pace" });
@@ -389,7 +392,7 @@ test.describe("slider editing", () => {
     await pace.getByRole("radio", { name: "Calm" }).click();
     await expect.poll(async () => (await sliderShot(page)).step).toBe(2.4);
     expect((await sliderShot(page)).duration).toBeCloseTo(n * 2.4, 9);
-    await expect(page.getByText(`${(n * 2.4).toFixed(1)} s`).first()).toBeVisible();
+    await expect(loopLength).toContainText(`${(n * 2.4).toFixed(1)} s`);
     await expect(pace.getByRole("radio", { name: "Calm" })).toHaveAttribute("aria-checked", "true");
 
     await page.getByRole("button", { name: "Undo" }).click();

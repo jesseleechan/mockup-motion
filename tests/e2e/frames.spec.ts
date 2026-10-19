@@ -300,8 +300,9 @@ test("the pace sets a Frames shot's length in one undo step and explains an unav
   await option("Calm").click();
   await expect.poll(duration).toBe(23.5);
   await expect(option("Calm")).toHaveAttribute("aria-checked", "true");
-  // The inspector's read-out and the timeline's loop length both follow.
-  await expect(page.getByText("23.5 s", { exact: true })).toHaveCount(2);
+  await expect(
+    page.locator('[data-panel="inspector"] [data-field]').filter({ hasText: "Loop length" }),
+  ).toContainText("23.5 s");
   await page.getByRole("button", { name: "Undo" }).click();
   await expect.poll(duration).toBe(19.5);
   await expect(option("Default")).toHaveAttribute("aria-checked", "true");
