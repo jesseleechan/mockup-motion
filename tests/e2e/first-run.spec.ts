@@ -170,7 +170,7 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   // Applied with empty slots: the overlay asks for screenshots.
   const overlay = page.getByTestId("fill-template-overlay");
   await expect(overlay).toBeVisible();
-  await expect(overlay).toContainText("Add screenshots to fill this template");
+  await expect(overlay).toContainText("Needs a full-page desktop screenshot");
   const applied = await docState(page);
   expect(applied.templateId).toBe("scroll-story");
   expect(applied.assetIds).toEqual([]);

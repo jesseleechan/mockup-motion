@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { produce } from "immer";
 import { newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
+import { replaceLayoutAssetIds } from "../doc/assets";
 import { readLastExport, writeLastExport } from "../export/last-settings";
 import type {
   AssetMeta,
@@ -56,7 +57,15 @@ export interface EditorStoreState {
    */
   rememberExport: (settings: ExportSettings) => void;
   applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
-  addAssets: (refs: AssetRef[], blobs?: Record<string, Blob>) => Promise<void>;
+  /**
+   * Adds assets. `replace` swaps screen asset ids in every shot (old id to new id) in the same
+   * undo step, such as a full-page screenshot taking a short one's place in Scroll Story.
+   */
+  addAssets: (
+    refs: AssetRef[],
+    blobs?: Record<string, Blob>,
+    replace?: Record<string, string>,
+  ) => Promise<void>;
   /**
    * Adds assets and applies a template in one undo step. `build` receives the document with
    * the new assets already in it, so the template's slots can fill from them.
@@ -288,7 +297,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    addAssets: async (refs: AssetRef[], blobs?: Record<string, Blob>) => {
+    addAssets: async (refs, blobs, replace) => {
       if (blobs) {
         for (const [id, blob] of Object.entries(blobs)) {
           await putBlob(id, blob);
@@ -300,6 +309,9 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
             if (!draft.assets.some((a) => a.id === ref.id)) {
               draft.assets.push(ref);
             }
+          }
+          if (replace) {
+            for (const shot of draft.shots) replaceLayoutAssetIds(shot.layout, replace);
           }
           fillEmptyScreens(draft, refs);
         },

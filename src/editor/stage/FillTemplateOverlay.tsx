@@ -3,6 +3,8 @@ import { Button, Icon } from "../../ui";
 import { Sparkles, UploadCloud } from "lucide-react";
 
 interface FillTemplateOverlayProps {
+  /** What the template still needs, as its gallery card says it (`templateNeeds`). */
+  needs: string;
   onChooseScreenshots: () => void;
   onUseDemoContent: () => void;
 }
@@ -12,6 +14,7 @@ interface FillTemplateOverlayProps {
  * takes pointer events, so the stage and its drop targets stay usable around it.
  */
 export const FillTemplateOverlay: React.FC<FillTemplateOverlayProps> = ({
+  needs,
   onChooseScreenshots,
   onUseDemoContent,
 }) => (
@@ -21,9 +24,7 @@ export const FillTemplateOverlay: React.FC<FillTemplateOverlayProps> = ({
       aria-label="Fill this template"
       className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200"
     >
-      <p className="text-xs font-medium text-[var(--color-text)]">
-        Add screenshots to fill this template
-      </p>
+      <p className="text-xs font-medium text-[var(--color-text)]">{needs}</p>
       <div className="flex items-center gap-2">
         <Button
           variant="primary"
