@@ -65,13 +65,11 @@ export type Background =
   | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // 2-3 stops, OKLCH-interpolated
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
-export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
-export type BrowserChrome = "standard" | "minimal" | "none";
+export type BrowserChrome = "standard" | "none";
 
 export interface Style {
   background: Background;
   frameAppearance: "light" | "dark";
-  deviceFinish: DeviceFinish;
   browserChrome: BrowserChrome;
   browserUrl: string; // shown in URL pill; "" hides text
   shadow: ShadowPreset;
@@ -233,6 +231,8 @@ Gradient angles use CSS direction in normalized frame coordinates: 0° runs bott
 
 Mesh, ambient and image backgrounds were removed on 19 October 2026. `sanitizeDoc` loads a saved mesh as a gradient from its first to its last colour (315°, CSS), and a saved ambient or image background as the Ash solid `#DFE1E3`. The v1 migration turns a v1 image background into Ash too.
 
+Device finishes and the `minimal` browser chrome were removed on 19 October 2026. `sanitizeDoc` drops a saved `deviceFinish`, so every device loads in its one finish (the phone in Silver, `quality-bar.md` §3.3), and loads a saved `minimal` chrome as `standard`.
+
 ## 3. Stage, units and camera
 
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
@@ -368,7 +368,7 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 

@@ -28,7 +28,6 @@ describe("editor labels (F08)", () => {
       "BROWSER_CHROME_LABELS",
       "CAMERA_LABELS",
       "DESTINATION_LABELS",
-      "DEVICE_FINISH_LABELS",
       "DEVICE_LABELS",
       "EASING_LABELS",
       "ENTRANCE_LABELS",

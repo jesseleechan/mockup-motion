@@ -17,7 +17,6 @@ import type {
   CameraMove,
   CameraPresetId,
   CaptureSection,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   ExportSettings,
@@ -55,8 +54,7 @@ const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
   "heroTilt",
 ];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
-const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
+const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
 // Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
@@ -154,9 +152,8 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   const style: Style = {
     background: sanitizeBackground(rawStyle.background),
     frameAppearance: rawStyle.frameAppearance === "dark" ? "dark" : "light",
-    deviceFinish: includesValue(VALID_DEVICE_FINISHES, rawStyle.deviceFinish)
-      ? rawStyle.deviceFinish
-      : defaults.style.deviceFinish,
+    // Device finishes were removed: a saved `deviceFinish` is dropped, so every phone loads in
+    // the one finish (quality-bar §3.3). The removed `minimal` chrome loads as `standard`.
     browserChrome: includesValue(VALID_BROWSER_CHROMES, rawStyle.browserChrome)
       ? rawStyle.browserChrome
       : defaults.style.browserChrome,
