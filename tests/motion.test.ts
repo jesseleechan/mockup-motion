@@ -134,22 +134,9 @@ describe("RNG (src/motion/rng.ts)", () => {
 });
 
 describe("Camera (src/motion/camera.ts)", () => {
-  const ALL_PRESETS: CameraPresetId[] = [
-    "static",
-    "pushIn",
-    "pullBack",
-    "orbitLeft",
-    "orbitRight",
-    "tiltUp",
-    "tiltDown",
-    "riseUp",
-    "dollyLeft",
-    "dollyRight",
-    "isoDrift",
-    "heroTilt",
-  ];
+  const ALL_PRESETS: CameraPresetId[] = ["static", "pushIn"];
 
-  it("PRESET_POSES exports all 12 camera presets", () => {
+  it("PRESET_POSES exports every camera preset", () => {
     for (const preset of ALL_PRESETS) {
       expect(PRESET_POSES[preset]).toBeDefined();
       expect(PRESET_POSES[preset].from).toBeDefined();
@@ -469,10 +456,10 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     const schedPush = schedule(docPushIn);
     assertDeepCloseTo(evaluate(docPushIn, 0), evaluate(docPushIn, schedPush.total));
 
-    // 3. Single orbitLeft + loop + float
+    // 3. Single pushIn + loop + float
     const docOrbit = createDoc();
     docOrbit.loop = true;
-    docOrbit.shots[0].camera = { preset: "orbitLeft", intensity: 1, easing: "smooth", float: 0.5 };
+    docOrbit.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 };
     docOrbit.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
     const schedOrbit = schedule(docOrbit);
     assertDeepCloseTo(evaluate(docOrbit, 0), evaluate(docOrbit, schedOrbit.total));
@@ -493,14 +480,14 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
         id: "shot-1",
         duration: 4,
         transitionIn: { kind: "push", duration: 0.7, easing: "quintInOut", direction: "left" },
-        camera: { preset: "orbitRight", intensity: 0.8, easing: "smooth", float: 0 },
+        camera: { preset: "static", intensity: 0, easing: "smooth", float: 0.4 },
       },
       {
         ...defaultShot(),
         id: "shot-2",
         duration: 4,
         transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
-        camera: { preset: "tiltUp", intensity: 0.6, easing: "smooth", float: 0 },
+        camera: { preset: "pushIn", intensity: 0.6, easing: "smooth", float: 0 },
       },
     ];
     const sched3Shot = schedule(doc3Shot);
@@ -547,7 +534,7 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     const rng = mulberry32(987654);
 
     const aspects: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
-    const presets: CameraPresetId[] = ["static", "pushIn", "pullBack", "orbitLeft", "tiltUp"];
+    const presets: CameraPresetId[] = ["static", "pushIn"];
     const easings: EasingId[] = ["smooth", "gentle", "expoOut", "quintInOut"];
 
     for (let i = 0; i < 1000; i++) {

@@ -37,7 +37,7 @@ function savedDoc(layout: Record<string, unknown>, aspect: Aspect = "16:9"): unk
     ...defaultShot(),
     duration: 8,
     entrance: "rise",
-    camera: { preset: "isoDrift", intensity: 0.5, easing: "smooth", float: 0.2 },
+    camera: { preset: "pushIn", intensity: 0.5, easing: "smooth", float: 0.2 },
     transitionIn: { kind: "fade", duration: 0.8, easing: "quintInOut" },
     layout,
   };
@@ -66,7 +66,7 @@ describe("Saved projects with removed layouts", () => {
       const doc = load({ kind: "pair", desktopId: "d1", mobileId: "m1", arrangement });
       expect(doc.shots[0].layout).toEqual({ kind: "single", device: "browser", assetId: "d1" });
       // A single browser keeps the shot's own camera, entrance and wrap.
-      expect(doc.shots[0].camera.preset).toBe("isoDrift");
+      expect(doc.shots[0].camera.preset).toBe("pushIn");
       expect(doc.shots[0].entrance).toBe("rise");
       expect(doc.shots[0].transitionIn.kind).toBe("fade");
       expectDrawsScreens(doc, ["d1"]);
@@ -156,7 +156,7 @@ describe("Saved projects with removed layouts", () => {
     const doc = load(frames as unknown as Record<string, unknown>);
     expect(doc.shots[0].layout).toEqual(frames);
     // Not a removed layout, so the saved camera and length stay.
-    expect(doc.shots[0].camera.preset).toBe("isoDrift");
+    expect(doc.shots[0].camera.preset).toBe("pushIn");
     expect(doc.shots[0].duration).toBe(8);
   });
 

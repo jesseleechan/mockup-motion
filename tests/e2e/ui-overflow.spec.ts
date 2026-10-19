@@ -107,7 +107,7 @@ async function openReel(page: Page) {
       id: "shot-phone",
       layout: { kind: "single" as const, device: "phone" as const, assetId },
     };
-    phone.camera.preset = "orbitRight";
+    phone.camera.preset = "static";
     opening.duration = 4;
     single.duration = 4;
     phone.duration = 4;
@@ -278,10 +278,8 @@ const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
 // Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
-const NODE_ID = String.raw`\b(?:single|row\d+|col\d+):[a-z0-9]+`;
-const RAW_ID = new RegExp(
-  String.raw`pushIn|heroTilt|isoDrift|row\d+:col\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`,
-);
+const NODE_ID = String.raw`\\b(?:single|row\\d+|col\\d+):[a-z0-9]+`;
+const RAW_ID = new RegExp(String.raw`pushIn|row\\d+:col\\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`);
 
 async function expectNoRawIds(page: Page, context: string) {
   const text = await page.evaluate(() => document.body.innerText);
@@ -294,19 +292,21 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await resetAndOpen(page, "dark");
   await openReel(page);
 
-  // Shots on Hero tilt and Isometric drift, beside the reel's Push in.
+  // Shots on both camera moves, Still and Push in; only the middle browser pushes in, so its
+  // timeline label is unique (the opening shot is a copy of it).
   // Set through the store, so the checks below don't depend on finding the labels first.
   await page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
     if (!store) throw new Error("__editorStore is unavailable");
     store.getState().apply((draft) => {
-      draft.shots[1].camera.preset = "heroTilt";
-      draft.shots[2].camera.preset = "isoDrift";
+      draft.shots[0].camera.preset = "static";
+      draft.shots[1].camera.preset = "pushIn";
+      draft.shots[2].camera.preset = "static";
     });
   });
   const doc = await currentDoc(page);
   expect(doc.shots.map((s) => s.camera.preset)).toEqual(
-    expect.arrayContaining(["pushIn", "heroTilt", "isoDrift"]),
+    expect.arrayContaining(["pushIn", "static"]),
   );
 
   await select(page, { kind: "video" });
@@ -318,11 +318,11 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
 
   // The human labels are the ones the task names.
   const timeline = page.locator('[data-panel="timeline"]');
-  await expect(timeline.getByText("Browser · Hero tilt")).toBeVisible();
+  await expect(timeline.getByText("Browser · Push in")).toBeVisible();
   await select(page, { kind: "shot", id: doc.shots[2].id });
   await expect(
-    page.locator('[data-panel="inspector"]').getByRole("button", { name: "Isometric drift" }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.locator('[data-panel="inspector"]').getByRole("radio", { name: "Still", exact: true }),
+  ).toBeChecked();
 
   // The drop hint over a Frames row, whose nodes are "row1:item0" and so on.
   await resetAndOpen(page, "dark");
