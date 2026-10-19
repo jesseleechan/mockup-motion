@@ -8,6 +8,7 @@ import {
   type ExportPlanResult,
 } from "../../export/plan";
 import { probeVideoEncoders } from "../../export/probe";
+import { afterNextPaint } from "../defer";
 
 const NO_PROBE_NEEDED: EncoderSupport = { avc: false, vp9: false };
 
@@ -46,14 +47,19 @@ export function useExportPlan(
   useEffect(() => {
     if (!open || !needsProbe) return;
     let cancelled = false;
-    for (const { key, width, height } of probes) {
-      probeVideoEncoders({ width, height, fps, quality }).then((res) => {
-        if (cancelled) return;
-        setProbed((p) => (p[key] ? p : { ...p, [key]: { avc: res.avc, vp9: res.vp9 } }));
-      });
-    }
+    // VideoEncoder.isConfigSupported blocks the main thread (60–500 ms per open, measured
+    // locally with SwiftShader), so the dialog paints first, with "Checking encoder…".
+    const cancelWait = afterNextPaint(() => {
+      for (const { key, width, height } of probes) {
+        probeVideoEncoders({ width, height, fps, quality }).then((res) => {
+          if (cancelled) return;
+          setProbed((p) => (p[key] ? p : { ...p, [key]: { avc: res.avc, vp9: res.vp9 } }));
+        });
+      }
+    });
     return () => {
       cancelled = true;
+      cancelWait();
     };
   }, [open, needsProbe, probes, fps, quality]);
 

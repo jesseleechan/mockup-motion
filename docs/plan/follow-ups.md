@@ -14,6 +14,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | `Engine.pick()` returns meaningless UVs for meshes other than screens.                                                              | F04, F06 |
 | The screen material ignores device `material.opacity`.                                                                              | F02      |
 | The inspector can't narrow below 304 px (`panel-layout.ts`): its selects ("Single device") clip below it.                           | Windows  |
+| Preview start-up blocks the main thread on GPU round trips under SwiftShader (CI's software GPU), measured locally after "Try with demo content": `TextureManager.extractRowColor` reads one row back with `getImageData` from a GPU-backed 2D canvas (1.3–1.6 s in one task, waiting behind the WebGL uploads queued before it), the stage's `WebGLRenderer` creation takes 0.4–2 s, and each thumbnail's `convertToBlob` 0.3–0.5 s. A `willReadFrequently` canvas for the row read would likely remove the first. These long tasks are why the export dialog's chunk loaded so slowly on its first click. | Export open latency |
 
 ## Templates and layouts
 
@@ -42,6 +43,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | Space always plays or pauses the video, even when a button has focus, so Space can't press a focused button (Enter still works). `EditorShell.tsx` could leave Space to focused buttons, switches and chips.                                                                                                                            | Loop chips         |
 | The stage preview shows screenshots soft: a 2880 px desktop capture on a ~540 px browser screen looks blurred next to the same capture downscaled with Lanczos. `main` renders the same pixels (checked on #77).                                                                                                                        | First run (polish) |
 | The gallery dialog has an empty band above its header: `DialogContent` (`src/ui/Dialog.tsx`) always renders its title row with the close button, and the gallery draws its own header below it.                                                                                                                                         | First run (polish) |
+| `EditorShell` subscribes to `playhead` only for its arrow-key handler, so the whole shell re-renders at every playhead write during playback (~30 Hz, `EngineCanvas`'s `STORE_WRITE_INTERVAL_MS`). Reading the playhead with `useUIStore.getState()` in the handler would avoid it. It played no part in the export dialog's open latency: nothing plays in those tests, and no playhead write happened between the click and the dialog. | Export open latency |
 
 ## Export
 
