@@ -18,6 +18,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | `Engine.pick()` returns the phone for much of the desktop screen in the pair overlap layout, and returns meaningless UVs for meshes other than screens.                                                                                                                 | F04, F06              |
 | The module-level cursor textures in `CursorSprites.ts` are never disposed (small and shared).                                                                                                                                                                           | F01                   |
 | The screen material ignores device `material.opacity`.                                                                                                                                                                                                                  | F02                   |
+| Side panel minimums (`panel-layout.ts`) follow their widest content: the Library's tabs need 272 px while the Brand tab exists, and the inspector's selects clip below 304 px. They can drop after the brand cut and inspector polish.                                  | Polish: windows       |
 
 ## Templates and layouts
 
