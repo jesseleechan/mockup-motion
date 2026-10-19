@@ -10,6 +10,7 @@ import {
 } from "../motion/layouts/duration";
 import type {
   Aspect,
+  AssetMeta,
   AssetRef,
   AudioTrack,
   AssetRole,
@@ -17,6 +18,7 @@ import type {
   BrowserChrome,
   CameraMove,
   CameraPresetId,
+  CaptureSection,
   DeviceFinish,
   DeviceKind,
   EasingId,
@@ -159,7 +161,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (typeof a.role === "string") ref.role = a.role as AssetRole;
         if (Array.isArray(a.palette))
           ref.palette = a.palette.filter((p: unknown): p is string => typeof p === "string");
-        if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
+        if (a.meta && typeof a.meta === "object") ref.meta = sanitizeAssetMeta(a.meta);
         if (typeof a.family === "string") ref.family = a.family;
         if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;
         if (Array.isArray(a.peaks)) {
@@ -250,6 +252,13 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   if (shots.length === 0) {
     warnings.push("No valid shots found in document. Created a default shot.");
     shots.push(defaultShot());
+  }
+
+  // A scrolling responsive layout lasts its holds plus moves, which depend on its screenshots
+  // (contracts.md §5), so its length is set once the assets are known.
+  for (const shot of shots) {
+    const fixed = fixedShotDuration(shot.layout, shot.scroll, assets);
+    if (fixed !== null) shot.duration = fixed;
   }
 
   const doc: ProjectDoc = {
@@ -442,6 +451,12 @@ function sanitizeShot(
       hold: clamp(typeof sc.hold === "number" ? sc.hold : 0.8, 0, 10),
       easing: includesValue(VALID_EASINGS, sc.easing) ? sc.easing : "smooth",
     };
+    // Responsive Scroll's section stops: keys in page order; unset means the default stops.
+    if (Array.isArray(sc.sections)) {
+      shot.scroll.sections = sc.sections.filter(
+        (key): key is string => typeof key === "string" && key !== "",
+      );
+    }
   }
 
   if (s.styleOverrides && typeof s.styleOverrides === "object") {
@@ -494,6 +509,12 @@ function sanitizeLayout(
         kind: "single",
         device: includesValue(VALID_DEVICE_KINDS, l.device) ? l.device : "browser",
         assetId: checkAsset(l.assetId, "assetId"),
+      };
+    case "responsive":
+      return {
+        kind: "responsive",
+        desktopId: checkAsset(l.desktopId, "desktopId"),
+        mobileId: checkAsset(l.mobileId, "mobileId"),
       };
     case "rows": {
       const res: Layout = {
@@ -627,4 +648,32 @@ function sanitizeTextLayer(t: Record<string, unknown>, assetIds: Set<string>): T
   }
 
   return layer;
+}
+
+/**
+ * Keeps well-formed section data on a stored asset's meta and drops the rest: sections need a
+ * string id and a top ≥ 0, sorted ascending; page must be a string.
+ */
+function sanitizeAssetMeta(meta: AssetMeta): AssetMeta {
+  const clean: AssetMeta = { ...meta };
+  if (Array.isArray(meta.sections)) {
+    const sections = (meta.sections as unknown[])
+      .filter(
+        (s): s is CaptureSection =>
+          !!s &&
+          typeof s === "object" &&
+          typeof (s as CaptureSection).id === "string" &&
+          (s as CaptureSection).id !== "" &&
+          Number.isFinite((s as CaptureSection).top) &&
+          (s as CaptureSection).top >= 0,
+      )
+      .map((s) => ({ id: s.id, top: s.top }))
+      .sort((a, b) => a.top - b.top);
+    if (sections.length > 0) clean.sections = sections;
+    else delete clean.sections;
+  } else {
+    delete clean.sections;
+  }
+  if (typeof meta.page !== "string") delete clean.page;
+  return clean;
 }

@@ -3,6 +3,20 @@ export type AssetRole = "desktop" | "mobile" | "tablet" | "logo" | "background" 
 export type EasingId =
   | "linear" | "gentle" | "smooth" | "expoOut" | "quintInOut" | "backOut" | "spring" | "slide";
 
+/** A section of a captured page: its key (`id`, else `tag.class`) and top edge in image px. */
+export interface CaptureSection {
+  id: string;
+  top: number;
+}
+
+export interface AssetMeta {
+  tall?: boolean;          // image analysis (WP-13)
+  hasStatusBar?: boolean;  // image analysis (WP-06)
+  bottomColor?: string;    // image analysis (WP-06)
+  sections?: CaptureSection[]; // from the capture's JSON, ascending (Responsive Scroll)
+  page?: string;           // the capture's URL: pairs a desktop and a mobile capture of one page
+}
+
 export interface AssetRef {
   id: string;
   kind: "image" | "font" | "audio";
@@ -13,7 +27,7 @@ export interface AssetRef {
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
   palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
-  meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
+  meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
   durationSec?: number;    // audio
   peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
@@ -62,6 +76,7 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
+  | { kind: "responsive"; desktopId: string; mobileId: string }
   | { kind: "title" };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
@@ -75,6 +90,8 @@ export type Layout =
 // orbit: the screenshots on a ring seen from slightly above, cards always facing the camera. Each
 // step turns the next card (from the right) to the front. shape and step as for slider; at most
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
+// responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
+// (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
 // cards and rows (default: 0.14 × width across, 0.06 down).
 // columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"
@@ -109,6 +126,8 @@ export interface CameraPose {
 export interface ScrollSpec {
   enabled: boolean;        // opt-in; never auto-enabled
   stops: number[];         // 0..1 positions in scrollable range, ascending, first is 0
+  sections?: string[];     // responsive: section keys to stop at after the top, in page order.
+                           // Unset = the default stops; `stops` is the fallback without section data
   hold: number;            // seconds held at each stop
   easing: EasingId;
 }
@@ -147,7 +166,7 @@ export interface Shot {
   layout: Layout;
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
-  scroll?: ScrollSpec;     // honoured only for single-device layouts
+  scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
   cursor?: CursorSpec;     // honoured only for single-device layouts
   texts: TextLayer[];
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
