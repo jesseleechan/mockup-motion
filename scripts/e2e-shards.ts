@@ -27,6 +27,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "first-run",
     "backgrounds",
     "spike",
+    "responsive-scroll",
   ],
   [
     "editor",
