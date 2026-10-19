@@ -14,7 +14,7 @@ This session removes the layouts no template builds, the laptop and tablet devic
 
 The preset sessions are still changing these files: Stack (#53, #56, #57) adds the slider's deck arrangement, Responsive Scroll (#52, #54, #55, #58, #59) adds a `responsive` layout kind, Orbit (#49, merged) added `orbit`, and the iPhone phone (#50) and Mobile Scroll Story (#48) change the phone and `trio.ts`. Both PRs below stay drafts until all of those have merged into `main`; then each merges `main`, goes green, and waits for the owner's go-ahead.
 
-Responsive Scroll's `responsive` layout is its own kind (`src/motion/layouts/responsive.ts`); it doesn't extend `pair`. It shares the Assets section's desktop and mobile pickers with `pair`, so PR 1 keeps those pickers for `responsive`. Its entrance (`ENTRANCE_DURATION`, stagger) is its own and PR 2 keeps it unless the owner says otherwise.
+Responsive Scroll's `responsive` layout is its own kind (`src/motion/layouts/responsive.ts`); it doesn't extend `pair`. It shares the Assets section's desktop and mobile pickers with `pair`, so PR 1 keeps those pickers for `responsive`. Its entrance (`ENTRANCE_DURATION`, stagger) goes with the other entrances in PR 2: in a single looping shot an entrance never plays, and nothing sets one.
 
 ### PR 1: layouts no template builds, laptop and tablet
 
@@ -44,9 +44,9 @@ Tests removed with the features (approved): `tests/e2e/layouts.spec.ts`, the pai
 
 Removes:
 
-- `TransitionChip`, `TransitionPopover`, `TransitionSection`, `AddShotMenu` and the parts of `EntranceSection` that only a reel uses.
+- `TransitionChip`, `TransitionPopover`, `TransitionSection`, `AddShotMenu` and the Entrance select (`EntranceSection` becomes `DurationSection`).
 - The store's add, duplicate, delete, move, transition and split actions, and the shot card's reorder, duplicate and split.
-- The multi-shot parts of `TimelineContainer`, the blur, push, zoom and wipe shader, and the shot-to-shot entrance code in the layouts and `evaluate`.
+- The multi-shot parts of `TimelineContainer` and `schedule`, the blur, push, zoom and wipe shader, `Shot.entrance` with the entrance code in the layouts and `evaluate`, and `CameraMove.progressRange` (split shots).
 - The 5 transition stills (approved) and the e2e screenshots only reels wrote.
 
 Stays:
