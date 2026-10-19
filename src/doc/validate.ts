@@ -570,6 +570,10 @@ function sanitizeLayout(
           typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
           sliderIds.length,
         ),
+        // Unset is the carousel; saved sliders from before the deck have no arrangement.
+        ...(l.arrangement === "deck" || l.arrangement === "carousel"
+          ? { arrangement: l.arrangement }
+          : {}),
       };
     }
     case "title":
