@@ -12,6 +12,7 @@ import { validateAndDecodeAsset } from "../../assets/decode";
 import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "../library/capture-import";
 import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
 import { FillTemplateOverlay } from "./FillTemplateOverlay";
+import { UseMyScreenshotsBanner } from "./UseMyScreenshotsBanner";
 
 const EngineCanvas = lazy(() =>
   import("../../engine/react/EngineCanvas").then((m) => ({ default: m.EngineCanvas })),
@@ -354,6 +355,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
           onUseDemoContent={fillWithDemoContent}
         />
       )}
+
+      {!showEmptyState && !showFillOverlay && <UseMyScreenshotsBanner />}
 
       {/* Global Drag-and-drop Overlay */}
       {isDragOver && (
