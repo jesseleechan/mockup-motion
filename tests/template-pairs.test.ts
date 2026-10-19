@@ -26,12 +26,21 @@ describe("pairedTemplateId", () => {
     expect(pairedTemplateId("mobile-scroll-story")).toBe("scroll-story");
   });
 
+  it("pairs Desktop Stack with Mobile Stack (stack plan D5)", () => {
+    expect(pairedTemplateId("desktop-stack")).toBe("mobile-stack");
+    expect(pairedTemplateId("mobile-stack")).toBe("desktop-stack");
+  });
+
   it("gives unknown ids no pair", () => {
     expect(pairedTemplateId("removed-template")).toBeUndefined();
   });
 
-  it("pairs every built-in", () => {
-    for (const t of BUILTIN_TEMPLATES) expect(pairedTemplateId(t.id), t.id).toBeDefined();
+  it("pairs every one-size built-in, and no desktop + mobile one", () => {
+    for (const t of BUILTIN_TEMPLATES) {
+      // Responsive Scroll shows both sizes at once, so it has no other size.
+      if (t.category === "both") expect(pairedTemplateId(t.id), t.id).toBeUndefined();
+      else expect(pairedTemplateId(t.id), t.id).toBeDefined();
+    }
   });
 
   it("pairs every paired built-in with a built-in of the other category", () => {

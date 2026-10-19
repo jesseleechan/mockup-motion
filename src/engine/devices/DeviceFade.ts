@@ -24,9 +24,13 @@ export interface DeviceDraw {
  */
 export type FadeBlend = "linear" | "srgb" | "background";
 
-/** The fade blend a shot's layout uses: the slider's and the orbit's are mixed in sRGB. */
+/**
+ * The fade blend a shot's layout uses (quality bar §3.1): the carousel's neighbours and the
+ * orbit's cards are mixed in sRGB; a deck's entering card and every entrance blend in linear
+ * light.
+ */
 export function fadeBlendFor(layout: Layout | undefined): FadeBlend {
-  if (layout?.kind === "slider") return "srgb";
+  if (layout?.kind === "slider") return layout.arrangement === "deck" ? "linear" : "srgb";
   if (layout?.kind === "orbit") return "background";
   return "linear";
 }
