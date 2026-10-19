@@ -6,6 +6,7 @@ import {
   BUILTIN_TEMPLATES,
   fittingTemplateId,
   getTemplateById,
+  templateInCategory,
   validateTemplateRequirements,
   type Template,
   type TemplateCategory,
@@ -51,7 +52,7 @@ export const TemplateGalleryModal: React.FC = () => {
   ] as const;
 
   const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {
-    const matchesCategory = activeCategory === "all" || t.category === activeCategory;
+    const matchesCategory = templateInCategory(t, activeCategory);
     const matchesQuery =
       searchQuery.trim() === "" ||
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

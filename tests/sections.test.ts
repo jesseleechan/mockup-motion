@@ -22,21 +22,30 @@ describe("WP-15: Section Detection & Suggested Stops (src/assets/sections.ts)", 
       if (!fs.existsSync(jsonPath)) continue;
 
       const metadata = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
-      const groundTruthSections = (metadata.sections as { top: number; height: number; id: string }[]) || [];
-      const groundTruthTops = Array.from(new Set(groundTruthSections.map((s) => s.top))).sort((a, b) => a - b);
+      const groundTruthSections =
+        (metadata.sections as { top: number; height: number; id: string }[]) || [];
+      const groundTruthTops = Array.from(new Set(groundTruthSections.map((s) => s.top))).sort(
+        (a, b) => a - b,
+      );
 
       // 1. Test Desktop Full Screenshot
       const desktopPath = path.join(siteDir, "desktop-full.webp");
       if (fs.existsSync(desktopPath)) {
-        const { data, info } = await sharp(desktopPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+        const { data, info } = await sharp(desktopPath)
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
         const vh = Math.round(info.width / 1.6);
         const tolerance = Math.round(0.15 * vh);
 
         const detected = detectSections(data, info.width, info.height, { viewportHeight: vh });
-        console.log(`${site} desktop (w=${info.width}, h=${info.height}, vh=${vh}, tol=${tolerance}):`, {
-          gt: groundTruthTops,
-          detected,
-        });
+        console.log(
+          `${site} desktop (w=${info.width}, h=${info.height}, vh=${vh}, tol=${tolerance}):`,
+          {
+            gt: groundTruthTops,
+            detected,
+          },
+        );
         totalDetectedCount += detected.length;
         totalGroundTruthTops += groundTruthTops.length;
 
@@ -51,7 +60,10 @@ describe("WP-15: Section Detection & Suggested Stops (src/assets/sections.ts)", 
       // 2. Test Mobile Full Screenshot
       const mobilePath = path.join(siteDir, "mobile-full.webp");
       if (fs.existsSync(mobilePath)) {
-        const { data, info } = await sharp(mobilePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+        const { data, info } = await sharp(mobilePath)
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
         const vh = Math.round(info.width / 0.4615);
         const tolerance = Math.round(0.15 * vh);
 
@@ -144,9 +156,11 @@ describe("WP-15: Section Detection & Suggested Stops (src/assets/sections.ts)", 
       expect(shot.scroll?.enabled).toBeFalsy();
     }
 
-    // Applying standard templates (other than explicit scroll-story) does not enable scroll
+    // Applying standard templates (other than the explicit scroll templates: both Scroll Story
+    // sizes and Responsive Scroll) does not enable scroll
     for (const template of BUILTIN_TEMPLATES) {
-      if (template.id === "scroll-story") continue;
+      if (["scroll-story", "mobile-scroll-story", "responsive-scroll"].includes(template.id))
+        continue;
       const built = buildTemplate(template, {
         aspect: "16:9",
         assets: store.getState().doc.assets,
