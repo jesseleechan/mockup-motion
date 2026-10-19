@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
-import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 
 declare global {
   interface Window {
@@ -218,7 +218,8 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  // The gallery shows the registry's order (tests/templates.test.ts pins it), Desktop Slider first.
+  // The gallery shows the registry order (tests/templates.test.ts pins it); the first card is
+  // the first-run default.
   expect(order).toEqual(BUILTIN_TEMPLATES.map((t) => t.id));
   expect(order[0]).toBe("desktop-slider");
 

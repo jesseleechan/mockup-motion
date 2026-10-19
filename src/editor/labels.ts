@@ -29,6 +29,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   wall: "Isometric wall",
   stack: "Cascading stack",
   slider: "Slider",
+  orbit: "Orbit",
   responsive: "Responsive scroll",
   title: "Title card",
 };

@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 import type { AssetProvider, Engine, TextRaster } from "../../src/engine/Engine";
 import type { exportWithEngine } from "../../src/export/engine-export";
 import type { schedule } from "../../src/motion";
-import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import { keepResourceTimings } from "../helpers/resource-timing";
 
 // The specs below find the app's Mediabunny module in the resource-timing entries.

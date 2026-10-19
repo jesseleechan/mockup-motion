@@ -50,6 +50,22 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("aurelia"),
   ],
+  // Five per orbit, so the gallery shows a ring. The poster (35% of the 10 s loop) shows the
+  // third screenshot settling at the front: Maison Oak's photographic hero, as on the sliders.
+  "desktop-orbit": [
+    desktopHero("northwind"),
+    desktopHero("aurelia"),
+    desktopHero("maison-oak"),
+    desktopHero("field-notes"),
+    desktopHero("studio-kova"),
+  ],
+  "mobile-orbit": [
+    mobileHero("aurelia"),
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("field-notes"),
+    mobileHero("studio-kova"),
+  ],
   "scroll-story": [desktopFull("studio-kova")],
   // One page at both sizes: Aurelia's full pages, with their capture sections.
   "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
