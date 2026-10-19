@@ -134,35 +134,32 @@ async function renderDeck(page: Page, times: number[]): Promise<PixelBuffer[]> {
   );
 }
 
-test("every settled deck card is colour-exact, and the front card covers the ones behind", async ({
+// One test (CLAUDE.md, Tests): the settled pose at t = 0 and the entering card's fade at t = 1.
+test("deck cards are colour-exact in order, and the entering card fades in linear light", async ({
   page,
 }) => {
-  const [frame] = await renderDeck(page, [0]);
+  const [settled, mid] = await renderDeck(page, [0, 1]);
   const node = nodesAt(0);
   const cards = [0, 1, 2].map((i) => box(node(IMAGES[i].id)));
   // The front card's centre, where the cards behind it overlap it.
-  const front = patch(frame, cards[0].cx, cards[0].cy);
+  const front = patch(settled, cards[0].cx, cards[0].cy);
   expect(deltaE(front, FRONT), `front ${front.map((c) => c.toFixed(1))}`).toBeLessThan(1);
   // Each card behind at full colour (D1), in the strip that peeks past the card in front.
   for (const r of [1, 2]) {
     const x = (cards[r - 1].x1 + cards[r].x1) / 2;
-    const colour = patch(frame, x, cards[r].cy);
+    const colour = patch(settled, x, cards[r].cy);
     expect(deltaE(colour, COLOURS[r]), `slot ${r} ${colour.map((c) => c.toFixed(1))}`).toBeLessThan(
       1,
     );
   }
-});
 
-test("the card entering the deck fades in linear light, like an entrance", async ({ page }) => {
-  const t = 1;
-  const [frame] = await renderDeck(page, [t]);
-  const node = nodesAt(t);
-  const entering = node(IMAGES[3].id);
+  const later = nodesAt(1);
+  const entering = later(IMAGES[3].id);
   expect(entering.opacity).toBeGreaterThan(0.2);
   expect(entering.opacity).toBeLessThan(0.95);
-  const ahead = box(node(IMAGES[2].id));
+  const ahead = box(later(IMAGES[2].id));
   const card = box(entering);
-  const colour = patch(frame, (ahead.x1 + card.x1) / 2, card.cy);
+  const colour = patch(mid, (ahead.x1 + card.x1) / 2, card.cy);
   const expected = overLinear(ENTERING, entering.opacity, ASH);
   // An sRGB mix (the carousel's neighbour fade) of this near-black over Ash is far darker.
   expect(
