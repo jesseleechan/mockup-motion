@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Video inspector > Background: each preset switches between its own light and dark fills
 // (docs/polish-plan/inspectors.md P1). The flat presets use Ash and Onyx.
@@ -16,7 +17,7 @@ interface EditorWindow {
 /** First run → gallery → the template → demo content, then the Video inspector. */
 async function openTemplate(page: Page, templateId: string): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

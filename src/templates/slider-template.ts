@@ -18,9 +18,14 @@ interface SliderTemplateSpec {
   description: string;
   role: Extract<AssetRole, "mobile" | "desktop">;
   axis: SliderLayout["axis"];
+  /** Unset: the carousel. "deck": Desktop Stack and Mobile Stack (stack plan D4). */
+  arrangement?: SliderLayout["arrangement"];
 }
 
-/** Mobile Slider and Desktop Slider: one carousel shot that loops natively (presets P03). */
+/**
+ * Mobile Slider and Desktop Slider (presets P03), and Desktop Stack and Mobile Stack (stack
+ * plan S03): one slider shot that loops natively.
+ */
 export function sliderTemplate(spec: SliderTemplateSpec): Template {
   const label = spec.role === "mobile" ? "Mobile" : "Desktop";
   const slots: SlotSpec[] = Array.from({ length: SLOT_COUNT }, (_, i) => ({
@@ -65,6 +70,7 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
         axis: spec.axis,
         shape: spec.role,
         step: SLIDER_STEP,
+        ...(spec.arrangement ? { arrangement: spec.arrangement } : {}),
       };
       const shot = defaultShot(layout);
       shot.duration = sliderDuration(layout);
@@ -72,7 +78,6 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
       shot.entrance = "none";
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      shot.texts = [];
 
       return { style, shots: [shot], loop: true };
     },

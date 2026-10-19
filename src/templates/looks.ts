@@ -17,11 +17,6 @@ export function paletteBackground(id: PaletteId, angle?: number): Background {
   return background;
 }
 
-/** The palette's text colour, chosen for contrast against its background. */
-export function paletteTextColor(id: PaletteId): string {
-  return palette(id).textColor;
-}
-
 /**
  * A preset's background tone: its light fill or its dark one (Video inspector > Background).
  * Anything else is a custom colour.
@@ -42,24 +37,23 @@ export const FLAT_TONES: PresetTones = { light: "ash", dark: "onyx" };
 
 const TONES: PresetTone[] = ["light", "dark"];
 
-type ToneStyle = Pick<Style, "background" | "textColor" | "frameAppearance">;
+type FillStyle = Pick<Style, "background" | "frameAppearance">;
 
 /** A template's light and dark fills; Ash and Onyx unless it declares its own. */
 export function templateTones(template: { tones?: PresetTones } | undefined): PresetTones {
   return template?.tones ?? FLAT_TONES;
 }
 
-/** The style fields a preset tone sets. */
-export function presetToneStyle(tone: PresetTone, tones: PresetTones = FLAT_TONES): ToneStyle {
+/** The style fields a preset tone sets: the fill and its frame look. */
+export function presetToneStyle(tone: PresetTone, tones: PresetTones = FLAT_TONES): FillStyle {
   const id = tones[tone];
   return {
     background: paletteBackground(id),
-    textColor: paletteTextColor(id),
     frameAppearance: palette(id).frameAppearance,
   };
 }
 
-/** Switches a style (say a draft's) to the tone's fill and text colour; grain and vignette stay. */
+/** Switches a style (say a draft's) to the tone's fill; grain and vignette stay. */
 export function setPresetTone(
   style: Style,
   tone: PresetTone,
@@ -99,22 +93,11 @@ export function backgroundColor(background: Background): string {
 // 8% card hairline that keeps a dark screenshot's edge visible on a dark fill (quality-bar §6).
 const DARK_FILL_LIGHTNESS = 0.5;
 
-type FillStyle = Pick<Style, "background" | "frameAppearance">;
-
 /** The style fields a custom flat colour sets: the fill and the frame look to match it. */
 export function customBackgroundStyle(color: string): FillStyle {
   const lightness = oklch(color)?.l ?? 1;
   const look = lightness < DARK_FILL_LIGHTNESS ? FLAT_TONES.dark : FLAT_TONES.light;
   return { background: { kind: "solid", color }, frameAppearance: palette(look).frameAppearance };
-}
-
-/**
- * The fill a tone sets from the Background control: only the background and its frame look, so
- * a template's own text colour (Scroll Story keeps the brand's) is left alone.
- */
-export function toneFillStyle(tone: PresetTone, tones: PresetTones = FLAT_TONES): FillStyle {
-  const { background, frameAppearance } = presetToneStyle(tone, tones);
-  return { background, frameAppearance };
 }
 
 /** A key that is equal for equal backgrounds, for remembering which one a UI state belongs to. */

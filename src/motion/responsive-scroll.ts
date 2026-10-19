@@ -173,8 +173,7 @@ function timeline(spec: ScrollSpec, screens: ScrollScreen[]): Timeline {
   const movesOf = (stops: number[][]) =>
     stops.slice(1).map((stop, i) => stopDistance(screens, stops[i], stop) / SCREENS_PER_SECOND);
   const fixedTime = (stops: number[][]) => stops.length * hold + RESPONSIVE_WRAP_OVERLAP;
-  const total = (stops: number[][]) =>
-    fixedTime(stops) + movesOf(stops).reduce((a, b) => a + b, 0);
+  const total = (stops: number[][]) => fixedTime(stops) + movesOf(stops).reduce((a, b) => a + b, 0);
   while (px.length > 2 && total(px) > MAX_SHOT_DURATION) px = px.slice(0, -1);
   let moves = movesOf(px);
   const moveTime = moves.reduce((a, b) => a + b, 0);
@@ -211,4 +210,9 @@ export function responsiveScrollAt(spec: ScrollSpec, screens: ScrollScreen[], t:
     start += move;
   }
   return toFractions(px[px.length - 1]);
+}
+
+/** How many stops, the top included, fit in the shot (the 30 s cap may leave out the last ones). */
+export function responsiveShownStops(spec: ScrollSpec, screens: ScrollScreen[]): number {
+  return timeline(spec, screens).px.length;
 }

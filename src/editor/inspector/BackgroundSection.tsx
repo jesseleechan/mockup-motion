@@ -8,7 +8,7 @@ import {
   customBackgroundStyle,
   paletteBackground,
   templateTones,
-  toneFillStyle,
+  presetToneStyle,
   type BackgroundChoice,
 } from "../../templates/looks";
 import { currentTemplate } from "../template-actions";
@@ -49,7 +49,7 @@ export const BackgroundSection: React.FC = () => {
     setCustomFor(null);
     apply(
       (draft) => {
-        Object.assign(draft.style, toneFillStyle(next, tones));
+        Object.assign(draft.style, presetToneStyle(next, tones));
       },
       { label: next === "dark" ? "Use dark background" : "Use light background" },
     );

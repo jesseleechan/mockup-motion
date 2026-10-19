@@ -16,8 +16,11 @@ export interface TemplateBuildContext {
   style?: Partial<Style>;
 }
 
-/** The gallery tab a template sits under: the screenshots it presents. */
-export type TemplateCategory = "desktop" | "mobile";
+/**
+ * The gallery tab a template sits under: the screenshots it presents. "both" shows a desktop and
+ * a mobile screenshot of one page (Responsive Scroll) and sits under both tabs.
+ */
+export type TemplateCategory = "desktop" | "mobile" | "both";
 
 export interface Template {
   id: string;
@@ -28,6 +31,11 @@ export interface Template {
   defaultDuration: number;
   /** The Light and Dark background fills (`presetToneStyle`); Ash and Onyx when omitted. */
   tones?: PresetTones;
+  /**
+   * Two slot keys that show one page at two sizes (Responsive Scroll). `fillSlots` fills them with
+   * a desktop and a mobile capture of the same page when the library has one.
+   */
+  samePage?: readonly [desktopSlot: string, mobileSlot: string];
   build: (ctx: TemplateBuildContext) => {
     style: Style;
     shots: Shot[];

@@ -51,8 +51,8 @@ const colors = {
   yellow: [255, 255, 0] as const,
 };
 
-async function ready(page: import("@playwright/test").Page): Promise<void> {
-  await page.goto("/lab?fixture=device-card-frontal&t=0&aspect=16:9");
+async function ready(page: import("@playwright/test").Page, extra = ""): Promise<void> {
+  await page.goto(`/lab?fixture=device-card-frontal&t=0&aspect=16:9${extra}`);
   await page.waitForFunction(() => window.__labReady === true);
 }
 
@@ -195,121 +195,6 @@ test("F01 tall screenshot scroll preserves top-down color bands at both endpoint
   expect(frames.geometriesAfterScroll).toBe(frames.geometriesBeforeScroll);
 });
 
-test("F01 capital T has its crossbar at the top of glyph ink bounds", async ({ page }) => {
-  await ready(page);
-  const rows = await page.evaluate(async () => {
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const doc = structuredClone(window.__fixtures?.["text-title"]);
-    if (!doc || !engine || !setDoc) throw new Error("F01 text fixture hooks are unavailable");
-    engine.resize(1280, 720);
-    doc.style.background = { kind: "solid", color: "#808080" };
-    doc.style.grain = 0;
-    doc.style.vignette = 0;
-    doc.style.fonts.display.family = "Inter Display";
-    doc.shots[0].layout = { kind: "title" };
-    doc.shots[0].texts = [
-      {
-        id: "f01-capital-t",
-        text: "T",
-        role: "title",
-        font: "display",
-        size: 20,
-        anchor: "center",
-        align: "center",
-        color: "#FFFFFF",
-        animation: "none",
-        delay: 0,
-      },
-    ];
-    await setDoc(doc);
-    engine.renderAt(0);
-    const pixels = engine.readPixels();
-    const inkRows: number[] = [];
-    const inkColumns: number[] = [];
-    for (let y = 0; y < 720; y++)
-      for (let x = 0; x < 1280; x++) {
-        const i = (y * 1280 + x) * 4;
-        if (pixels[i] > 170 && pixels[i + 1] > 170 && pixels[i + 2] > 170) {
-          inkRows.push(y);
-          inkColumns.push(x);
-        }
-      }
-    if (inkRows.length === 0) throw new Error("Capital T produced no measurable ink");
-    const minY = Math.min(...inkRows);
-    const maxY = Math.max(...inkRows);
-    const minX = Math.min(...inkColumns);
-    const maxX = Math.max(...inkColumns);
-    const counts = new Array<number>(maxY - minY + 1).fill(0);
-    for (let y = minY; y <= maxY; y++)
-      for (let x = minX; x <= maxX; x++) {
-        const i = (y * 1280 + x) * 4;
-        if (pixels[i] > 170 && pixels[i + 1] > 170 && pixels[i + 2] > 170) counts[y - minY]++;
-      }
-    return counts;
-  });
-  const quarter = Math.max(1, Math.floor(rows.length / 4));
-  const topInk = rows.slice(0, quarter).reduce((sum, n) => sum + n, 0);
-  const bottomInk = rows.slice(rows.length - quarter).reduce((sum, n) => sum + n, 0);
-  expect(topInk).toBeGreaterThan(bottomInk * 3);
-});
-
-test("F01 maskReveal exposes lower glyph ink before its upper crossbar", async ({ page }) => {
-  await ready(page);
-  const bands = await page.evaluate(async () => {
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    const doc = structuredClone(window.__fixtures?.["text-title"]);
-    if (!doc || !engine || !setDoc) throw new Error("F01 mask reveal hooks are unavailable");
-    engine.resize(1280, 720);
-    doc.style.background = { kind: "solid", color: "#808080" };
-    doc.style.grain = 0;
-    doc.style.vignette = 0;
-    doc.style.fonts.display = { source: "builtin", family: "Inter Display", weight: 600 };
-    doc.shots[0].layout = { kind: "title" };
-    doc.shots[0].texts = [
-      {
-        id: "f01-mask-t",
-        text: "T",
-        role: "title",
-        font: "display",
-        size: 20,
-        anchor: "center",
-        align: "center",
-        color: "#FFFFFF",
-        animation: "maskReveal",
-        delay: 0,
-      },
-    ];
-    await setDoc(doc);
-    const countRows = () => {
-      const pixels = engine.readPixels();
-      const rows = new Array<number>(720).fill(0);
-      for (let y = 0; y < 720; y++)
-        for (let x = 0; x < 1280; x++) {
-          const i = (y * 1280 + x) * 4;
-          if (pixels[i] > 170 && pixels[i + 1] > 170 && pixels[i + 2] > 170) rows[y]++;
-        }
-      return rows;
-    };
-    engine.renderAt(1);
-    const full = countRows();
-    const fullInkRows = full.flatMap((count, y) => (count > 0 ? [y] : []));
-    if (fullInkRows.length === 0) throw new Error("Mask reveal produced no complete glyph ink");
-    const min = Math.min(...fullInkRows);
-    const max = Math.max(...fullInkRows);
-    engine.renderAt(0.12);
-    const revealed = countRows();
-    const quarter = Math.max(1, Math.floor((max - min + 1) / 4));
-    return {
-      top: revealed.slice(min, min + quarter).reduce((a, b) => a + b, 0),
-      bottom: revealed.slice(max - quarter + 1, max + 1).reduce((a, b) => a + b, 0),
-    };
-  });
-  expect(bands.bottom).toBeGreaterThan(0);
-  expect(bands.top).toBe(0);
-});
-
 test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page }) => {
   await ready(page);
   await page.evaluate(async () => {
@@ -347,19 +232,9 @@ test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page
     const provider = makeProvider();
     // The F01 fixture is 640x360; product presets intentionally omit this test-only size.
     const smallFixtureResolution = 360 as ProjectDoc["export"]["resolution"];
-    const result = await exportFn(
-      doc,
-      { ...provider, getImage: async () => images.quadrants(1600, 1000) },
-      {
-        destination: "custom",
-        resolution: smallFixtureResolution,
-        fps: 30,
-        quality: "high",
-        format: "webm",
-        supersample: 1,
-        motionBlur: false,
-      },
-    );
+    const result = await exportFn(doc, { ...provider, getImage: async () => images.quadrants(1600, 1000) }, {
+      destination: "custom", resolution: smallFixtureResolution, fps: 30, quality: "high", format: "webm", supersample: 1,
+    });
     const media = window.__mediabunnyTest;
     if (!media) throw new Error("Mediabunny browser test module is unavailable");
     const input = new media.Input({
@@ -375,7 +250,10 @@ test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page
       if (canvas.width !== 640 || canvas.height !== 360) {
         throw new Error(`Expected a 640x360 export frame, got ${canvas.width}x${canvas.height}`);
       }
-      const context = canvas.getContext("2d");
+      const context = canvas.getContext("2d") as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D
+        | null;
       if (!context) throw new Error("Decoded frame has no 2D context");
       const image = context.getImageData(0, 0, canvas.width, canvas.height);
       return Array.from(image.data);

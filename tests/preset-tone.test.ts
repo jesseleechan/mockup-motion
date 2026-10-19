@@ -19,7 +19,6 @@ import {
   presetToneStyle,
   setPresetTone,
   templateTones,
-  toneFillStyle,
 } from "../src/templates/looks";
 
 const ASH: Background = { kind: "solid", color: "#DFE1E3" };
@@ -29,8 +28,11 @@ const TONE_TEMPLATES = [
   "mobile-slider",
   "frames",
   "mobile-frames",
+  "desktop-stack",
+  "mobile-stack",
   "desktop-orbit",
   "mobile-orbit",
+  "responsive-scroll",
 ];
 
 function presetDoc(id: string): ProjectDoc {
@@ -53,15 +55,13 @@ const GRAPHITE = {
 };
 
 describe("Preset tone: the Light / Dark background of every preset", () => {
-  it("dark is a flat Onyx fill with light text and dark frames; light is Ash", () => {
+  it("dark is a flat Onyx fill with dark frames; light is Ash", () => {
     expect(presetToneStyle("dark")).toEqual({
       background: ONYX,
-      textColor: "#F4F4F5",
       frameAppearance: "dark",
     });
     expect(presetToneStyle("light")).toEqual({
       background: ASH,
-      textColor: "#18181B",
       frameAppearance: "light",
     });
   });
@@ -94,7 +94,6 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
     const dark = store.getState().doc.style;
     expect(presetToneOf(dark)).toBe("dark");
     expect(dark.frameAppearance).toBe("dark");
-    expect(dark.textColor).toBe("#F4F4F5");
     expect([dark.grain, dark.vignette, dark.shadow]).toEqual([0, 0, "none"]);
     expect(store.getState().past.length).toBe(pastBefore + 1);
 
@@ -168,11 +167,11 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
 
   it("the control sets only the fill and frame look, never the text colour", () => {
     const tones = templateTones(getTemplateById("scroll-story"));
-    expect(Object.keys(toneFillStyle("dark", tones)).sort()).toEqual([
+    expect(Object.keys(presetToneStyle("dark", tones)).sort()).toEqual([
       "background",
       "frameAppearance",
     ]);
-    expect(toneFillStyle("dark", tones)).toEqual({ background: GRAPHITE, frameAppearance: "dark" });
+    expect(presetToneStyle("dark", tones)).toEqual({ background: GRAPHITE, frameAppearance: "dark" });
   });
 
   it("Custom stays selected only while the document shows the background it was opened on", () => {
@@ -211,7 +210,6 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
     const { doc: sanitized } = sanitizeDoc(JSON.parse(JSON.stringify(doc)));
     expect(presetToneOf(sanitized.style)).toBe("dark");
     expect(sanitized.style.frameAppearance).toBe("dark");
-    expect(sanitized.style.textColor).toBe("#F4F4F5");
 
     await saveProject(doc);
     const loaded = await loadProject(doc.id);

@@ -276,7 +276,7 @@ describe("Orbit shots set their own length and keep a still camera", () => {
 describe("Desktop Orbit and Mobile Orbit templates", () => {
   it("are a built-in desktop and mobile pair with 6 slots, the first 4 required", () => {
     const ids = BUILTIN_TEMPLATES.map((t) => t.id);
-    expect(ids.indexOf("desktop-orbit")).toBe(ids.indexOf("mobile-frames") + 1);
+    expect(ids.indexOf("desktop-orbit")).toBe(ids.indexOf("mobile-stack") + 1);
     expect(ids.indexOf("mobile-orbit")).toBe(ids.indexOf("desktop-orbit") + 1);
     expect(pairedTemplateId("desktop-orbit")).toBe("mobile-orbit");
     expect(pairedTemplateId("mobile-orbit")).toBe("desktop-orbit");

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
   Icon,
 } from "../../ui";
-import { Copy, Plus, Sparkles, Type } from "lucide-react";
+import { Copy, Plus, Sparkles } from "lucide-react";
 
 export interface AddShotMenuProps {
   doc: ProjectDoc;
@@ -35,10 +35,6 @@ export const AddShotMenu: React.FC<AddShotMenuProps> = ({
     onAddShot(layout, insertAfterIndex);
   };
 
-  const handleTitleCard = () => {
-    onAddShot({ kind: "title" }, insertAfterIndex);
-  };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,10 +50,6 @@ export const AddShotMenu: React.FC<AddShotMenuProps> = ({
       <DropdownMenuContent align="start" sideOffset={6} className="w-[180px]">
         <DropdownMenuItem icon={<Icon icon={Copy} size={13} />} onClick={handleSameLayout}>
           Same layout
-        </DropdownMenuItem>
-
-        <DropdownMenuItem icon={<Icon icon={Type} size={13} />} onClick={handleTitleCard}>
-          Title card
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

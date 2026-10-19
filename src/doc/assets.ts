@@ -17,8 +17,6 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "slider":
     case "orbit":
       return [...layout.assetIds];
-    case "title":
-      return [];
   }
 }
 
@@ -29,8 +27,8 @@ export function resolveShotStyle(doc: ProjectDoc, shotIndex: number): Style {
 }
 
 /**
- * Every image asset the document can draw: device screens in every layout kind and
- * text-layer logos. Audio is excluded; this is the set to decode as images.
+ * Every image asset the document can draw: the device screens in every layout kind. This is
+ * the set to decode as images.
  */
 export function collectAssetIds(doc: ProjectDoc): Set<string> {
   const ids = new Set<string>();
@@ -40,7 +38,6 @@ export function collectAssetIds(doc: ProjectDoc): Set<string> {
 
   for (const shot of doc.shots) {
     for (const id of layoutAssetIds(shot.layout)) add(id);
-    for (const layer of shot.texts ?? []) add(layer.logoAssetId);
   }
   return ids;
 }

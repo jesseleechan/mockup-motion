@@ -22,8 +22,8 @@ interface ExportModalProps {
 }
 
 function presetSettings(id: DestinationId): ExportSettings {
-  const { resolution, fps, quality, format, supersample, motionBlur } = DESTINATION_PRESETS[id];
-  return { destination: id, resolution, fps, quality, format, supersample, motionBlur };
+  const { resolution, fps, quality, format, supersample } = DESTINATION_PRESETS[id];
+  return { destination: id, resolution, fps, quality, format, supersample };
 }
 
 const notice = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs flex items-start gap-2";
@@ -33,7 +33,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   const apply = useEditorStore((s) => s.apply);
   const { total: duration } = useMemo(() => schedule(doc), [doc]);
 
-  const [settings, setSettings] = useState<ExportSettings>(() => presetSettings("web-embed"));
+  // Opens on MP4 at the project's aspect; the web bundle stays one card away.
+  const [settings, setSettings] = useState<ExportSettings>(() => presetSettings("custom"));
   const { probing, plan } = useExportPlan(settings, doc.aspect, duration, open);
 
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -128,7 +129,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   };
 
   const planned = plan?.ok ? plan.plan : null;
-  const exportsAudio = planned?.extension === "mp4" || planned?.extension === "webm";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -164,23 +164,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 <div className={`${notice} border-amber-500/30 text-amber-300`} role="status">
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
                   <span>{planned.notice}</span>
-                </div>
-              )}
-
-              {doc.audio && (
-                <div
-                  data-testid="music-note"
-                  className={`${notice} border-[var(--color-line)] text-[var(--color-text-2)]`}
-                >
-                  {exportsAudio
-                    ? `Music is mixed into the ${planned?.extension === "mp4" ? "MP4 (AAC)" : "WebM (Opus)"}.`
-                    : settings.format === "bundle"
-                      ? "Web bundles are silent, so music is left out."
-                      : settings.format === "gif"
-                        ? "GIFs have no sound, so music is left out."
-                        : settings.format === "png"
-                          ? "Still frames have no sound."
-                          : "Checking which audio codec this browser has…"}
                 </div>
               )}
 

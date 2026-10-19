@@ -5,18 +5,11 @@ import { expect, test, type Page } from "@playwright/test";
  * still and the others still run. Baselines are Linux-only and generated in CI; see README.md.
  */
 
-const TEMPLATES = ["scroll-story"];
+const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
 const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
 const BACKGROUNDS = ["solid", "gradient"];
 const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
-const TEXT_ANIMS: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
 
 interface Still {
   name: string;
@@ -26,9 +19,16 @@ interface Still {
 }
 
 // The sliders step every 2.0 s: 1.9 s is the rest pose (step 0 has settled) and 2.5 s is
-// mid-step (step 1 started at 2.0 s), presets plan P05. The orbits step on the same timing, so
-// they use the same times (orbit plan D7).
-const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider", "desktop-orbit", "mobile-orbit"];
+// mid-step (step 1 started at 2.0 s), presets plan P05. The Stack presets are slider decks and
+// the orbits step on the same timing, so they use the same times (stack plan D7, orbit plan D7).
+const SLIDER_TEMPLATES = [
+  "desktop-slider",
+  "mobile-slider",
+  "desktop-stack",
+  "mobile-stack",
+  "desktop-orbit",
+  "mobile-orbit",
+];
 const SLIDER_TIMES = [1.9, 2.5];
 
 const STILLS: Still[] = [];
@@ -78,6 +78,8 @@ const DARK_STILLS: Record<string, number> = {
   "mobile-frames": 2.4,
   "desktop-slider": 2.5,
   "mobile-slider": 2.5,
+  "desktop-stack": 2.5,
+  "mobile-stack": 2.5,
   "desktop-orbit": 2.5,
   "mobile-orbit": 2.5,
 };
@@ -101,6 +103,23 @@ for (const device of DEVICES) {
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
 }
+// Responsive Scroll: the works hold (3.6 s, both screens on one section) at every aspect, side by
+// side or stacked, plus 16:9 mid-move (2.05 s, the shared timing). Responsive Scroll plan R06.
+for (const aspect of ["16:9", "4:3", "1:1", "4:5", "9:16"]) {
+  const tag = aspect.replace(":", "x");
+  STILLS.push({
+    name: `responsive-scroll-${tag}-t3.6`,
+    fixture: "responsive-scroll",
+    aspect,
+    t: 3.6,
+  });
+}
+STILLS.push({
+  name: "responsive-scroll-16x9-t2.05",
+  fixture: "responsive-scroll",
+  aspect: "16:9",
+  t: 2.05,
+});
 for (const kind of TRANSITIONS) {
   STILLS.push({
     name: `transition-${kind}`,
@@ -108,9 +127,6 @@ for (const kind of TRANSITIONS) {
     aspect: "16:9",
     t: 3.6,
   });
-}
-for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
-  STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });
 }
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
