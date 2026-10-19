@@ -8,7 +8,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 1. **The work is the hero.** Screenshots are shown at the largest size the composition allows, color-exact and crisp. Effects support them and never compete.
 2. **One idea per shot.** Each shot has a single dominant movement. Secondary motion (float, grain, background drift) stays under the threshold of attention.
-3. **Motion has intent.** It starts with purpose, settles, and holds. Nothing moves linearly except marquees. Nothing reverses within a shot.
+3. **Motion has intent.** It starts with purpose, settles, and holds. Nothing moves linearly except Frames lanes. Nothing reverses within a shot.
 4. **Restraint over decoration.** If an effect is noticeable as an effect, it is too strong.
 
 ## 2. Motion
@@ -24,7 +24,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 | `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only. Overshoot 3% or less                                                |
 | `spring`     | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels                                                                    |
 | `slide`      | cubic-bezier(0.40, 0, 0.05, 1)                     | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
-| `linear`     | —                                                  | Marquees only                                                                                |
+| `linear`     | —                                                  | Frames lanes only                                                                            |
 
 ### 2.2 Durations
 
@@ -39,17 +39,12 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 Default lens: **fov 22°**. Long lenses look like product photography; wide lenses distort the screenshots. Allowed range is 15–35°.
 
-| Preset                     | From → To                                                           |
-| -------------------------- | ------------------------------------------------------------------- |
-| `static`                   | No change (float only)                                              |
-| `pushIn`                   | distance 1.10 → 0.98 (about 12% scale change)                       |
-| `pullBack`                 | distance 0.92 → 1.06                                                |
-| `orbitLeft` / `orbitRight` | yaw ∓14° → ±4°, pitch 6°, distance 1.05                             |
-| `tiltUp` / `tiltDown`      | pitch 14° → 4° (or reverse), distance 1.04                          |
-| `riseUp`                   | panY −0.06 → 0.02, pitch 8° → 3°                                    |
-| `dollyLeft` / `dollyRight` | panX +0.08 → −0.08 (scaled by aspect), yaw 6°                       |
-| `isoDrift`                 | yaw 34° pitch 28° fixed, panX/panY drift 0.05 along the diagonal    |
-| `heroTilt`                 | yaw −20° → −10°, pitch 10° → 6°, roll −2° → 0°, distance 1.08 → 1.0 |
+| Preset    | From → To                                     |
+| --------- | --------------------------------------------- |
+| `static`  | No change (float only)                        |
+| `pushIn`  | distance 1.10 → 0.98 (about 12% scale change) |
+
+The editor offers these two as Still and Push in. On 19 October 2026 the owner cut the other ten moves (pull back, orbit, tilt, rise, dolly, isometric drift and hero tilt), which no template used: the product is flat, looping presets. A saved project that uses one loads with `static`.
 
 `intensity` scales the delta between from and to around the midpoint pose. Every preset must keep all screen content inside the frame at `intensity = 1` for every aspect (WP-09 adds a framing test).
 
@@ -61,7 +56,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - Never reverse direction within a shot. The v1 zoom-in-then-out "breathing" is banned.
 - Never use more than one dominant movement at once (for example, orbit plus push plus scroll). Scroll shots use a near-static camera (intensity ≤ 0.3).
-- Never let marquee speed exceed 0.12 frame widths per second. The one exception is Frames (a `rows` or `columns` layout with `travel: "period"`: Desktop Frames and Mobile Frames): every row or column moves at the same speed, alternating direction, at no more than **0.20 stage units (frame heights) per second** along its motion axis. Desktop Frames' rows move sideways and Mobile Frames' columns move vertically under the same limit, so the two presets are one effect. At the 0.12 limit a 4-screenshot Frames loop at 9:16 would need more than 30 s.
+- Never let a Frames lane (a `rows` or `columns` layout: Desktop Frames and Mobile Frames) move faster than **0.20 stage units (frame heights) per second** along its motion axis. Every row or column moves at the same speed, alternating direction. Desktop Frames' rows move sideways and Mobile Frames' columns move vertically under the same limit, so the two presets are one effect. (The tilted marquees' 0.12 frame widths per second went with them on 19 October 2026.)
 - Never use a linear camera move.
 - Never let elements pop in without an entrance. Never animate opacity alone for large objects (pair it with 2–4% rise or scale 0.97 → 1). Slider cards pair their fade with the 0.75 neighbour scale. The card entering a deck's last slot (Desktop Stack, Mobile Stack) pairs its fade with its move and scale into that slot.
 
@@ -69,7 +64,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 ### 3.1 Screen content
 
-- **Fit to width, always.** If the screenshot is taller than the viewport, crop the bottom (or scroll, if opted in). If it is shorter, then for desktop the viewport aspect adapts within `[1.25, 2.0]`, and for phones and tablets the content is top-aligned and the remainder filled with the screenshot's bottom-row average color. Never crop horizontally.
+- **Fit to width, always.** If the screenshot is taller than the viewport, crop the bottom (or scroll, if opted in). If it is shorter, then for desktop the viewport aspect adapts within `[1.25, 2.0]`, and for phones the content is top-aligned and the remainder filled with the screenshot's bottom-row average color. Never crop horizontally.
 - Unlit material, sRGB, no tone mapping. A screenshot pixel must be identical to the source within ΔE < 1 at a frontal camera.
 - **One exception: faded slider neighbours.** In the `slider` layout the active card is color-exact like any other screen. Its neighbours are a deliberate de-emphasis: scale 0.75 and 65% opacity over the background, faded as one object (screen, border and shadow together, so no body shows through). The fade mixes encoded sRGB values, as the reference does: a pixel of 15 at 65% over a background of 223 shows 88. Entrances keep blending in linear light. **The orbit extends this exception:** only its front card is at full strength and colour-exact; every other card is mixed with the background colour at a strength of 0.65 + 0.35 × max(0, z)^4 (z = 1 at the front, −1 at the back), in encoded sRGB like the slider. The mix is with the background, never with the cards behind, and each card covers what is behind it, so overlapping cards never show through each other. No other layout shows a screen faded or tinted once its entrance has finished, except while a deck's entering card fades in during a step (§4); that fade blends in linear light, like an entrance.
 - Textures are pre-downscaled to about 1.5× the largest on-screen width (2× for `master` quality) with high-quality resampling, and use mipmaps plus max anisotropy. Text inside a screenshot must not shimmer during slow camera moves (WP-03 has a check for this).
@@ -79,7 +74,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 - Corner radius: 1.1% of window width. Hairline border: 1 px at 1080p equivalent (0.0009 stage units), `rgba(0,0,0,0.08)` light or `rgba(255,255,255,0.08)` dark.
 - `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in Inter Regular (+2% tracking) at 42% of toolbar height, 55% opacity.
-- `minimal`: no toolbar; traffic lights float inside the top-left corner over a 6% top fade. `none`: the screen only, with radius and border kept.
+- `none`: the screen only, with radius and border kept. (A `minimal` chrome, floating traffic lights and no toolbar, was removed on 19 October 2026; saved ones load as `standard`.)
 - Light toolbar `#F6F6F7`, dark `#1E1E21`.
 
 ### 3.3 Phone (an iPhone Pro, front on)
@@ -90,20 +85,17 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 - Dynamic Island: 31.3% × 9.2% of the screen width, 2.7% below the screen top, pure black with the front camera lens at its right end.
 - Buttons stand 0.6% of the width proud: the Action button and volume buttons on the left, the side button on the right, at the iPhone's positions.
 - **Status bar.** The top 62 pt of the 874 pt screen (7.1%). A screenshot without a status bar starts below it: the bar shows "9:41", signal, Wi-Fi and a full battery over the screenshot's top-row colour, in black on a light colour and white on a dark one, like iOS. So content is never covered by the island. A screenshot that already includes a status bar (detected by `assets/roles.ts`) fills the whole screen, and its own status bar stays pinned while the page scrolls. Scroll speeds are measured against the viewport below the status bar.
-- Finishes (frame colours): `graphite #45454A` (Black Titanium), `black #232326`, `silver #D9DADC` (Silver), `sand #C2A78F` (Desert Titanium).
+- Finish: Silver, frame colour `#D9DADC`. The other finishes (Black Titanium, black, Desert Titanium) and the Device finish control were removed on 19 October 2026; saved finishes load as Silver. The tablet and laptop body is silver `#D9DADD`.
 
-### 3.4 Tablet, laptop, card
+### 3.4 Card
 
-- Tablet: screen aspect 0.75, bezel 4% of width, radius 6.5%.
-- Laptop: a browser-style screen in a thin aluminium lid (bezel 1.8%) plus a base at 6% of lid height, viewed at pitch 8° or more so the base reads. Only used when the camera has pitch.
 - Card: the screenshot alone with a hairline border. This is the "frameless" look. The corner radius is 1.6% of width for landscape cards and 7.5% of width for portrait (mobile) cards, which show a mobile screenshot at the phone screen aspect 0.4615. Mobile Slider and Mobile Frames use the same portrait card.
 
 ## 4. Composition
 
 - **Safe margin:** at least 7% of the shortest frame side around the primary subject at the shot's tightest camera pose.
 - **Primary subject size:** single desktop device spans 62–74% of frame width at 16:9 and 4:3, 84–90% at 9:16, 4:5, and 1:1. A single phone spans 70–78% of frame height.
-- **Responsive pair:** phone height is 78–86% of browser height, the phone overlaps the browser's right edge by 10–16% of browser width, and the phone sits 0.04 stage units in front.
-- **Marquee and wall:** at most 3 rows or 5 columns visible. No asset appears twice within the same row or column window. Adjacent rows are offset by half a period. With fewer than 3 distinct assets, use the `single` or `pair` layout instead (templates enforce this through slots).
+- **Frames lanes:** at most 3 rows or 5 columns visible. No asset appears twice within the same row or column window.
 - **Slider:** cards on one axis, still camera, no tilt. The active card is centred at scale 1 and opacity 1; the others sit at scale 0.75 and opacity 0.65. Horizontal (`axis: "x"`, mobile cards): the active card is 0.63 of the frame height tall at the phone aspect 0.4615, capped at 0.52 of the frame width (the cap only comes close at 9:16). Vertical (`axis: "y"`, desktop cards): the active card is 0.84 of the frame width wide, capped at 0.50 of the frame height (binds at 16:9, 4:3 and 1:1). Centre-to-centre spacing is half the active size along the axis + gap + half the neighbour size, with a gap of 0.128 (x) or 0.115 (y) stage units at 4:5, scaled with the card at other aspects. At 4:5 this gives the reference: a 0.29 × 0.63 active card with 0.38 spacing (x), and 0.67 × 0.42 with 0.48 spacing (y). The safe margin applies to the active card; neighbours are cropped by the frame on purpose. Sliders need 3 screenshots and work best with 4–6. With fewer screenshots than visible slots, the far cards fade out instead of repeating: no screenshot appears twice in view. The lit cards stay centred on the active one: with an even number of screenshots, one fewer is lit (with 4, one card each side), so the frame is balanced. A slider shot has no camera controls; its camera is always still.
 - **Desktop Frames** (`rows`, `device: "card"`, tilt 0, `travel: "period"`; template id `frames`): at 4:5, 9:16 and 1:1, 3 rows of cards 0.315 tall with a 0.065 gap between cards and between rows (pitch 0.585 along a row); the middle row is centred and the outer rows are cropped by the frame edges. At 16:9 and 4:3, 2 rows of cards 0.42 tall with the same gap, so a row window shows at most 4 cards. Adjacent rows move in opposite directions at one shared speed (the outer rows of three move left). Row r starts r/rows of a period along (half a period with 2 rows; 0, ⅓ and ⅔ with 3), so the outer rows, which move together, never line up the same screenshot. Odd rows show the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent rows never line up as two copies of one row. **One exception to the column rule above:** adjacent rows move in opposite directions over the same screenshots, so they pass each other and, for a moment, can stack the same screenshot in one column. With the reversed order they cross one card at a time: each time the cards of two adjacent rows line up, at most one stacked pair per period shows the same screenshot (two with an even number of screenshots, never side by side). No row order avoids it entirely while the rows share their screenshots, and it is allowed (owner, 8 October 2026, P05; reversed order approved in the PF04 review, 9 October 2026). Frames needs 4 screenshots.
 - **Mobile Frames** (`columns`, `device: "card"`, tilt 0, `travel: "period"`): Desktop Frames turned 90°, with mobile screenshots on portrait cards (§3.4) in columns. The gap is 0.065 between cards and between columns, as in Desktop Frames. Column counts and card widths per aspect:

@@ -139,7 +139,6 @@ describe("Mobile Frames template (Frames plan PF03)", () => {
           ...COMPOSITION[aspect],
           device: "card",
           tilt: 0,
-          speed: 0.35,
           gap: GAP,
           travel: "period",
         });
@@ -296,17 +295,10 @@ describe("Mobile Frames in the editor store (Frames plan PF03)", () => {
 });
 
 describe("Changing the aspect re-fits Frames shots (Frames plan D13)", () => {
-  const tilted: Layout[] = [
-    {
-      kind: "rows",
-      assetIds: ["d1", "d2", "d3"],
-      rows: 2,
-      device: "browser",
-      tilt: 8,
-      speed: 0.35,
-    },
-    { kind: "columns", assetIds: ["m1", "m2", "m3"], columns: 3, tilt: 12, speed: 0.4 },
-    { kind: "columns", assetIds: ["m1", "m2"], columns: 2, tilt: 0, speed: 0.4, device: "card" },
+  const others: Layout[] = [
+    { kind: "single", device: "browser", assetId: "d1" },
+    { kind: "slider", assetIds: ["m1", "m2", "m3"], axis: "x", shape: "mobile", step: 2 },
+    { kind: "responsive", desktopId: "d1", mobileId: "m1" },
   ];
 
   it("gives Mobile Frames the layout and duration it is built with at the new aspect", () => {
@@ -348,13 +340,13 @@ describe("Changing the aspect re-fits Frames shots (Frames plan D13)", () => {
   });
 
   it("leaves every other layout as it is", () => {
-    for (const layout of tilted) {
+    for (const layout of others) {
       for (const aspect of ASPECTS) {
         expect(refitFramesLayout(layout, aspect)).toBe(layout);
       }
     }
     const doc = createDoc();
-    doc.shots[0].layout = tilted[1];
+    doc.shots[0].layout = others[0];
     doc.shots[0].duration = 7;
     const before = structuredClone(doc.shots);
     changeAspect(doc, "9:16");

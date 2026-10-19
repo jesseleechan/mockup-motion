@@ -12,11 +12,8 @@ function layoutAssetIds(layout: Layout): string[] {
   switch (layout.kind) {
     case "single":
       return [layout.assetId];
-    case "pair":
     case "responsive":
       return [layout.desktopId, layout.mobileId];
-    case "trio":
-      return [layout.desktopId, layout.tabletId ?? "", layout.mobileId];
     default:
       return layout.assetIds;
   }
@@ -28,14 +25,8 @@ function replaceLayoutAssetIds(layout: Layout, swap: (id: string) => string): vo
     case "single":
       layout.assetId = swap(layout.assetId);
       return;
-    case "pair":
     case "responsive":
       layout.desktopId = swap(layout.desktopId);
-      layout.mobileId = swap(layout.mobileId);
-      return;
-    case "trio":
-      layout.desktopId = swap(layout.desktopId);
-      if (layout.tabletId) layout.tabletId = swap(layout.tabletId);
       layout.mobileId = swap(layout.mobileId);
       return;
     default:

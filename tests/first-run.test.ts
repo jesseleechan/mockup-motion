@@ -181,7 +181,7 @@ describe("F06: add assets and apply a template in one undo step", () => {
   it("keeps the browser chrome the template preserves", async () => {
     const store = createEditorStore();
     store.getState().apply((draft) => {
-      draft.style.browserChrome = "minimal";
+      draft.style.browserChrome = "none";
     });
     const slider = template("desktop-slider");
     await store
@@ -189,7 +189,7 @@ describe("F06: add assets and apply a template in one undo step", () => {
       .addAssetsAndApplyTemplate(demoAssetsToFill(slider, []), slider.id, (doc) =>
         applyTemplate(slider, doc),
       );
-    expect(store.getState().doc.style.browserChrome).toBe("minimal");
+    expect(store.getState().doc.style.browserChrome).toBe("none");
     expect(store.getState().doc.templateId).toBe("desktop-slider");
   });
 });

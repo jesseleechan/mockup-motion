@@ -14,8 +14,8 @@ export interface ActiveShot {
   weight: number;
   /**
    * Only on the incoming shot 0 during the loop wrap: its unclamped time, t − total (< 0).
-   * `localT` stays clamped to 0 (contracts.md §5); marquee layouts use this instead so
-   * their strip keeps moving in step with the outgoing layer.
+   * `localT` stays clamped to 0 (contracts.md §5); Frames layouts use this instead so
+   * their lanes keep moving in step with the outgoing layer.
    */
   wrapT?: number;
 }
