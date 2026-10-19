@@ -48,7 +48,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  accent: string;          // highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
