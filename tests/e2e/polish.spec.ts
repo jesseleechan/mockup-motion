@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ciTimeout } from "../helpers/ci";
 
 interface EditorStore {
   getState: () => {
@@ -59,7 +60,34 @@ test.describe("WP-18 polish", () => {
     const projectId = await page.evaluate(
       () => (window as unknown as { __editorStore: EditorStore }).__editorStore.getState().doc.id,
     );
-    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    // Reload once the project is in storage: autosave waits 600 ms, then writes. The save label
+    // is a UI detail; the stored project is what the reload reads.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            (id) =>
+              new Promise<boolean>((resolve, reject) => {
+                const req = indexedDB.open("mockupmotion-v2");
+                req.onerror = () => reject(req.error);
+                req.onsuccess = () => {
+                  const db = req.result;
+                  const get = db
+                    .transaction("projects", "readonly")
+                    .objectStore("projects")
+                    .get(id);
+                  get.onerror = () => reject(get.error);
+                  get.onsuccess = () => {
+                    db.close();
+                    resolve(get.result !== undefined);
+                  };
+                };
+              }),
+            projectId,
+          ),
+        { timeout: ciTimeout(5_000), message: "the project is saved before the reload" },
+      )
+      .toBe(true);
     await page.reload();
     await expect
       .poll(() =>
