@@ -33,11 +33,12 @@ npm run demo:capture       # recaptures the demo sites in demo-sites/ into publi
 
 CI (`.github/workflows/ci.yml`) has three required checks: `unit` (typecheck, lint, test, build), `e2e` and `visual`. All three must be green.
 
-- `unit` and `visual` run in full on every pull request.
-- `e2e` reports on every pull request, but runs Playwright only when the PR is ready for review (not a draft), targets `main`, and changes an e2e trigger path: `src/`, `public/`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/e2e/`, `tests/helpers/`, `playwright.config.ts`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/e2e-paths.ts` or `scripts/e2e-shards.ts`. The list lives in `scripts/e2e-paths.ts`. Otherwise `e2e` is green within seconds and says why the suite was not run.
+- `unit` and `visual` run in full on every pull request and merge group.
+- `e2e` reports on every pull request and merge group. On a pull request and in a merge group it runs only the **smoke subset**, the tests tagged `@smoke` (`--grep @smoke`, about 5 minutes). On a pull request it runs Playwright only when the PR is ready for review (not a draft), targets `main`, and changes an e2e trigger path: `src/`, `public/`, `index.html`, `vite.config.ts`, `tsconfig.json`, `tests/e2e/`, `tests/helpers/`, `playwright.config.ts`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `scripts/e2e-paths.ts` or `scripts/e2e-shards.ts`. The list lives in `scripts/e2e-paths.ts`. Otherwise `e2e` is green within seconds and says why the suite was not run. A merge group always runs the smoke subset.
 - Drafts and PRs stacked on another branch skip the suite while you iterate. Marking a draft ready for review runs it. A stacked PR runs it once it targets `main` and gets a new commit, which merging `main` into it gives it.
 - Pushes to `main`, the nightly run (06:00 UTC) and manual runs always run the full e2e suite.
-- The suite runs on four shards, which are file groups in `scripts/e2e-shards.ts` balanced on measured durations. When you add a spec, add it to the group with the least time; a unit test fails until every spec is in exactly one group. The `e2e` check merges the shards' reports, and uploads the HTML report as `e2e-results` when a test fails.
+- **When `main`'s full run fails, the merge queue pauses** until the failure is fixed or the culprit PR is reverted. Nothing else merges in the meantime.
+- The full suite runs on four shards, which are file groups in `scripts/e2e-shards.ts` balanced on measured durations. When you add a spec, add it to the group with the least time; a unit test fails until every spec is in exactly one group. The `e2e` check merges the shards' reports, and uploads the HTML report as `e2e-results` when a test fails.
 
 `perf` is not in CI, because the runner has no GPU.
 
@@ -73,7 +74,8 @@ Write the fewest tests that protect what matters, at the cheapest level that can
 - **e2e only for what needs a real browser:** WebGL colour and orientation, export and encoding, asset loading, and user flows that have broken before. A PR adds at most one e2e test unless its task asks for more. A new preset adds none: the stills and the existing specs that cover every built-in template already exercise it.
 - **No counts that every addition changes.** Don't assert the number of templates, presets or stills as a literal; read it from the registry. A literal count conflicts with every PR that adds one.
 - **Proof that a test can fail** is needed for a test that guards a bug fix: revert the fix, run the test, and put the failure in the PR. A test for new behaviour doesn't need it.
-- **Locally,** run typecheck, lint, `npm test` and build, plus only the e2e specs you added or changed (`npx playwright test tests/e2e/<name>.spec.ts`). Don't run the full e2e suite locally; CI runs it when the PR is ready.
+- **Locally,** run typecheck, lint, `npm test` and build, plus only the e2e specs you added or changed (`npx playwright test tests/e2e/<name>.spec.ts`). Don't run the full e2e suite locally; `main` runs it after every merge.
+- **The smoke subset** is what a PR's `e2e` check runs: the browser checks that mean "the app is broken" (boot and a template with demo content, WebGL colour and orientation, one export to a playable file, asset loading, the overflow guard). Tag a test by ending its title with ` @smoke`, as in `test("F02 solid colour is exact @smoke", ...)`. Add a test to it only when its failure would make the app unusable; keep the subset under about 3 minutes of runner time. `npm run test:e2e -- --grep @smoke` runs it.
 - **A flaky e2e test** gets one re-run. If it fails again and the PR doesn't touch what it tests, say so in the PR and fix or remove the test in its own small PR. Don't keep re-running it.
 
 ## Code style
@@ -86,7 +88,7 @@ Write the fewest tests that protect what matters, at the cheapest level that can
 
 ## Definition of done (every task)
 
-- `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass, and the PR's three CI checks (`unit`, `e2e`, `visual`) are green. If the PR touches an e2e trigger path (see Commands), `e2e` must have run the full suite on the head you merge, which happens once the PR is ready for review and targets `main`.
+- `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass, and the PR's three CI checks (`unit`, `e2e`, `visual`) are green. If the PR touches an e2e trigger path (see Commands), `e2e` must have run the smoke subset on the head you merge, which happens once the PR is ready for review and targets `main`. `main` then runs the full suite.
 - The acceptance criteria of your task are met, and the PR shows how each one was verified.
 - Visual work: attach before/after frames or a contact sheet to the PR. Check `quality-bar.md` and say which rules you checked.
 - Update the status: the WP table in `docs/plan/README.md` for a work package, or remove the item from `docs/plan/follow-ups.md` for a follow-up. Link the evidence.

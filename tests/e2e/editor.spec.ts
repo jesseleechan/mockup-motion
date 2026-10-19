@@ -271,4 +271,44 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-export-dark.png") });
   });
+
+  test("Media cards show each screenshot, and the badge switches its role", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Try with demo content" }).click();
+    await page.getByRole("tab", { name: "Media" }).click();
+
+    // Demo screenshots have no stored blob; each card still loads its image (it showed a
+    // generic icon before).
+    const cards = page.getByTestId("media-card");
+    await expect(cards.first()).toBeVisible();
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      const img = cards.nth(i).locator("img");
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth))
+        .toBeGreaterThan(0);
+    }
+
+    const first = cards.first();
+    const id = await first.getAttribute("data-asset-id");
+    const role = () =>
+      page.evaluate(
+        (assetId) =>
+          (
+            window as unknown as {
+              __editorStore: {
+                getState: () => { doc: { assets: { id: string; role?: string }[] } };
+              };
+            }
+          ).__editorStore
+            .getState()
+            .doc.assets.find((a) => a.id === assetId)?.role,
+        id,
+      );
+    expect(await role()).toBe("desktop");
+    await first.getByRole("button", { name: /Desktop screenshot\. Change to Mobile/ }).click();
+    expect(await role()).toBe("mobile");
+    await expect(first.getByTestId("media-role")).toHaveText("Mobile");
+  });
 });
