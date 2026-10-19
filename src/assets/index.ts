@@ -4,3 +4,4 @@ export * from "./palette";
 export * from "./fonts";
 export * from "./roles";
 export * from "./sections";
+export * from "./capture-json";
