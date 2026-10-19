@@ -167,6 +167,7 @@ export const DESTINATION_LABELS: Record<DestinationId, string> = {
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   desktop: "Desktop",
   mobile: "Mobile",
+  both: "Desktop + mobile",
 };
 
 /** Select options for the given values, labelled from one of the maps above. */
@@ -187,5 +188,8 @@ export function shotSummary(shot: Shot): string {
 /** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
 function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
+  if (layout.kind === "slider" && layout.arrangement === "deck") {
+    return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";
+  }
   return LAYOUT_LABELS[layout.kind];
 }

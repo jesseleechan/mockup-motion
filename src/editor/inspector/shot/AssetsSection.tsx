@@ -43,7 +43,8 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
 };
 
 /**
- * The screenshots a single, slider or orbit layout shows. Frames fills from the project.
+ * The screenshots a single, responsive, slider or orbit layout shows. Frames fills from the
+ * project.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
@@ -58,7 +59,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
       </Section>
     );
   }
-  if (layout.kind !== "single") return null;
+  if (layout.kind !== "single" && layout.kind !== "responsive") return null;
 
   return (
     <Section title="Screenshots">
@@ -78,6 +79,33 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
               )
             }
           />
+        )}
+
+        {layout.kind === "responsive" && (
+          <>
+            <AssetField
+              label="Desktop"
+              value={layout.desktopId || ""}
+              images={images}
+              droppable
+              onChange={(id) =>
+                update((target) => {
+                  if (target.layout.kind === "responsive") target.layout.desktopId = id;
+                })
+              }
+            />
+            <AssetField
+              label="Mobile"
+              value={layout.mobileId || ""}
+              images={images}
+              droppable
+              onChange={(id) =>
+                update((target) => {
+                  if (target.layout.kind === "responsive") target.layout.mobileId = id;
+                })
+              }
+            />
+          </>
         )}
 
         <p className="text-[11px] text-[var(--color-text-3)]">

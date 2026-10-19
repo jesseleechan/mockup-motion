@@ -30,9 +30,13 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 ## Choose a template
 
-Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
+Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
 
 Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
+
+## Responsive Scroll
+
+Responsive Scroll shows the desktop and mobile versions of one page side by side (stacked at 4:5 and 9:16), scrolling together and pausing on the same sections. It needs one desktop and one mobile full-page screenshot. Drop the JSON files `npm run capture` writes next to them, and both screens stop on the page's sections; without them, they stop at the same points down each page. Pick the sections in the shot inspector under Scroll stops.
 
 ## Scroll Story
 

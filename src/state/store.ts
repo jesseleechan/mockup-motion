@@ -468,6 +468,12 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
+          } else if (layout.kind === "responsive") {
+            if (slotKeyOrNodeId.includes("mobile")) {
+              layout.mobileId = assetId;
+            } else {
+              layout.desktopId = assetId;
+            }
           } else if (isSteppedLayout(layout)) {
             // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
             // are a ring of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
