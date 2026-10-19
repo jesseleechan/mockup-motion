@@ -48,8 +48,8 @@ describe("export settings in a saved project", () => {
     expect(sanitizeExport(undefined)).toEqual(defaultExport());
   });
 
-  it("default to the Custom preset, the dialog's MP4 at 1080p", () => {
-    const { id, resolution, fps, quality, format, supersample } = DESTINATION_PRESETS.custom;
+  it("default to the Video preset, the dialog's MP4 at 1080p", () => {
+    const { id, resolution, fps, quality, format, supersample } = DESTINATION_PRESETS.video;
     expect(defaultExport()).toEqual({
       destination: id,
       resolution,
@@ -58,6 +58,26 @@ describe("export settings in a saved project", () => {
       format,
       supersample,
     });
+  });
+});
+
+describe("destinations from before the six cards", () => {
+  it("load LinkedIn and X as Video when their settings are Video's, else as Custom", () => {
+    for (const destination of ["linkedin", "x"]) {
+      expect(sanitizeExport({ ...defaultExport(), destination })).toEqual(defaultExport());
+      expect(sanitizeExport({ ...defaultExport(), destination, fps: 60 })).toEqual({
+        ...defaultExport(),
+        destination: "custom",
+        fps: 60,
+      });
+    }
+  });
+
+  it("keep Custom settings, including Video's with another anti-aliasing", () => {
+    const crisp = { ...defaultExport(), destination: "custom", supersample: 1.5 };
+    expect(sanitizeExport(crisp)).toEqual(crisp);
+    const custom = { ...defaultExport(), destination: "custom", resolution: 1440 };
+    expect(sanitizeExport(custom)).toEqual(custom);
   });
 });
 
@@ -96,6 +116,19 @@ describe("the store", () => {
     store.getState().newDoc();
     expect(store.getState().doc.export).toEqual(WEB_BUNDLE);
     expect(createEditorStore().getState().doc.export).toEqual(WEB_BUNDLE);
+  });
+
+  it("keeps a remembered Video with Crisp 1.5× through a reload and a new project", () => {
+    const storage = memoryStorage();
+    vi.stubGlobal("localStorage", storage);
+    const crisp: ExportSettings = { ...defaultExport(), destination: "custom", supersample: 1.5 };
+    const store = createEditorStore();
+    store.getState().rememberExport(crisp);
+
+    const saved = JSON.parse(JSON.stringify(store.getState().doc));
+    expect(createEditorStore(saved).getState().doc.export).toEqual(crisp);
+    store.getState().newDoc();
+    expect(store.getState().doc.export).toEqual(crisp);
   });
 
   it("keeps an opened project's own settings", () => {

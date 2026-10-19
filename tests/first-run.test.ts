@@ -42,6 +42,7 @@ const twoRoles: Template = {
   },
 };
 
+// A full-page capture: the test template's desktop slot prefers one.
 const userDesktop: AssetRef = {
   id: "user-desktop",
   kind: "image",
@@ -49,8 +50,9 @@ const userDesktop: AssetRef = {
   mime: "image/png",
   bytes: 1000,
   width: 1440,
-  height: 900,
+  height: 5000,
   role: "desktop",
+  meta: { tall: true },
 };
 
 describe("F06: template gallery state", () => {

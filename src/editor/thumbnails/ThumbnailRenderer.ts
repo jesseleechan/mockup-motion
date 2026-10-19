@@ -119,6 +119,8 @@ export class ThumbnailRenderer {
   private readonly current = new Map<string, string>();
   private readonly pending = new Map<string, Pending>();
   private queue: Promise<void> = Promise.resolve();
+  /** Jobs taken off `pending` that haven't finished rendering yet. */
+  private running = 0;
   private disposed = false;
 
   constructor(opts: ThumbnailRendererOptions) {
@@ -149,6 +151,11 @@ export class ThumbnailRenderer {
     this.cancelPending(key);
     this.current.delete(key);
     this.prune();
+  }
+
+  /** No request is waiting for its debounce or rendering (tests and debugging). */
+  get idle(): boolean {
+    return this.pending.size === 0 && this.running === 0;
   }
 
   /** Number of object URLs currently alive (tests and debugging). */
@@ -206,7 +213,8 @@ export class ThumbnailRenderer {
     // Later requests for this key start a new debounce; this job is fixed now.
     this.pending.delete(key);
     job.timer = null;
-    this.queue = this.queue.then(() => this.run(key, job));
+    this.running++;
+    this.queue = this.queue.then(() => this.run(key, job)).finally(() => this.running--);
   }
 
   private async run(key: string, job: Pending): Promise<void> {
