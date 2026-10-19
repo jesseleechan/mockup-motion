@@ -97,19 +97,13 @@ export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove 
 }
 
 function isStillCamera(camera: CameraMove): boolean {
-  return (
-    camera.preset === "static" &&
-    camera.intensity === 0 &&
-    camera.float === 0 &&
-    camera.progressRange === undefined
-  );
+  return camera.preset === "static" && camera.intensity === 0 && camera.float === 0;
 }
 
 /**
- * The shortest shot a layout allows. Only Frames (rows or columns with travel "period") has
- * one: its speed limit (quality-bar §2.5).
+ * The shortest shot a layout allows. Only Frames (rows or columns) has one: its speed limit
+ * (quality-bar §2.5).
  */
 export function minShotDuration(layout: Layout, aspect: Aspect): number {
-  const frames = layout.kind === "rows" || layout.kind === "columns";
-  return frames && layout.travel === "period" ? framesDuration(layout, aspect) : 1;
+  return layout.kind === "rows" || layout.kind === "columns" ? framesDuration(layout, aspect) : 1;
 }

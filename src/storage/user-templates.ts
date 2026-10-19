@@ -1,6 +1,7 @@
 import { getDB } from "./db";
 import { normalizeStyleAngles } from "../doc/gradient-angle";
-import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { applyLegacyLook, legacyLook, mapLegacyLayout } from "../doc/legacy-layouts";
+import type { Aspect, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot } from "../doc/defaults";
 import { clampSliderStep, sliderDuration } from "../motion";
 
@@ -84,19 +85,8 @@ export function convertDocToUserTemplate(
       case "single":
         layout.assetId = remapId(layout.assetId);
         break;
-      case "pair":
-        layout.desktopId = remapId(layout.desktopId);
-        layout.mobileId = remapId(layout.mobileId);
-        break;
-      case "trio":
-        layout.desktopId = remapId(layout.desktopId);
-        if (layout.tabletId) layout.tabletId = remapId(layout.tabletId);
-        layout.mobileId = remapId(layout.mobileId);
-        break;
       case "rows":
       case "columns":
-      case "wall":
-      case "stack":
       case "slider":
       case "orbit":
         layout.assetIds = layout.assetIds.map(remapId);
@@ -118,11 +108,13 @@ export function convertDocToUserTemplate(
 }
 
 /**
- * Fills slots in a UserTemplate with target assets by matching roles.
+ * Fills slots in a UserTemplate with target assets by matching roles. `aspect` is the document's:
+ * a removed layout maps to a Frames look sized for it.
  */
 export function fillUserTemplateSlots(
   template: UserTemplate,
   assets: AssetRef[],
+  aspect: Aspect = "16:9",
 ): { style: Style; shots: Shot[]; loop: boolean } {
   template = normalizeStyleAngles(template);
   // Group available assets by role
@@ -172,44 +164,53 @@ export function fillUserTemplateSlots(
     return chosenId;
   };
 
-  const shots: Shot[] = withoutTitleCards(template.shots).map((s) => {
-    const shot = structuredClone(s);
-    // Text layers were removed (October 2026); a template saved before then may carry them.
-    delete (shot as { texts?: unknown }).texts;
-    const layout = shot.layout;
+  // A video has one shot: a template saved from a multi-shot reel keeps its first.
+  const shots: Shot[] = withoutTitleCards(template.shots)
+    .slice(0, 1)
+    .map((s) => {
+      const shot = structuredClone(s);
+      // Its loop wrap: saved blur, push, zoom and wipe transitions play as fades.
+      const wrap = shot.transitionIn.kind as string;
+      if (wrap !== "cut" && wrap !== "fade") shot.transitionIn.kind = "fade";
 
-    switch (layout.kind) {
-      case "single":
-        layout.assetId = resolveSlot(layout.assetId);
-        break;
-      case "pair":
-        layout.desktopId = resolveSlot(layout.desktopId);
-        layout.mobileId = resolveSlot(layout.mobileId);
-        break;
-      case "trio":
-        layout.desktopId = resolveSlot(layout.desktopId);
-        if (layout.tabletId) layout.tabletId = resolveSlot(layout.tabletId);
-        layout.mobileId = resolveSlot(layout.mobileId);
-        break;
-      case "rows":
-      case "columns":
-      case "wall":
-      case "stack":
-        layout.assetIds = layout.assetIds.map(resolveSlot);
-        break;
-      case "slider":
-      case "orbit": {
-        // Fewer assets than slots reuse one; a slider or orbit never shows a screenshot twice
-        // (quality bar §4), and its length follows its screenshots so the loop stays native.
-        layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
-        layout.step = clampSliderStep(layout.step, layout.assetIds.length);
-        shot.duration = sliderDuration(layout);
-        break;
+      // A template saved before 19 Oct 2026 may use a removed layout: it takes the preset look a
+      // saved project of that kind loads as (src/doc/legacy-layouts.ts).
+      const raw = shot.layout as unknown as Record<string, unknown>;
+      const look = legacyLook(raw);
+      if (look) {
+        const ids = Array.isArray(raw.assetIds)
+          ? [...new Set(raw.assetIds.map((id) => resolveSlot(String(id))).filter(Boolean))]
+          : [];
+        const desktopId = typeof raw.desktopId === "string" ? resolveSlot(raw.desktopId) : "";
+        shot.layout = mapLegacyLayout(raw, aspect, ids, desktopId);
+        applyLegacyLook(shot, look, aspect);
       }
-    }
 
-    return shot;
-  });
+      // Text layers were removed (October 2026); a template saved before then may carry them.
+      delete (shot as { texts?: unknown }).texts;
+      const layout = shot.layout;
+
+      switch (layout.kind) {
+        case "single":
+          layout.assetId = resolveSlot(layout.assetId);
+          break;
+        case "rows":
+        case "columns":
+          layout.assetIds = layout.assetIds.map(resolveSlot);
+          break;
+        case "slider":
+        case "orbit": {
+          // Fewer assets than slots reuse one; a slider or orbit never shows a screenshot twice
+          // (quality bar §4), and its length follows its screenshots so the loop stays native.
+          layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
+          layout.step = clampSliderStep(layout.step, layout.assetIds.length);
+          shot.duration = sliderDuration(layout);
+          break;
+        }
+      }
+
+      return shot;
+    });
 
   const style = structuredClone(template.style);
   // Typography was removed (October 2026); a template saved before then may carry its fields.

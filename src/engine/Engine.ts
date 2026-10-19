@@ -5,7 +5,6 @@ import type { TextLine, TextRaster } from "../text/rasterize";
 import {
   evaluate,
   isSteppedLayout,
-  shotEntrance,
   type FrameState,
   type LayoutNode,
   type ShotFrame,
@@ -137,7 +136,7 @@ export class Engine {
     this.compositeTarget = new THREE.WebGLRenderTarget(renderW, renderH, {
       colorSpace: THREE.SRGBColorSpace,
     });
-    this.compositePass = new CompositePass(opts.width / opts.height);
+    this.compositePass = new CompositePass();
 
     // Final post-processing pass
     this.finalPass = new FinalPass({
@@ -216,7 +215,6 @@ export class Engine {
     const renderH = Math.round(h * ss);
 
     this.resizeTargets(renderW, renderH);
-    this.compositePass.setAspect(w / h);
     this.finalPass.resize(w, h, ss);
     this.rescaleScreens();
   }
@@ -276,14 +274,13 @@ export class Engine {
     this.currentDoc = doc;
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
-    this.backgroundRenderer.prepareDocument(this.renderer, doc, this.textureManager);
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
     // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference.
     const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
     this.deviceFade.prepare(this.renderer, this.targetA, {
-      fade: hasStepped || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
+      fade: hasStepped,
       srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) !== "linear"),
     });
 
@@ -298,16 +295,9 @@ export class Engine {
     target: THREE.WebGLRenderTarget,
     frame: ShotFrame,
     stageAspect: number,
-    backgroundPhase = 0,
   ): void {
     // 1. Clear background
-    this.backgroundRenderer.render(
-      this.renderer,
-      target,
-      frame,
-      backgroundPhase,
-      this.textureManager,
-    );
+    this.backgroundRenderer.render(this.renderer, target, frame);
 
     // 2. Position camera
     applyCameraPose(
@@ -369,14 +359,9 @@ export class Engine {
     if (layers.length === 0) return null;
 
     // Outgoing (or only) layer into targetA, incoming layer into targetB during a transition
-    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect, frameState.backgroundPhase);
+    this.renderShotToTarget(this.targetA, layers[0].frame, stageAspect);
     if (layers.length > 1 && layers[1].weight > 0) {
-      this.renderShotToTarget(
-        this.targetB,
-        layers[1].frame,
-        stageAspect,
-        frameState.backgroundPhase,
-      );
+      this.renderShotToTarget(this.targetB, layers[1].frame, stageAspect);
     }
 
     this.compositePass.render(

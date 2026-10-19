@@ -1,6 +1,5 @@
-import type { Aspect, Layout, Shot } from "../../doc/types";
+import type { Aspect, Layout } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
-import { ease } from "../easing";
 import type { LayoutNode } from "./types";
 
 type ResponsiveLayout = Extract<Layout, { kind: "responsive" }>;
@@ -17,8 +16,6 @@ const SIDE_GAP = 0.05;
 const STACK_GAP = 0.04;
 const SIDE_MAX_HEIGHT = 0.66;
 const STACK_MAX_MOBILE_HEIGHT = 0.6;
-const ENTRANCE_DURATION = 0.8;
-const STAGGER = 0.1;
 
 export interface ResponsiveCard {
   width: number;
@@ -61,32 +58,11 @@ export function responsiveGeometry(aspect: Aspect): {
   };
 }
 
-/** Entrance opacity and offsets, as the pair layout does (quality bar §2.2). */
-function entranceAt(entrance: Shot["entrance"], shotT: number, order: number) {
-  const delay = entrance === "stagger" ? order * STAGGER : 0;
-  const e = ease("expoOut", Math.max(0, Math.min(1, (shotT - delay) / ENTRANCE_DURATION)));
-  switch (entrance) {
-    case "rise":
-      return { opacity: e, y: -(1 - e) * 0.03, scale: 1 };
-    case "scale":
-      return { opacity: e, y: 0, scale: 0.97 + 0.03 * e };
-    case "stagger":
-      return { opacity: e, y: -(1 - e) * 0.03, scale: 0.97 + 0.03 * e };
-    default:
-      return { opacity: 1, y: 0, scale: 1 };
-  }
-}
-
 /**
  * The desktop and mobile cards of Responsive Scroll. Scroll is 0 here; `evaluate` sets both
  * screens' positions (motion/responsive-scroll.ts).
  */
-export function resolveResponsiveLayout(
-  layout: ResponsiveLayout,
-  aspect: Aspect,
-  shotT: number,
-  entrance: Shot["entrance"] = "none",
-): LayoutNode[] {
+export function resolveResponsiveLayout(layout: ResponsiveLayout, aspect: Aspect): LayoutNode[] {
   const { desktop, mobile } = responsiveGeometry(aspect);
   const cards = [
     {
@@ -103,7 +79,6 @@ export function resolveResponsiveLayout(
     },
   ];
   return cards.map(({ id, card, assetId, aspect: screenAspect }, order) => {
-    const e = entranceAt(entrance, shotT, order);
     return {
       id,
       device: "card",
@@ -111,8 +86,8 @@ export function resolveResponsiveLayout(
       width: card.width,
       height: card.height,
       screenAspect,
-      transform: { x: card.x, y: card.y + e.y, z: 0, rx: 0, ry: 0, rz: 0, scale: e.scale },
-      opacity: e.opacity,
+      transform: { x: card.x, y: card.y, z: 0, rx: 0, ry: 0, rz: 0, scale: 1 },
+      opacity: 1,
       scroll: 0,
       depthOrder: order,
     };

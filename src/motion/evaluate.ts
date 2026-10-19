@@ -25,12 +25,10 @@ export interface ShotFrame {
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number;
   layers: { frame: ShotFrame; weight: number }[];
   transition?: {
     kind: Transition["kind"];
     progress: number;
-    direction?: Transition["direction"];
   };
 }
 
@@ -41,26 +39,9 @@ export function clearLayoutCache(): void {
   // Modular layouts resolve deterministically
 }
 
-function isMarquee(shot: Shot): boolean {
-  return (
-    shot.layout.kind === "rows" || shot.layout.kind === "columns" || shot.layout.kind === "wall"
-  );
-}
-
-/**
- * Whether shot `index` skips its entrance. A loop has no first frame: frame(0) is also the
- * frame the loop wraps into, and the wrap holds shot 0 at local t = 0. Playing shot 0's
- * entrance there would dissolve the last shot into an empty canvas on every loop, so looping
- * docs skip it.
- */
-export function loopSkipsEntrance(doc: ProjectDoc, index: number): boolean {
-  return doc.loop && index === 0;
-}
-
-/** The entrance shot `index` plays (see `loopSkipsEntrance`). */
-export function shotEntrance(doc: ProjectDoc, index: number): Shot["entrance"] {
-  if (loopSkipsEntrance(doc, index)) return "none";
-  return doc.shots[index]?.entrance ?? "none";
+/** Frames: rows or columns lanes (Desktop Frames, Mobile Frames). */
+function isFrames(shot: Shot): boolean {
+  return shot.layout.kind === "rows" || shot.layout.kind === "columns";
 }
 
 function evaluateNodes(
@@ -70,9 +51,8 @@ function evaluateNodes(
   localT: number,
   layoutT: number,
   layoutDuration: number,
-  entrance: Shot["entrance"],
 ): LayoutNode[] {
-  const nodes = resolveLayout(shot.layout, aspect, assets, layoutT, layoutDuration, entrance);
+  const nodes = resolveLayout(shot.layout, aspect, assets, layoutT, layoutDuration);
 
   // Scroll calculation (honoured for single-device layouts)
   if (shot.scroll?.enabled && shot.layout.kind === "single" && nodes.length > 0) {
@@ -116,7 +96,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   }
 
   const active = activeLayers(doc, normT);
-  const backgroundPhase = total > 0 ? normT / total : 0;
 
   const layers = active.layers.map((activeShot) => {
     const shot = activeShot.shot;
@@ -126,32 +105,22 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     const p = shot.duration > 0 ? Math.max(0, Math.min(1, localT / shot.duration)) : 0;
     const baseCamera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
 
-    // Marquees snap their travel to whole card steps per loop when they can (layouts/marquee.ts).
-    // A single looping shot loops after `total`, which is shorter than the shot when it has
-    // a wrap crossfade; during that crossfade the incoming strip runs on t − total, so both
-    // layers show the cards in the same places and only the screens dissolve.
-    const marquee = isMarquee(shot);
-    const layoutT = marquee ? (activeShot.wrapT ?? localT) : localT;
-    const layoutDuration = marquee && doc.loop && doc.shots.length === 1 ? total : shot.duration;
+    // Frames lanes travel one asset period per loop (layouts/lanes.ts). A single looping shot
+    // loops after `total`, which is shorter than the shot when it has a wrap crossfade; during
+    // that crossfade the incoming lanes run on t − total, so both layers show the cards in the
+    // same places and only the screens dissolve.
+    const frames = isFrames(shot);
+    const layoutT = frames ? (activeShot.wrapT ?? localT) : localT;
+    const layoutDuration = frames && doc.loop && doc.shots.length === 1 ? total : shot.duration;
 
-    const entrance = shotEntrance(doc, activeShot.index);
-
-    // Nodes evaluation with entrance and scroll
-    const nodes = evaluateNodes(
-      shot,
-      doc.aspect,
-      doc.assets,
-      localT,
-      layoutT,
-      layoutDuration,
-      entrance,
-    );
+    // Nodes evaluation with scroll
+    const nodes = evaluateNodes(shot, doc.aspect, doc.assets, localT, layoutT, layoutDuration);
 
     // Auto-framing: keep safe margins under camera moves for bounded layouts. A slider's
     // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar
     // §4), so they are full bleed.
     let camera = baseCamera;
-    const isFullBleed = marquee || isSteppedLayout(shot.layout);
+    const isFullBleed = frames || isSteppedLayout(shot.layout);
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {
@@ -182,7 +151,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   return {
     t: normT,
     total,
-    backgroundPhase,
     layers,
     transition: active.transition,
   };

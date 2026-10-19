@@ -20,266 +20,6 @@ async function openLab(page: Page, extra = "") {
   await page.waitForFunction(() => window.__labReady === true);
 }
 
-test.describe("F11 ambient background", () => {
-  test("the ambient background is blurred, keeps its colours and is cover-fit", async ({
-    page,
-  }) => {
-    await openLab(page, BACKGROUND_ONLY);
-    const result = await page.evaluate(async () => {
-      const base = window.__fixtures?.["single-browser"];
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      if (!base || !engine || !setDoc) throw new Error("F11 ambient hooks are unavailable");
-      engine.resize(640, 360);
-      // Red | green | blue thirds (25% / 50% / 25%) under a fine black checker.
-      const canvas = new OffscreenCanvas(1600, 1000);
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("2D canvas context unavailable");
-      context.fillStyle = "#FF0000";
-      context.fillRect(0, 0, 400, 1000);
-      context.fillStyle = "#00FF00";
-      context.fillRect(400, 0, 800, 1000);
-      context.fillStyle = "#0000FF";
-      context.fillRect(1200, 0, 400, 1000);
-      context.fillStyle = "#000000";
-      for (let y = 0; y < 1000; y += 40) {
-        for (let x = (y / 40) % 2 === 0 ? 0 : 40; x < 1600; x += 80) context.fillRect(x, y, 40, 40);
-      }
-      const bitmap = await createImageBitmap(canvas);
-      const id = "f11-ambient";
-      const doc = structuredClone(base);
-      doc.assets = [
-        { id, kind: "image", name: id, mime: "image/png", bytes: 1, width: 1600, height: 1000 },
-      ];
-      doc.shots = [{ ...doc.shots[0], layout: { kind: "single", device: "card", assetId: "" } }];
-      doc.style.background = { kind: "ambient", assetId: id, blur: 1, dim: 0 };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-
-      const measure = async (aspect: ProjectDoc["aspect"], width: number, height: number) => {
-        engine.resize(width, height);
-        await setDoc({ ...structuredClone(doc), aspect }, { [id]: bitmap });
-        engine.renderAt(1);
-        const px = engine.readPixels();
-        let energy = 0;
-        let samples = 0;
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width - 1; x++) {
-            const i = (y * width + x) * 4;
-            for (let c = 0; c < 3; c++) energy += Math.abs(px[i + 4 + c] - px[i + c]);
-            samples++;
-          }
-        }
-        const mean = (x0: number, x1: number) => {
-          const sum = [0, 0, 0];
-          let n = 0;
-          for (let y = Math.round(height * 0.4); y < Math.round(height * 0.6); y++) {
-            for (let x = Math.round(width * x0); x < Math.round(width * x1); x++) {
-              const i = (y * width + x) * 4;
-              for (let c = 0; c < 3; c++) sum[c] += px[i + c];
-              n++;
-            }
-          }
-          return sum.map((s) => s / n);
-        };
-        return {
-          energy: energy / samples,
-          left: mean(0, 0.04),
-          centre: mean(0.48, 0.52),
-          right: mean(0.96, 1),
-        };
-      };
-      return {
-        wide: await measure("16:9", 640, 360),
-        tall: await measure("9:16", 360, 640),
-      };
-    });
-
-    // Cover-fit at 9:16 shows only the middle ~35% of the width: the green band reaches
-    // both edges. Stretched, the edges would be red and blue.
-    for (const side of ["left", "right"] as const) {
-      const [r, g, b] = result.tall[side];
-      expect(g, `9:16 ${side} edge is green (${r}, ${g}, ${b})`).toBeGreaterThan(
-        Math.max(r, b) + 40,
-      );
-    }
-    // The checker is 40 px in the source: unblurred it is 30+ levels per pixel step.
-    expect(result.wide.energy, "16:9 mean |dI/dx| per channel").toBeLessThan(1.5);
-    expect(result.tall.energy, "9:16 mean |dI/dx| per channel").toBeLessThan(1.5);
-    // Blurred, not a flat fallback: red on the left, blue on the right at 16:9.
-    expect(result.wide.left[0], "16:9 left edge is red").toBeGreaterThan(result.wide.left[2] + 40);
-    expect(result.wide.right[2], "16:9 right edge is blue").toBeGreaterThan(
-      result.wide.right[0] + 40,
-    );
-    expect(result.wide.centre[1], "16:9 centre is green").toBeGreaterThan(
-      result.wide.centre[0] + 40,
-    );
-  });
-
-  test("the ambient background uses only the screenshot's first viewport", async ({ page }) => {
-    await openLab(page, BACKGROUND_ONLY);
-    const means = await page.evaluate(async () => {
-      const base = window.__fixtures?.["single-browser"];
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      if (!base || !engine || !setDoc) throw new Error("F11 ambient hooks are unavailable");
-      engine.resize(640, 360);
-      // A tall page: the first 900 px (one 1440x900 viewport) green, the rest red.
-      const canvas = new OffscreenCanvas(1440, 4000);
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("2D canvas context unavailable");
-      context.fillStyle = "#FF0000";
-      context.fillRect(0, 0, 1440, 4000);
-      context.fillStyle = "#00FF00";
-      context.fillRect(0, 0, 1440, 900);
-      const bitmap = await createImageBitmap(canvas);
-      const id = "f11-tall";
-      const doc = structuredClone(base);
-      doc.assets = [
-        { id, kind: "image", name: id, mime: "image/png", bytes: 1, width: 1440, height: 4000 },
-      ];
-      doc.shots = [{ ...doc.shots[0], layout: { kind: "single", device: "card", assetId: "" } }];
-      doc.style.background = { kind: "ambient", assetId: id, blur: 1, dim: 0 };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      await setDoc(doc, { [id]: bitmap });
-      engine.renderAt(1);
-      const px = engine.readPixels();
-      let red = 0;
-      let green = 0;
-      for (let i = 0; i < px.length; i += 4) {
-        red += px[i];
-        green += px[i + 1];
-      }
-      const n = px.length / 4;
-      return { red: red / n, green: green / n };
-    });
-    expect(means.green, JSON.stringify(means)).toBeGreaterThan(200);
-    expect(means.red, JSON.stringify(means)).toBeLessThan(40);
-  });
-
-  test("image backgrounds are cover-fit at all five aspects", async ({ page }) => {
-    await openLab(page, BACKGROUND_ONLY);
-    const ratios = await page.evaluate(async () => {
-      const base = window.__fixtures?.["single-browser"];
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      if (!base || !engine || !setDoc) throw new Error("F11 image hooks are unavailable");
-      // A black 300x300 square centred on white, in a 1600x1000 image.
-      const canvas = new OffscreenCanvas(1600, 1000);
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("2D canvas context unavailable");
-      context.fillStyle = "#FFFFFF";
-      context.fillRect(0, 0, 1600, 1000);
-      context.fillStyle = "#000000";
-      context.fillRect(650, 350, 300, 300);
-      const bitmap = await createImageBitmap(canvas);
-      const id = "f11-square";
-      const sizes: Record<ProjectDoc["aspect"], [number, number]> = {
-        "16:9": [640, 360],
-        "9:16": [360, 640],
-        "1:1": [480, 480],
-        "4:5": [400, 500],
-        "4:3": [560, 420],
-      };
-      const out: Record<string, number> = {};
-      for (const [aspect, [width, height]] of Object.entries(sizes)) {
-        const doc = structuredClone(base);
-        doc.aspect = aspect as ProjectDoc["aspect"];
-        doc.assets = [
-          { id, kind: "image", name: id, mime: "image/png", bytes: 1, width: 1600, height: 1000 },
-        ];
-        doc.shots = [{ ...doc.shots[0], layout: { kind: "single", device: "card", assetId: "" } }];
-        doc.style.background = { kind: "image", assetId: id, dim: 0 };
-        doc.style.grain = 0;
-        doc.style.vignette = 0;
-        engine.resize(width, height);
-        await setDoc(doc, { [id]: bitmap });
-        engine.renderAt(1);
-        const px = engine.readPixels();
-        let minX = width;
-        let maxX = -1;
-        let minY = height;
-        let maxY = -1;
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            if (px[(y * width + x) * 4] < 128) {
-              minX = Math.min(minX, x);
-              maxX = Math.max(maxX, x);
-              minY = Math.min(minY, y);
-              maxY = Math.max(maxY, y);
-            }
-          }
-        }
-        if (maxX < 0) throw new Error(`${aspect}: the square is not in the frame`);
-        out[aspect] = (maxX - minX + 1) / (maxY - minY + 1);
-      }
-      return out;
-    });
-    for (const [aspect, ratio] of Object.entries(ratios)) {
-      expect(ratio, `${aspect}: the square's width / height`).toBeGreaterThan(0.95);
-      expect(ratio, `${aspect}: the square's width / height`).toBeLessThan(1.05);
-    }
-  });
-
-  test("rendering an ambient background allocates no GPU objects per frame", async ({ page }) => {
-    await openLab(page);
-    const counts = await page.evaluate(async () => {
-      const base = window.__fixtures?.["single-browser"];
-      const engine = window.__labEngine;
-      const setDoc = window.__labSetDoc;
-      const images = window.__labTestImages;
-      if (!base || !engine || !setDoc || !images) throw new Error("F11 hooks are unavailable");
-      engine.resize(640, 360);
-      const doc = structuredClone(base);
-      const id = doc.shots[0].layout.kind === "single" ? doc.shots[0].layout.assetId : "";
-      doc.style.background = { kind: "ambient", assetId: id, blur: 1, dim: 0.35 };
-      await setDoc(doc, { [id]: await images.quadrants(1600, 1000) });
-      // The engine's renderer is private; the context is reached through the canvas.
-      const renderer = (engine as unknown as { renderer: { getContext(): WebGL2RenderingContext } })
-        .renderer;
-      const gl = renderer.getContext();
-      const created = { texture: 0, framebuffer: 0, renderbuffer: 0, buffer: 0 };
-      const originals = {
-        createTexture: gl.createTexture,
-        createFramebuffer: gl.createFramebuffer,
-        createRenderbuffer: gl.createRenderbuffer,
-        createBuffer: gl.createBuffer,
-      };
-      gl.createTexture = function () {
-        created.texture++;
-        return originals.createTexture.call(gl);
-      };
-      gl.createFramebuffer = function () {
-        created.framebuffer++;
-        return originals.createFramebuffer.call(gl);
-      };
-      gl.createRenderbuffer = function () {
-        created.renderbuffer++;
-        return originals.createRenderbuffer.call(gl);
-      };
-      gl.createBuffer = function () {
-        created.buffer++;
-        return originals.createBuffer.call(gl);
-      };
-      const before = engine.getMemoryInfo();
-      try {
-        for (let frame = 0; frame < 60; frame++) engine.renderAt(frame / 10);
-      } finally {
-        Object.assign(gl, originals);
-      }
-      return { created, before, after: engine.getMemoryInfo() };
-    });
-    expect(counts.created, "WebGL objects created during 60 frames").toEqual({
-      texture: 0,
-      framebuffer: 0,
-      renderbuffer: 0,
-      buffer: 0,
-    });
-    expect(counts.after).toEqual(counts.before);
-  });
-});
-
 test.describe("F11 browser URL pill", () => {
   test("the URL is drawn centred inside the pill", async ({ page }) => {
     await openLab(page);
@@ -295,7 +35,6 @@ test.describe("F11 browser URL pill", () => {
       const doc = structuredClone(base);
       const id = doc.shots[0].layout.kind === "single" ? doc.shots[0].layout.assetId : "";
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      doc.shots[0].entrance = "none";
       doc.style.grain = 0;
       doc.style.vignette = 0;
       doc.style.frameAppearance = "light";
@@ -385,7 +124,6 @@ test.describe("F11 browser URL pill", () => {
       const makeDoc = (url: string) => {
         const doc = structuredClone(base);
         doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-        doc.shots[0].entrance = "none";
         doc.style.grain = 0;
         doc.style.vignette = 0;
         doc.style.browserUrl = url;
@@ -446,7 +184,6 @@ test.describe("F11 browser URL pill", () => {
         {
           ...doc.shots[0],
           duration: 0.5,
-          entrance: "none",
           camera: { preset: "static", intensity: 0, easing: "smooth", float: 0 },
         },
       ];
@@ -549,7 +286,6 @@ test.describe("F11 screens and grain", () => {
       ];
       doc.shots[0].layout = { kind: "single", device: "browser", assetId: id };
       doc.shots[0].camera = { preset: "static", intensity: 1, easing: "smooth", float: 0 };
-      doc.shots[0].entrance = "none";
       doc.style.grain = 0;
       doc.style.vignette = 0;
       await setDoc(doc, { [id]: bitmap });

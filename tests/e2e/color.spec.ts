@@ -47,17 +47,16 @@ for (const [hex, rgb] of [
     expectRgbNear(avgRegion(frame, 600, 320, 680, 400), rgb, 1);
   });
 }
-for (const kind of ["gradient", "mesh"] as const) {
-  test(`F02 constant ${kind} outputs linear values`, async ({ page }) => {
-    await ready(page, BACKGROUND_ONLY);
-    const bg: Background =
-      kind === "gradient"
-        ? { kind, stops: ["#3366CC", "#3366CC"], angle: 90, angleConvention: "css" }
-        : { kind, colors: ["#3366CC", "#3366CC", "#3366CC"], drift: 0, seed: 1 };
-    const frame = await background(page, bg);
-    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+test("F02 constant gradient outputs linear values", async ({ page }) => {
+  await ready(page, BACKGROUND_ONLY);
+  const frame = await background(page, {
+    kind: "gradient",
+    stops: ["#3366CC", "#3366CC"],
+    angle: 90,
+    angleConvention: "css",
   });
-}
+  expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
+});
 test("F02 screenshot band centres preserve RGB in source top-to-bottom order", async ({ page }) => {
   await ready(page, "&cameraDistance=0.7");
   const pixels = await page.evaluate(async () => {
@@ -69,7 +68,6 @@ test("F02 screenshot band centres preserve RGB in source top-to-bottom order", a
     const assetId = "f02-source-bands";
     doc.shots[0].layout = { kind: "single", device: "card", assetId };
     doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-    doc.shots[0].entrance = "none";
     doc.style.grain = doc.style.vignette = 0;
     doc.style.shadow = "none";
     doc.assets.push({
@@ -150,26 +148,41 @@ test("F02 grain is zero-mean monochrome, bounded and deterministic in every chan
     expect(deviation).toBeLessThan(8);
   }
 });
-test("F02 transition fade blends in linear light", async ({ page }) => {
-  await ready(page, BACKGROUND_ONLY);
+// The loop wrap crossfade (contracts.md §5) blends the shot's end into its start. A card
+// scrolls a black-over-white screenshot from its top (black) to its bottom (white), so halfway
+// through a linear 1 s wrap the screen mixes white and black 50/50 in linear light.
+test("F02 loop wrap fade blends in linear light", async ({ page }) => {
+  await ready(page);
   const pixels = await page.evaluate(async () => {
     const doc = structuredClone(window.__fixtures?.["device-card-frontal"]);
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
-    if (!doc || !engine || !setDoc) throw new Error("Fixture unavailable");
-    doc.loop = false;
+    const images = window.__labTestImages;
+    if (!doc || !engine || !setDoc || !images) throw new Error("Fixture unavailable");
+    const assetId = "f02-wrap-bands";
+    doc.loop = true;
     doc.style.background = { kind: "solid", color: "#000000" };
     doc.style.grain = doc.style.vignette = 0;
-    const shot = doc.shots[0];
-    shot.duration = 2;
-    doc.shots.push({
-      ...structuredClone(shot),
-      id: "white-shot",
-      styleOverrides: { background: { kind: "solid", color: "#FFFFFF" } },
-      transitionIn: { kind: "fade", duration: 1, easing: "linear" },
+    doc.style.shadow = "none";
+    doc.assets.push({
+      id: assetId,
+      kind: "image",
+      name: assetId,
+      mime: "image/png",
+      bytes: 1,
+      width: 1600,
+      height: 4000,
     });
-    await setDoc(doc);
-    engine.renderAt(1.5);
+    const shot = doc.shots[0];
+    shot.layout = { kind: "single", device: "card", assetId };
+    shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    // Holds the top for 2 s, scrolls 3 screens in 4 s (under 0.9 per second), holds the
+    // bottom for 2 s. The loop is 7 s and the wrap fades over [6, 7).
+    shot.duration = 8;
+    shot.scroll = { enabled: true, stops: [0, 1], hold: 2, easing: "smooth" };
+    shot.transitionIn = { kind: "fade", duration: 1, easing: "linear" };
+    await setDoc(doc, { [assetId]: await images.bands(1600, 4000, ["#000000", "#FFFFFF"]) });
+    engine.renderAt(6.5);
     return { width: 1280, height: 720, data: engine.readPixels() };
   });
   expectRgbNear(avgRegion(pixels, 600, 320, 680, 400), [188, 188, 188], 1);

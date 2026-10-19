@@ -4,23 +4,14 @@ import { useUIStore } from "../../state/ui-store";
 import { schedule } from "../../motion";
 import { TimeRuler } from "./TimeRuler";
 import { ShotCard } from "./ShotCard";
-import { TransitionChip } from "./TransitionChip";
-import { AddShotMenu } from "./AddShotMenu";
-import { BUILTIN_TEMPLATES } from "../../templates/registry";
 import { Icon, Tooltip } from "../../ui";
 import { Maximize, Pause, Play, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
-import type { AssetRef, Layout, Transition } from "../../doc/types";
+import type { Layout } from "../../doc/types";
 
 export const TimelineContainer: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
-  const addShot = useEditorStore((s) => s.addShot);
-  const duplicateShot = useEditorStore((s) => s.duplicateShot);
-  const removeShot = useEditorStore((s) => s.removeShot);
-  const moveShot = useEditorStore((s) => s.moveShot);
   const setShotDuration = useEditorStore((s) => s.setShotDuration);
-  const setTransition = useEditorStore((s) => s.setTransition);
-  const splitShot = useEditorStore((s) => s.splitShot);
 
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
@@ -52,38 +43,26 @@ export const TimelineContainer: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Compute timing schedule
-  const { total, shots: scheduledShots } = useMemo(() => schedule(doc), [doc]);
+  // The loop length: the shot, less a wrap crossfade's overlap
+  const { total } = useMemo(() => schedule(doc), [doc]);
+  // A document has one shot (multi-shot reels were cut on 19 Oct 2026).
+  const shot = doc.shots[0];
 
   // Pixels per second
   const pxPerSecond = useMemo(() => {
     if (total <= 0) return 60;
     if (zoomMode === "fit") {
-      // Fit all shots nicely in available width with padding for add button (~100px)
+      // Fit the shot in the available width, with some padding
       const availableWidth = Math.max(200, containerWidth - 120);
       return Math.max(25, availableWidth / total);
     }
     return Math.max(25, (containerWidth / total) * zoomLevel);
   }, [containerWidth, total, zoomMode, zoomLevel]);
 
-  // Shot boundaries for Shift-snap
-  const shotBoundaries = useMemo(() => {
-    const list: number[] = [0];
-    for (const s of scheduledShots) {
-      if (!list.includes(s.start)) list.push(s.start);
-      if (!list.includes(s.end)) list.push(s.end);
-    }
-    if (!list.includes(total)) list.push(total);
-    return list.sort((a, b) => a - b);
-  }, [scheduledShots, total]);
+  // Shift-snap points: the start and the loop point
+  const shotBoundaries = useMemo(() => [0, total], [total]);
 
-  // Selected shot index
-  const selectedShotIndex = useMemo(() => {
-    if (selection.kind === "shot") {
-      return doc.shots.findIndex((s) => s.id === selection.id);
-    }
-    return -1;
-  }, [doc.shots, selection]);
+  const isSelected = selection.kind === "shot" && selection.id === shot.id;
 
   // Time format helper (00:00.0)
   const formatTime = (seconds: number) => {
@@ -91,55 +70,6 @@ export const TimelineContainer: React.FC = () => {
     const s = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 10);
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}.${ms}`;
-  };
-
-  // Keyboard navigation between shots
-  const handleNavigateShot = (direction: -1 | 1) => {
-    const currentIndex = selectedShotIndex !== -1 ? selectedShotIndex : 0;
-    const nextIndex = Math.max(0, Math.min(doc.shots.length - 1, currentIndex + direction));
-    const targetShot = doc.shots[nextIndex];
-    if (targetShot) {
-      setSelection({ kind: "shot", id: targetShot.id });
-    }
-  };
-
-  // Add shot from template helper
-  const handleAddFromTemplate = (templateId: string, insertAfterIndex?: number) => {
-    const tmpl = BUILTIN_TEMPLATES.find((t) => t.id === templateId);
-    if (!tmpl) return;
-
-    const slots: Record<string, AssetRef> = {};
-    for (const slot of tmpl.slots) {
-      const images = doc.assets.filter((a) => a.kind === "image");
-      const match = images.find((a) => a.role === slot.role) || images[0];
-      if (match) slots[slot.key] = match;
-    }
-
-    const res = tmpl.build({
-      style: doc.style,
-      aspect: doc.aspect,
-      projectName: doc.name,
-      slots,
-    });
-
-    if (res.shots.length > 0) {
-      apply(
-        (draft) => {
-          const newS = structuredClone(res.shots[0]);
-          newS.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          if (
-            insertAfterIndex !== undefined &&
-            insertAfterIndex >= 0 &&
-            insertAfterIndex < draft.shots.length
-          ) {
-            draft.shots.splice(insertAfterIndex + 1, 0, newS);
-          } else {
-            draft.shots.push(newS);
-          }
-        },
-        { label: `Add shot from template "${tmpl.name}"` },
-      );
-    }
   };
 
   // Wheel zoom with Ctrl / trackpad pinch
@@ -277,78 +207,23 @@ export const TimelineContainer: React.FC = () => {
             className="absolute top-0 bottom-0 w-[2px] bg-[var(--color-accent)] pointer-events-none z-30 opacity-80"
           />
 
-          {doc.shots.map((shot, idx) => {
-            const isSelected = selectedShotIndex === idx;
-            const scheduled = scheduledShots[idx];
-            const startSec = scheduled ? scheduled.start : 0;
-            const endSec = scheduled ? scheduled.end : shot.duration;
-            const cardWidth = shot.duration * pxPerSecond;
-
-            // Transition chip before this shot (for shot > 0)
-            const showTransitionBefore = idx > 0;
-            const transitionBefore = shot.transitionIn;
-
-            return (
-              <React.Fragment key={shot.id}>
-                {showTransitionBefore && (
-                  <TransitionChip
-                    transition={transitionBefore}
-                    onChange={(newTrans: Transition) => setTransition(idx, newTrans)}
-                  />
-                )}
-
-                <ShotCard
-                  shot={shot}
-                  index={idx}
-                  isSelected={isSelected}
-                  widthPx={cardWidth}
-                  startSec={startSec}
-                  endSec={endSec}
-                  pxPerSecond={pxPerSecond}
-                  playhead={playhead}
-                  canDelete={doc.shots.length > 1}
-                  onSelect={() => setSelection({ kind: "shot", id: shot.id })}
-                  onDurationChange={(newDuration) => setShotDuration(idx, newDuration)}
-                  onReorder={moveShot}
-                  onDuplicate={() => duplicateShot(idx)}
-                  onDelete={() => removeShot(idx)}
-                  onSplit={(splitT) => splitShot(idx, splitT)}
-                  onChangeLayout={(newLayout: Layout) => {
-                    apply(
-                      (draft) => {
-                        const target = draft.shots[idx];
-                        if (target) {
-                          target.layout = newLayout;
-                        }
-                      },
-                      { label: "Change layout" },
-                    );
-                  }}
-                  onNavigateLeft={() => handleNavigateShot(-1)}
-                  onNavigateRight={() => handleNavigateShot(1)}
-                />
-              </React.Fragment>
-            );
-          })}
-
-          {/* Loop Wrap Transition Chip at the end when loop is enabled */}
-          {doc.loop && doc.shots.length > 1 && (
-            <TransitionChip
-              isLoopWrap
-              transition={doc.shots[0].transitionIn}
-              onChange={(newTrans: Transition) => setTransition(0, newTrans)}
-            />
-          )}
-
-          {/* Add Shot Menu Button */}
-          <div className="h-full py-0.5">
-            <AddShotMenu
-              doc={doc}
-              insertAfterIndex={selectedShotIndex !== -1 ? selectedShotIndex : undefined}
-              onAddShot={addShot}
-              onAddFromTemplate={handleAddFromTemplate}
-            />
-          </div>
+          <ShotCard
+            shot={shot}
+            index={0}
+            isSelected={isSelected}
+            widthPx={shot.duration * pxPerSecond}
+            pxPerSecond={pxPerSecond}
+            onSelect={() => setSelection({ kind: "shot", id: shot.id })}
+            onDurationChange={(newDuration) => setShotDuration(0, newDuration)}
+            onChangeLayout={(newLayout: Layout) => {
+              apply(
+                (draft) => {
+                  draft.shots[0].layout = newLayout;
+                },
+                { label: "Change layout" },
+              );
+            }}
+          />
         </div>
       </div>
     </div>
