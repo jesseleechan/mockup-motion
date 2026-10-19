@@ -1,12 +1,12 @@
 /**
- * Section data from `npm run capture` (scripts/capture.ts): each screenshot comes with a JSON file
- * of section positions in CSS px. Responsive Scroll stops both screens on the same section, so
+ * Section data from the capture command (packages/capture, also `npm run capture`): each
+ * screenshot comes with a JSON file of section positions in CSS px. Responsive Scroll stops both screens on the same section, so
  * the sections are stored on the screenshot's asset in image px (docs/responsive-scroll-plan, R02).
  * Pure: no DOM.
  */
 import type { AssetMeta, AssetRef, CaptureSection } from "../doc/types";
 
-/** The fields of a capture JSON this app reads (`CaptureMetadata` in scripts/capture.ts). */
+/** The fields of a capture JSON this app reads (`CaptureMetadata` in packages/capture/src/index.d.mts). */
 export interface CaptureJson {
   url: string;
   viewportWidth: number;

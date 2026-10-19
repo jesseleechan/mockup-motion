@@ -51,10 +51,13 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 
 ## Demo content and capture
 
-| Item                                                                                                                                                                                                         | Source                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
-| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                                                                                                     | F12                         |
-| Vite warns in dev that the demo JSON under `public/demo/` (`manifest.json`, `sections*.json`) can't be imported from JavaScript; dev and build work. Moving the imported JSON under `src/` would silence it. | Responsive Scroll R02 (#52) |
+| Item                                                                                                                                                                                                                                                    | Source                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                                                                                                                                                | F12                         |
+| Vite warns in dev that the demo JSON under `public/demo/` (`manifest.json`, `sections*.json`) can't be imported from JavaScript; dev and build work. Moving the imported JSON under `src/` would silence it.                                            | Responsive Scroll R02 (#52) |
+| The mobile capture files are always named `@2x` (`<host>-mobile-390@2x.png`), even with `--scale 3`. The JSON's `scale` is right, but the name misleads. Naming them after the real scale changes the capture format the editor and the demo files use. | Capture CLI                 |
+| `packages/capture/package.json` has no `license`, and neither does the repo. Choose one before publishing `mockup-motion-capture`.                                                                                                                      | Capture CLI                 |
+| Publishing `mockup-motion-capture` to npm is deferred (owner, 19 Oct 2026: personal use for now); the package is ready, see packages/capture/README.md.                                                                                                 | Capture CLI                 |
 
 ## Tests and CI
 
