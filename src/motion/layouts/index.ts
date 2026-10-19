@@ -2,6 +2,7 @@ import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
 import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
 import { resolvePairLayout } from "./pair";
+import { resolveResponsiveLayout } from "./responsive";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
@@ -39,6 +40,12 @@ export { columnsGeometry, resolveColumnsLayout } from "./columns";
 export { lanesAssetIds, lanesDuration, resolveLanes } from "./lanes";
 export type { LaneAxis, LaneGeometry, LaneOptions } from "./lanes";
 export { resolveWallLayout } from "./wall";
+export {
+  RESPONSIVE_DESKTOP_ASPECT,
+  RESPONSIVE_MOBILE_ASPECT,
+  resolveResponsiveLayout,
+  responsiveGeometry,
+} from "./responsive";
 export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";
 export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
@@ -75,6 +82,8 @@ export function resolveLayout(
         : resolveSliderLayout(layout, aspect, assets, shotT);
     case "orbit":
       return resolveOrbitLayout(layout, aspect, assets, shotT);
+    case "responsive":
+      return resolveResponsiveLayout(layout, aspect, shotT, entrance);
     case "title":
       return resolveTitleLayout();
     default: {
