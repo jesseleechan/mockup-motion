@@ -106,7 +106,7 @@ async function setFramesShot(page: Page, c: FramesCase, count: number, duration:
 }
 
 for (const c of CASES) {
-  test(`a ${c.name} shot replaces the speed and tilt sliders and keeps its minimum duration`, async ({
+  test(`a ${c.name} shot replaces the speed and tilt sliders and sets its length by pace`, async ({
     page,
   }) => {
     await openEditorWithDemo(page);
@@ -129,7 +129,8 @@ for (const c of CASES) {
     await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
     await expect(page.getByText("Loop length", { exact: true })).toBeVisible();
     await expect(page.getByText("15.0 s", { exact: true })).toBeVisible();
-    // Brisk, the fastest pace, keeps the Frames minimum: 15 s × 0.8 is just above it.
+    // Brisk is 15 s × 0.8 = 12 s, which is exactly this shot's minimum, so the shot lands on it.
+    // The clamp below the minimum is covered by tests/pace.test.ts.
     await pace.getByRole("radio", { name: "Brisk" }).click();
     await expect
       .poll(() =>

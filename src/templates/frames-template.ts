@@ -7,7 +7,6 @@ import { presetToneStyle } from "./looks";
 type RowsLayout = Extract<Layout, { kind: "rows" }>;
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
 
-export { FRAMES_MIN_LOOP };
 // Quality bar §4: Frames needs 4 screenshots; the slots take up to 6.
 const REQUIRED_SLOTS = 4;
 const SLOT_COUNT = 6;
