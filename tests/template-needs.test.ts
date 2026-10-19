@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 import type { AssetRef, AssetRole } from "../src/doc/types";
 import {
   BUILTIN_TEMPLATES,
+  demoAssetsToFill,
+  fillSlots,
   getTemplateById,
+  missingRequiredSlots,
   templateNeeds,
   validateTemplateRequirements,
   type Template,
 } from "../src/templates";
+import { demoAssetRef } from "../src/lab/demo-assets";
 
 function template(id: string): Template {
   const found = getTemplateById(id);
@@ -63,5 +67,34 @@ describe("Template cards say what a template needs (polish item 4)", () => {
     expect(validateTemplateRequirements(slider, screenshots("desktop", 3))).toEqual({
       valid: true,
     });
+  });
+});
+
+describe("Scroll presets need a full-page screenshot (polish item 5)", () => {
+  const hero = demoAssetRef("demo-northwind-desktop-hero");
+  const full = demoAssetRef("demo-studio-kova-desktop-full");
+
+  it("counts a short screenshot in a full-page slot as missing, so demo content adds a full page", () => {
+    // After Desktop Slider's demo content the library holds only heroes, which can't scroll.
+    const story = template("scroll-story");
+    expect(missingRequiredSlots(story, [hero]).map((s) => s.key)).toEqual(["desktop1"]);
+    const demo = demoAssetsToFill(story, [hero]);
+    expect(demo.map((a) => a.meta?.tall)).toEqual([true]);
+    expect(missingRequiredSlots(story, [hero, ...demo])).toEqual([]);
+    expect(fillSlots(story, [hero, ...demo]).desktop1?.meta?.tall).toBe(true);
+  });
+
+  it("says so on the card until the library has a full-page screenshot of the role", () => {
+    const story = template("scroll-story");
+    expect(validateTemplateRequirements(story, [hero])).toEqual({
+      valid: false,
+      reason: "Needs a full-page desktop screenshot",
+    });
+    expect(validateTemplateRequirements(story, [hero, full])).toEqual({ valid: true });
+    expect(
+      validateTemplateRequirements(template("mobile-scroll-story"), [
+        demoAssetRef("demo-aurelia-mobile-hero"),
+      ]).valid,
+    ).toBe(false);
   });
 });

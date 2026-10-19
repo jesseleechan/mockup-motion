@@ -44,15 +44,17 @@ export function templateNeeds(template: Template): string {
 
 /**
  * Whether the library has enough distinct screenshots of each role the template's required
- * slots ask for. When it doesn't, `reason` is the template's `templateNeeds` text.
+ * slots ask for, full-page ones where a slot prefers them. When it doesn't, `reason` is the
+ * template's `templateNeeds` text.
  */
 export function validateTemplateRequirements(
   template: Template,
   assets: AssetRef[],
 ): { valid: boolean; reason?: string } {
   const met = roleNeeds(template).every(
-    ({ role, count }) =>
-      assets.filter((a) => a.kind === "image" && a.role === role).length >= count,
+    ({ role, count, tall }) =>
+      assets.filter((a) => a.kind === "image" && a.role === role && (!tall || a.meta?.tall))
+        .length >= count,
   );
   return met ? { valid: true } : { valid: false, reason: templateNeeds(template) };
 }
@@ -190,7 +192,13 @@ function samePagePair(
 /** Required slots that fillSlots cannot fill from these assets. */
 export function missingRequiredSlots(t: Template, assets: AssetRef[]): SlotSpec[] {
   const filled = fillSlots(t, assets);
-  return t.slots.filter((slot) => slot.required && !filled[slot.key]);
+  // A full-page slot holding a short screenshot shows a page that never scrolls, so it still
+  // counts as missing (polish item 5): demo content adds a full-page capture for it.
+  return t.slots.filter(
+    (slot) =>
+      slot.required &&
+      (!filled[slot.key] || (slot.prefer === "tall" && !filled[slot.key]?.meta?.tall)),
+  );
 }
 
 /**
