@@ -171,7 +171,10 @@ describe("Preset tone: the Light / Dark background of every preset", () => {
       "background",
       "frameAppearance",
     ]);
-    expect(presetToneStyle("dark", tones)).toEqual({ background: GRAPHITE, frameAppearance: "dark" });
+    expect(presetToneStyle("dark", tones)).toEqual({
+      background: GRAPHITE,
+      frameAppearance: "dark",
+    });
   });
 
   it("Custom stays selected only while the document shows the background it was opened on", () => {
