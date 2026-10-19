@@ -1,4 +1,4 @@
-import React, { useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import React, { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { GripVertical, Plus, Upload, X } from "lucide-react";
 import { validateAndDecodeAsset } from "../../../assets/decode";
@@ -63,7 +63,8 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   const moveAssetInShot = useEditorStore((s) => s.moveAssetInShot);
   const addAssets = useEditorStore((s) => s.addAssets);
   const { toast } = useToast();
-  const urls = useAssetUrls(images);
+  const imageIds = useMemo(() => images.map((a) => a.id), [images]);
+  const urls = useAssetUrls(imageIds);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The gap a dragged row would land in: 0 is before the first row.
   const [dropGap, setDropGap] = useState<number | null>(null);
