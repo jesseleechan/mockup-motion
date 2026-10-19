@@ -7,8 +7,8 @@ test.beforeEach(async ({ page }) => {
   await keepResourceTimings(page);
 });
 
-// F09: export correctness (every
-// destination preset) and the export dialog (layout, truthful summary, cancel).
+// F09: export correctness (every destination preset) and the
+// export dialog (layout, truthful summary, cancel).
 
 interface Media {
   ALL_FORMATS: unknown;
@@ -44,7 +44,6 @@ interface LabWindow {
   __createLabAssetProvider?: () => {
     getImage(id: string, maxWidth: number): Promise<ImageBitmap>;
     getText: unknown;
-    getAudio?: unknown;
   };
   __labTestImages?: {
     quadrants(w: number, h: number): Promise<ImageBitmap>;

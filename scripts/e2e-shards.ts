@@ -38,7 +38,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "shadows-post",
     "stack",
   ],
-  ["audio", "export-dialog", "thumbnails", "stage", "lab", "devices", "ui", "preset-tone", "orbit"],
+  ["export-dialog", "thumbnails", "stage", "lab", "devices", "ui", "preset-tone", "orbit"],
   ["export", "frames", "slider", "mobile-frames"],
 ];
 

@@ -487,7 +487,6 @@ test.describe("F11 browser URL pill", () => {
         quality: "high",
         format: "webm",
         supersample: 1,
-        motionBlur: false,
       });
       const input = new media.Input({
         source: new media.BlobSource(exported.blob),

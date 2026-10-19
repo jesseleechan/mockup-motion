@@ -35,7 +35,7 @@ export function resolveShotStyle(doc: ProjectDoc, shotIndex: number): Style {
 /**
  * Every image asset the document can draw: device screens in every layout kind,
  * ambient and image backgrounds (document style and every shot override), and
- * text-layer logos. Audio is excluded; this is the set to decode as images.
+ * text-layer logos: the set to decode as images.
  */
 export function collectAssetIds(doc: ProjectDoc): Set<string> {
   const ids = new Set<string>();
