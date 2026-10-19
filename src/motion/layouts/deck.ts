@@ -14,11 +14,12 @@ const SLOT_SCALE_STEP = 0.06;
 // along the axis: below the front card on y, to its right on x.
 const Y_PEEK = 0.12;
 const X_PEEK = 0.2;
-// Card size. y: at most 0.84 of the frame width wide, and the deck at most 0.8 of the frame
-// height tall. x: at most 0.7 of the frame height tall, and the deck at most 0.86 of the frame
-// width wide.
+// Card size. y: at most 0.84 of the frame width wide, and the deck at most 0.86 of the frame
+// height tall (the preview's 0.8 left the 16:9 front card at 58% of the frame width; 0.86 gives
+// 62%, the low end for a single desktop device: quality bar §4, stack plan S04 review). x: at
+// most 0.7 of the frame height tall, and the deck at most 0.86 of the frame width wide.
 const Y_CARD_WIDTH = 0.84;
-const Y_DECK_HEIGHT = 0.8;
+const Y_DECK_HEIGHT = 0.86;
 const X_CARD_HEIGHT = 0.7;
 const X_DECK_WIDTH = 0.86;
 // The leaving card goes this far past the frame edge, so its edge is not left on the border.

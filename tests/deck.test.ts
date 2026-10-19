@@ -145,7 +145,7 @@ describe("Deck arrangement (stack plan S01)", () => {
       for (let n = 2; n <= 6; n++) {
         const depth = deckDepth(n);
         const desktop = nodesAt(deck("y", "desktop", n), aspect, 0)[0];
-        const height = Math.min((0.84 * W) / 1.6, 0.8 / (1 + (depth - 1) * 0.12));
+        const height = Math.min((0.84 * W) / 1.6, 0.86 / (1 + (depth - 1) * 0.12));
         expect(desktop.height, `${aspect} N=${n}`).toBeCloseTo(height, 9);
         expect(desktop.width, `${aspect} N=${n}`).toBeCloseTo(1.6 * height, 9);
 
