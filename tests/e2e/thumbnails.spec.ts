@@ -199,6 +199,9 @@ test.describe("F07: shot and project thumbnails", () => {
     const elapsed = Date.now() - started;
     console.log(`Thumbnail updated ${elapsed} ms after the camera change`);
 
+    // As for "before": a render landing while the image decodes would change its src and fail
+    // the decode.
+    await waitForThumbnails(page);
     const after = await imageStats(thumb);
     expect(after.naturalWidth).toBeGreaterThan(0);
     // Still frames the browser at distance 1.0 instead of the push-in's 1.04 at the thumbnail
