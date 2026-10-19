@@ -8,6 +8,7 @@ import { fillSlots, missingRequiredSlots } from "./slots";
 const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
 const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
+const mobileFull = (site: DemoSite) => demoAssetId(site, "mobile", "full");
 
 /**
  * Demo captures per template, in slot order (fillSlots is greedy by role).
@@ -49,6 +50,22 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("aurelia"),
   ],
+  // Five per stack. The poster (35% of the 10 s loop, 3.5 s) shows the third screenshot in
+  // front with the fourth and fifth behind it: a photographic hero in front.
+  "desktop-stack": [
+    desktopHero("northwind"),
+    desktopHero("field-notes"),
+    desktopHero("maison-oak"),
+    desktopHero("aurelia"),
+    desktopHero("studio-kova"),
+  ],
+  "mobile-stack": [
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("aurelia"),
+    mobileHero("field-notes"),
+    mobileHero("studio-kova"),
+  ],
   // Five per orbit, so the gallery shows a ring. The poster (35% of the 10 s loop) shows the
   // third screenshot settling at the front: Maison Oak's photographic hero, as on the sliders.
   "desktop-orbit": [
@@ -66,6 +83,10 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("studio-kova"),
   ],
   "scroll-story": [desktopFull("studio-kova")],
+  // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
+  "mobile-scroll-story": [mobileFull("aurelia")],
+  // One page at both sizes: Aurelia's full pages, with their capture sections.
+  "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
