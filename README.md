@@ -58,7 +58,7 @@ Videos are silent. Music was removed in October 2026; a saved project with a mus
 
 ## Export
 
-Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip), animated GIF and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. GIFs are capped at 960 px on the short side and 20 fps.
+Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip) and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. Animated GIF export and motion blur were removed in October 2026; a saved project that used them opens with MP4 and no motion blur.
 
 Each destination is a starting point for the settings. The dialog opens on Custom, an MP4 at 1080p in your project's aspect:
 
@@ -105,8 +105,6 @@ Put the files next to the page. The script pauses the video when the visitor pre
 
 Export stays on this machine. Each finished file is read back and checked ("Verified MP4"). Cancel stops the encode and leaves the editor usable.
 
-GIF export is slow and large. A 6-second GIF at the 1080p setting (1708 × 960, 20 fps) took over a minute, froze the page while encoding, and came out at 83 MB. For GIFs, use 720p or a shorter video.
-
 ## Projects
 
 Projects, screenshots and brand kits are stored in IndexedDB in this browser. Open Projects from the MockupMotion menu at the top left to switch, rename, duplicate or delete them. If storage is full, the save indicator says so. Clearing site data removes the local library.
@@ -141,6 +139,6 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Brand kit               | Brand tab fields as listed; no font upload control. `tests/e2e/library.spec.ts` "Media Tab & Brand Kit flow…". Missing font upload and logo drawing: [`follow-ups.md`](docs/plan/follow-ups.md)                                                           |
 | Export                  | Destinations, formats and resolutions read from the dialog; "Switch to 4:3" changed Dribbble to 1600 × 1200. `tests/e2e/export.spec.ts` "F09 destination presets export at their size and length"                                                         |
 | Web bundle              | A 720p Website export: the zip held `untitled-presentation.mp4`, `.webm`, `-poster.webp` and `embed.html`; both videos verified; the snippet above is the dialog's text, formatted by Prettier                                                            |
-| GIF and PNG             | Exported both from the dialog and verified (GIF 1708 × 960, 83 MB; PNG 1920 × 1080)                                                                                                                                                                       |
+| PNG                     | Exported from the dialog and verified (PNG 1920 × 1080)                                                                                                                                                                                                   |
 | Cancel                  | `tests/e2e/export-dialog.spec.ts` "cancel stops the worker and returns to the settings"                                                                                                                                                                   |
 | Projects                | The Projects dialog lists rename, duplicate and delete. `polish.spec.ts` "projects can be duplicated and deleted" and "storage quota surfaces a calm error…"                                                                                              |

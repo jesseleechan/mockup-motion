@@ -44,7 +44,6 @@ const PREVIEW_SETTINGS = {
   quality: "web",
   format: "webm",
   supersample: 1,
-  motionBlur: false,
 } as const;
 
 interface RenderedTemplate {

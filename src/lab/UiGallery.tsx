@@ -264,12 +264,8 @@ function GalleryContent() {
               />
             </Field>
 
-            <Field label="Motion Blur">
-              <Switch
-                checked={switchVal}
-                onCheckedChange={setSwitchVal}
-                aria-label="Enable motion blur"
-              />
+            <Field label="Loop">
+              <Switch checked={switchVal} onCheckedChange={setSwitchVal} aria-label="Loop" />
             </Field>
 
             <Field label="Background Color">

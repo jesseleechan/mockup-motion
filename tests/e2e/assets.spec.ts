@@ -481,7 +481,6 @@ test("F03: a pair's WebM export contains both screen assets", async ({ page }) =
       quality: "web",
       format: "webm",
       supersample: 1,
-      motionBlur: false,
     });
     const input = new media.Input({
       source: new media.BlobSource(result.blob),

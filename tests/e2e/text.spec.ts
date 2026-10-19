@@ -133,7 +133,6 @@ test.describe("WP-10 Text & Typography E2E & Visual Verification", () => {
         quality: "web",
         format: "mp4",
         supersample: 1,
-        motionBlur: false,
       });
 
       return {

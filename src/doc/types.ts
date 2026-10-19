@@ -178,7 +178,7 @@ export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-fee
   | "linkedin" | "x" | "presentation-4k";
 
 export type ExportQuality = "web" | "high" | "master";
-export type ExportFormat = "mp4" | "webm" | "bundle" | "gif" | "png";
+export type ExportFormat = "mp4" | "webm" | "bundle" | "png";
 
 export interface ExportSettings {
   destination: DestinationId;
@@ -187,7 +187,6 @@ export interface ExportSettings {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export interface ProjectDoc {

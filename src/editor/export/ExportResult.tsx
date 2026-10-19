@@ -24,7 +24,6 @@ const DOWNLOAD_LABELS: Record<ExportExtension, string> = {
   mp4: "MP4",
   webm: "WebM",
   zip: "bundle",
-  gif: "GIF",
   png: "PNG",
 };
 
@@ -65,7 +64,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
   const { url, filename, extension, result } = outcome;
   const [copied, setCopied] = useState(false);
   const isVideo = extension === "mp4" || extension === "webm";
-  const isImage = extension === "gif" || extension === "png";
+  const isImage = extension === "png";
 
   useEffect(() => {
     if (!copied) return;

@@ -153,16 +153,16 @@ test.describe("F09 export dialog", () => {
 
     await expect(summary).not.toContainText("Checking encoder");
     await expect(dialog.getByRole("combobox", { name: "Format" })).toContainText("MP4");
-    await expectCleanLayout(page, "Custom", 6);
+    await expectCleanLayout(page, "Custom", 5);
     for (const card of ["Website", "Dribbble", "Story", "4K presentation", "Custom"]) {
       await dialog.getByRole("button", { name: card, exact: true }).click();
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, card, 6);
+      await expectCleanLayout(page, card, 5);
     }
-    for (const format of [/Animated GIF/, /Still frame/, /WebM/]) {
+    for (const format of [/Still frame/, /WebM/]) {
       await choose(page, dialog, "Format", format);
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, `Format ${format.source}`, 6);
+      await expectCleanLayout(page, `Format ${format.source}`, 5);
     }
     // The longest option of every select fits on one line (a still frame disables the
     // video-only fields, so it comes last).
@@ -173,7 +173,7 @@ test.describe("F09 export dialog", () => {
       ["Format", /Still frame/],
     ] as const) {
       await choose(page, dialog, field, option);
-      await expectCleanLayout(page, `${field} ${option.source}`, 6);
+      await expectCleanLayout(page, `${field} ${option.source}`, 5);
     }
 
     await choose(page, dialog, "Format", /WebM/);

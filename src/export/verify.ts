@@ -37,9 +37,9 @@ export async function verifyExportBlob(
     };
   }
 
-  // GIF and still images: Mediabunny reads video containers only, so decode the image and
+  // Still images: Mediabunny reads video containers only, so decode the image and
   // check its size (Node has no image decoder; there the check is skipped).
-  if (blob.type === "image/gif" || blob.type === "image/png" || blob.type === "image/webp") {
+  if (blob.type === "image/png" || blob.type === "image/webp") {
     if (typeof createImageBitmap !== "function") return { valid: true, warnings: [] };
     let bitmap: ImageBitmap;
     try {
