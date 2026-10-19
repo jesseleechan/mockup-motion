@@ -59,6 +59,9 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
 
     // 3. Verify Brand Kit persists across reload
     await page.reload();
+    // A reload starts on an empty project, so the editor opens on the gallery; close it.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     await brandTabBtn.click();
     await expect(page.locator("#kit-name")).toHaveValue("Nexus Design Kit");
 
