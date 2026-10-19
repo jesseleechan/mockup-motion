@@ -43,7 +43,7 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
 };
 
 /**
- * The screenshots a single, pair, trio, slider or orbit layout shows. Other layouts fill from the
+ * The screenshots a single, pair, responsive, trio, slider or orbit layout shows. Other layouts fill from the
  * project.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
@@ -59,7 +59,14 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
       </Section>
     );
   }
-  if (layout.kind !== "single" && layout.kind !== "pair" && layout.kind !== "trio") return null;
+  if (
+    layout.kind !== "single" &&
+    layout.kind !== "pair" &&
+    layout.kind !== "responsive" &&
+    layout.kind !== "trio"
+  ) {
+    return null;
+  }
 
   return (
     <Section title="Screenshots">
@@ -81,7 +88,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           />
         )}
 
-        {layout.kind === "pair" && (
+        {(layout.kind === "pair" || layout.kind === "responsive") && (
           <>
             <AssetField
               label="Desktop"
@@ -90,7 +97,8 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
               droppable
               onChange={(id) =>
                 update((target) => {
-                  if (target.layout.kind === "pair") target.layout.desktopId = id;
+                  const l = target.layout;
+                  if (l.kind === "pair" || l.kind === "responsive") l.desktopId = id;
                 })
               }
             />
@@ -101,7 +109,8 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
               droppable
               onChange={(id) =>
                 update((target) => {
-                  if (target.layout.kind === "pair") target.layout.mobileId = id;
+                  const l = target.layout;
+                  if (l.kind === "pair" || l.kind === "responsive") l.mobileId = id;
                 })
               }
             />

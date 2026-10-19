@@ -73,6 +73,7 @@ test("a dropped captures folder imports its full pages with roles and sections; 
   await drag("drop");
   await expect(page.getByTestId("import-drop-overlay")).toHaveCount(0);
   await expect(page.getByText("Not imported: notes.txt.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Skipped 1 viewport capture", { exact: false })).toBeVisible();
   await expect.poll(async () => (await storedAssets(page)).length).toBe(2);
   const assets = await storedAssets(page);
   const desktop = assets.find((a) => a.name === "aurelia-desktop-1440-full.webp");
@@ -83,7 +84,9 @@ test("a dropped captures folder imports its full pages with roles and sections; 
   expect(desktop?.meta?.sections?.length).toBeGreaterThan(0);
   expect(mobile?.meta?.sections?.length).toBeGreaterThan(0);
 
-  // ⌘V / Ctrl+V outside a field imports the clipboard's image.
+  // ⌘V / Ctrl+V outside a field and with no dialog open imports the clipboard's image.
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.evaluate(async () => {
     const blob = await (await fetch("/demo/aurelia/mobile-hero.webp")).blob();
     const data = new DataTransfer();

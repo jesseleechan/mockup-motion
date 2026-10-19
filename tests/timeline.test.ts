@@ -10,7 +10,7 @@ describe("WP-14: Storyboard Timeline & Transitions", () => {
     doc.shots = [
       defaultShot({ kind: "single", device: "browser", assetId: "" }),
       defaultShot({ kind: "pair", desktopId: "d1", mobileId: "m1", arrangement: "overlap" }),
-      defaultShot({ kind: "title" }),
+      defaultShot({ kind: "single", device: "card", assetId: "" }),
     ];
     doc.shots[0].duration = 3.5;
     doc.shots[1].duration = 4.2;

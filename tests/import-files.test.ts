@@ -5,6 +5,7 @@ import {
   roleFromName,
   sortImportFiles,
   unsupportedMessage,
+  addedMessage,
 } from "../src/editor/import/sort-files";
 import type { CaptureFile, CaptureJson } from "../src/assets/capture-json";
 import type { AssetRef } from "../src/doc/types";
@@ -88,6 +89,13 @@ describe("sorting dropped and pasted files", () => {
     );
     expect(unsupportedMessage([])).toBeUndefined();
     expect(nameList(["a", "b", "c", "d", "e"])).toBe("a, b, c and 2 more");
+  });
+
+  it("says what a drop added and which viewport captures it left out", () => {
+    expect(addedMessage(1, 0)).toBe("Added 1 screenshot.");
+    expect(addedMessage(2, 2, 2)).toBe(
+      "Added 2 screenshots with section data. Skipped 2 viewport captures; the full pages are used instead.",
+    );
   });
 });
 

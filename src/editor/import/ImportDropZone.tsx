@@ -4,7 +4,13 @@ import { Icon, useToast } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { isTypingTarget } from "../focus";
 import { unfilledSlots } from "../template-actions";
-import { dragHasFiles, filesFromClipboard, filesFromDrop } from "./read-files";
+import {
+  dragHasFiles,
+  filesFromDrop,
+  imagesFromClipboard,
+  isDialogOpen,
+  type ImportFile,
+} from "./read-files";
 import { useImportFiles } from "./use-import-files";
 
 /**
@@ -32,16 +38,24 @@ export const ImportDropZone: React.FC = () => {
       if (!e.dataTransfer || !dragHasFiles(e.dataTransfer)) return;
       e.preventDefault();
       setDragging(false);
-      await importFiles(await filesFromDrop(e.dataTransfer), { announce: true });
-    };
-    const onPaste = async (e: ClipboardEvent) => {
-      if (isTypingTarget(e.target) || !e.clipboardData) return;
-      e.preventDefault();
-      const files = filesFromClipboard(e.clipboardData);
-      if (files.length === 0) {
-        toast("Nothing to import: the clipboard has no image.");
+      let files: ImportFile[];
+      try {
+        files = await filesFromDrop(e.dataTransfer);
+      } catch (err) {
+        console.error("Reading dropped files failed:", err);
+        toast(
+          `The dropped files couldn't be read${err instanceof Error ? `: ${err.message}` : "."}`,
+        );
         return;
       }
+      await importFiles(files, { announce: true });
+    };
+    const onPaste = async (e: ClipboardEvent) => {
+      // A dialog or a field keeps its own paste.
+      if (isTypingTarget(e.target) || isDialogOpen() || !e.clipboardData) return;
+      const files = imagesFromClipboard(e.clipboardData);
+      if (files.length === 0) return;
+      e.preventDefault();
       await importFiles(files, { announce: true });
     };
 

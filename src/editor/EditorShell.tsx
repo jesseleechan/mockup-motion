@@ -12,7 +12,6 @@ import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
-import { useAudioPreview } from "./audio/useAudioPreview";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
@@ -39,7 +38,6 @@ export const EditorShell: React.FC = () => {
   const setSelection = useUIStore((s) => s.setSelection);
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
-  useAudioPreview();
   const togglePanel = useUIStore((s) => s.togglePanel);
   const setTheme = useUIStore((s) => s.setTheme);
 
@@ -100,8 +98,7 @@ export const EditorShell: React.FC = () => {
   // Move the selection to the first shot instead of leaving the inspector empty (F06).
   useEffect(() => {
     if (selection.kind === "video") return;
-    const shotId = selection.kind === "shot" ? selection.id : selection.shotId;
-    if (doc.shots.some((s) => s.id === shotId)) return;
+    if (doc.shots.some((s) => s.id === selection.id)) return;
     const first = doc.shots[0];
     setSelection(first ? { kind: "shot", id: first.id } : { kind: "video" });
   }, [doc.shots, selection, setSelection]);
@@ -207,18 +204,6 @@ export const EditorShell: React.FC = () => {
             { label: "Delete shot" },
           );
           setSelection({ kind: "video" });
-        } else if (selection.kind === "text") {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              const targetShot = draft.shots.find((s) => s.id === selection.shotId);
-              if (targetShot) {
-                targetShot.texts = targetShot.texts.filter((t) => t.id !== selection.id);
-              }
-            },
-            { label: "Delete text layer" },
-          );
-          setSelection({ kind: "shot", id: selection.shotId });
         }
         return;
       }

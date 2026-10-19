@@ -52,12 +52,12 @@ export async function filesFromDrop(data: DataTransfer): Promise<ImportFile[]> {
 const PASTE_NAME = "Pasted screenshot";
 
 /**
- * The files of a paste. A copied image arrives as `image.png`, so it gets a name that says
- * where it came from.
+ * The images of a paste; empty when the clipboard holds none (text, say). A copied image arrives
+ * as `image.png`, so it gets a name that says where it came from.
  */
-export function filesFromClipboard(data: DataTransfer): ImportFile[] {
+export function imagesFromClipboard(data: DataTransfer): ImportFile[] {
   return Array.from(data.items)
-    .filter((item) => item.kind === "file")
+    .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
     .map((item) => item.getAsFile())
     .filter((file): file is File => file !== null)
     .map((file) => {
@@ -65,6 +65,11 @@ export function filesFromClipboard(data: DataTransfer): ImportFile[] {
       const ext = file.name.slice(file.name.indexOf("."));
       return importFile(new File([file], `${PASTE_NAME}${ext}`, { type: file.type }));
     });
+}
+
+/** Whether a dialog (export, gallery, projects…) is open over the editor. */
+export function isDialogOpen(): boolean {
+  return document.querySelector('[role="dialog"], [role="alertdialog"]') !== null;
 }
 
 /** Whether a drag carries files from outside the page (not a library card or a shot). */

@@ -1,13 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createDoc, defaultShot } from "../src/doc/defaults";
-import type {
-  Aspect,
-  CameraPose,
-  CameraPresetId,
-  EasingId,
-  ScrollSpec,
-  TextLayer,
-} from "../src/doc/types";
+import type { Aspect, CameraPose, CameraPresetId, EasingId, ScrollSpec } from "../src/doc/types";
 import {
   PRESET_POSES,
   activeLayers,
@@ -24,7 +17,6 @@ import {
   scrollPosition,
   sliderDuration,
   sliderStep,
-  textFrame,
 } from "../src/motion";
 
 function assertDeepCloseTo(a: unknown, b: unknown, epsilon = 1e-5, path = ""): void {
@@ -438,53 +430,6 @@ describe("Scroll (src/motion/scroll.ts)", () => {
   });
 });
 
-describe("Text Animation (src/motion/text-anim.ts)", () => {
-  it("handles empty words, delays, and all animations", () => {
-    const baseLayer: TextLayer = {
-      id: "txt-1",
-      text: "Design in motion",
-      role: "title",
-      font: "display",
-      size: 6,
-      anchor: "center",
-      align: "center",
-      color: "",
-      animation: "none",
-      delay: 0.5,
-    };
-
-    // Before delay
-    const fBefore = textFrame(baseLayer, 3, 0.2);
-    expect(fBefore.opacity).toBe(0);
-
-    // Empty wordCount
-    const fEmpty = textFrame(baseLayer, 0, 1.0);
-    expect(fEmpty.words.length).toBe(0);
-    expect(fEmpty.opacity).toBe(1);
-
-    // fadeUp
-    const fFade = textFrame({ ...baseLayer, animation: "fadeUp" }, 3, 1.0);
-    expect(fFade.opacity).toBeGreaterThan(0);
-    expect(fFade.words.length).toBe(3);
-
-    // maskReveal
-    const fMask = textFrame({ ...baseLayer, animation: "maskReveal" }, 3, 1.0);
-    expect(fMask.words[0].clip).toBeLessThan(1);
-
-    // blurIn
-    const fBlur = textFrame({ ...baseLayer, animation: "blurIn" }, 3, 1.0);
-    expect(fBlur.words[0].blur).toBeLessThan(12);
-
-    // wordStagger
-    const fStagger = textFrame({ ...baseLayer, animation: "wordStagger" }, 3, 1.0);
-    expect(fStagger.words.length).toBe(3);
-
-    // typewriter
-    const fType = textFrame({ ...baseLayer, animation: "typewriter" }, 3, 0.8);
-    expect(fType.words.length).toBe(3);
-  });
-});
-
 describe("Layouts (src/motion/layouts.ts)", () => {
   it("resolves single layout with screen aspect and entrance handling", () => {
     const doc = createDoc();
@@ -506,8 +451,7 @@ describe("Layouts (src/motion/layouts.ts)", () => {
     expect(phoneNodes[0].screenAspect).toBeCloseTo(0.4615);
   });
 
-  it('supports layout.kind === "title" and resolves pair layout', () => {
-    expect(resolveLayout({ kind: "title" }, "16:9", [], 0, 5)).toEqual([]);
+  it("resolves pair layout", () => {
     const pairNodes = resolveLayout(
       { kind: "pair", desktopId: "d1", mobileId: "m1", arrangement: "overlap" },
       "16:9",

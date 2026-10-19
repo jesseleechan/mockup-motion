@@ -6,7 +6,7 @@ import { useToast } from "../../ui";
 import { useTemplateActions } from "../template-actions";
 import { applyCaptures, splitCaptureFiles } from "../library/capture-import";
 import { importFile, type ImportFile } from "./read-files";
-import { importRole, sortImportFiles, unsupportedMessage } from "./sort-files";
+import { addedMessage, importRole, sortImportFiles, unsupportedMessage } from "./sort-files";
 
 /** The status bar and bottom colour of a phone screenshot, from a downscaled copy. */
 async function analyze(
@@ -27,11 +27,6 @@ async function analyze(
   } finally {
     bmp.close();
   }
-}
-
-function addedMessage(count: number, withSections: number): string {
-  const noun = count === 1 ? "screenshot" : "screenshots";
-  return withSections > 0 ? `Added ${count} ${noun} with section data.` : `Added ${count} ${noun}.`;
 }
 
 /**
@@ -73,7 +68,13 @@ export function useImportFiles() {
       // Fills the template when it is waiting for screenshots (F06).
       await addScreenshots(added, blobs);
       if (options.announce) {
-        toast(addedMessage(added.length, added.filter((r) => r.meta?.sections).length));
+        toast(
+          addedMessage(
+            added.length,
+            added.filter((r) => r.meta?.sections).length,
+            sorted.viewportDuplicates.length,
+          ),
+        );
       }
     },
     [addScreenshots, toast],

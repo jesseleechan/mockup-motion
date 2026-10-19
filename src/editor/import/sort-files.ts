@@ -133,3 +133,17 @@ export function unsupportedMessage(names: string[]): string | undefined {
   if (names.length === 0) return undefined;
   return `Not imported: ${nameList(names)}. Use PNG, JPG, WebP, or AVIF.`;
 }
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/**
+ * The message after a drop or paste. It names the viewport captures left out for their full
+ * pages, so no file is skipped silently.
+ */
+export function addedMessage(count: number, withSections: number, viewportSkipped = 0): string {
+  const added = `Added ${plural(count, "screenshot")}${withSections > 0 ? " with section data" : ""}.`;
+  if (viewportSkipped === 0) return added;
+  return `${added} Skipped ${plural(viewportSkipped, "viewport capture")}; the full pages are used instead.`;
+}

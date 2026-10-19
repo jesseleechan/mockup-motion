@@ -1,5 +1,5 @@
 import type { Aspect, ExportFormat, ExportSettings } from "../doc/types";
-import { estimateFileSize, gifOutput, outputDimensions, type BundleParts } from "./destinations";
+import { estimateFileSize, outputDimensions, type BundleParts } from "./destinations";
 
 /** Video encoders available in this browser at the export size (see probe.ts). */
 export interface EncoderSupport {
@@ -7,7 +7,7 @@ export interface EncoderSupport {
   vp9: boolean;
 }
 
-export type ExportExtension = "mp4" | "webm" | "zip" | "gif" | "png";
+export type ExportExtension = "mp4" | "webm" | "zip" | "png";
 
 /** What an export will actually write, after the encoder probe. */
 export interface ExportPlan {
@@ -29,8 +29,7 @@ export interface ExportPlan {
 
 export type ExportPlanResult = { ok: true; plan: ExportPlan } | { ok: false; error: string };
 
-const NO_VIDEO_ENCODER =
-  "This browser can't encode video. Export an animated GIF or a still frame instead.";
+const NO_VIDEO_ENCODER = "This browser can't encode video. Export a still frame instead.";
 
 /** True when the format needs the encoder probe before it can be planned. */
 export function needsEncoderProbe(format: ExportFormat): boolean {
@@ -52,20 +51,6 @@ export function planExport(
   const base = { width, height, fps: requested.fps, duration };
 
   switch (requested.format) {
-    case "gif": {
-      const gif = gifOutput(aspect, requested.resolution, requested.fps);
-      return {
-        ok: true,
-        plan: {
-          ...base,
-          ...gif,
-          settings: requested,
-          label: "Animated GIF",
-          extension: "gif",
-          bytes: estimateFileSize(requested, aspect, duration),
-        },
-      };
-    }
     case "png":
       return {
         ok: true,
