@@ -1,6 +1,6 @@
 # R04 evidence: Responsive Scroll rendering
 
-Lab fixtures `responsive-scroll` (Aurelia's desktop and mobile full pages with their capture sections) and `responsive-scroll-fallback` (the same pages without sections), in `src/lab/responsive-fixtures.ts`. Stills from `/lab?still=1&fixture=…&aspect=…&t=…&w=1200` (Chromium, SwiftShader), checked by eye.
+Lab fixtures `responsive-scroll` (Aurelia's desktop and mobile full pages with their capture sections; since R05 the template's own preview, which renders identically) and `responsive-scroll-fallback` (the same pages without sections, `src/lab/responsive-fixtures.ts`). Stills from `/lab?still=1&fixture=…&aspect=…&t=…&w=1200` (Chromium, SwiftShader), checked by eye.
 
 ![contact sheet](contact-sheet.webp)
 
