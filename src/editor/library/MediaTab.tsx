@@ -15,6 +15,7 @@ import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
 import { validateAndDecodeAsset } from "../../assets/decode";
 import { useTemplateActions } from "../template-actions";
+import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "./capture-import";
 import {
   Copy,
   GalleryHorizontal,
@@ -133,9 +134,9 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const handleFileUpload = async (files: File[]) => {
     const newRefs: AssetRef[] = [];
     const blobs: Record<string, Blob> = {};
-    const errors: string[] = [];
+    const { images, captures, errors } = await splitCaptureFiles(files);
 
-    for (const file of files) {
+    for (const file of images) {
       let validated: { ref: AssetRef; blob: Blob };
       try {
         validated = await validateAndDecodeAsset(file, file.name);
@@ -175,9 +176,10 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
       });
     }
 
-    for (const message of errors) toast(message);
+    const attached = applyCaptures(newRefs, captures);
+    for (const message of [...errors, ...attached.errors]) toast(message);
     // Fills the template when it is waiting for screenshots (F06).
-    if (newRefs.length > 0) await addScreenshots(newRefs, blobs);
+    if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
   };
 
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,7 +246,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/png,image/jpeg,image/webp,image/avif"
+        accept={SCREENSHOT_ACCEPT}
         data-testid="media-input"
         aria-label="Upload screenshots"
         className="hidden"
