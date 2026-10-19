@@ -3,13 +3,10 @@ import { aspectRatioValue } from "../camera";
 import { ease } from "../easing";
 import { lanesAssetIds, resolveLanes } from "./lanes";
 import { marqueeVelocity } from "./marquee";
+import { PHONE_BODY_ASPECT, PHONE_SCREEN_ASPECT } from "../phone-spec";
 import { type LayoutNode } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
-
-// Quality-bar §3.1: a phone's screen aspect (9:19.5), and a phone body's width / height.
-const PHONE_SCREEN_ASPECT = 0.4615;
-const PHONE_BODY_ASPECT = 0.488;
 
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
 
