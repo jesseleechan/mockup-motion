@@ -35,6 +35,23 @@ export function sliderAssetIds(layout: SliderLayout): string[] {
  */
 export const ORBIT_MAX_SCREENSHOTS = 6;
 
+/**
+ * The fewest screenshots a list layout needs (quality-bar §4): 3 for a slider or stack, 4 for an
+ * orbit or Frames. Other layouts have no list, so 0.
+ */
+export function minShotScreenshots(layout: Layout): number {
+  switch (layout.kind) {
+    case "slider":
+      return 3;
+    case "orbit":
+    case "rows":
+    case "columns":
+      return 4;
+    default:
+      return 0;
+  }
+}
+
 /** The screenshots an orbit shot shows: the first ORBIT_MAX_SCREENSHOTS of its list. */
 export function orbitAssetIds(layout: OrbitLayout): string[] {
   return layout.assetIds.slice(0, ORBIT_MAX_SCREENSHOTS);
@@ -97,12 +114,7 @@ export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove 
 }
 
 function isStillCamera(camera: CameraMove): boolean {
-  return (
-    camera.preset === "static" &&
-    camera.intensity === 0 &&
-    camera.float === 0 &&
-    camera.progressRange === undefined
-  );
+  return camera.preset === "static" && camera.intensity === 0 && camera.float === 0;
 }
 
 /**

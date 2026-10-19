@@ -19,6 +19,7 @@ import type {
   CaptureSection,
   DeviceKind,
   EasingId,
+  DestinationId,
   ExportSettings,
   Layout,
   ProjectDoc,
@@ -45,18 +46,22 @@ const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
 // Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
-const VALID_FPS = [24, 30, 60] as const;
+const VALID_FPS = [15, 24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
-const VALID_FORMATS = ["mp4", "webm"] as const;
+const VALID_FORMATS = ["mp4", "webm", "bundle", "png"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
-const VALID_TRANSITIONS: readonly Transition["kind"][] = [
-  "cut",
-  "fade",
-  "blur",
-  "push",
-  "zoom",
-  "wipe",
+const VALID_DESTINATIONS: readonly DestinationId[] = [
+  "video",
+  "dribbble",
+  "instagram-feed",
+  "instagram-story",
+  "presentation-4k",
+  "web-embed",
+  "custom",
 ];
+
+// Saved blur, push, zoom and wipe transitions (cut with reels on 19 Oct 2026) load as fades.
+const LEGACY_TRANSITIONS = ["blur", "push", "zoom", "wipe"];
 function clamp(val: number, min: number, max: number): number {
   if (Number.isNaN(val) || typeof val !== "number") return min;
   return Math.max(min, Math.min(max, val));
@@ -64,6 +69,42 @@ function clamp(val: number, min: number, max: number): number {
 
 function includesValue<T>(list: readonly T[], val: unknown): val is T {
   return list.includes(val as T);
+}
+
+/**
+ * Export settings from a saved project or this browser's last export. Every value the dialog
+ * offers is kept; anything else (a removed format such as GIF, motion blur, an unknown
+ * destination) falls back to the default Video export.
+ */
+function sameEncoding(a: ExportSettings, b: ExportSettings): boolean {
+  return (
+    a.resolution === b.resolution &&
+    a.fps === b.fps &&
+    a.quality === b.quality &&
+    a.format === b.format &&
+    a.supersample === b.supersample
+  );
+}
+
+export function sanitizeExport(raw: unknown): ExportSettings {
+  const fallback = defaultExport();
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const encoding = {
+    resolution: includesValue(VALID_RESOLUTIONS, r.resolution) ? r.resolution : fallback.resolution,
+    fps: includesValue(VALID_FPS, r.fps) ? r.fps : fallback.fps,
+    quality: includesValue(VALID_QUALITIES, r.quality) ? r.quality : fallback.quality,
+    format: includesValue(VALID_FORMATS, r.format) ? r.format : fallback.format,
+    supersample: includesValue(VALID_SUPERSAMPLES, r.supersample)
+      ? r.supersample
+      : fallback.supersample,
+  };
+  if (includesValue(VALID_DESTINATIONS, r.destination)) {
+    return { destination: r.destination, ...encoding };
+  }
+  // A destination that no longer exists (LinkedIn & X, merged into Video) is Video when its
+  // settings are Video's, and Custom otherwise, so no setting is lost.
+  const settings: ExportSettings = { destination: "custom", ...encoding };
+  return sameEncoding(settings, fallback) ? fallback : settings;
 }
 
 export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[] } {
@@ -156,32 +197,15 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     ),
   };
 
-  // Export
-  const rawExport = (d.export && typeof d.export === "object" ? d.export : {}) as Record<
-    string,
-    unknown
-  >;
-  const exp: ExportSettings = {
-    destination:
-      typeof rawExport.destination === "string"
-        ? (rawExport.destination as ExportSettings["destination"])
-        : "custom",
-    resolution: includesValue(VALID_RESOLUTIONS, rawExport.resolution)
-      ? rawExport.resolution
-      : 1080,
-    fps: includesValue(VALID_FPS, rawExport.fps) ? rawExport.fps : 30,
-    quality: includesValue(VALID_QUALITIES, rawExport.quality) ? rawExport.quality : "high",
-    format: includesValue(VALID_FORMATS, rawExport.format) ? rawExport.format : "mp4",
-    supersample: includesValue(VALID_SUPERSAMPLES, rawExport.supersample)
-      ? rawExport.supersample
-      : 1.5,
-  };
+  const exp = sanitizeExport(d.export);
 
   // Shots
   const aspect: Aspect = includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9";
+  // A document has one shot. Multi-shot reels were cut on 19 Oct 2026: a saved reel keeps its
+  // first shot, whose transitionIn is the loop wrap (docs/cuts-plan/README.md).
   const shots: Shot[] = [];
   if (Array.isArray(d.shots)) {
-    for (let i = 0; i < d.shots.length; i++) {
+    for (let i = 0; i < d.shots.length && shots.length === 0; i++) {
       const s = d.shots[i];
       if (s && typeof s === "object") {
         const sanitizedShot = sanitizeShot(
@@ -195,6 +219,9 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
           shots.push(sanitizedShot);
         }
       }
+    }
+    if (d.shots.length > 1) {
+      warnings.push(`Kept the first of ${d.shots.length} shots: a video has one shot.`);
     }
   }
 
@@ -296,9 +323,6 @@ function sanitizeShot(
   }
 
   const camera: CameraMove = sanitizeCamera(s.camera);
-  const entrance = ["none", "rise", "scale", "stagger"].includes(s.entrance as string)
-    ? (s.entrance as Shot["entrance"])
-    : "none";
 
   const transitionIn: Transition = sanitizeTransition(s.transitionIn);
 
@@ -311,11 +335,10 @@ function sanitizeShot(
     layout,
     // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
-    entrance,
     transitionIn,
   };
 
-  // A removed layout takes its preset look's camera, entrance, wrap and length.
+  // A removed layout takes its preset look's camera, wrap and length.
   const look =
     s.layout && typeof s.layout === "object"
       ? legacyLook(s.layout as Record<string, unknown>)
@@ -494,14 +517,11 @@ function sanitizeTransition(trans: unknown): Transition {
     return { kind: "cut", duration: 0, easing: "quintInOut" };
   }
   const t = trans as Record<string, unknown>;
-  const kind = includesValue(VALID_TRANSITIONS, t.kind) ? t.kind : "cut";
+  const kind = t.kind === "fade" || LEGACY_TRANSITIONS.includes(t.kind as string) ? "fade" : "cut";
   return {
     kind,
     duration: clamp(typeof t.duration === "number" ? t.duration : 0.7, 0, 5),
     easing: includesValue(VALID_EASINGS, t.easing) ? t.easing : "quintInOut",
-    direction: ["left", "right", "up", "down"].includes(t.direction as string)
-      ? (t.direction as Transition["direction"])
-      : undefined,
   };
 }
 

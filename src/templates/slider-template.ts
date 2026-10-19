@@ -43,7 +43,6 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
     // A pair's gallery tab is the role of its screenshots.
     category: spec.role,
     slots,
-    toneSwitch: true,
     // The gallery badge: the five demo screenshots its preview and demo content use.
     defaultDuration: 5 * SLIDER_STEP,
     build: (ctx: TemplateBuildContext) => {
@@ -77,7 +76,6 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
       shot.duration = sliderDuration(layout);
       // After N steps the cards are back where they started, so the loop is native.
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
-      shot.entrance = "none";
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
       return { style, shots: [shot], loop: true };

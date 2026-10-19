@@ -3,9 +3,13 @@ import { defaultShot, defaultStyle } from "../doc/defaults";
 import { minDurationFor, scrollableFramesFor } from "../motion/scroll";
 import { screenAspectFor } from "../motion/layouts/types";
 import type { Template, TemplateBuildContext, TemplateCategory } from "./types";
-import { paletteBackground } from "./looks";
+import { presetToneStyle, type PresetTones } from "./looks";
 
 const SCROLL_STORY_DURATION = 10;
+
+// Fog's designed dark counterpart is Graphite; its first stop is Onyx, so the top of the frame
+// reads like the flat presets' dark (quality-bar §6).
+const SCROLL_STORY_TONES: PresetTones = { light: "fog", dark: "graphite" };
 
 const SCROLL_STORY_SCROLL: ScrollSpec = {
   enabled: true,
@@ -49,14 +53,14 @@ export function scrollStoryTemplate(options: ScrollStoryOptions): Template {
     category: role,
     slots: [{ key: slotKey, role, required: true, prefer: "tall", label }],
     defaultDuration: SCROLL_STORY_DURATION,
+    tones: SCROLL_STORY_TONES,
     build: (ctx: TemplateBuildContext) => {
       const asset = ctx.slots[slotKey];
 
       const style: Style = {
         ...defaultStyle(),
         ...ctx.style,
-        background: paletteBackground("fog"),
-        frameAppearance: "light",
+        ...presetToneStyle("light", SCROLL_STORY_TONES),
         shadow: "soft",
         browserChrome: "standard",
       };

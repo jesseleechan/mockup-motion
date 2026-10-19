@@ -58,7 +58,6 @@ describe("Responsive Scroll template (R05)", () => {
     });
     expect(shot.camera).toMatchObject({ preset: "static", intensity: 0, float: 0 });
     expect(shot.transitionIn).toMatchObject({ kind: "fade", duration: 0.8 });
-    expect(shot.entrance).toBe("none");
     expect(shot.duration).toBeCloseTo(9.377 + 0.8, 2);
   });
 
@@ -67,7 +66,7 @@ describe("Responsive Scroll template (R05)", () => {
       validateTemplateRequirements(responsiveScrollTemplate, [demo("aurelia", "desktop")]),
     ).toEqual({
       valid: false,
-      reason: "Needs a mobile screenshot",
+      reason: "Needs a desktop and a mobile full-page screenshot",
     });
     expect(
       validateTemplateRequirements(responsiveScrollTemplate, [

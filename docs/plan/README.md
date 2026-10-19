@@ -156,7 +156,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 | [11](wp/WP-11-templates-and-gallery.md)        | Templates, slot filling, previews, contact sheet                 | M1 → M2   | 04, 06–09 (15 for Scroll Story; 10 and 14 for reels) | L    | Done (fixed in [F04][f04], [F06][f06], [F07][f07], [F11][f11])                         |
 | [12](wp/WP-12-editor-shell-and-inspector.md)   | Editor shell and contextual inspector                            | M2        | 01, 03, 05                                           | L    | Done (fixed in [F05][f05], [F06][f06], [F08][f08])                                     |
 | [13](wp/WP-13-media-library-and-brand-kit.md)  | Media library, roles, projects, My templates (brand kit removed) | M2        | 01, 05, 12                                           | M    | Done (fixed in [F07][f07], [F08][f08])                                                 |
-| [14](wp/WP-14-storyboard-timeline.md)          | Storyboard timeline and transitions                              | M2        | 02, 03, 12                                           | L    | Done (fixed in [F02][f02], [F07][f07], [F08][f08])                                     |
+| [14](wp/WP-14-storyboard-timeline.md)          | Storyboard timeline and transitions                              | M2        | 02, 03, 12                                           | L    | Done (fixed in [F02][f02], [F07][f07], [F08][f08]); reels cut in [#74][c2]             |
 | [15](wp/WP-15-scroll-story-and-cursor.md)      | Scroll Story and cursor overlay                                  | M2        | 09, 12                                               | M    | Done (fixed in [F01][f01]); cursor removed (audit cut, Oct 2026)                       |
 | [16](wp/WP-16-export-v2.md)                    | Export v2, destinations, web bundle, GIF                         | M3        | 03, 08                                               | M    | Done (fixed in [F09][f09], [F10][f10])                                                 |
 | [17](wp/WP-17-audio.md)                        | Music track (optional)                                           | M3        | 14, 16                                               | S    | Removed on 2026-10-19 (editor cuts)                                                    |
@@ -178,6 +178,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 [f13]: https://github.com/jesseleechan/mockup-motion/pull/15
 [f14]: https://github.com/jesseleechan/mockup-motion/pull/17
 [c1]: https://github.com/jesseleechan/mockup-motion/pull/61
+[c2]: https://github.com/jesseleechan/mockup-motion/pull/74
 [cut-text]: https://github.com/jesseleechan/mockup-motion/pull/72
 
 "Fixed in Fxx" means that fix PR changed the WP's code and added the tests that guard it. Which fix touched which WP comes from the fix plan's problem table (`docs/fix-plan/README.md` §2) and each PR's file list. Every test named in these PRs runs in CI: unit and visual tests on every pull request; e2e tests on every pull request that touches an e2e trigger path (`CLAUDE.md`, Commands), on every push to `main` and nightly. The `perf` project (`tests/perf`) needs a real GPU and isn't in CI.

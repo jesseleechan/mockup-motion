@@ -16,7 +16,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
     duration: 4,
     layout,
     camera: { preset, intensity: 1, easing: "smooth", float: 0 },
-    entrance: "none",
     transitionIn: { kind: "cut", duration: 0, easing: "smooth" },
   };
 }
@@ -30,11 +29,9 @@ describe("editor labels (F08)", () => {
       "DESTINATION_LABELS",
       "DEVICE_LABELS",
       "EASING_LABELS",
-      "ENTRANCE_LABELS",
       "LAYOUT_LABELS",
       "SHADOW_LABELS",
       "TEMPLATE_CATEGORY_LABELS",
-      "TRANSITION_LABELS",
     ]);
   });
 

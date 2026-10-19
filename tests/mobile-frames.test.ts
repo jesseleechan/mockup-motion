@@ -78,7 +78,7 @@ function mobileFramesDoc(aspect: Aspect, assets: AssetRef[]): ProjectDoc {
 
 const nodesAt = (doc: ProjectDoc, t: number) => {
   const shot = doc.shots[0];
-  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration, shot.entrance);
+  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration);
 };
 const colOf = (node: LayoutNode) => Number(node.id.match(/^col(\d+):/)![1]);
 // Rounds to 4 decimals without a "-0.0000" for values just below zero.
@@ -144,7 +144,6 @@ describe("Mobile Frames template (Frames plan PF03)", () => {
         });
         expect(doc.loop, label).toBe(true);
         expect(shot.transitionIn.kind, label).toBe("cut");
-        expect(shot.entrance, label).toBe("none");
         expect(shot.duration, label).toBe(DURATIONS[aspect][i]);
         expect(schedule(doc).total, label).toBe(shot.duration);
         expect(shot.duration, label).toBeGreaterThanOrEqual(15);

@@ -1,5 +1,14 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { TopBar } from "./shell/TopBar";
+import { PanelResizer } from "./shell/PanelResizer";
+import { CollapsedRail } from "./shell/CollapsedRail";
+import {
+  COLLAPSED_RAIL_WIDTH,
+  libraryAfterResize,
+  loadPanelWidths,
+  maxPanelWidth,
+  renderedPanelWidths,
+} from "./shell/panel-layout";
 import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
 import { TransportBar } from "./transport/TransportBar";
@@ -10,22 +19,19 @@ import { ProjectsModal } from "./dialogs/ProjectsModal";
 import { TemplateGalleryModal } from "./dialogs/TemplateGalleryModal";
 import { useEditorStore, setupAutosave } from "../state/store";
 import { useUIStore } from "../state/ui-store";
+import { openOnStart, watchFirstRunGallery } from "./first-run-gallery";
 import { checkAndMigrateV1 } from "../storage/projects";
 import { schedule } from "../motion";
 import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
+import { ImportDropZone } from "./import/ImportDropZone";
+import { isTypingTarget } from "./focus";
 import { Monitor } from "lucide-react";
 
 const ExportModal = lazy(() =>
   import("./export/ExportModal").then((m) => ({ default: m.ExportModal })),
 );
-
-function isInputElement(el: EventTarget | null): boolean {
-  if (!el || !(el instanceof HTMLElement)) return false;
-  const tag = el.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-}
 
 export const EditorShell: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
@@ -44,12 +50,16 @@ export const EditorShell: React.FC = () => {
   const setPlaying = useUIStore((s) => s.setPlaying);
   const togglePanel = useUIStore((s) => s.togglePanel);
   const setTheme = useUIStore((s) => s.setTheme);
+  const panelWidths = useUIStore((s) => s.panelWidths);
+  const setPanelWidths = useUIStore((s) => s.setPanelWidths);
 
   const [exportOpen, setExportOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [showSafeMargins, setShowSafeMargins] = useState(false);
-  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth);
+  const lastWindowWidth = useRef<number | null>(null);
+  const isMobileScreen = windowWidth < 1024;
 
   // Setup autosave & migration on boot
   useEffect(() => {
@@ -68,35 +78,50 @@ export const EditorShell: React.FC = () => {
 
     // 2. Autosave subscription
     const cancelAutosave = setupAutosave(useEditorStore);
+    const stopFirstRunGallery = watchFirstRunGallery();
 
-    // 3. V1 Database Migration
+    // 3. Open the migrated v1 project, else the most recent saved one, else the gallery
     checkAndMigrateV1()
-      .then((migratedDoc) => {
-        if (migratedDoc) {
-          loadDoc(migratedDoc);
-        }
-      })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.warn("[Migration] v1 migration check encountered:", err);
-      });
+        return null;
+      })
+      .then((migratedDoc) => (migratedDoc ? loadDoc(migratedDoc) : openOnStart()))
+      .catch((err: unknown) => {
+        console.error("[Start] couldn't open the last project:", err);
+      })
+      .finally(() => useUIStore.getState().finishStarting());
 
     if (import.meta.env.DEV) {
       (window as unknown as { __editorStore: unknown }).__editorStore = useEditorStore;
       (window as unknown as { __uiStore: unknown }).__uiStore = useUIStore;
     }
 
-    // 4. Mobile screen resize listener (< 1024px)
-    const checkMobile = () => {
-      setIsMobileScreen(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
     return () => {
       cancelAutosave();
-      window.removeEventListener("resize", checkMobile);
+      stopFirstRunGallery();
     };
   }, [loadDoc, setTheme]);
+
+  // Side panels on smaller windows: saved widths, and the Library collapses below 1280 px
+  // (docs/polish-plan/stage-timeline.md).
+  useEffect(() => {
+    setPanelWidths(loadPanelWidths(localStorage));
+    const onResize = () => {
+      const width = window.innerWidth;
+      const ui = useUIStore.getState();
+      const current = { open: ui.panels.library, autoCollapsed: ui.libraryAutoCollapsed };
+      const next = libraryAfterResize(current, lastWindowWidth.current, width);
+      if (next.open !== current.open || next.autoCollapsed !== current.autoCollapsed) {
+        ui.setLibraryCollapse(next);
+      }
+      lastWindowWidth.current = width;
+      setWindowWidth(width);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [setPanelWidths]);
 
   // Filling a template and undoing it replace the shots, so a selected shot can vanish.
   // Move the selection to the first shot instead of leaving the inspector empty (F06).
@@ -111,7 +136,7 @@ export const EditorShell: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
-      if (isInputElement(e.target)) return;
+      if (isTypingTarget(e.target)) return;
 
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const cmdKey = isMac ? e.metaKey : e.ctrlKey;
@@ -177,41 +202,6 @@ export const EditorShell: React.FC = () => {
         return;
       }
 
-      // Cmd+D: Duplicate Shot
-      if (cmdKey && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        if (selection.kind === "shot") {
-          const target = doc.shots.find((s) => s.id === selection.id);
-          if (target) {
-            const copy = { ...structuredClone(target), id: crypto.randomUUID() };
-            apply(
-              (draft) => {
-                const idx = draft.shots.findIndex((s) => s.id === selection.id);
-                draft.shots.splice(idx + 1, 0, copy);
-              },
-              { label: "Duplicate shot" },
-            );
-            setSelection({ kind: "shot", id: copy.id });
-          }
-        }
-        return;
-      }
-
-      // Delete / Backspace: Remove selected shot or text
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (selection.kind === "shot" && doc.shots.length > 1) {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              draft.shots = draft.shots.filter((s) => s.id !== selection.id);
-            },
-            { label: "Delete shot" },
-          );
-          setSelection({ kind: "video" });
-        }
-        return;
-      }
-
       // [ / ]: Toggle Panels
       if (e.key === "[") {
         e.preventDefault();
@@ -248,6 +238,10 @@ export const EditorShell: React.FC = () => {
     togglePanel,
   ]);
 
+  const widths = renderedPanelWidths(panelWidths, panels, windowWidth);
+  const sideWidth = (panel: "library" | "inspector") =>
+    panels[panel] ? widths[panel] : COLLAPSED_RAIL_WIDTH;
+
   return (
     <ToastProvider>
       <TooltipProvider>
@@ -276,7 +270,19 @@ export const EditorShell: React.FC = () => {
             {/* Workspace Body */}
             <div className="flex-1 flex min-h-0 overflow-hidden relative">
               {/* Library Panel (Left) */}
-              {!isMobileScreen && panels.library && <LibraryPanel />}
+              {!isMobileScreen &&
+                (panels.library ? (
+                  <div className="relative flex shrink-0 z-20" style={{ width: widths.library }}>
+                    <LibraryPanel />
+                    <PanelResizer
+                      panel="library"
+                      width={widths.library}
+                      max={maxPanelWidth("library", windowWidth, sideWidth("inspector"))}
+                    />
+                  </div>
+                ) : (
+                  <CollapsedRail panel="library" />
+                ))}
 
               {/* Center Stage & Transport */}
               <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
@@ -288,7 +294,19 @@ export const EditorShell: React.FC = () => {
               </main>
 
               {/* Inspector Panel (Right) */}
-              {!isMobileScreen && panels.inspector && <InspectorPanel />}
+              {!isMobileScreen &&
+                (panels.inspector ? (
+                  <div className="relative flex shrink-0 z-20" style={{ width: widths.inspector }}>
+                    <InspectorPanel />
+                    <PanelResizer
+                      panel="inspector"
+                      width={widths.inspector}
+                      max={maxPanelWidth("inspector", windowWidth, sideWidth("library"))}
+                    />
+                  </div>
+                ) : (
+                  <CollapsedRail panel="inspector" />
+                ))}
             </div>
 
             {/* Timeline Area (Bottom) */}
@@ -301,6 +319,7 @@ export const EditorShell: React.FC = () => {
               </Suspense>
             )}
             <TemplateGalleryModal />
+            <ImportDropZone />
             <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
             <ProjectsModal open={projectsOpen} onOpenChange={setProjectsOpen} />
           </div>

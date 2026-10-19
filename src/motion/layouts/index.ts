@@ -1,4 +1,4 @@
-import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
+import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
 import { resolveResponsiveLayout } from "./responsive";
@@ -18,6 +18,7 @@ export {
   MAX_SHOT_DURATION,
   isSteppedLayout,
   minShotDuration,
+  minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
   SLIDER_MAX_SCREENSHOTS,
@@ -49,15 +50,14 @@ export function resolveLayout(
   assets: AssetRef[],
   shotT: number,
   shotDuration: number,
-  entrance: Shot["entrance"] = "none",
 ): LayoutNode[] {
   switch (layout.kind) {
     case "single":
-      return resolveSingleLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveSingleLayout(layout, aspect, assets);
     case "rows":
-      return resolveRowsLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveRowsLayout(layout, aspect, assets, shotT, shotDuration);
     case "columns":
-      return resolveColumnsLayout(layout, aspect, assets, shotT, shotDuration, entrance);
+      return resolveColumnsLayout(layout, aspect, assets, shotT, shotDuration);
     case "slider":
       return layout.arrangement === "deck"
         ? resolveDeckLayout(layout, aspect, assets, shotT)
@@ -65,7 +65,7 @@ export function resolveLayout(
     case "orbit":
       return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "responsive":
-      return resolveResponsiveLayout(layout, aspect, shotT, entrance);
+      return resolveResponsiveLayout(layout, aspect);
     default: {
       const _exhaustive: never = layout;
       return [];

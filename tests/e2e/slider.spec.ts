@@ -273,13 +273,8 @@ test("slider frames create no GPU objects: the fade targets are allocated with t
     const setDoc = window.__labSetDoc;
     const doc = structuredClone(window.__fixtures?.["slider-x"]);
     if (!engine || !setDoc || !doc) throw new Error("Lab hooks are unavailable");
-    // The slider is the second shot, so the warm-up render at t = 0 doesn't draw it.
-    const slider = doc.shots[0];
-    const intro = structuredClone(slider);
-    intro.id = "intro";
-    intro.duration = 2;
-    intro.layout = { kind: "single", device: "card", assetId: doc.assets[0].id };
-    doc.shots = [intro, slider];
+    // A document has one shot since reels were cut, so setDocument's warm-up render at t = 0
+    // already draws the faded neighbours (docs/plan/follow-ups.md).
     doc.loop = false;
     await setDoc(doc);
     // The engine's renderer is private; the context is reached through it.
@@ -347,7 +342,8 @@ test.describe("slider editing", () => {
       });
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     await page.locator('[data-testid="template-card"][data-template-id="mobile-slider"]').click();
     await page.getByRole("button", { name: "Apply template" }).click();
     await page.getByRole("button", { name: "Use demo content" }).click();
@@ -405,6 +401,29 @@ test.describe("slider editing", () => {
     expect(await sliderShot(page)).toEqual(before);
   });
 
+  test("the screenshot list reorders by keyboard, keeping focus on the moved row", async ({
+    page,
+  }) => {
+    await openMobileSlider(page);
+    const before = (await sliderShot(page)).assetIds;
+    const list = page.getByRole("list", { name: "Slider screenshots" });
+    const first = list.getByRole("listitem").first();
+    await first.focus();
+
+    // Two moves in a row: React reorders the row's element, so focus must be put back after each.
+    await page.keyboard.press("Alt+ArrowDown");
+    await page.keyboard.press("Alt+ArrowDown");
+    const moved = [before[1], before[2], before[0], ...before.slice(3)];
+    await expect.poll(async () => (await sliderShot(page)).assetIds).toEqual(moved);
+    await expect(list.getByRole("listitem").nth(2)).toBeFocused();
+
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect
+      .poll(async () => (await sliderShot(page)).assetIds)
+      .toEqual([before[1], before[0], ...before.slice(2)]);
+    await expect(list.getByRole("listitem").nth(1)).toBeFocused();
+  });
+
   test("a screenshot added from the Media tab joins the slider and adds one step", async ({
     page,
   }) => {
@@ -422,7 +441,7 @@ test.describe("slider editing", () => {
       mimeType: "image/png",
       buffer: png,
     });
-    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    const card = page.getByTestId("media-card").filter({ hasText: "extra-mobile.png" });
     await expect(card).toBeVisible();
     await card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to slider" }).click();

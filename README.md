@@ -31,7 +31,7 @@ It writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) to
 
 Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
 
-Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
+Drop PNG, JPEG, WebP or AVIF files or a whole folder anywhere on the editor, paste an image with ⌘V / Ctrl+V, or upload them in the Media tab. A dropped `captures` folder brings each screenshot's role (desktop or mobile) and section data. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
 
 ## Responsive Scroll
 
@@ -41,9 +41,9 @@ Responsive Scroll shows the desktop and mobile versions of one page side by side
 
 Scrolling is off unless you pick Desktop Scroll Story or Mobile Scroll Story, or turn on "Scroll through page" for a shot. Mobile Scroll Story scrolls a tall mobile screenshot on a phone. Both last 10 s, or longer when a page needs it to stay under 0.9 screen heights per second. A tall screenshot never starts moving on its own. When scroll is on, the shot inspector shows its stops, the hold at each stop and the easing.
 
-## Reels
+## Loops
 
-Add shots on the timeline. Between two shots, pick a cut or a fade, blur, push, zoom or wipe transition. A looping video also has a wrap transition from the last shot back to the first, so the camera never reverses. Each shot's camera is still or a slow push in.
+A video is one shot that loops. The presets loop seamlessly on their own; a shot with a camera move fades from its end back into its start, so the camera never reverses. Multi-shot reels and shot transitions were removed on 19 October 2026: a saved reel opens with its first shot.
 
 ## Sound
 
@@ -53,17 +53,20 @@ Videos are silent. Music was removed in October 2026; a saved project with a mus
 
 Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip) and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. Animated GIF export and motion blur were removed in October 2026; a saved project that used them opens with MP4 and no motion blur.
 
-Each destination is a starting point for the settings. The dialog opens on Custom, an MP4 at 1080p in your project's aspect:
+Each destination is a starting point for the settings. A new project's dialog opens on Video, an MP4 at 1080p in your project's aspect; after that it opens on the settings of your last export:
 
-| Destination     | Format              | Resolution | Suggested aspect   |
-| --------------- | ------------------- | ---------- | ------------------ |
-| Custom          | MP4 (default)       | 1080p      | Your project's     |
-| Website         | Web bundle (.zip)   | 1080p      | 16:9               |
-| Dribbble        | MP4                 | 1200p      | 4:3 (1600 × 1200)  |
-| Instagram       | MP4                 | 1080p      | 4:5 (1080 × 1350)  |
-| Story           | MP4                 | 1080p      | 9:16 (1080 × 1920) |
-| LinkedIn & X    | MP4                 | 1080p      | 16:9               |
-| 4K presentation | MP4, master quality | 2160p      | 16:9               |
+| Destination     | Format                                  | Resolution | Suggested aspect   |
+| --------------- | --------------------------------------- | ---------- | ------------------ |
+| Video           | MP4 (default), also for LinkedIn and X  | 1080p      | Your project's     |
+| Dribbble        | MP4                                     | 1200p      | 4:3 (1600 × 1200)  |
+| Instagram       | MP4                                     | 1080p      | 4:5 (1080 × 1350)  |
+| Story           | MP4                                     | 1080p      | 9:16 (1080 × 1920) |
+| 4K presentation | MP4, master quality                     | 2160p      | 16:9               |
+| Web bundle      | MP4, WebM, poster and embed code (.zip) | 1080p      | 16:9               |
+
+Changing a setting by hand makes the settings Custom, and no destination is selected.
+
+**Several sizes at once.** Under the destinations, pick any of 16:9, 4:3, 4:5 and 9:16 to get one file per size in one export, for example for a site, Dribbble, an Instagram post and a Story. Each size renders the project re-fitted to that aspect, as "Switch to" would, without changing the project. Files render one after another, and each one can be downloaded as soon as it finishes.
 
 A destination doesn't change the project's aspect on its own. If they differ, the dialog says so and offers "Switch to 4:3" (for example). Until you switch, a 16:9 project exported for Dribbble comes out at 2134 × 1200.
 
@@ -128,7 +131,7 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Templates, demo content | The gallery lists the templates (12 then; 4 since 2026-10-08); `tests/e2e/polish.spec.ts` "first run opens the template gallery, then demo content"                                                                                                       |
 | Uploads and assigning   | A PNG uploaded after demo content went to the library only; dragging it onto the stage device moved slot 1 to it. A WebP dropped on the window was added. `polish.spec.ts` "rejects corrupt and oversized screenshots"; types from `src/assets/decode.ts` |
 | Scroll Story            | "Scroll through page" is off on a new shot with a tall screenshot; turning it on shows stops, hold and easing. `tests/e2e/wave5.spec.ts` "WP-15: Scroll Story…"                                                                                           |
-| Reels                   | The transition picker lists Cut, Fade, Blur, Push, Zoom and Wipe, and the timeline has a "Loop wrap transition" chip. `tests/timeline.test.ts`, `tests/motion.test.ts` loop seams                                                                         |
+| Loops                   | A saved reel opens with its first shot, and its blur, push, zoom or wipe wrap plays as a fade. `tests/legacy-layouts.test.ts` "Saved multi-shot reels", `tests/motion.test.ts` loop seams                                                                 |
 | Export                  | Destinations, formats and resolutions read from the dialog; "Switch to 4:3" changed Dribbble to 1600 × 1200. `tests/e2e/export.spec.ts` "F09 destination presets export at their size and length"                                                         |
 | Web bundle              | A 720p Website export: the zip held `untitled-presentation.mp4`, `.webm`, `-poster.webp` and `embed.html`; both videos verified; the snippet above is the dialog's text, formatted by Prettier                                                            |
 | PNG                     | Exported from the dialog and verified (PNG 1920 × 1080)                                                                                                                                                                                                   |

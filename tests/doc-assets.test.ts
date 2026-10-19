@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateAndDecodeAsset } from "../src/assets/decode";
 import { collectAssetIds } from "../src/doc/assets";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
@@ -157,7 +158,7 @@ describe("F03: device keys rely on time-independent layout nodes", () => {
         const doc = buildTemplatePreviewDoc(template);
         for (const shot of doc.shots) {
           const signature = (t: number) =>
-            resolveLayout(shot.layout, aspect, doc.assets, t, shot.duration, shot.entrance)
+            resolveLayout(shot.layout, aspect, doc.assets, t, shot.duration)
               .map((n) => `${n.id}|${n.device}|${n.width.toFixed(5)}|${n.height.toFixed(5)}`)
               .sort();
           const atStart = signature(0);
@@ -169,5 +170,22 @@ describe("F03: device keys rely on time-independent layout nodes", () => {
         }
       }
     }
+  });
+});
+
+describe("screenshot validation", () => {
+  it("rejects other file types, files of 35 MB or more and files that don't decode", async () => {
+    await expect(
+      validateAndDecodeAsset(new Blob(["hello"], { type: "text/plain" }), "notes.txt"),
+    ).rejects.toThrow("notes.txt: use PNG, JPG, WebP, or AVIF.");
+    await expect(
+      validateAndDecodeAsset(
+        new Blob([new Uint8Array(35 * 1024 * 1024 + 8)], { type: "image/png" }),
+        "huge.png",
+      ),
+    ).rejects.toThrow("huge.png: images must be below 35 MB.");
+    await expect(
+      validateAndDecodeAsset(new Blob(["this is not a png"], { type: "image/png" }), "broken.png"),
+    ).rejects.toThrow("broken.png: this image couldn't be read.");
   });
 });

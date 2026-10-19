@@ -3,13 +3,13 @@ import type { Engine } from "../../engine/Engine";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { createEditorAssetProvider } from "../asset-provider";
-import { unfilledSlots, useTemplateActions } from "../template-actions";
-import type { AssetRef } from "../../doc/types";
+import { currentTemplate, unfilledSlots, useTemplateActions } from "../template-actions";
+import { templateNeeds } from "../../templates";
 import { aspectRatioValue } from "../../motion";
-import { Button, Icon, useToast } from "../../ui";
+import { Button, Icon } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
-import { validateAndDecodeAsset } from "../../assets/decode";
-import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "../library/capture-import";
+import { SCREENSHOT_ACCEPT } from "../library/capture-import";
+import { useImportFiles } from "../import/use-import-files";
 import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
 import { FillTemplateOverlay } from "./FillTemplateOverlay";
 
@@ -32,7 +32,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   const doc = useEditorStore((s) => s.doc);
   const assignAssetToSlot = useEditorStore((s) => s.assignAssetToSlot);
   const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
-  const { addScreenshots, fillWithDemoContent } = useTemplateActions();
+  const { fillWithDemoContent } = useTemplateActions();
+  const importFiles = useImportFiles();
 
   const stageZoom = useUIStore((s) => s.stageZoom);
   const selection = useUIStore((s) => s.selection);
@@ -45,14 +46,12 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
   }, [doc.shots, selection]);
   const provider = useMemo(() => createEditorAssetProvider(), []);
 
-  const [isDragOver, setIsDragOver] = useState(false);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState<PreviewSize | null>(null);
-  const { toast } = useToast();
 
   // Measure the stage so the preview gets an explicit pixel size (F05).
   useEffect(() => {
@@ -72,69 +71,22 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     };
   }, []);
 
-  const handleFiles = React.useCallback(
-    async (files: File[]) => {
-      const newRefs: AssetRef[] = [];
-      const blobs: Record<string, Blob> = {};
-
-      const { images, captures, errors } = await splitCaptureFiles(files);
-      for (const file of images) {
-        try {
-          const result = await validateAndDecodeAsset(file, file.name);
-          newRefs.push(result.ref);
-          blobs[result.ref.id] = result.blob;
-        } catch (err) {
-          toast(err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`);
-        }
-      }
-
-      const attached = applyCaptures(newRefs, captures);
-      for (const message of [...errors, ...attached.errors]) toast(message);
-      // Fills the template when it is waiting for screenshots (F06).
-      if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
-    },
-    [addScreenshots, toast],
-  );
-
-  // Global drag-and-drop listener
+  // The gallery's "Choose screenshots" opens this picker (polish item 1). The click stays
+  // within the user's activation from the gallery button, so the browser allows the dialog.
+  const screenshotPickerRequests = useUIStore((s) => s.screenshotPickerRequests);
   useEffect(() => {
-    const onDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer?.types.includes("Files")) {
-        setIsDragOver(true);
-      }
-    };
-
-    const onDragLeave = (e: DragEvent) => {
-      // If leaving window
-      if (!e.relatedTarget) {
-        setIsDragOver(false);
-      }
-    };
-
-    const onDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        await handleFiles(Array.from(e.dataTransfer.files));
-      }
-    };
-
-    window.addEventListener("dragover", onDragOver);
-    window.addEventListener("dragleave", onDragLeave);
-    window.addEventListener("drop", onDrop);
-
-    return () => {
-      window.removeEventListener("dragover", onDragOver);
-      window.removeEventListener("dragleave", onDragLeave);
-      window.removeEventListener("drop", onDrop);
-    };
-  }, [handleFiles]);
+    if (screenshotPickerRequests > 0) fileInputRef.current?.click();
+  }, [screenshotPickerRequests]);
 
   const isVertical = doc.aspect === "9:16" || doc.aspect === "4:5";
-  const showEmptyState = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
+  // While the editor decides what to open on start, the stage stays blank rather than
+  // flashing the empty state under the gallery.
+  const starting = useUIStore((s) => s.starting);
+  const emptyProject = doc.shots.length === 0 || (doc.assets.length === 0 && !doc.templateId);
+  const showEmptyState = emptyProject && !starting;
   // A template is applied but some required slot has no screenshot yet (F06).
-  const showFillOverlay = !showEmptyState && unfilledSlots(doc).length > 0;
+  const showFillOverlay = !emptyProject && unfilledSlots(doc).length > 0;
+  const fillTemplate = showFillOverlay ? currentTemplate(doc) : undefined;
   const preview = stageSize
     ? fitPreview(stageSize.width, stageSize.height, aspectRatioValue(doc.aspect), stageZoom)
     : null;
@@ -155,7 +107,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
-            await handleFiles(Array.from(e.target.files));
+            await importFiles(Array.from(e.target.files));
           }
         }}
       />
@@ -205,7 +157,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
             </Button>
           </div>
         </div>
-      ) : preview && preview.width > 0 && preview.height > 0 ? (
+      ) : !emptyProject && preview && preview.width > 0 && preview.height > 0 ? (
         /* Canvas Stage Output Boundary: explicit pixels, fitted to the stage */
         <div className="relative shrink-0" style={{ width: preview.width, height: preview.height }}>
           <div
@@ -301,26 +253,12 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         </div>
       ) : null}
 
-      {showFillOverlay && (
+      {fillTemplate && (
         <FillTemplateOverlay
+          needs={templateNeeds(fillTemplate)}
           onChooseScreenshots={() => fileInputRef.current?.click()}
           onUseDemoContent={fillWithDemoContent}
         />
-      )}
-
-      {/* Global Drag-and-drop Overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 z-50 bg-[var(--color-bg)]/80 backdrop-blur-xs border-2 border-dashed border-[var(--color-accent)] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-100">
-          <div className="w-14 h-14 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center animate-bounce">
-            <Icon icon={UploadCloud} size={30} />
-          </div>
-          <div className="text-base font-semibold text-[var(--color-text)]">
-            Drop screenshots anywhere to add
-          </div>
-          <div className="text-xs text-[var(--color-text-2)]">
-            PNG, WebP, JPG up to 8K resolution
-          </div>
-        </div>
       )}
     </div>
   );

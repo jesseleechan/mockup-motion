@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { Layout, ProjectDoc } from "../../src/doc/types";
+import type { CameraPresetId, Layout, ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
 import { CAMERA_LABELS, EASING_LABELS } from "../../src/editor/labels";
 import { BLANK_PAGE } from "../helpers/blank-page";
@@ -68,7 +68,8 @@ async function resetAndOpen(page: Page, theme: Theme) {
 
 /** Applies a template from the gallery and fills its slots with demo screenshots. */
 async function applyTemplateWithDemo(page: Page, templateId: string) {
-  await page.getByRole("button", { name: "Start with a template" }).click();
+  // The editor opens on the gallery when it starts on an empty project.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();
@@ -86,35 +87,33 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
     .toBeGreaterThan(0);
 }
 
-/**
- * A three-shot reel with every inspector layout: an opening browser, a single browser and a
- * phone. No built-in template has more than one shot, so it is built on Scroll Story's demo
- * screenshot through the store.
- */
-async function openReel(page: Page) {
+/** The shot looks the inspector shows: a single browser and a phone. */
+type ShotLook = "browser" | "phone";
+const SHOT_LOOKS: ShotLook[] = ["browser", "phone"];
+
+/** Scroll Story with its demo screenshot: one single-browser shot. */
+async function openStory(page: Page) {
   await applyTemplateWithDemo(page, "scroll-story");
-  await page.evaluate(() => {
-    const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
-    if (!store) throw new Error("__editorStore is unavailable");
-    // Cloned from the committed doc: structuredClone cannot copy an Immer draft.
-    const single = structuredClone(store.getState().doc.shots[0]);
-    if (single.layout.kind !== "single") throw new Error("Scroll Story has no single shot");
-    const assetId = single.layout.assetId;
-    delete single.scroll;
-    const opening = { ...structuredClone(single), id: "shot-intro" };
-    const phone = {
-      ...structuredClone(single),
-      id: "shot-phone",
-      layout: { kind: "single" as const, device: "phone" as const, assetId },
-    };
-    phone.camera.preset = "static";
-    opening.duration = 4;
-    single.duration = 4;
-    phone.duration = 4;
-    store.getState().apply((draft) => {
-      draft.shots = [opening, single, phone];
-    });
-  });
+}
+
+/**
+ * Gives the video's one shot `look`, keeping its screenshot. Set through the store, as no
+ * template builds a phone.
+ */
+async function setShotLook(page: Page, look: ShotLook, camera?: CameraPresetId) {
+  await page.evaluate(
+    ({ look, camera }) => {
+      const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
+      if (!store) throw new Error("__editorStore is unavailable");
+      store.getState().apply((draft) => {
+        const shot = draft.shots[0];
+        const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
+        shot.layout = { kind: "single", device: look, assetId };
+        if (camera) shot.camera.preset = camera;
+      });
+    },
+    { look, camera },
+  );
 }
 async function currentDoc(page: Page): Promise<ProjectDoc> {
   return page.evaluate(() => {
@@ -211,40 +210,40 @@ const THEMES: Theme[] = ["dark", "light"];
 test.describe("F08 overflow guard", () => {
   for (const viewport of VIEWPORTS) {
     for (const theme of THEMES) {
-      test(`no clipped text in the panels at ${viewport.width}×${viewport.height}, ${theme}`, async ({
+      test(`no clipped text in the panels at ${viewport.width}×${viewport.height}, ${theme}${viewport.width === 1280 ? " @smoke" : ""}`, async ({
         page,
       }) => {
         test.setTimeout(90000);
         await page.setViewportSize(viewport);
         await resetAndOpen(page, theme);
-        await openReel(page);
+        await openStory(page);
         const inspector = page.locator('[data-panel="inspector"]');
 
         await select(page, { kind: "video" });
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll.
-        const doc = await currentDoc(page);
-        const singleShot = doc.shots[1];
-        await select(page, { kind: "shot", id: singleShot.id });
-        await inspector.getByRole("switch", { name: "Scroll through page" }).click();
+        // Every section of a single-device shot: Scroll Story's shot already scrolls.
+        const shotId = (await currentDoc(page)).shots[0].id;
+        await select(page, { kind: "shot", id: shotId });
+        await expect(inspector.getByRole("switch", { name: "Scroll through page" })).toBeChecked();
         await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
+        await expectNoOverflow(page, "Shot inspector, scroll");
 
-        // Each shot in turn: single browser and phone shots show different sections.
-        for (const [index, shot] of doc.shots.entries()) {
-          await select(page, { kind: "shot", id: shot.id });
-          await expect(inspector.getByText(`Shot ${index + 1}`, { exact: true })).toBeVisible();
-          await expectNoOverflow(page, `Shot ${index + 1} inspector`);
+        // Each look in turn: a browser and a phone show different sections.
+        for (const look of SHOT_LOOKS) {
+          await setShotLook(page, look);
+          await select(page, { kind: "shot", id: shotId });
+          await expect(inspector.getByText("Shot 1", { exact: true })).toBeVisible();
+          await expectNoOverflow(page, `${look} shot inspector`);
         }
 
         // The other library tab.
         await page.getByRole("tab", { name: "Media" }).click();
         await expectNoOverflow(page, "Media tab");
 
-        // Both Frames presets, whose speed row holds the loop length chips: the single shot
-        // takes a Desktop Frames, then a Mobile Frames layout with six screenshots. Last, and
-        // the inspector only: a 30 s shot squeezes the other shot cards in the timeline.
+        // Both Frames presets, whose speed row holds the loop length chips: the shot takes a
+        // Desktop Frames, then a Mobile Frames layout with six screenshots. The inspector only.
         for (const layout of FRAMES_LAYOUTS) {
           await page.evaluate(
             ({ id, layout }) => {
@@ -253,7 +252,7 @@ test.describe("F08 overflow guard", () => {
               if (!store) throw new Error("__editorStore is unavailable");
               store.getState().apply((draft) => {
                 const shot = draft.shots.find((s) => s.id === id);
-                if (!shot) throw new Error("no single shot");
+                if (!shot) throw new Error("no shot");
                 const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
                 shot.duration = 30;
                 shot.layout = {
@@ -262,9 +261,9 @@ test.describe("F08 overflow guard", () => {
                 } as FramesLayout;
               });
             },
-            { id: singleShot.id, layout },
+            { id: shotId, layout },
           );
-          await select(page, { kind: "shot", id: singleShot.id });
+          await select(page, { kind: "shot", id: shotId });
           await expect(inspector.getByRole("group", { name: "Loop length" })).toBeVisible();
           await expectNoOverflow(page, `${layout.kind} Frames inspector`, ["inspector"]);
         }
@@ -290,39 +289,30 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   test.setTimeout(90000);
   await page.setViewportSize({ width: 1600, height: 1000 });
   await resetAndOpen(page, "dark");
-  await openReel(page);
+  await openStory(page);
+  const shotId = (await currentDoc(page)).shots[0].id;
 
-  // Shots on both camera moves, Still and Push in; only the middle browser pushes in, so its
-  // timeline label is unique (the opening shot is a copy of it).
-  // Set through the store, so the checks below don't depend on finding the labels first.
-  await page.evaluate(() => {
-    const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
-    if (!store) throw new Error("__editorStore is unavailable");
-    store.getState().apply((draft) => {
-      draft.shots[0].camera.preset = "static";
-      draft.shots[1].camera.preset = "pushIn";
-      draft.shots[2].camera.preset = "static";
-    });
-  });
-  const doc = await currentDoc(page);
-  expect(doc.shots.map((s) => s.camera.preset)).toEqual(
-    expect.arrayContaining(["pushIn", "static"]),
-  );
-
+  // Each look, on the camera moves with camelCase ids. Set through the store, so the checks
+  // below don't depend on finding the labels first.
   await select(page, { kind: "video" });
   await expectNoRawIds(page, "Video inspector");
-  for (const [index, shot] of doc.shots.entries()) {
-    await select(page, { kind: "shot", id: shot.id });
-    await expectNoRawIds(page, `Shot ${index + 1} inspector`);
+  const timeline = page.locator('[data-panel="timeline"]');
+  const inspector = page.locator('[data-panel="inspector"]');
+  for (const [look, camera] of [
+    ["browser", "pushIn"],
+    ["phone", "static"],
+  ] as const) {
+    await setShotLook(page, look, camera);
+    await select(page, { kind: "shot", id: shotId });
+    await expectNoRawIds(page, `${look} shot inspector`);
   }
 
   // The human labels are the ones the task names.
-  const timeline = page.locator('[data-panel="timeline"]');
+  await setShotLook(page, "browser", "pushIn");
   await expect(timeline.getByText("Browser · Push in")).toBeVisible();
-  await select(page, { kind: "shot", id: doc.shots[2].id });
-  await expect(
-    page.locator('[data-panel="inspector"]').getByRole("radio", { name: "Still", exact: true }),
-  ).toBeChecked();
+  await setShotLook(page, "phone", "static");
+  await select(page, { kind: "shot", id: shotId });
+  await expect(inspector.getByRole("radio", { name: "Still", exact: true })).toBeChecked();
 
   // The drop hint over a Frames row, whose nodes are "row1:item0" and so on.
   await resetAndOpen(page, "dark");

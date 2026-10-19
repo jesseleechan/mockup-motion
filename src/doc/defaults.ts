@@ -1,4 +1,5 @@
 import type { Aspect, CameraMove, ExportSettings, Layout, ProjectDoc, Shot, Style } from "./types";
+import { BUILTIN_PALETTES } from "./palettes";
 
 export function defaultStyle(): Style {
   return {
@@ -17,14 +18,15 @@ export function defaultStyle(): Style {
   };
 }
 
+/** The dialog's default: the Video preset in `src/export/destinations.ts`, an MP4 at 1080p. */
 export function defaultExport(): ExportSettings {
   return {
-    destination: "custom",
+    destination: "video",
     resolution: 1080,
     fps: 30,
     quality: "high",
     format: "mp4",
-    supersample: 1.5,
+    supersample: 1,
   };
 }
 
@@ -47,7 +49,6 @@ export function defaultShot(layout?: Layout): Shot {
       assetId: "",
     },
     camera: defaultCameraMove(),
-    entrance: "none",
     transitionIn: {
       kind: "cut",
       duration: 0,
@@ -81,4 +82,30 @@ export function createDoc(partial?: Partial<ProjectDoc>): ProjectDoc {
     export: partial.export ? { ...base.export, ...partial.export } : base.export,
     shots: partial.shots && partial.shots.length > 0 ? partial.shots : base.shots,
   };
+}
+
+/**
+ * The look a new project starts with: the presets' flat Ash fill, with no shadow, grain or
+ * vignette (quality bar §6). `defaultStyle()` stays as it is, because the sanitizer and the
+ * migration fill gaps in saved projects from it.
+ */
+export function newProjectStyle(): Style {
+  const ash = BUILTIN_PALETTES.find((p) => p.id === "ash");
+  if (!ash) throw new Error("The Ash palette is missing");
+  return {
+    ...defaultStyle(),
+    background: structuredClone(ash.background),
+    frameAppearance: ash.frameAppearance,
+    shadow: "none",
+    grain: 0,
+    vignette: 0,
+  };
+}
+
+/** The document the editor opens on first run and that "New project" creates. */
+export function newProjectDoc(): ProjectDoc {
+  const shot = defaultShot();
+  // A still camera, as every preset but Scroll Story uses; nothing to push in on yet.
+  shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+  return createDoc({ style: newProjectStyle(), shots: [shot] });
 }

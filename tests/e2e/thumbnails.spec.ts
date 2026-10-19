@@ -25,7 +25,8 @@ async function resetAndOpen(page: Page) {
 
 /** Applies a template from the gallery and fills its slots with demo screenshots. */
 async function applyTemplateWithDemo(page: Page, templateId: string) {
-  await page.getByRole("button", { name: "Start with a template" }).click();
+  // The editor opens on the gallery when it starts on an empty project.
+  await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
   await page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click();
   await page.getByRole("button", { name: "Apply template" }).click();
   await page.getByRole("button", { name: "Use demo content" }).click();
@@ -37,6 +38,35 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
       }),
     )
     .toBeGreaterThan(0);
+}
+
+/**
+ * Waits until no thumbnail is queued or rendering, and the shot cards show the results. Idle
+ * must hold across 200 ms: a request React issues just after a change waits 300 ms for its
+ * debounce, so it can't fall between the two samples.
+ */
+async function waitForThumbnails(page: Page) {
+  const settled = () =>
+    page.evaluate(() => {
+      const renderer = (window as unknown as { __thumbnailRenderer?: { idle: boolean } })
+        .__thumbnailRenderer;
+      if (!renderer) throw new Error("__thumbnailRenderer is unavailable");
+      const images = [
+        ...document.querySelectorAll<HTMLImageElement>('[data-testid="shot-card"] img'),
+      ];
+      return renderer.idle && images.length > 0 && images.every((img) => img.complete);
+    });
+  await expect
+    .poll(
+      async () => {
+        if (!(await settled())) return false;
+        await page.waitForTimeout(200);
+        return settled();
+      },
+      // Rendering competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
+      { timeout: ciTimeout(20_000) },
+    )
+    .toBe(true);
 }
 
 async function shotCount(page: Page): Promise<number> {
@@ -115,16 +145,11 @@ test.describe("F07: shot and project thumbnails", () => {
     await resetAndOpen(page);
   });
 
-  test("every shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
+  test("the shot card shows a rendered thumbnail after applying a template", async ({ page }) => {
     test.setTimeout(90_000);
-    // Every built-in template has one shot, so add two more.
     await applyTemplateWithDemo(page, "scroll-story");
-    for (let i = 0; i < 2; i++) {
-      await page.getByRole("button", { name: "Add shot" }).click();
-      await page.getByRole("menuitem", { name: "Same layout" }).click();
-    }
     const shots = await shotCount(page);
-    expect(shots).toBe(3);
+    expect(shots).toBe(1);
 
     const cards = page.locator('[data-testid="shot-card"]');
     await expect(cards).toHaveCount(shots);
@@ -153,8 +178,10 @@ test.describe("F07: shot and project thumbnails", () => {
     await expect
       .poll(() => thumb.evaluate((el: HTMLImageElement) => el.naturalWidth), { timeout: 20_000 })
       .toBeGreaterThan(0);
-    // Let the first project-thumbnail write (and any other queued render) finish.
-    await page.waitForTimeout(1000);
+    // The shot card shows a thumbnail as soon as there is one, first of the template without
+    // screenshots: wait until the renderer has drawn the filled shot (and the project
+    // thumbnail), so "before" is the push-in render and not an older one still being replaced.
+    await waitForThumbnails(page);
     const before = await imageStats(thumb);
 
     const started = Date.now();
@@ -242,7 +269,8 @@ test.describe("F07: template previews in the gallery and Library", () => {
   test("a card plays its preview on hover and focus, and pauses and rewinds after", async ({
     page,
   }) => {
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     const cards = page.locator('[data-testid="template-card"]');
     await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
@@ -251,6 +279,14 @@ test.describe("F07: template previews in the gallery and Library", () => {
       els.map((el) => el.querySelector("video")?.getAttribute("poster")),
     );
     for (const poster of posters) expect(poster).toMatch(/^\/templates\/[a-z-]+\.webp$/);
+
+    // The selected card, the first-run default, plays as soon as the gallery opens.
+    const selected = page.locator(
+      `[data-testid="template-card"][data-template-id="${BUILTIN_TEMPLATES[0].id}"]`,
+    );
+    await expect
+      .poll(async () => (await videoState(selected)).paused, { timeout: ciTimeout(10_000) })
+      .toBe(false);
 
     // A rejected play() logs "[TemplatePreview] … failed to play"; report it instead of a timeout.
     const previewErrors: string[] = [];
@@ -298,7 +334,8 @@ test.describe("F07: template previews in the gallery and Library", () => {
 
   test("reduced motion shows posters only", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     const cards = page.locator('[data-testid="template-card"]');
     await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
