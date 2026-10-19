@@ -80,6 +80,7 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
+  | { kind: "responsive"; desktopId: string; mobileId: string }
   | { kind: "title" };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
@@ -91,6 +92,8 @@ export type Layout =
 // orbit: the screenshots on a ring seen from slightly above, cards always facing the camera. Each
 // step turns the next card (from the right) to the front. shape and step as for slider; at most
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
+// responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
+// (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
 // cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
 // today's behaviour; "period" moves every row exactly one asset period per loop, so speed follows
@@ -126,6 +129,8 @@ export interface CameraPose {
 export interface ScrollSpec {
   enabled: boolean;        // opt-in; never auto-enabled
   stops: number[];         // 0..1 positions in scrollable range, ascending, first is 0
+  sections?: string[];     // responsive: section keys to stop at after the top, in page order.
+                           // Unset = the default stops; `stops` is the fallback without section data
   hold: number;            // seconds held at each stop
   easing: EasingId;
 }
@@ -164,7 +169,7 @@ export interface Shot {
   layout: Layout;
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
-  scroll?: ScrollSpec;     // honoured only for single-device layouts
+  scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
   cursor?: CursorSpec;     // honoured only for single-device layouts
   texts: TextLayer[];
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
