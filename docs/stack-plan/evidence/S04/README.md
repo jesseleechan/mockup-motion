@@ -17,7 +17,7 @@ Rendered at 1080 px (4:5) and 1920 px (16:9) for both presets with the 5-screens
 
 ## Baseline candidates (`baseline-candidates/`)
 
-D7's 10 stills, rendered from the same lab fixtures `tests/visual/stills.spec.ts` would use, 1280 px wide, lossless WebP. **These are not baselines.** They are for the owner's review; the Linux baselines are written by the Visual baselines workflow only after the owner's written approval.
+D7's 10 stills, rendered from the same lab fixtures `tests/visual/stills.spec.ts` would use, 1280 px wide, lossless WebP. The owner approved them on 19 October 2026: "I approve the stills and baselines you're waiting on. Go with your recommendation on every open decision." The Linux baselines in `tests/visual/stills.spec.ts-snapshots/` were then rendered by the Visual baselines workflow from the same commit.
 
 | File                                                                              | What it shows                                                                                 |
 | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
