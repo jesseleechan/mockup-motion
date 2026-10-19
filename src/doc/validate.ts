@@ -19,6 +19,7 @@ import type {
   DeviceFinish,
   DeviceKind,
   EasingId,
+  DestinationId,
   ExportSettings,
   FontRef,
   Layout,
@@ -61,10 +62,20 @@ const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "b
 const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
 const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
-const VALID_FPS = [24, 30, 60] as const;
+const VALID_FPS = [15, 24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
-const VALID_FORMATS = ["mp4", "webm"] as const;
+const VALID_FORMATS = ["mp4", "webm", "bundle", "png"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
+const VALID_DESTINATIONS: readonly DestinationId[] = [
+  "custom",
+  "web-embed",
+  "dribbble",
+  "instagram-feed",
+  "instagram-story",
+  "linkedin",
+  "x",
+  "presentation-4k",
+];
 const VALID_TRANSITIONS: readonly Transition["kind"][] = [
   "cut",
   "fade",
@@ -100,6 +111,28 @@ function clamp(val: number, min: number, max: number): number {
 
 function includesValue<T>(list: readonly T[], val: unknown): val is T {
   return list.includes(val as T);
+}
+
+/**
+ * Export settings from a saved project or this browser's last export. Every value the dialog
+ * offers is kept; anything else (a removed format such as GIF, motion blur, an unknown
+ * destination) falls back to the default MP4 export.
+ */
+export function sanitizeExport(raw: unknown): ExportSettings {
+  const fallback = defaultExport();
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    destination: includesValue(VALID_DESTINATIONS, r.destination)
+      ? r.destination
+      : fallback.destination,
+    resolution: includesValue(VALID_RESOLUTIONS, r.resolution) ? r.resolution : fallback.resolution,
+    fps: includesValue(VALID_FPS, r.fps) ? r.fps : fallback.fps,
+    quality: includesValue(VALID_QUALITIES, r.quality) ? r.quality : fallback.quality,
+    format: includesValue(VALID_FORMATS, r.format) ? r.format : fallback.format,
+    supersample: includesValue(VALID_SUPERSAMPLES, r.supersample)
+      ? r.supersample
+      : fallback.supersample,
+  };
 }
 
 export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[] } {
@@ -201,26 +234,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         : defaults.style.accent,
   };
 
-  // Export
-  const rawExport = (d.export && typeof d.export === "object" ? d.export : {}) as Record<
-    string,
-    unknown
-  >;
-  const exp: ExportSettings = {
-    destination:
-      typeof rawExport.destination === "string"
-        ? (rawExport.destination as ExportSettings["destination"])
-        : "custom",
-    resolution: includesValue(VALID_RESOLUTIONS, rawExport.resolution)
-      ? rawExport.resolution
-      : 1080,
-    fps: includesValue(VALID_FPS, rawExport.fps) ? rawExport.fps : 30,
-    quality: includesValue(VALID_QUALITIES, rawExport.quality) ? rawExport.quality : "high",
-    format: includesValue(VALID_FORMATS, rawExport.format) ? rawExport.format : "mp4",
-    supersample: includesValue(VALID_SUPERSAMPLES, rawExport.supersample)
-      ? rawExport.supersample
-      : 1.5,
-  };
+  const exp = sanitizeExport(d.export);
 
   // Shots
   const shots: Shot[] = [];

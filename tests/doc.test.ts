@@ -19,7 +19,7 @@ describe("WP-01: Document Defaults and Validation", () => {
     expect(sanitized.export.resolution).toBe(1080);
     expect(sanitized.export.fps).toBe(30);
     expect(sanitized.export.quality).toBe("high");
-    expect(sanitized.export.supersample).toBe(1.5);
+    expect(sanitized.export.supersample).toBe(1); // the Custom preset the dialog opens on (#67)
     expect(sanitized.shots.length).toBe(1);
     expect(sanitized.shots[0].duration).toBe(5);
   });
