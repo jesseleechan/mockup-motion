@@ -1,15 +1,13 @@
 # Polish plan: the Export dialog
 
-**Status: in progress.** Written 19 October 2026 from the editor audit the owner approved that day. On 19 October 2026 the owner approved every recommendation, including the six destination cards in §3, and added §4. The coordinating session reviews these PRs and gives each a turn in the merge queue. Items build on the cuts that edit the same files: #63 (music), #65 (GIF export and motion blur) and #67 (MP4 default).
+**Status: done when #87 merges.** Written 19 October 2026 from the editor audit the owner approved that day. On 19 October 2026 the owner approved every recommendation, including the six destination cards in §3, and added §4. The coordinating session reviews these PRs and gives each a turn in the merge queue. Items build on the cuts that edit the same files: #63 (music), #65 (GIF export and motion blur) and #67 (MP4 default).
 
 Each item is its own PR, with before and after screenshots of the dialog at 1440 × 900 and 1280 × 800 and a check that nothing in it overflows.
 
-| Item                         | PR      | Status      |
-| ---------------------------- | ------- | ----------- |
-| 1. Advanced section          | #80     | Merged      |
-| 2. Remember the last choice  | #81     | Merged      |
-| 3. Destinations              | #83     | In review   |
-| 4. Export every size at once |         | Not started |
+| 1. Advanced section | #80 | Merged |
+| 2. Remember the last choice | #81 | Merged |
+| 3. Destinations | #83 | Merged |
+| 4. Export every size at once | #87 | In review |
 
 ## 1. An Advanced section
 
@@ -73,6 +71,7 @@ Added by the owner on 19 October 2026, from the audit's "Add" list.
 - The presets already re-fit to each aspect, so this is an export queue: each aspect renders in turn from a copy of the document at that aspect (`changeAspect`), and the project's own aspect never changes.
 - Progress shows per file, cancel stops the whole queue, and each file is offered as it finishes, the way a single export is today.
 - Tests: unit tests for the queue (order, cancel, the document is not changed); at most one e2e test, for a two-aspect export.
+- **Built:** a "Sizes" row of chips under the destinations; the project's aspect is selected when the dialog opens and follows "Switch to". The pure queue is `src/editor/export/queue.ts`. The summary lists each file with its size and estimate, plus the total. While rendering, the dialog shows "File 2 of 3 · 4:5" and the finished files with their download links; a cancel keeps them. One export of one size looks as before. The sizes are only re-fitted and planned while the dialog is open, and every file's encoder notice is shown, naming its sizes.
 
 ## Follow-ups
 
