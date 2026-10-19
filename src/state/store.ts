@@ -3,6 +3,7 @@ import { produce, current } from "immer";
 import { createDoc, defaultShot } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
 import type {
+  AssetMeta,
   AssetRef,
   AssetRole,
   Layout,
@@ -64,6 +65,8 @@ export interface EditorStoreState {
   replaceAsset: (id: string, ref: AssetRef, blob?: Blob) => Promise<void>;
   removeAsset: (id: string) => Promise<void>;
   setAssetRole: (id: string, role: AssetRole) => void;
+  /** Merges capture section data into library screenshots (Responsive Scroll). */
+  setAssetCaptures: (updates: { id: string; meta: Pick<AssetMeta, "sections" | "page"> }[]) => void;
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
@@ -324,6 +327,19 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: `Set role to ${role}` },
+      );
+    },
+
+    setAssetCaptures: (updates) => {
+      if (updates.length === 0) return;
+      get().apply(
+        (draft) => {
+          for (const { id, meta } of updates) {
+            const asset = draft.assets.find((a) => a.id === id);
+            if (asset) asset.meta = { ...asset.meta, ...meta };
+          }
+        },
+        { label: "Add page sections" },
       );
     },
 
