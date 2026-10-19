@@ -38,8 +38,6 @@ export interface AssetProvider {
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
   /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
   getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
-  /** Raw bytes of an audio asset (music track); absent where audio is unsupported (worker). */
-  getAudio?(assetId: string): Promise<Blob | null>;
 }
 
 export interface EngineDebugInfo {

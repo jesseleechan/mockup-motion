@@ -6,8 +6,6 @@ export interface VerifyExportExpected {
   duration: number; // in seconds
   fps: number;
   codec?: "avc" | "vp9" | "av1";
-  /** true: an audio track of `duration` is required; false: none may exist; undefined: not checked. */
-  audio?: boolean;
 }
 
 export interface VerifyExportResult {
@@ -17,8 +15,6 @@ export interface VerifyExportResult {
     height: number;
     duration: number;
     codec?: string;
-    audioDuration?: number;
-    audioCodec?: string;
   };
   warnings: string[];
 }
@@ -114,34 +110,7 @@ export async function verifyExportBlob(
       );
     }
 
-    // 3. Verify the audio track (WP-17): present with length `total` ±1 audio frame, or absent
-    const audioTrack = await input.getPrimaryAudioTrack();
-    if (audioTrack) {
-      let audioDuration: number;
-      try {
-        audioDuration = await audioTrack.computeDuration();
-      } catch (error) {
-        warnings.push(`Could not read exported audio duration: ${String(error)}`);
-        audioDuration = 0;
-      }
-      actual.audioDuration = audioDuration;
-      actual.audioCodec = audioTrack.codec ?? undefined;
-      if (expected.audio === false) {
-        warnings.push("Unexpected audio track in the output.");
-      } else if (expected.audio === true) {
-        // One AAC frame is 1024 samples (~21 ms at 48 kHz); allow two plus encoder padding.
-        const audioTolerance = 0.06;
-        if (Math.abs(audioDuration - expected.duration) > audioTolerance) {
-          warnings.push(
-            `Audio duration mismatch: expected ${expected.duration.toFixed(2)}s, got ${audioDuration.toFixed(2)}s.`,
-          );
-        }
-      }
-    } else if (expected.audio === true) {
-      warnings.push("Expected an audio track but none was found.");
-    }
-
-    // 4. Verify codec if specified
+    // 3. Verify codec if specified
     if (expected.codec && trackCodec) {
       const normalizedTrackCodec = trackCodec.toLowerCase();
       const match =

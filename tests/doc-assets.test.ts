@@ -92,10 +92,9 @@ describe("F03: collectAssetIds", () => {
     expect([...collectAssetIds(doc)].sort()).toEqual(["doc-ambient", "shot-ambient", "shot-image"]);
   });
 
-  it("collects text-layer logos and excludes audio", () => {
+  it("collects text-layer logos", () => {
     const doc = docWith([{ kind: "title" }]);
     doc.shots[0].texts = [textLayer("t1", "logo-a"), textLayer("t2")];
-    doc.audio = { assetId: "music", volume: 1, fadeIn: 0, fadeOut: 0, offset: 0 };
     expect([...collectAssetIds(doc)]).toEqual(["logo-a"]);
   });
 

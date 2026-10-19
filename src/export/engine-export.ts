@@ -8,7 +8,6 @@ import { createWebEmbedBundle } from "./bundle";
 import { encodeGif } from "./gif";
 import { probeVideoEncoders } from "./probe";
 import { verifyExportBlob, type VerifyExportResult } from "./verify";
-import { prepareExportAudio, withoutAudio } from "./audio-mux";
 import { createCanvas, encodeInWorker, encodeMainThread, type StartMessage } from "./video-encode";
 
 export { liveExportWorkers } from "./video-encode";
@@ -53,7 +52,7 @@ export interface ExportResult {
   blob: Blob;
   mime: string;
   bundleSnippet?: string;
-  /** Things the export left out or changed, e.g. music that could not be mixed. */
+  /** Things the export left out or changed, e.g. a bundle with one video format. */
   warnings: string[];
   /** Every exported file, re-read with Mediabunny (or decoded, for images). */
   verification: ExportVerification[];
@@ -151,18 +150,6 @@ export async function exportWithEngine(
   const container = settings.format === "webm" ? "webm" : "mp4";
   const codec = container === "mp4" ? "avc" : "vp9";
 
-  // Mix the optional music track (absent or unsupported => no audio, reasons in warnings)
-  const prepared = await prepareExportAudio(
-    doc,
-    provider.getAudio?.bind(provider),
-    total,
-    container,
-  );
-  const audio = prepared.audio;
-  // The worker's abort listener is attached only after preparation, so a cancel
-  // during preparation must be checked here or it is lost.
-  signal?.throwIfAborted();
-
   // Decode every image at the width it appears on screen (quality-bar §3.1)
   const decodeWidths = textureWidths(doc, {
     outputWidthPx: width,
@@ -211,7 +198,6 @@ export async function exportWithEngine(
     bitrate:
       options.videoBitrate ??
       calculateBitrate(settings.quality, codec, width, height, settings.fps),
-    audio,
   };
   const useWorker = typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined";
   const { blob, mime } = useWorker
@@ -224,12 +210,11 @@ export async function exportWithEngine(
     duration: total,
     fps: settings.fps,
     codec,
-    audio: Boolean(audio),
   });
   return {
     blob,
     mime,
-    warnings: prepared.warnings,
+    warnings: [],
     verification: [{ label: container === "mp4" ? "MP4" : "WebM", result }],
   };
 }
@@ -318,12 +303,11 @@ async function exportBundleWithEngine(
   if (formats.length === 0) throw new Error("This browser can't encode MP4 or WebM video.");
 
   onProgress?.({ stage: "preparing", frame: 0, total: 100, percentage: 0 });
-  const silent = withoutAudio(doc);
   const videos: Partial<Record<"mp4" | "webm", Blob>> = {};
   const verification: ExportVerification[] = [];
   const share = 90 / formats.length;
   for (const [index, format] of formats.entries()) {
-    const part = await exportWithEngine(silent, provider, { ...settings, format }, signal, (p) => {
+    const part = await exportWithEngine(doc, provider, { ...settings, format }, signal, (p) => {
       const percentage = Math.round(index * share + p.percentage * (share / 100));
       const part = format === "mp4" ? "MP4" : "WebM";
       onProgress?.({ stage: "rendering", frame: p.frame, total: p.total, percentage, part });

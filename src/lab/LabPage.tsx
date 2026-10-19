@@ -194,7 +194,6 @@ export const LabPage: React.FC = () => {
               return images[assetId] ?? provider.getImage(assetId, maxWidth);
             },
             getText: provider.getText.bind(provider),
-            getAudio: provider.getAudio?.bind(provider),
           };
           await engine.setDocument(nextDoc, testProvider);
           engine.renderAt(0);

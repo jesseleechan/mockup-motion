@@ -41,7 +41,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "stack",
   ],
   [
-    "audio",
     "export-dialog",
     "entrance",
     "thumbnails",
