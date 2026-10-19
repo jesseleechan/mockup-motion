@@ -53,4 +53,5 @@ export async function openOnStart(source: ProjectSource = savedProjects): Promis
   }
   // Still on the new project: no saved project, or it couldn't be read.
   if (untouched() && isEmptyProject(startDoc)) useUIStore.getState().openFirstRunGallery();
+  useUIStore.getState().finishStarting();
 }

@@ -33,6 +33,7 @@ afterEach(() => {
   stop?.();
   stop = undefined;
   useUIStore.getState().closeTemplateGallery();
+  useUIStore.setState({ starting: true });
   useEditorStore.getState().loadDoc(createDoc());
 });
 
@@ -49,8 +50,11 @@ describe("Start: the last project, or the gallery", () => {
   });
 
   it("opens the gallery over the new project when nothing is saved", async () => {
+    expect(useUIStore.getState().starting).toBe(true);
     await openOnStart(source([]));
     expect(galleryState()).toEqual({ templateGalleryOpen: true, firstRunGallery: true });
+    // The stage shows its empty state only now, under the gallery.
+    expect(useUIStore.getState().starting).toBe(false);
   });
 
   it("reopens the most recent saved project, without the gallery", async () => {
@@ -59,6 +63,7 @@ describe("Start: the last project, or the gallery", () => {
     await openOnStart(source([recent, older]));
     expect(useEditorStore.getState().doc.id).toBe(recent.id);
     expect(galleryState()).toEqual({ templateGalleryOpen: false, firstRunGallery: false });
+    expect(useUIStore.getState().starting).toBe(false);
   });
 
   it("opens the gallery when the saved projects can't be read", async () => {

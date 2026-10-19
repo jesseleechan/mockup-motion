@@ -80,7 +80,8 @@ export const EditorShell: React.FC = () => {
       .then((migratedDoc) => (migratedDoc ? loadDoc(migratedDoc) : openOnStart()))
       .catch((err: unknown) => {
         console.error("[Start] couldn't open the last project:", err);
-      });
+      })
+      .finally(() => useUIStore.getState().finishStarting());
 
     if (import.meta.env.DEV) {
       (window as unknown as { __editorStore: unknown }).__editorStore = useEditorStore;

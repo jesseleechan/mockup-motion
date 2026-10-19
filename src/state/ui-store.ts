@@ -17,6 +17,11 @@ export interface UIState {
   templateGalleryOpen: boolean;
   /** The gallery was opened by the editor on start, not by the user (`first-run-gallery.ts`). */
   firstRunGallery: boolean;
+  /**
+   * True until the editor has decided what to open on start: the last project or the gallery
+   * (`openOnStart`). The stage shows no empty state meanwhile, so it doesn't flash.
+   */
+  starting: boolean;
   /** Counts requests for the stage's screenshot file picker (the gallery's Choose screenshots). */
   screenshotPickerRequests: number;
 
@@ -31,6 +36,7 @@ export interface UIState {
   openFirstRunGallery: () => void;
   closeTemplateGallery: () => void;
   requestScreenshotPicker: () => void;
+  finishStarting: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -46,6 +52,7 @@ export const useUIStore = create<UIState>((set) => ({
   theme: "dark",
   templateGalleryOpen: false,
   firstRunGallery: false,
+  starting: true,
   screenshotPickerRequests: 0,
 
   setSelection: (selection) => set({ selection }),
@@ -63,6 +70,7 @@ export const useUIStore = create<UIState>((set) => ({
   openTemplateGallery: () => set({ templateGalleryOpen: true, firstRunGallery: false }),
   openFirstRunGallery: () => set({ templateGalleryOpen: true, firstRunGallery: true }),
   closeTemplateGallery: () => set({ templateGalleryOpen: false, firstRunGallery: false }),
+  finishStarting: () => set({ starting: false }),
   requestScreenshotPicker: () =>
     set((state) => ({ screenshotPickerRequests: state.screenshotPickerRequests + 1 })),
 }));
