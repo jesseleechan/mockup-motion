@@ -25,7 +25,6 @@ export interface ShotFrame {
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number;
   layers: { frame: ShotFrame; weight: number }[];
   transition?: {
     kind: Transition["kind"];
@@ -41,10 +40,9 @@ export function clearLayoutCache(): void {
   // Modular layouts resolve deterministically
 }
 
-function isMarquee(shot: Shot): boolean {
-  return (
-    shot.layout.kind === "rows" || shot.layout.kind === "columns" || shot.layout.kind === "wall"
-  );
+/** Frames: rows or columns lanes (Desktop Frames, Mobile Frames). */
+function isFrames(shot: Shot): boolean {
+  return shot.layout.kind === "rows" || shot.layout.kind === "columns";
 }
 
 /**
@@ -116,7 +114,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   }
 
   const active = activeLayers(doc, normT);
-  const backgroundPhase = total > 0 ? normT / total : 0;
 
   const layers = active.layers.map((activeShot) => {
     const shot = activeShot.shot;
@@ -126,13 +123,13 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     const p = shot.duration > 0 ? Math.max(0, Math.min(1, localT / shot.duration)) : 0;
     const baseCamera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
 
-    // Marquees snap their travel to whole card steps per loop when they can (layouts/marquee.ts).
-    // A single looping shot loops after `total`, which is shorter than the shot when it has
-    // a wrap crossfade; during that crossfade the incoming strip runs on t − total, so both
-    // layers show the cards in the same places and only the screens dissolve.
-    const marquee = isMarquee(shot);
-    const layoutT = marquee ? (activeShot.wrapT ?? localT) : localT;
-    const layoutDuration = marquee && doc.loop && doc.shots.length === 1 ? total : shot.duration;
+    // Frames lanes travel one asset period per loop (layouts/lanes.ts). A single looping shot
+    // loops after `total`, which is shorter than the shot when it has a wrap crossfade; during
+    // that crossfade the incoming lanes run on t − total, so both layers show the cards in the
+    // same places and only the screens dissolve.
+    const frames = isFrames(shot);
+    const layoutT = frames ? (activeShot.wrapT ?? localT) : localT;
+    const layoutDuration = frames && doc.loop && doc.shots.length === 1 ? total : shot.duration;
 
     const entrance = shotEntrance(doc, activeShot.index);
 
@@ -151,7 +148,7 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
     // neighbours and an orbit's side cards may be cropped by the frame on purpose (quality bar
     // §4), so they are full bleed.
     let camera = baseCamera;
-    const isFullBleed = marquee || isSteppedLayout(shot.layout);
+    const isFullBleed = frames || isSteppedLayout(shot.layout);
     if (!isFullBleed && nodes.length > 0) {
       const multiplier = frameDistance(nodes, doc.aspect, baseCamera);
       if (multiplier > 1.0) {
@@ -182,7 +179,6 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
   return {
     t: normT,
     total,
-    backgroundPhase,
     layers,
     transition: active.transition,
   };

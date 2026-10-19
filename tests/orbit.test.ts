@@ -268,7 +268,7 @@ describe("Orbit shots set their own length and keep a still camera", () => {
     const layout = doc.shots[0].layout as OrbitLayout;
     layout.step = 9;
     doc.shots[0].duration = 3;
-    doc.shots[0].camera = { preset: "orbitLeft", intensity: 1, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
     const { doc: clean } = sanitizeDoc(doc);
     expect(clean.shots[0].layout).toEqual({ ...layout, step: 4 });
     expect(clean.shots[0].duration).toBe(20);

@@ -1,5 +1,6 @@
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
+import { applyLegacyLook, legacyLook, mapLegacyLayout } from "./legacy-layouts";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -16,7 +17,6 @@ import type {
   CameraMove,
   CameraPresetId,
   CaptureSection,
-  DeviceFinish,
   DeviceKind,
   EasingId,
   ExportSettings,
@@ -39,24 +39,11 @@ const VALID_EASINGS: readonly EasingId[] = [
   "spring",
   "slide",
 ];
-const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "riseUp",
-  "dollyLeft",
-  "dollyRight",
-  "isoDrift",
-  "heroTilt",
-];
+const VALID_CAMERA_PRESETS: readonly CameraPresetId[] = ["static", "pushIn"];
 const VALID_SHADOW_PRESETS: readonly ShadowPreset[] = ["none", "soft", "medium", "dramatic"];
-const VALID_DEVICE_FINISHES: readonly DeviceFinish[] = ["graphite", "silver", "black", "sand"];
-const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "minimal", "none"];
-const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
+const VALID_BROWSER_CHROMES: readonly BrowserChrome[] = ["standard", "none"];
+// Saved laptops and tablets (cut on 19 Oct 2026) are unknown kinds, so they load as browsers.
+const VALID_DEVICE_KINDS: readonly DeviceKind[] = ["browser", "phone", "card"];
 const VALID_RESOLUTIONS = [720, 1080, 1200, 1440, 2160] as const;
 const VALID_FPS = [24, 30, 60] as const;
 const VALID_QUALITIES = ["web", "high", "master"] as const;
@@ -150,11 +137,10 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     unknown
   >;
   const style: Style = {
-    background: sanitizeBackground(rawStyle.background, assetIdSet, warnings),
+    background: sanitizeBackground(rawStyle.background),
     frameAppearance: rawStyle.frameAppearance === "dark" ? "dark" : "light",
-    deviceFinish: includesValue(VALID_DEVICE_FINISHES, rawStyle.deviceFinish)
-      ? rawStyle.deviceFinish
-      : defaults.style.deviceFinish,
+    // Device finishes were removed: a saved `deviceFinish` is dropped, so every phone loads in
+    // the one finish (quality-bar §3.3). The removed `minimal` chrome loads as `standard`.
     browserChrome: includesValue(VALID_BROWSER_CHROMES, rawStyle.browserChrome)
       ? rawStyle.browserChrome
       : defaults.style.browserChrome,
@@ -192,12 +178,19 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   };
 
   // Shots
+  const aspect: Aspect = includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9";
   const shots: Shot[] = [];
   if (Array.isArray(d.shots)) {
     for (let i = 0; i < d.shots.length; i++) {
       const s = d.shots[i];
       if (s && typeof s === "object") {
-        const sanitizedShot = sanitizeShot(s as Record<string, unknown>, assetIdSet, warnings, i);
+        const sanitizedShot = sanitizeShot(
+          s as Record<string, unknown>,
+          assetIdSet,
+          aspect,
+          warnings,
+          i,
+        );
         if (sanitizedShot) {
           shots.push(sanitizedShot);
         }
@@ -223,7 +216,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     name: typeof d.name === "string" && d.name.trim() ? d.name.trim() : "Untitled presentation",
     createdAt: typeof d.createdAt === "number" && d.createdAt > 0 ? d.createdAt : Date.now(),
     updatedAt: typeof d.updatedAt === "number" && d.updatedAt > 0 ? d.updatedAt : Date.now(),
-    aspect: includesValue(VALID_ASPECTS, d.aspect) ? d.aspect : "16:9",
+    aspect,
     loop: typeof d.loop === "boolean" ? d.loop : true,
     assets,
     style,
@@ -238,7 +231,20 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   return { doc, warnings };
 }
 
-function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string[]): Background {
+// The Ash palette's fill (quality-bar §6), which removed screenshot backgrounds load as.
+const ASH = "#DFE1E3";
+
+function meshToGradient(colors: unknown): Background {
+  const hexes = Array.isArray(colors)
+    ? colors.filter((c): c is string => typeof c === "string")
+    : [];
+  const first = hexes[0] ?? "#1B1B2F";
+  const last = hexes[hexes.length - 1] ?? first;
+  // The angle and convention of the light built-in gradients (quality-bar §6).
+  return { kind: "gradient", stops: [first, last], angle: 315, angleConvention: "css" };
+}
+
+function sanitizeBackground(bg: unknown): Background {
   if (!bg || typeof bg !== "object") {
     return defaultStyle().background;
   }
@@ -257,51 +263,12 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
         ...(b.angleConvention === "css" ? { angleConvention: "css" as const } : {}),
       });
     case "mesh":
-      return {
-        kind: "mesh",
-        colors:
-          Array.isArray(b.colors) && b.colors.length >= 3
-            ? b.colors.slice(0, 5).map((c) => (typeof c === "string" ? c : "#F1EDE6"))
-            : ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
-        drift: clamp(typeof b.drift === "number" ? b.drift : 0.05, 0, 1),
-        seed: typeof b.seed === "number" ? b.seed : 42,
-      };
-    case "ambient": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(
-          `Background ambient screenshot asset '${assetId}' not found. Cleared asset reference.`,
-        );
-        return {
-          kind: "ambient",
-          assetId: "",
-          blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-        };
-      }
-      return {
-        kind: "ambient",
-        assetId,
-        blur: clamp(typeof b.blur === "number" ? b.blur : 0.8, 0, 1),
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0.2, 0, 1),
-      };
-    }
-    case "image": {
-      const assetId = typeof b.assetId === "string" ? b.assetId : "";
-      if (!assetIds.has(assetId)) {
-        warnings.push(`Background image asset '${assetId}' not found. Cleared asset reference.`);
-        return {
-          kind: "image",
-          assetId: "",
-          dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-        };
-      }
-      return {
-        kind: "image",
-        assetId,
-        dim: clamp(typeof b.dim === "number" ? b.dim : 0, 0, 1),
-      };
-    }
+      // Mesh backgrounds were removed: keep their colours as a gradient from first to last.
+      return meshToGradient(b.colors);
+    case "ambient":
+    case "image":
+      // Ambient and image backgrounds were removed: they load as the flat Ash fill.
+      return { kind: "solid", color: ASH };
     default:
       return defaultStyle().background;
   }
@@ -310,6 +277,7 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
 function sanitizeShot(
   s: Record<string, unknown>,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Shot | null {
@@ -321,7 +289,7 @@ function sanitizeShot(
     );
     return null;
   }
-  const layout = sanitizeLayout(s.layout, assetIds, warnings, shotIndex);
+  const layout = sanitizeLayout(s.layout, assetIds, aspect, warnings, shotIndex);
   if (!layout) {
     warnings.push(`Shot ${shotIndex} had an invalid layout and was dropped.`);
     return null;
@@ -347,6 +315,13 @@ function sanitizeShot(
     transitionIn,
   };
 
+  // A removed layout takes its preset look's camera, entrance, wrap and length.
+  const look =
+    s.layout && typeof s.layout === "object"
+      ? legacyLook(s.layout as Record<string, unknown>)
+      : null;
+  if (look) applyLegacyLook(shot, look, aspect);
+
   if (s.scroll && typeof s.scroll === "object") {
     const sc = s.scroll as Record<string, unknown>;
     shot.scroll = {
@@ -371,9 +346,7 @@ function sanitizeShot(
     const overrides = s.styleOverrides as Partial<Style>;
     shot.styleOverrides = {
       ...overrides,
-      ...(overrides.background
-        ? { background: sanitizeBackground(overrides.background, assetIds, warnings) }
-        : {}),
+      ...(overrides.background ? { background: sanitizeBackground(overrides.background) } : {}),
     };
   }
 
@@ -383,6 +356,7 @@ function sanitizeShot(
 function sanitizeLayout(
   layout: unknown,
   assetIds: Set<string>,
+  aspect: Aspect,
   warnings: string[],
   shotIndex: number,
 ): Layout | null {
@@ -400,6 +374,14 @@ function sanitizeLayout(
     return id;
   };
 
+  const look = legacyLook(l);
+  if (look) {
+    const ids = Array.isArray(l.assetIds)
+      ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+      : [];
+    return mapLegacyLayout(l, aspect, ids, checkAsset(l.desktopId, "desktopId"));
+  }
+
   switch (l.kind) {
     case "single":
       return {
@@ -407,30 +389,12 @@ function sanitizeLayout(
         device: includesValue(VALID_DEVICE_KINDS, l.device) ? l.device : "browser",
         assetId: checkAsset(l.assetId, "assetId"),
       };
-    case "pair":
-      return {
-        kind: "pair",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-        arrangement: l.arrangement === "side" ? "side" : "overlap",
-      };
     case "responsive":
       return {
         kind: "responsive",
         desktopId: checkAsset(l.desktopId, "desktopId"),
         mobileId: checkAsset(l.mobileId, "mobileId"),
       };
-    case "trio": {
-      const res: Layout = {
-        kind: "trio",
-        desktopId: checkAsset(l.desktopId, "desktopId"),
-        mobileId: checkAsset(l.mobileId, "mobileId"),
-      };
-      if (typeof l.tabletId === "string") {
-        res.tabletId = checkAsset(l.tabletId, "tabletId");
-      }
-      return res;
-    }
     case "rows": {
       const res: Layout = {
         kind: "rows",
@@ -439,17 +403,15 @@ function sanitizeLayout(
           : [],
         rows: l.rows === 1 || l.rows === 2 || l.rows === 3 ? l.rows : 2,
         device: l.device === "card" ? "card" : "browser",
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent, so older rows render as before.
       if (typeof l.cardHeight === "number" && Number.isFinite(l.cardHeight)) {
         res.cardHeight = clamp(l.cardHeight, 0.1, 0.8);
       }
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
     case "columns": {
@@ -461,11 +423,10 @@ function sanitizeLayout(
           ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
           : [],
         columns,
-        tilt: typeof l.tilt === "number" ? l.tilt : 12,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.35, 0, 1),
+        tilt: typeof l.tilt === "number" ? l.tilt : 0,
+        travel: "period",
       };
-      // Optional Frames fields stay unset when absent (or "phone", the default), so older
-      // columns render as before.
+      // "phone", the default, stays unset.
       if (l.device === "card") res.device = "card";
       if (typeof l.cardWidth === "number" && Number.isFinite(l.cardWidth)) {
         res.cardWidth = clamp(l.cardWidth, 0.1, 0.8);
@@ -473,30 +434,8 @@ function sanitizeLayout(
       if (typeof l.gap === "number" && Number.isFinite(l.gap)) {
         res.gap = clamp(l.gap, 0, 0.5);
       }
-      if (l.travel === "steps" || l.travel === "period") res.travel = l.travel;
       return res;
     }
-    case "wall": {
-      const cols = Number(l.columns);
-      const columns = cols === 3 || cols === 4 || cols === 5 ? cols : 4;
-      return {
-        kind: "wall",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        columns,
-        speed: clamp(typeof l.speed === "number" ? l.speed : 0.2, 0, 1),
-      };
-    }
-    case "stack":
-      return {
-        kind: "stack",
-        assetIds: Array.isArray(l.assetIds)
-          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
-          : [],
-        device: l.device === "card" ? "card" : "browser",
-        spread: clamp(typeof l.spread === "number" ? l.spread : 0.3, 0, 1),
-      };
     case "slider": {
       const sliderIds = Array.isArray(l.assetIds)
         ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
@@ -542,7 +481,8 @@ function sanitizeCamera(camera: unknown): CameraMove {
   if (!camera || typeof camera !== "object") return defaultCameraMove();
   const c = camera as Record<string, unknown>;
   return {
-    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "pushIn",
+    // A removed move (orbit, tilt, dolly, ...) or an unknown one loads as a still camera.
+    preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "static",
     intensity: clamp(typeof c.intensity === "number" ? c.intensity : 0.5, 0, 1),
     easing: includesValue(VALID_EASINGS, c.easing) ? c.easing : "smooth",
     float: clamp(typeof c.float === "number" ? c.float : 0.3, 0, 1),

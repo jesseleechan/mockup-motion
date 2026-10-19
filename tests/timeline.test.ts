@@ -9,7 +9,7 @@ describe("WP-14: Storyboard Timeline & Transitions", () => {
     const doc = createDoc();
     doc.shots = [
       defaultShot({ kind: "single", device: "browser", assetId: "" }),
-      defaultShot({ kind: "pair", desktopId: "d1", mobileId: "m1", arrangement: "overlap" }),
+      defaultShot({ kind: "single", device: "phone", assetId: "m1" }),
       defaultShot({ kind: "single", device: "card", assetId: "" }),
     ];
     doc.shots[0].duration = 3.5;
@@ -127,8 +127,8 @@ describe("WP-14: Storyboard Timeline & Transitions", () => {
       expect(frameStart.layers.length).toBeGreaterThan(0);
       expect(frameEnd.layers.length).toBeGreaterThan(0);
 
-      // In a looped document, t = total wraps to t = 0, so backgroundPhase and layers match
-      expect(frameEnd.backgroundPhase).toBeCloseTo(frameStart.backgroundPhase, 4);
+      // In a looped document, t = total wraps to t = 0, so the time and layers match
+      expect(frameEnd.t).toBeCloseTo(frameStart.t, 4);
 
       // Camera pose continuity across seam
       const startCam = frameStart.layers[0].frame.camera;

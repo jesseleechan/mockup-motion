@@ -87,12 +87,6 @@ export async function garbageCollectBlobs(): Promise<number> {
     for (const asset of project.assets) {
       referencedAssetIds.add(asset.id);
     }
-    if (project.style.background.kind === "ambient" && project.style.background.assetId) {
-      referencedAssetIds.add(project.style.background.assetId);
-    }
-    if (project.style.background.kind === "image" && project.style.background.assetId) {
-      referencedAssetIds.add(project.style.background.assetId);
-    }
   }
 
   const allBlobKeys = await listBlobKeys();

@@ -2,7 +2,8 @@
  * Splits the e2e specs across the CI shards by file. Playwright's own `--shard` cuts the
  * alphabetical test list into contiguous slices, which put every slow export and editor spec on
  * one shard (23 min, while another took 4). These groups are balanced on the per-file durations
- * of CI run 39238056392 (2088 s of tests after the 19 October 2026 trim): about 520 s per group.
+ * of CI run 39238056392, less the tests the 19 October 2026 trim and cuts removed: about 500 s per
+ * group.
  *
  * Every spec in tests/e2e must be in exactly one group; tests/e2e-shards.test.ts fails otherwise.
  * When you add a spec, put it in the group with the least time. The `e2e-shard` matrix in
@@ -17,8 +18,8 @@ import { pathToFileURL } from "node:url";
 
 export const E2E_SHARDS: readonly (readonly string[])[] = [
   ["export", "art-direction", "entrance", "first-run", "polish"],
-  ["editor", "slider", "devices", "orbit"],
-  ["assets", "thumbnails", "ui-overflow", "layouts", "color", "backgrounds"],
+  ["editor", "slider", "devices"],
+  ["assets", "thumbnails", "ui-overflow", "color", "orbit"],
   ["orientation", "export-dialog", "stage", "timeline", "frames", "lab"],
 ];
 

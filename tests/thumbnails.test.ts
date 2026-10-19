@@ -53,7 +53,7 @@ function fakeBackend() {
   };
 }
 
-function docWithPreset(preset: "pushIn" | "pullBack" | "static"): ProjectDoc {
+function docWithPreset(preset: "pushIn" | "static"): ProjectDoc {
   const doc = createDoc();
   doc.shots[0].camera.preset = preset;
   return doc;
@@ -90,7 +90,7 @@ describe("F07: ThumbnailRenderer", () => {
     const doc = docWithPreset("pushIn");
     const renamed = { ...doc, name: "Renamed", updatedAt: doc.updatedAt + 1000 };
     expect(thumbnailHash(renamed, 2.5, "16:9")).toBe(thumbnailHash(doc, 2.5, "16:9"));
-    expect(thumbnailHash(docWithPreset("pullBack"), 2.5, "16:9")).not.toBe(
+    expect(thumbnailHash(docWithPreset("static"), 2.5, "16:9")).not.toBe(
       thumbnailHash(doc, 2.5, "16:9"),
     );
     expect(thumbnailHash(doc, 2.5, "9:16")).not.toBe(thumbnailHash(doc, 2.5, "16:9"));

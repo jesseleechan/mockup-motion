@@ -4,8 +4,8 @@ import { demoAssetRef } from "./demo-assets";
 import { labTestBandsId, labTestQuadrantsId } from "./test-images";
 
 /**
- * Real demo captures with their true sizes. Phones get the mobile capture and tablets the
- * full page, so their portrait screens fill to width instead of showing a 16:10 hero.
+ * Real demo captures with their true sizes. Phones get the mobile capture, so their portrait
+ * screens fill to width instead of showing a 16:10 hero.
  */
 const DESKTOP = demoAssetRef("demo-aurelia-desktop-hero");
 const DESKTOP_FULL = demoAssetRef("demo-aurelia-desktop-full");
@@ -13,11 +13,10 @@ const MOBILE = demoAssetRef("demo-aurelia-mobile-hero");
 
 function screenAssetId(device: DeviceKind): string {
   if (device === "phone") return MOBILE.id;
-  if (device === "tablet") return DESKTOP_FULL.id;
   return DESKTOP.id;
 }
 
-const DEVICES: DeviceKind[] = ["browser", "phone", "tablet", "laptop", "card"];
+const DEVICES: DeviceKind[] = ["browser", "phone", "card"];
 
 function stillDoc(name: string): ProjectDoc {
   const doc = createDoc({ name, loop: false, assets: [DESKTOP, DESKTOP_FULL, MOBILE] });
@@ -45,17 +44,13 @@ function singleShot(
   return shot;
 }
 
-/** Frontal (static) and tilted (settled hero tilt) stills for every device. */
+/** A frontal (static) still for every device. */
 export function deviceFixtures(): Record<string, ProjectDoc> {
   const out: Record<string, ProjectDoc> = {};
   for (const device of DEVICES) {
     const frontal = stillDoc(`device-${device}-frontal`);
     singleShot(frontal, device, { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`device-${device}-frontal`] = frontal;
-
-    const tilted = stillDoc(`device-${device}-tilted`);
-    singleShot(tilted, device, { preset: "heroTilt", intensity: 1, easing: "smooth", float: 0 });
-    out[`device-${device}-tilted`] = tilted;
   }
   return out;
 }
@@ -63,9 +58,6 @@ export function deviceFixtures(): Record<string, ProjectDoc> {
 const BACKGROUNDS: Record<string, Background> = {
   solid: { kind: "solid", color: "#141417" },
   gradient: { kind: "gradient", stops: ["#F1EDE6", "#E3DCD0"], angle: 290, angleConvention: "css" },
-  mesh: { kind: "mesh", colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"], drift: 0.2, seed: 3 },
-  ambient: { kind: "ambient", assetId: DESKTOP.id, blur: 0.55, dim: 0.35 },
-  image: { kind: "image", assetId: DESKTOP.id, dim: 0.15 },
 };
 
 export function backgroundFixtures(): Record<string, ProjectDoc> {
@@ -75,7 +67,7 @@ export function backgroundFixtures(): Record<string, ProjectDoc> {
     doc.style = {
       ...doc.style,
       background,
-      frameAppearance: name === "solid" || name === "mesh" ? "dark" : "light",
+      frameAppearance: name === "solid" ? "dark" : "light",
     };
     singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear", float: 0 });
     out[`bg-${name}`] = doc;
@@ -126,13 +118,11 @@ function testAssetRef(id: string, width: number, height: number): AssetRef {
 
 /**
  * Quadrant sizes that fit each device screen to width without a bottom crop, so all four
- * quadrants are visible: phones are 0.46 wide, tablets 0.75, desktop screens 1.6.
+ * quadrants are visible: phones are 0.46 wide, desktop screens 1.6.
  */
 const QUADRANT_SIZE: Record<DeviceKind, [number, number]> = {
   browser: [1600, 1000],
   phone: [780, 1688],
-  tablet: [1200, 1600],
-  laptop: [1600, 1000],
   card: [1600, 1000],
 };
 

@@ -44,7 +44,7 @@ Scrolling is off unless you pick Desktop Scroll Story or Mobile Scroll Story, or
 
 ## Reels
 
-Add shots on the timeline. Between two shots, pick a cut or a fade, blur, push, zoom or wipe transition. A looping video also has a wrap transition from the last shot back to the first, so the camera never reverses.
+Add shots on the timeline. Between two shots, pick a cut or a fade, blur, push, zoom or wipe transition. A looping video also has a wrap transition from the last shot back to the first, so the camera never reverses. Each shot's camera is still or a slow push in.
 
 ## Sound
 

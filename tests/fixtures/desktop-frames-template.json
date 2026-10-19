@@ -6,7 +6,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -24,7 +23,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -51,7 +49,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -69,7 +66,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -96,7 +92,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -114,7 +109,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -141,7 +135,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -159,7 +152,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -186,7 +178,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -204,7 +195,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -231,7 +221,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -249,7 +238,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -276,7 +264,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -294,7 +281,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -321,7 +307,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -339,7 +324,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -366,7 +350,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -384,7 +367,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -411,7 +393,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -429,7 +410,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -456,7 +436,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -474,7 +453,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -501,7 +479,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -519,7 +496,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -546,7 +522,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -564,7 +539,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -591,7 +565,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -609,7 +582,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -636,7 +608,6 @@
         "color": "#DFE1E3"
       },
       "frameAppearance": "light",
-      "deviceFinish": "silver",
       "browserChrome": "standard",
       "browserUrl": "",
       "shadow": "none",
@@ -654,7 +625,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
