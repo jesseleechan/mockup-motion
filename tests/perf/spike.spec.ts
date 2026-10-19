@@ -54,7 +54,6 @@ test("Spike 3: Export speed - 6s at 1080p30 finishes in <= 12s", async ({ page }
       quality: "high",
       format: "webm",
       supersample: 1,
-      motionBlur: false,
     });
 
     return (performance.now() - start) / 1000;

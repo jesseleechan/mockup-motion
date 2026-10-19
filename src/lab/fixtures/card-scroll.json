@@ -32,13 +32,7 @@
     "browserUrl": "aurelia.studio",
     "shadow": "soft",
     "grain": 0.25,
-    "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "",
-    "accent": "#000000"
+    "vignette": 0.06
   },
   "shots": [
     {
@@ -62,7 +56,6 @@
         "easing": "smooth"
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "cut",
         "duration": 0,
@@ -76,7 +69,6 @@
     "fps": 30,
     "quality": "high",
     "format": "mp4",
-    "supersample": 1,
-    "motionBlur": false
+    "supersample": 1
   }
 }

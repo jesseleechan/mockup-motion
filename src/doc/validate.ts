@@ -1,4 +1,3 @@
-import { clampAudioTrack } from "../audio/mix";
 import { normalizeGradientAngle } from "./gradient-angle";
 import { defaultCameraMove, defaultExport, defaultShot, defaultStyle } from "./defaults";
 import {
@@ -9,25 +8,23 @@ import {
 } from "../motion/layouts/duration";
 import type {
   Aspect,
+  AssetMeta,
   AssetRef,
-  AudioTrack,
   AssetRole,
   Background,
   BrowserChrome,
   CameraMove,
   CameraPresetId,
+  CaptureSection,
   DeviceFinish,
   DeviceKind,
   EasingId,
   ExportSettings,
-  FontRef,
   Layout,
   ProjectDoc,
   ShadowPreset,
   Shot,
   Style,
-  TextAnimId,
-  TextLayer,
   Transition,
 } from "./types";
 
@@ -73,26 +70,6 @@ const VALID_TRANSITIONS: readonly Transition["kind"][] = [
   "zoom",
   "wipe",
 ];
-const VALID_TEXT_ANIMS: readonly TextAnimId[] = [
-  "none",
-  "fadeUp",
-  "maskReveal",
-  "blurIn",
-  "wordStagger",
-  "typewriter",
-];
-const VALID_ANCHORS: readonly TextLayer["anchor"][] = [
-  "top-left",
-  "top",
-  "top-right",
-  "left",
-  "center",
-  "right",
-  "bottom-left",
-  "bottom",
-  "bottom-right",
-];
-
 function clamp(val: number, min: number, max: number): number {
   if (Number.isNaN(val) || typeof val !== "number") return min;
   return Math.max(min, Math.min(max, val));
@@ -138,8 +115,11 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
   if (Array.isArray(d.assets)) {
     for (const a of d.assets) {
       if (a && typeof a === "object" && typeof a.id === "string" && a.id.trim()) {
+        // Music was removed (October 2026). Drop saved audio assets, or they would
+        // come back below as broken images.
+        if (a.kind === "audio") continue;
         const id = a.id.trim();
-        const kind = a.kind === "font" || a.kind === "audio" ? a.kind : "image";
+        const kind = a.kind === "font" ? a.kind : "image";
         const ref: AssetRef = {
           id,
           kind,
@@ -155,14 +135,8 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (typeof a.width === "number") ref.width = a.width;
         if (typeof a.height === "number") ref.height = a.height;
         if (typeof a.role === "string") ref.role = a.role as AssetRole;
-        if (Array.isArray(a.palette))
-          ref.palette = a.palette.filter((p: unknown): p is string => typeof p === "string");
-        if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
+        if (a.meta && typeof a.meta === "object") ref.meta = sanitizeAssetMeta(a.meta);
         if (typeof a.family === "string") ref.family = a.family;
-        if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;
-        if (Array.isArray(a.peaks)) {
-          ref.peaks = a.peaks.filter((p: unknown): p is number => typeof p === "number");
-        }
 
         assets.push(ref);
         assetIdSet.add(id);
@@ -194,12 +168,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
       0,
       1,
     ),
-    fonts: sanitizeFonts(rawStyle.fonts, defaults.style.fonts),
-    textColor: typeof rawStyle.textColor === "string" ? rawStyle.textColor : "",
-    accent:
-      typeof rawStyle.accent === "string" && rawStyle.accent
-        ? rawStyle.accent
-        : defaults.style.accent,
   };
 
   // Export
@@ -221,7 +189,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     supersample: includesValue(VALID_SUPERSAMPLES, rawExport.supersample)
       ? rawExport.supersample
       : 1.5,
-    motionBlur: Boolean(rawExport.motionBlur),
   };
 
   // Shots
@@ -243,6 +210,13 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     shots.push(defaultShot());
   }
 
+  // A scrolling responsive layout lasts its holds plus moves, which depend on its screenshots
+  // (contracts.md §5), so its length is set once the assets are known.
+  for (const shot of shots) {
+    const fixed = fixedShotDuration(shot.layout, shot.scroll, assets);
+    if (fixed !== null) shot.duration = fixed;
+  }
+
   const doc: ProjectDoc = {
     version: 2,
     id: typeof d.id === "string" && d.id ? d.id : crypto.randomUUID(),
@@ -261,27 +235,7 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     doc.templateId = d.templateId;
   }
 
-  const audio = sanitizeAudio(d.audio, assets, warnings);
-  if (audio) doc.audio = audio;
-
   return { doc, warnings };
-}
-
-function sanitizeAudio(raw: unknown, assets: AssetRef[], warnings: string[]): AudioTrack | null {
-  if (!raw || typeof raw !== "object") return null;
-  const a = raw as Record<string, unknown>;
-  const assetId = typeof a.assetId === "string" ? a.assetId : "";
-  if (!assets.some((x) => x.id === assetId && x.kind === "audio")) {
-    warnings.push(`Music asset '${assetId}' not found. Removed the music track.`);
-    return null;
-  }
-  return clampAudioTrack({
-    assetId,
-    volume: typeof a.volume === "number" ? a.volume : 0.8,
-    fadeIn: typeof a.fadeIn === "number" ? a.fadeIn : 0.5,
-    fadeOut: typeof a.fadeOut === "number" ? a.fadeOut : 1.5,
-    offset: typeof a.offset === "number" ? a.offset : 0,
-  });
 }
 
 function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string[]): Background {
@@ -353,32 +307,20 @@ function sanitizeBackground(bg: unknown, assetIds: Set<string>, warnings: string
   }
 }
 
-function sanitizeFonts(fonts: unknown, fallback: Style["fonts"]): Style["fonts"] {
-  if (!fonts || typeof fonts !== "object") return fallback;
-  const f = fonts as Record<string, unknown>;
-
-  const cleanFontRef = (r: unknown, def: FontRef): FontRef => {
-    if (!r || typeof r !== "object") return def;
-    const ref = r as Record<string, unknown>;
-    return {
-      source: ref.source === "asset" ? "asset" : "builtin",
-      family: typeof ref.family === "string" && ref.family ? ref.family : def.family,
-      weight: typeof ref.weight === "number" ? clamp(ref.weight, 100, 900) : def.weight,
-    };
-  };
-
-  return {
-    display: cleanFontRef(f.display, fallback.display),
-    body: cleanFontRef(f.body, fallback.body),
-  };
-}
-
 function sanitizeShot(
   s: Record<string, unknown>,
   assetIds: Set<string>,
   warnings: string[],
   shotIndex: number,
 ): Shot | null {
+  // Title cards and text layers were removed (October 2026). A saved title card has no
+  // screenshot to show, so it is dropped; text layers on other shots are dropped silently.
+  if ((s.layout as { kind?: unknown } | undefined)?.kind === "title") {
+    warnings.push(
+      `Shot ${shotIndex} was a title card, which is no longer supported, and was dropped.`,
+    );
+    return null;
+  }
   const layout = sanitizeLayout(s.layout, assetIds, warnings, shotIndex);
   if (!layout) {
     warnings.push(`Shot ${shotIndex} had an invalid layout and was dropped.`);
@@ -392,15 +334,6 @@ function sanitizeShot(
 
   const transitionIn: Transition = sanitizeTransition(s.transitionIn);
 
-  const texts: TextLayer[] = [];
-  if (Array.isArray(s.texts)) {
-    for (const t of s.texts) {
-      if (t && typeof t === "object") {
-        texts.push(sanitizeTextLayer(t as Record<string, unknown>, assetIds));
-      }
-    }
-  }
-
   const shot: Shot = {
     id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
     // A slider or orbit sets its own length (N × step), so its loop stays native (contracts.md §5).
@@ -411,7 +344,6 @@ function sanitizeShot(
     // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
     entrance,
-    texts,
     transitionIn,
   };
 
@@ -425,6 +357,12 @@ function sanitizeShot(
       hold: clamp(typeof sc.hold === "number" ? sc.hold : 0.8, 0, 10),
       easing: includesValue(VALID_EASINGS, sc.easing) ? sc.easing : "smooth",
     };
+    // Responsive Scroll's section stops: keys in page order; unset means the default stops.
+    if (Array.isArray(sc.sections)) {
+      shot.scroll.sections = sc.sections.filter(
+        (key): key is string => typeof key === "string" && key !== "",
+      );
+    }
   }
 
   if (s.styleOverrides && typeof s.styleOverrides === "object") {
@@ -475,6 +413,12 @@ function sanitizeLayout(
         desktopId: checkAsset(l.desktopId, "desktopId"),
         mobileId: checkAsset(l.mobileId, "mobileId"),
         arrangement: l.arrangement === "side" ? "side" : "overlap",
+      };
+    case "responsive":
+      return {
+        kind: "responsive",
+        desktopId: checkAsset(l.desktopId, "desktopId"),
+        mobileId: checkAsset(l.mobileId, "mobileId"),
       };
     case "trio": {
       const res: Layout = {
@@ -589,8 +533,6 @@ function sanitizeLayout(
         ),
       };
     }
-    case "title":
-      return { kind: "title" };
     default:
       return null;
   }
@@ -623,25 +565,30 @@ function sanitizeTransition(trans: unknown): Transition {
   };
 }
 
-function sanitizeTextLayer(t: Record<string, unknown>, assetIds: Set<string>): TextLayer {
-  const layer: TextLayer = {
-    id: typeof t.id === "string" && t.id ? t.id : crypto.randomUUID(),
-    text: typeof t.text === "string" ? t.text : "",
-    role: ["title", "subtitle", "caption", "label"].includes(t.role as string)
-      ? (t.role as TextLayer["role"])
-      : "title",
-    font: t.font === "body" ? "body" : "display",
-    size: clamp(typeof t.size === "number" ? t.size : 6, 1.6, 20),
-    anchor: includesValue(VALID_ANCHORS, t.anchor) ? t.anchor : "center",
-    align: t.align === "left" || t.align === "right" ? t.align : "center",
-    color: typeof t.color === "string" ? t.color : "",
-    animation: includesValue(VALID_TEXT_ANIMS, t.animation) ? t.animation : "none",
-    delay: clamp(typeof t.delay === "number" ? t.delay : 0, 0, 30),
-  };
-
-  if (typeof t.logoAssetId === "string" && assetIds.has(t.logoAssetId)) {
-    layer.logoAssetId = t.logoAssetId;
+/**
+ * Keeps well-formed section data on a stored asset's meta and drops the rest: sections need a
+ * string id and a top ≥ 0, sorted ascending; page must be a string.
+ */
+function sanitizeAssetMeta(meta: AssetMeta): AssetMeta {
+  const clean: AssetMeta = { ...meta };
+  if (Array.isArray(meta.sections)) {
+    const sections = (meta.sections as unknown[])
+      .filter(
+        (s): s is CaptureSection =>
+          !!s &&
+          typeof s === "object" &&
+          typeof (s as CaptureSection).id === "string" &&
+          (s as CaptureSection).id !== "" &&
+          Number.isFinite((s as CaptureSection).top) &&
+          (s as CaptureSection).top >= 0,
+      )
+      .map((s) => ({ id: s.id, top: s.top }))
+      .sort((a, b) => a.top - b.top);
+    if (sections.length > 0) clean.sections = sections;
+    else delete clean.sections;
+  } else {
+    delete clean.sections;
   }
-
-  return layer;
+  if (typeof meta.page !== "string") delete clean.page;
+  return clean;
 }
