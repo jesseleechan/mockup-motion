@@ -9,6 +9,7 @@ import { aspectRatioValue } from "../../motion";
 import { Button, Icon, useToast } from "../../ui";
 import { Film, LayoutTemplate, Sparkles, UploadCloud } from "lucide-react";
 import { validateAndDecodeAsset } from "../../assets/decode";
+import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "../library/capture-import";
 import { fitPreview, STAGE_PADDING, type PreviewSize } from "./fit";
 import { FillTemplateOverlay } from "./FillTemplateOverlay";
 
@@ -76,7 +77,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
       const newRefs: AssetRef[] = [];
       const blobs: Record<string, Blob> = {};
 
-      for (const file of files) {
+      const { images, captures, errors } = await splitCaptureFiles(files);
+      for (const file of images) {
         try {
           const result = await validateAndDecodeAsset(file, file.name);
           newRefs.push(result.ref);
@@ -86,8 +88,10 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         }
       }
 
+      const attached = applyCaptures(newRefs, captures);
+      for (const message of [...errors, ...attached.errors]) toast(message);
       // Fills the template when it is waiting for screenshots (F06).
-      if (newRefs.length > 0) await addScreenshots(newRefs, blobs);
+      if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
     },
     [addScreenshots, toast],
   );
@@ -147,7 +151,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept={SCREENSHOT_ACCEPT}
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
