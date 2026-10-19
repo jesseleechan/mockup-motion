@@ -74,18 +74,22 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await layoutSelect.click();
     await page.getByRole("option", { name: "Single device" }).click();
     await expect(page.getByText("Camera", { exact: true })).toBeVisible();
-    const heroTiltBtn = page.getByRole("button", { name: "Hero tilt" });
-    await expect(heroTiltBtn).toBeVisible();
-    await heroTiltBtn.click();
+    const cameraMove = page.getByRole("radiogroup", { name: "Camera move" });
+    const pushInBtn = cameraMove.getByRole("radio", { name: "Push in", exact: true });
+    await expect(pushInBtn).toBeVisible();
+    await pushInBtn.click();
+    await expect(pushInBtn).toBeChecked();
 
     // 5. Test Undo / Redo
     const undoBtn = page.getByRole("button", { name: "Undo" });
     await expect(undoBtn).toBeEnabled();
-    await undoBtn.click(); // Undoes heroTilt
+    await undoBtn.click(); // Undoes Push in
+    await expect(cameraMove.getByRole("radio", { name: "Still", exact: true })).toBeChecked();
 
     const redoBtn = page.getByRole("button", { name: "Redo" });
     await expect(redoBtn).toBeEnabled();
-    await redoBtn.click(); // Redoes heroTilt
+    await redoBtn.click(); // Redoes Push in
+    await expect(pushInBtn).toBeChecked();
 
     // 6. Test Contextual Inspector filtering
     // Switch to Title Card

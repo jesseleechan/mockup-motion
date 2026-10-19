@@ -18,9 +18,6 @@ const WALL: Extract<Layout, { kind: "wall" }> = {
   speed: 0.3,
 };
 const DURATION = 8;
-// The camera of the wall-isometric lab fixture (src/lab/layout-fixtures.ts), which was the
-// since-removed Isometric Wall template's.
-const ISO_DRIFT: CameraMove = { preset: "isoDrift", intensity: 0.5, easing: "smooth", float: 0 };
 const STATIC: CameraMove = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 
 function sub(a: Point3D, b: Point3D): Point3D {
@@ -101,10 +98,10 @@ describe("F11 isometric wall", () => {
     }
   });
 
-  it("cards (with their gaps) cover every point of the frame under static and isoDrift", () => {
+  it("cards (with their gaps) cover every point of the frame under a static camera", () => {
     const samples = 9;
     for (const aspect of ASPECTS) {
-      for (const move of [STATIC, ISO_DRIFT]) {
+      for (const move of [STATIC]) {
         for (let i = 0; i < 12; i++) {
           const p = i / 11;
           const t = p * DURATION;

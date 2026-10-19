@@ -42,35 +42,11 @@ export const DEVICE_LABELS: Record<DeviceKind, string> = {
 };
 
 export const CAMERA_LABELS: Record<CameraPresetId, string> = {
-  static: "Static",
+  static: "Still",
   pushIn: "Push in",
-  pullBack: "Pull back",
-  orbitLeft: "Orbit left",
-  orbitRight: "Orbit right",
-  tiltUp: "Tilt up",
-  tiltDown: "Tilt down",
-  riseUp: "Rise",
-  dollyLeft: "Dolly left",
-  dollyRight: "Dolly right",
-  isoDrift: "Isometric drift",
-  heroTilt: "Hero tilt",
 };
 
-/** Picker order: the calm moves first, then the directional pairs, then the showcase angles. */
-export const CAMERA_PRESET_ORDER: CameraPresetId[] = [
-  "static",
-  "pushIn",
-  "pullBack",
-  "riseUp",
-  "orbitLeft",
-  "orbitRight",
-  "tiltUp",
-  "tiltDown",
-  "dollyLeft",
-  "dollyRight",
-  "heroTilt",
-  "isoDrift",
-];
+export const CAMERA_PRESET_ORDER: CameraPresetId[] = ["static", "pushIn"];
 
 export const TRANSITION_LABELS: Record<Transition["kind"], string> = {
   cut: "Cut",

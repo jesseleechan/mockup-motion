@@ -195,40 +195,6 @@ test("a staggered stack composites each fading device over the ones behind it", 
   );
 });
 
-test("a fading phone stays in front of the browser it overlaps under an orbiting camera", async ({
-  page,
-}) => {
-  await ready(page);
-  // Under an orbitRight camera the browser's centre is nearer the camera than the phone's,
-  // although the phone overlaps the browser in front (quality-bar §4), so draw order must
-  // come from the layout, not from the centres' depth.
-  const t = timeAtOpacity(0.5, STAGGER_DELAY);
-  const [middle, settled] = await renderEntrance(page, {
-    layout: {
-      kind: "pair",
-      desktopId: "pair-desktop",
-      mobileId: "pair-phone",
-      arrangement: "overlap",
-    },
-    entrance: "stagger",
-    camera: { preset: "orbitRight", intensity: 0.6, easing: "smooth", float: 0 },
-    colors: { "pair-desktop": "#0000FF", "pair-phone": "#FF0000" },
-    times: [t, 1.5],
-  });
-  const background = avgRegion(settled, 8, 8, 16, 16);
-  const phone = colorRegion(settled, RED, 4);
-  expect(phone.count, "the settled phone screen must show the source colour").toBeGreaterThan(
-    10_000,
-  );
-
-  const desktop = over(BLUE, entranceOpacity(t), background);
-  const expected = over(RED, entranceOpacity(t - STAGGER_DELAY), desktop);
-  const overlap = colorRegion(middle, expected, 4);
-  expect(overlap.count, `phone over the browser near ${expected.join(", ")}`).toBeGreaterThan(
-    phone.count * 0.3,
-  );
-});
-
 test("entrance frames create no GPU objects: the fade layer is allocated with the document", async ({
   page,
 }) => {

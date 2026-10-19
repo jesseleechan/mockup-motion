@@ -112,7 +112,7 @@ test.describe("WP-09 Layouts & Auto-framing E2E & Visual Verification", () => {
                 {
                   ...base.shots[0],
                   layout: lay as Layout,
-                  camera: { preset: "heroTilt", intensity: 1, easing: "smooth", float: 0 },
+                  camera: { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 },
                 },
               ],
             };

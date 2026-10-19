@@ -8,7 +8,7 @@ const ENTRANCE_DURATION = 0.8;
 
 // The grid is built flat in plane space (x across columns, y along them), then the whole
 // plane is rotated: rz turns the columns onto a diagonal, rx tips the plane back so it
-// reads as a surface seen from above. Tuned by eye with the isoDrift camera (F11).
+// reads as a surface seen from above. Tuned by eye with the since-removed isoDrift camera (F11).
 export const WALL_RX = (-50 * Math.PI) / 180;
 export const WALL_RZ = (35 * Math.PI) / 180;
 // Gap between neighbouring cards as a fraction of the card width (F11: 4-6%).

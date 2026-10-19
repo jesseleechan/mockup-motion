@@ -87,9 +87,8 @@ export type Layout =
 // cardWidth / 0.4615). gap: stage units between cards and columns. travel "period" is the Frames
 // loop on columns (Mobile Frames).
 
-export type CameraPresetId =
-  | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
-  | "riseUp" | "dollyLeft" | "dollyRight" | "isoDrift" | "heroTilt";
+// The other ten moves were removed on 19 October 2026; a saved one loads as "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;
