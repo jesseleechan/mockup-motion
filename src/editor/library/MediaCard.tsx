@@ -3,6 +3,8 @@ import type { AssetRef, AssetRole } from "../../doc/types";
 
 type ScreenRole = Extract<AssetRole, "desktop" | "mobile">;
 
+const CARD_ASPECT = 16 / 10;
+
 const ROLE_LABELS: Record<ScreenRole, string> = { desktop: "Desktop", mobile: "Mobile" };
 
 function otherRole(role: ScreenRole): ScreenRole {
@@ -27,6 +29,12 @@ export const MediaCard = React.forwardRef<HTMLDivElement, MediaCardProps>(
   ({ asset, thumb, usage, onSetRole, ...rest }, ref) => {
     const isUsed = usage.length > 0;
     const screenRole = asset.role === "desktop" || asset.role === "mobile" ? asset.role : undefined;
+    // The image fills the 16:10 box without overflowing it. A screenshot no wider than the box
+    // covers it from the top, so only its bottom is cut; a wider one, or a phone screen, shows
+    // whole. A page is never cropped at the sides (quality bar §3).
+    const aspect = asset.width && asset.height ? asset.width / asset.height : CARD_ASPECT;
+    const phoneScreen = screenRole === "mobile" && !asset.meta?.tall;
+    const fit = !phoneScreen && aspect <= CARD_ASPECT ? "object-cover" : "object-contain";
 
     return (
       <div
@@ -38,15 +46,13 @@ export const MediaCard = React.forwardRef<HTMLDivElement, MediaCardProps>(
         data-asset-id={asset.id}
         className="group relative flex flex-col rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)] overflow-hidden cursor-grab active:cursor-grabbing transition-all select-none"
       >
-        {/* The screenshot fits the card's width, top first: a page is never
-          cropped at the sides, only below (quality bar §3). */}
         <div className="w-full aspect-[16/10] bg-[var(--color-bg)] relative overflow-hidden border-b border-[var(--color-line)]">
           {thumb && (
             <img
               src={thumb}
               alt=""
               draggable={false}
-              className="absolute inset-x-0 top-0 w-full h-auto pointer-events-none"
+              className={`absolute inset-0 w-full h-full object-top pointer-events-none ${fit}`}
             />
           )}
 
