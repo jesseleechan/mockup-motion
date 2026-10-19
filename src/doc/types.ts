@@ -174,8 +174,10 @@ export interface Shot {
   styleOverrides?: Partial<Style>;
 }
 
-export type DestinationId = "custom" | "web-embed" | "dribbble" | "instagram-feed" | "instagram-story"
-  | "linkedin" | "x" | "presentation-4k";
+// "custom" is a state, not a card: the settings differ from every preset. Saved "linkedin" and
+// "x" load as "video" (sanitizeExport).
+export type DestinationId = "video" | "dribbble" | "instagram-feed" | "instagram-story"
+  | "presentation-4k" | "web-embed" | "custom";
 
 export type ExportQuality = "web" | "high" | "master";
 export type ExportFormat = "mp4" | "webm" | "bundle" | "png";

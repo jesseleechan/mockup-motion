@@ -48,8 +48,8 @@ describe("export settings in a saved project", () => {
     expect(sanitizeExport(undefined)).toEqual(defaultExport());
   });
 
-  it("default to the Custom preset, the dialog's MP4 at 1080p", () => {
-    const { id, resolution, fps, quality, format, supersample } = DESTINATION_PRESETS.custom;
+  it("default to the Video preset, the dialog's MP4 at 1080p", () => {
+    const { id, resolution, fps, quality, format, supersample } = DESTINATION_PRESETS.video;
     expect(defaultExport()).toEqual({
       destination: id,
       resolution,
@@ -58,6 +58,28 @@ describe("export settings in a saved project", () => {
       format,
       supersample,
     });
+  });
+});
+
+describe("destinations from before the six cards", () => {
+  it("load LinkedIn and X as Video, keeping their settings", () => {
+    for (const destination of ["linkedin", "x"]) {
+      expect(sanitizeExport({ ...defaultExport(), destination, fps: 60 })).toEqual({
+        ...defaultExport(),
+        fps: 60,
+      });
+    }
+  });
+
+  it("load the old untouched default, and Custom settings equal to Video's, as Video", () => {
+    const oldDefault = { ...defaultExport(), destination: "custom", supersample: 1.5 };
+    expect(sanitizeExport(oldDefault)).toEqual(defaultExport());
+    expect(sanitizeExport({ ...defaultExport(), destination: "custom" })).toEqual(defaultExport());
+  });
+
+  it("keep Custom settings that differ from every preset", () => {
+    const custom = { ...defaultExport(), destination: "custom", resolution: 1440 };
+    expect(sanitizeExport(custom)).toEqual(custom);
   });
 });
 

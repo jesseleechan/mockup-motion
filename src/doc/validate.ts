@@ -67,15 +67,16 @@ const VALID_QUALITIES = ["web", "high", "master"] as const;
 const VALID_FORMATS = ["mp4", "webm", "bundle", "png"] as const;
 const VALID_SUPERSAMPLES = [1, 1.5, 2] as const;
 const VALID_DESTINATIONS: readonly DestinationId[] = [
-  "custom",
-  "web-embed",
+  "video",
   "dribbble",
   "instagram-feed",
   "instagram-story",
-  "linkedin",
-  "x",
   "presentation-4k",
+  "web-embed",
+  "custom",
 ];
+/** LinkedIn & X was one card with the Video card's settings (export polish §3). */
+const MERGED_DESTINATIONS: readonly string[] = ["linkedin", "x"];
 const VALID_TRANSITIONS: readonly Transition["kind"][] = [
   "cut",
   "fade",
@@ -116,15 +117,27 @@ function includesValue<T>(list: readonly T[], val: unknown): val is T {
 /**
  * Export settings from a saved project or this browser's last export. Every value the dialog
  * offers is kept; anything else (a removed format such as GIF, motion blur, an unknown
- * destination) falls back to the default MP4 export.
+ * destination) falls back to the default Video export.
  */
+function sameEncoding(a: ExportSettings, b: ExportSettings): boolean {
+  return (
+    a.resolution === b.resolution &&
+    a.fps === b.fps &&
+    a.quality === b.quality &&
+    a.format === b.format &&
+    a.supersample === b.supersample
+  );
+}
+
 export function sanitizeExport(raw: unknown): ExportSettings {
   const fallback = defaultExport();
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  return {
+  const settings: ExportSettings = {
     destination: includesValue(VALID_DESTINATIONS, r.destination)
       ? r.destination
-      : fallback.destination,
+      : MERGED_DESTINATIONS.includes(r.destination as string)
+        ? "video"
+        : fallback.destination,
     resolution: includesValue(VALID_RESOLUTIONS, r.resolution) ? r.resolution : fallback.resolution,
     fps: includesValue(VALID_FPS, r.fps) ? r.fps : fallback.fps,
     quality: includesValue(VALID_QUALITIES, r.quality) ? r.quality : fallback.quality,
@@ -133,6 +146,16 @@ export function sanitizeExport(raw: unknown): ExportSettings {
       ? r.supersample
       : fallback.supersample,
   };
+  // Before October 2026 nothing wrote doc.export, so a saved project holds the old default,
+  // Custom with 1.5× supersampling, which nobody chose: it opens on Video. Custom settings that
+  // equal Video's are Video too.
+  if (
+    settings.destination === "custom" &&
+    (sameEncoding(settings, fallback) || sameEncoding(settings, { ...fallback, supersample: 1.5 }))
+  ) {
+    return fallback;
+  }
+  return settings;
 }
 
 export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[] } {

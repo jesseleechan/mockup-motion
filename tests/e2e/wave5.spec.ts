@@ -178,7 +178,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible();
 
     // Check Destination Presets are rendered
-    await expect(dialog.getByRole("button", { name: "Website", exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Web bundle", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: /Dribbble/i })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Instagram", exact: true })).toBeVisible();
     await expect(

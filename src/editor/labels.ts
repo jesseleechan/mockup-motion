@@ -157,15 +157,14 @@ export const ANCHOR_LABELS: Record<Anchor, string> = {
   "bottom-right": "Bottom right",
 };
 
-/** Short names for the export destination picker. LinkedIn and X share one preset. */
+/** Short names for the export destination picker. */
 export const DESTINATION_LABELS: Record<DestinationId, string> = {
-  "web-embed": "Website",
+  video: "Video",
   dribbble: "Dribbble",
   "instagram-feed": "Instagram",
   "instagram-story": "Story",
-  linkedin: "LinkedIn & X",
-  x: "LinkedIn & X",
   "presentation-4k": "4K presentation",
+  "web-embed": "Web bundle",
   custom: "Custom",
 };
 

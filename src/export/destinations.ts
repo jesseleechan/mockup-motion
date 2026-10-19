@@ -4,7 +4,7 @@
  * - Dribbble: 4:3 or 16:9, max 1600x1200 or 1920x1080, MP4 under 20MB. (Source: Dribbble Help Center)
  * - Instagram Feed: 4:5 vertical (1080x1350) or 1:1 square (1080x1080), 30 fps, MP4 H.264. (Source: Meta for Creators)
  * - Instagram/TikTok Story: 9:16 vertical (1080x1920), 30 fps, MP4 H.264. (Source: Meta & TikTok Business Help)
- * - LinkedIn / X: 16:9 landscape (1920x1080), 30 fps, MP4 H.264. (Source: LinkedIn Marketing Solutions & X Developer Platform)
+ * - Video (also LinkedIn / X): 16:9 landscape (1920x1080), 30 fps, MP4 H.264. (Source: LinkedIn Marketing Solutions & X Developer Platform)
  * - Presentation 4K: 16:9 UHD (3840x2160), 30 fps, high bitrate master MP4.
  */
 
@@ -20,7 +20,8 @@ export interface DestinationPreset {
   id: DestinationId;
   name: string;
   description: string;
-  aspect: Aspect;
+  /** The aspect the destination wants, or null for any: Video and Custom use the project's. */
+  aspect: Aspect | null;
   resolution: number; // short side
   fps: number;
   quality: ExportQuality;
@@ -29,6 +30,17 @@ export interface DestinationPreset {
 }
 
 export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
+  video: {
+    id: "video",
+    name: "Video",
+    description: "MP4 at 1080p in the project's aspect, for LinkedIn, X, a site or a presentation.",
+    aspect: null,
+    resolution: 1080,
+    fps: 30,
+    quality: "high",
+    format: "mp4",
+    supersample: 1.0,
+  },
   "web-embed": {
     id: "web-embed",
     name: "Website Embed",
@@ -73,28 +85,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     format: "mp4",
     supersample: 1.0,
   },
-  linkedin: {
-    id: "linkedin",
-    name: "LinkedIn",
-    description: "Standard 16:9 landscape (1920 × 1080) for professional feeds and carousels.",
-    aspect: "16:9",
-    resolution: 1080,
-    fps: 30,
-    quality: "high",
-    format: "mp4",
-    supersample: 1.0,
-  },
-  x: {
-    id: "x",
-    name: "X (Twitter)",
-    description: "Landscape 16:9 video optimized for X media timeline cards.",
-    aspect: "16:9",
-    resolution: 1080,
-    fps: 30,
-    quality: "high",
-    format: "mp4",
-    supersample: 1.0,
-  },
   "presentation-4k": {
     id: "presentation-4k",
     name: "Presentation 4K",
@@ -109,8 +99,8 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   custom: {
     id: "custom",
     name: "Custom",
-    description: "Manual control over all resolution, frame rate, quality, and container options.",
-    aspect: "16:9",
+    description: "Settings that differ from every destination.",
+    aspect: null,
     resolution: 1080,
     fps: 30,
     quality: "high",

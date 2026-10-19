@@ -1,22 +1,23 @@
 import React from "react";
 import clsx from "clsx";
-import { Check, Film, Globe, Monitor, Play, Share2, Smartphone, Sparkles } from "lucide-react";
+import { Check, Film, Globe, Monitor, Play, Smartphone, Video } from "lucide-react";
 import { Button } from "../../ui";
 import type { Aspect, DestinationId } from "../../doc/types";
 import { DESTINATION_PRESETS } from "../../export/destinations";
 import { DESTINATION_LABELS } from "../labels";
 
+/** Videos first, the web bundle last (export polish §3). Custom is a state, not a card. */
 const CARDS: {
   id: DestinationId;
   icon: React.ComponentType<{ size: number; className?: string }>;
+  detail: string;
 }[] = [
-  { id: "web-embed", icon: Globe },
-  { id: "dribbble", icon: Film },
-  { id: "instagram-feed", icon: Smartphone },
-  { id: "instagram-story", icon: Play },
-  { id: "linkedin", icon: Share2 },
-  { id: "presentation-4k", icon: Monitor },
-  { id: "custom", icon: Sparkles },
+  { id: "video", icon: Video, detail: "MP4 · your aspect" },
+  { id: "dribbble", icon: Film, detail: "4:3 · 1600 × 1200" },
+  { id: "instagram-feed", icon: Smartphone, detail: "4:5 · 1080 × 1350" },
+  { id: "instagram-story", icon: Play, detail: "9:16 · 1080 × 1920" },
+  { id: "presentation-4k", icon: Monitor, detail: "16:9 · 3840 × 2160" },
+  { id: "web-embed", icon: Globe, detail: "MP4, WebM, poster, embed" },
 ];
 
 export const sectionHeading =
@@ -40,14 +41,15 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
   return (
     <section>
       <span className={sectionHeading}>Destination</span>
-      <div className="grid grid-cols-4 gap-2">
-        {CARDS.map(({ id, icon: IconComp }) => {
+      <div className="grid grid-cols-3 gap-2">
+        {CARDS.map(({ id, icon: IconComp, detail }) => {
           const isSelected = destination === id;
           return (
             <button
               key={id}
               type="button"
               aria-pressed={isSelected}
+              aria-label={DESTINATION_LABELS[id]}
               onClick={() => onSelect(id)}
               className={clsx(
                 "min-w-0 p-2.5 rounded-lg border text-left flex flex-col gap-2 transition-colors",
@@ -66,15 +68,20 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
                 />
                 {isSelected && <Check size={12} className="text-[var(--color-accent)]" />}
               </span>
-              <span className="block truncate text-xs font-semibold text-[var(--color-text)]">
-                {DESTINATION_LABELS[id]}
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-semibold text-[var(--color-text)]">
+                  {DESTINATION_LABELS[id]}
+                </span>
+                <span className="block truncate text-[11px] tabular-nums text-[var(--color-text-3)]">
+                  {detail}
+                </span>
               </span>
             </button>
           );
         })}
       </div>
 
-      {destination !== "custom" && recommended !== aspect && (
+      {recommended && recommended !== aspect && (
         <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] flex items-center justify-between gap-3 text-xs">
           <span className="min-w-0 text-[var(--color-text-2)]">
             Preset recommends <strong>{recommended}</strong> (current: {aspect})

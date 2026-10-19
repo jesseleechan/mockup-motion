@@ -253,15 +253,16 @@ export interface Shot {
   styleOverrides?: Partial<Style>;
 }
 
+// "custom" is a state (settings that differ from every preset), not a card. Saved "linkedin"
+// and "x" load as "video" (export polish §3, October 2026).
 export type DestinationId =
-  | "custom"
-  | "web-embed"
+  | "video"
   | "dribbble"
   | "instagram-feed"
   | "instagram-story"
-  | "linkedin"
-  | "x"
-  | "presentation-4k";
+  | "presentation-4k"
+  | "web-embed"
+  | "custom";
 
 export interface ExportSettings {
   destination: DestinationId;

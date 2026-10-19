@@ -7,8 +7,8 @@ Each item is its own PR, with before and after screenshots of the dialog at 1440
 | Item                         | PR      | Status      |
 | ---------------------------- | ------- | ----------- |
 | 1. Advanced section          | #80     | In review   |
-| 2. Remember the last choice  | pending | In review   |
-| 3. Destinations              |         | Not started |
+| 2. Remember the last choice  | #81     | In review   |
+| 3. Destinations              | pending | In review   |
 | 4. Export every size at once |         | Not started |
 
 ## 1. An Advanced section
@@ -63,6 +63,7 @@ What the presets actually are:
 - Six cards fit a 3 × 2 grid, so there is no lone row of three at 1280 × 800.
 - **Kept:** the "Switch to 4:3" (or any aspect) offer under the cards when the project's aspect differs from the preset's.
 - **Saved projects:** `linkedin`, `x` and `custom` load as Video when the settings match it, otherwise as Custom. The `DestinationId` values stay readable on load.
+- **Built:** `DestinationId` drops `linkedin` and `x` and gains `video`. Video has no suggested aspect (it uses the project's), so the default never shows a "Switch to" offer. Each card has a second line ("4:3 · 1600 × 1200"). Custom shows as "Encoding · Custom". Because nothing wrote `doc.export` before §2, an older project holds the old untouched default (Custom, 1.5× supersampling); it loads as Video too.
 
 ## 4. Export every size at once
 
