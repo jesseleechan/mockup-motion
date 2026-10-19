@@ -26,8 +26,9 @@ interface Still {
 }
 
 // The sliders step every 2.0 s: 1.9 s is the rest pose (step 0 has settled) and 2.5 s is
-// mid-step (step 1 started at 2.0 s), presets plan P05.
-const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider"];
+// mid-step (step 1 started at 2.0 s), presets plan P05. The Stack presets are slider decks on the
+// same steps (stack plan D7).
+const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider", "desktop-stack", "mobile-stack"];
 const SLIDER_TIMES = [1.9, 2.5];
 
 const STILLS: Still[] = [];
@@ -77,6 +78,8 @@ const DARK_STILLS: Record<string, number> = {
   "mobile-frames": 2.4,
   "desktop-slider": 2.5,
   "mobile-slider": 2.5,
+  "desktop-stack": 2.5,
+  "mobile-stack": 2.5,
 };
 for (const [id, t] of Object.entries(DARK_STILLS)) {
   STILLS.push({ name: `${id}-dark-16x9-t${t}`, fixture: `${id}-dark-16x9`, aspect: "16:9", t });
