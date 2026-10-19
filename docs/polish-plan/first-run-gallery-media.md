@@ -1,30 +1,33 @@
 # Polish plan: first run, the template gallery and the Media library
 
-**Status: in progress.** Written 19 October 2026. The owner approved the editor audit's recommendations the same day ([audit](https://claude.ai/artifact/ANtzprpDcoTPmiCdxH22Db)) and asked for polish sessions. This session covers six items, one PR each. Three other polish sessions cover the stage, transport, timeline and window sizes; the Video and Shot inspectors; and the export dialog.
+**Status: in progress.** Written 19 October 2026. The owner approved the editor audit's recommendations the same day ([audit](https://claude.ai/artifact/ANtzprpDcoTPmiCdxH22Db)) and asked for polish sessions. The owner then confirmed this plan's decisions in this session: option A for item 1, the item 3 proposal, and the coordinating session as reviewer and merge-queue owner for the polish PRs. This session covers six items, one PR each. Three other polish sessions cover the stage, transport, timeline and window sizes; the Video and Shot inspectors; and the export dialog.
 
-Rules: `CLAUDE.md` (hard rules, "Tests", definition of done) and `docs/fix-plan/README.md` §3. Each PR carries before and after screenshots of the editor at 1440 × 900 and 1280 × 800, checks the UI overflow guard (`tests/e2e/ui-overflow.spec.ts`), and merges only after the owner's go-ahead on those screenshots. Visual stills whose pixels change need the owner's written approval of the rendered diff.
+Rules: `CLAUDE.md` (hard rules, "Tests", definition of done) and `docs/fix-plan/README.md` §3. Each PR carries before and after screenshots of the editor at 1440 × 900 and 1280 × 800, checks the UI overflow guard (`tests/e2e/ui-overflow.spec.ts`), and merges in its turn of the merge queue after the coordinating session's review. Visual stills whose pixels change need the owner's written approval of the rendered diff.
 
 ## Items
 
-| #   | Item                                                                                      | Waits for                                            | Status   |
-| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------- |
-| 1   | First run: open on something that moves                                                   | The owner's choice between options A and B (below)   | Proposed |
-| 2   | Empty-project defaults: the preset look                                                   | Nothing                                              | Building |
-| 3   | One gallery: the dialog stays, the Library leads to it                                    | #48, Responsive Scroll (#52–#59), brand-kit cut, #66 | Waiting  |
-| 4   | Card copy: "Needs 3+ desktop screenshots" instead of "3 slots"                            | #48, Responsive Scroll (#52–#59)                     | Waiting  |
-| 5   | Scroll Story with demo content uses the full-page capture; "Needs a full-page screenshot" | #48, Responsive Scroll (#52–#59)                     | Waiting  |
-| 6   | Media tab: real thumbnails, full name on hover, a Desktop / Mobile role badge             | Brand-kit cut, #66                                   | Waiting  |
+| #   | Item                                                                                      | Waits for                                | Status                                                       |
+| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| 1   | First run: open on something that moves                                                   | Nothing (option A decided)               | [#90](https://github.com/jesseleechan/mockup-motion/pull/90) |
+| 2   | Empty-project defaults: the preset look                                                   | Nothing                                  | [#77](https://github.com/jesseleechan/mockup-motion/pull/77) |
+| 3   | One gallery: the dialog stays, the Library leads to it                                    | Brand-kit cut (#75), dead-code cut (#66) | Waiting                                                      |
+| 4   | Card copy: "Needs 3+ desktop screenshots" instead of "3 slots"                            | Nothing                                  | [#92](https://github.com/jesseleechan/mockup-motion/pull/92) |
+| 5   | Scroll Story with demo content uses the full-page capture; "Needs a full-page screenshot" | #92                                      | [#93](https://github.com/jesseleechan/mockup-motion/pull/93) |
+| 6   | Media tab: real thumbnails, full name on hover, a Desktop / Mobile role badge             | Brand-kit cut (#75), dead-code cut (#66) | Hook on `polish/media-tab`                                   |
 
 Polish what remains, not what is being deleted: each waiting item starts from a `main` that already has the cuts and presets it depends on. `main` is merged before each push.
 
 ## 1. First run
 
-Today a new visitor lands on an empty stage ("Create a presentation") and has to choose before anything moves.
+Before, a new visitor landed on an empty stage ("Create a presentation") and had to choose before anything moved ([before](evidence/01-first-run/before-1440.png)).
 
-- **Option A (recommended): open on the gallery.** The template gallery opens over the empty project with its previews playing. Its footer offers "Try with demo content", which applies the selected preset with the demo screenshots, and "Choose screenshots". Closing it leaves today's empty state. It opens only when there is no saved project, so returning users land on their last project.
-- **Option B: start on Desktop Slider with the demo.** A new visitor lands on the Desktop Slider demo, already playing. The Library and the gallery offer the other presets. The demo stays until the user adds screenshots (the "Use my screenshots" follow-up).
+**Decided: option A, open on the gallery.** The other option was to start on the Desktop Slider demo.
 
-The owner picks one from screenshots of both before anything is built.
+- The editor opens a new, empty project on every load; it doesn't reopen the last project. So the gallery opens whenever the editor starts on an empty project (no screenshots, no template), not only on a first visit.
+- The selected card's preview plays as soon as the gallery opens, and focus starts on it. Other cards play on hover or focus, so only one preview video downloads up front.
+- The footer offers "Try with demo content" next to "Apply template" while the selected template is missing screenshots. It applies the selected template and fills its empty slots with demo screenshots in one undo step. "Apply template" without screenshots leads to the stage's fill overlay, which asks for them.
+- Closing the gallery leaves the empty state, whose "Start with a template" opens it again.
+- The gallery the editor opened steps aside once the project has content or another project is opened. A gallery the user opened stays until they close it.
 
 ## 2. Empty-project defaults
 
@@ -36,7 +39,7 @@ The empty project is built by `createDoc()` with `defaultStyle()`: Bone gradient
 
 The Library's Templates tab (`LibraryPanel.tsx`) repeats the gallery dialog (`TemplateGalleryModal.tsx`) in a narrow column, and applies on click without the dialog's size hint.
 
-Proposal: the dialog stays, because it has room for the previews, the Desktop / Mobile tabs, the size hint and Responsive Scroll's two-size card (R05). The Library loses its Templates tab and keeps Media; a "Templates" button in the Library header and the empty state open the dialog. User templates ("Save as template", `UserTemplatesSection`) move into the dialog as a "Yours" tab, shown when there is at least one. The owner confirms before it is built.
+**Decided:** the dialog stays, because it has room for the previews, the Desktop / Mobile tabs, the size hint and Responsive Scroll's two-size card (R05). The Library loses its Templates tab and keeps Media; a "Templates" button in the Library header and the empty state open the dialog. User templates ("Save as template", `UserTemplatesSection`) move into the dialog as a "Yours" tab, shown when there is at least one.
 
 ## 4. Card copy
 
@@ -49,6 +52,8 @@ Cards say what they need: "Needs 3+ desktop screenshots", "Needs 4+ mobile scree
 ## 6. Media tab
 
 Every card shows a generic image icon, so five desktop screenshots look identical (listed in `docs/plan/follow-ups.md`). Cards show the screenshot itself (top-aligned, never cropped horizontally), the full file name on hover, and a role badge the user can switch between Desktop and Mobile (`setAssetRole`).
+
+The thumbnails come from a shared hook, `src/editor/assets/useAssetUrls.ts`, which the Shot inspector's screenshot list (#89) uses too. The change stays on the cards: the "Add: getting screenshots in" session owns the import path (paste and drop, "Use my screenshots").
 
 ## Follow-ups
 
