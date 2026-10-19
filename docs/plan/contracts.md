@@ -43,7 +43,7 @@ export type EasingId =
 
 export interface AssetRef {
   id: string;
-  kind: "image" | "font" | "audio";
+  kind: "image" | "font"; // saved "audio" assets (music, removed October 2026) are dropped on load
   name: string;
   mime: string;
   bytes: number;
@@ -59,8 +59,6 @@ export interface AssetRef {
     page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
   };
   family?: string; // font: CSS family name registered via FontFace
-  durationSec?: number; // audio
-  peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
 }
 
 export interface FontRef {
@@ -255,14 +253,6 @@ export interface Shot {
   styleOverrides?: Partial<Style>;
 }
 
-export interface AudioTrack {
-  assetId: string;
-  volume: number;
-  fadeIn: number;
-  fadeOut: number;
-  offset: number;
-}
-
 export type DestinationId =
   | "custom"
   | "web-embed"
@@ -294,7 +284,6 @@ export interface ProjectDoc {
   assets: AssetRef[];
   style: Style;
   shots: Shot[]; // length >= 1
-  audio?: AudioTrack;
   export: ExportSettings;
   templateId?: string; // last applied template (informational)
 }

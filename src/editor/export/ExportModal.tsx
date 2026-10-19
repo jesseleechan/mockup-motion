@@ -128,7 +128,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   };
 
   const planned = plan?.ok ? plan.plan : null;
-  const exportsAudio = planned?.extension === "mp4" || planned?.extension === "webm";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -164,23 +163,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                 <div className={`${notice} border-amber-500/30 text-amber-300`} role="status">
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
                   <span>{planned.notice}</span>
-                </div>
-              )}
-
-              {doc.audio && (
-                <div
-                  data-testid="music-note"
-                  className={`${notice} border-[var(--color-line)] text-[var(--color-text-2)]`}
-                >
-                  {exportsAudio
-                    ? `Music is mixed into the ${planned?.extension === "mp4" ? "MP4 (AAC)" : "WebM (Opus)"}.`
-                    : settings.format === "bundle"
-                      ? "Web bundles are silent, so music is left out."
-                      : settings.format === "gif"
-                        ? "GIFs have no sound, so music is left out."
-                        : settings.format === "png"
-                          ? "Still frames have no sound."
-                          : "Checking which audio codec this browser has…"}
                 </div>
               )}
 

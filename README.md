@@ -48,9 +48,9 @@ In the Brand tab, save colours, a display and a body font, a default URL and a l
 
 Not available yet: uploading your own font, and logos in the video (a saved logo is not drawn). See [`docs/plan/follow-ups.md`](docs/plan/follow-ups.md).
 
-## Music
+## Sound
 
-Optional. Add an MP3, M4A, WAV or OGG file from the timeline. Drag the clip to offset it, and set its volume and fades. Fades go up to 3 seconds; by default the fade-in is 0.5 seconds and the fade-out 1.5 seconds, so a loop doesn't cut the track. Music is mixed into MP4 (AAC) and WebM (Opus). GIF, PNG and the web bundle stay silent.
+Videos are silent. Music was removed in October 2026; a saved project with a music track still opens, without the music.
 
 ## Export
 
@@ -99,7 +99,7 @@ A web bundle holds an MP4, a WebM, a WebP poster and `embed.html` with the snipp
 
 Put the files next to the page. The script pauses the video when the visitor prefers reduced motion.
 
-Export stays on this machine. Each finished file is read back and checked ("Verified MP4"). Cancel stops the encode and leaves the editor usable. If this browser can't encode the audio codec, the video exports without music and the result says so.
+Export stays on this machine. Each finished file is read back and checked ("Verified MP4"). Cancel stops the encode and leaves the editor usable.
 
 GIF export is slow and large. A 6-second GIF at the 1080p setting (1708 × 960, 20 fps) took over a minute, froze the page while encoding, and came out at 83 MB. For GIFs, use 720p or a shorter video.
 
@@ -135,7 +135,6 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Scroll Story            | "Scroll through page" is off on a new shot with a tall screenshot; turning it on shows stops, hold and easing. `tests/e2e/wave5.spec.ts` "WP-15: Scroll Story…"                                                                                           |
 | Reels                   | The transition picker lists Cut, Fade, Blur, Push, Zoom and Wipe, and the timeline has a "Loop wrap transition" chip. `tests/timeline.test.ts`, `tests/motion.test.ts` loop seams                                                                         |
 | Brand kit               | Brand tab fields as listed; no font upload control. `tests/e2e/library.spec.ts` "Media Tab & Brand Kit flow…". Missing font upload and logo drawing: [`follow-ups.md`](docs/plan/follow-ups.md)                                                           |
-| Music                   | The file input accepts .mp3, .m4a, .wav and .ogg; fade sliders read 0.5 / 3 and 1.5 / 3. `tests/e2e/audio.spec.ts` (offset drag, fades, export track length, silent bundle and GIF), `tests/audio.test.ts` (codec fallback warning)                       |
 | Export                  | Destinations, formats and resolutions read from the dialog; "Switch to 4:3" changed Dribbble to 1600 × 1200. `tests/e2e/export.spec.ts` "F09 destination presets export at their size and length"                                                         |
 | Web bundle              | A 720p Website export: the zip held `untitled-presentation.mp4`, `.webm`, `-poster.webp` and `embed.html`; both videos verified; the snippet above is the dialog's text, formatted by Prettier                                                            |
 | GIF and PNG             | Exported both from the dialog and verified (GIF 1708 × 960, 83 MB; PNG 1920 × 1080)                                                                                                                                                                       |

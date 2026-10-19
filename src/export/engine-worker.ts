@@ -9,7 +9,6 @@ import {
 import type { ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { schedule } from "../motion";
-import { addAudioTrackToOutput, writeAudio, type ExportAudio } from "./audio-mux";
 import { keyframeIntervalFor, MOTION_BLUR_SAMPLES, motionBlurShutter } from "./destinations";
 
 export type ToWorker =
@@ -25,7 +24,6 @@ export type ToWorker =
       height: number;
       /** Video bitrate in bits per second. */
       bitrate: number;
-      audio?: ExportAudio;
     }
   | { type: "cancel" };
 
@@ -51,7 +49,7 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
 
     if (msg.type === "start") {
       isCancelled = false;
-      const { doc, images, settings, codec, container, width, height, bitrate, audio } = msg;
+      const { doc, images, settings, codec, container, width, height, bitrate } = msg;
 
       try {
         const post = (data: FromWorker) => self.postMessage(data);
@@ -101,7 +99,6 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         });
 
         output.addVideoTrack(source, { frameRate: fps });
-        const audioSource = audio ? addAudioTrackToOutput(output, audio) : null;
         await output.start();
 
         for (let frame = 0; frame < totalFrames; frame++) {
@@ -125,7 +122,6 @@ if (typeof self !== "undefined" && typeof window === "undefined") {
         }
 
         post({ type: "progress", stage: "finishing", frame: totalFrames, total: totalFrames });
-        if (audio && audioSource) await writeAudio(audioSource, audio);
         await output.finalize();
         engine.dispose();
 

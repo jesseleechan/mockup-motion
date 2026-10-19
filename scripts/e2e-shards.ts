@@ -30,7 +30,6 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
   ],
   ["editor", "color", "ui-overflow", "polish", "text", "demo-assets", "library", "shadows-post"],
   [
-    "audio",
     "export-dialog",
     "entrance",
     "thumbnails",

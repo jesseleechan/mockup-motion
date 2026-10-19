@@ -5,14 +5,12 @@ import { sanitizeDoc } from "../doc/validate";
 import type {
   AssetRef,
   AssetRole,
-  AudioTrack,
   Layout,
   ProjectDoc,
   Shot,
   Style,
   Transition,
 } from "../doc/types";
-import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -74,14 +72,6 @@ export interface EditorStoreState {
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
   applyBrandKit: (kit: BrandKit) => void;
-
-  // Music track (WP-17)
-  setMusic: (ref: AssetRef, blob: Blob) => Promise<void>;
-  updateMusic: (
-    patch: Partial<Omit<AudioTrack, "assetId">>,
-    opts?: { coalesceKey?: string },
-  ) => void;
-  removeMusic: () => void;
 
   // Timeline / storyboard actions
   addShot: (layout?: Layout, insertAfterIndex?: number) => void;
@@ -316,7 +306,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
-          if (draft.audio?.assetId === id) delete draft.audio;
           // Sanitize references to removed asset across layouts/texts
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
@@ -324,55 +313,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         },
         { label: "Remove asset" },
       );
-    },
-
-    setMusic: async (ref: AssetRef, blob: Blob) => {
-      const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
-      await putBlob(ref.id, blob);
-      if (previousId && previousId !== ref.id) {
-        try {
-          await deleteBlob(previousId);
-        } catch (error) {
-          console.error(`Failed to remove replaced audio blob ${previousId}:`, error);
-        }
-      }
-      get().apply(
-        (draft) => {
-          // One music track per project: replace any previous audio asset.
-          draft.assets = draft.assets.filter((a) => a.kind !== "audio");
-          draft.assets.push(ref);
-          draft.audio = defaultAudioTrack(ref.id);
-        },
-        { label: "Add music" },
-      );
-    },
-
-    updateMusic: (patch, opts) => {
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          draft.audio = clampAudioTrack({ ...draft.audio, ...patch });
-        },
-        { label: "Edit music", coalesceKey: opts?.coalesceKey },
-      );
-    },
-
-    removeMusic: () => {
-      const id = get().doc.audio?.assetId;
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          const assetId = draft.audio.assetId;
-          delete draft.audio;
-          draft.assets = draft.assets.filter((a) => a.id !== assetId);
-        },
-        { label: "Remove music" },
-      );
-      if (id) {
-        void deleteBlob(id).catch((error) => {
-          console.error(`Failed to remove stored audio blob ${id}:`, error);
-        });
-      }
     },
 
     setAssetRole: (id: string, role: AssetRole) => {

@@ -323,7 +323,6 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
           return bitmapById[id] ?? provider.getImage(id, width);
         },
         getText: provider.getText.bind(provider),
-        getAudio: provider.getAudio?.bind(provider),
       });
       engine.renderAt(3);
       missing.push(...ids.filter((id) => !requested.has(id)).map((id) => `${layout.kind}:${id}`));
@@ -472,7 +471,6 @@ test("F03: a pair's WebM export contains both screen assets", async ({ page }) =
         return bitmaps[id] ?? baseProvider.getImage(id, maxWidth);
       },
       getText: baseProvider.getText.bind(baseProvider),
-      getAudio: baseProvider.getAudio?.bind(baseProvider),
     };
     const result = await exportFn(doc, provider, {
       destination: "custom",

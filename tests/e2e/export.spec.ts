@@ -45,7 +45,6 @@ interface LabWindow {
   __createLabAssetProvider?: () => {
     getImage(id: string, maxWidth: number): Promise<ImageBitmap>;
     getText: unknown;
-    getAudio?: unknown;
   };
   __labTestImages?: {
     quadrants(w: number, h: number): Promise<ImageBitmap>;
