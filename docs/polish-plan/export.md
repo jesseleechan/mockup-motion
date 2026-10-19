@@ -7,8 +7,8 @@ Each item is its own PR, with before and after screenshots of the dialog at 1440
 | Item                         | PR      | Status      |
 | ---------------------------- | ------- | ----------- |
 | 1. Advanced section          | #80     | Merged      |
-| 2. Remember the last choice  | #81     | In review   |
-| 3. Destinations              |         | Not started |
+| 2. Remember the last choice  | #81     | Merged      |
+| 3. Destinations              | #83     | In review   |
 | 4. Export every size at once |         | Not started |
 
 ## 1. An Advanced section
@@ -62,7 +62,8 @@ What the presets actually are:
 - **Custom stops being a card.** It is a state, not a destination: when a setting differs from the selected preset, no card is selected and the Encoding heading shows "Custom". Picking a card resets to its preset, as today.
 - Six cards fit a 3 × 2 grid, so there is no lone row of three at 1280 × 800.
 - **Kept:** the "Switch to 4:3" (or any aspect) offer under the cards when the project's aspect differs from the preset's.
-- **Saved projects:** `linkedin`, `x` and `custom` load as Video when the settings match it, otherwise as Custom. The `DestinationId` values stay readable on load.
+- **Saved projects:** `linkedin` and `x` load as Video when the settings match it, otherwise as Custom. The `DestinationId` values stay readable on load.
+- **Built:** `DestinationId` drops `linkedin` and `x` and gains `video`. Video has no suggested aspect (it uses the project's), so the default never shows a "Switch to" offer. Each card has a second line ("4:3 · 1600 × 1200"). Custom shows as "Encoding · Custom". Saved `linkedin` and `x` load as Video when their settings are Video's, and as Custom otherwise; every other saved Custom setting is kept, so a remembered choice such as Video with Crisp 1.5× survives a reload. The Video card's second line names LinkedIn and X, and each card's tooltip says what it is for. The web bundle's line stays "MP4, WebM, poster, embed": "MP4, WebM, poster, embed code" needs 173 px of the 156 px the card has at 1280 × 800, so the full wording is in its tooltip.
 
 ## 4. Export every size at once
 
