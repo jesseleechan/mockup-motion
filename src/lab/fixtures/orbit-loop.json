@@ -32,11 +32,6 @@
     "shadow": "medium",
     "grain": 0.25,
     "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "#FFFFFF",
     "accent": "#FFFFFF"
   },
   "shots": [
@@ -55,7 +50,6 @@
         "float": 0.3
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "fade",
         "duration": 0.8,
@@ -69,7 +63,6 @@
     "fps": 30,
     "quality": "high",
     "format": "mp4",
-    "supersample": 1,
-    "motionBlur": false
+    "supersample": 1
   }
 }

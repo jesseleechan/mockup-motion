@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Engine } from "../../src/engine/Engine";
 import { ciTimeout } from "../helpers/ci";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 declare global {
   interface Window {
@@ -25,7 +26,7 @@ interface StageMeasure {
 }
 
 async function resetAndOpen(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -223,7 +224,7 @@ async function openSmallPreview(page: Page) {
   // than a single browser on SwiftShader (P05 evidence).
   await page.getByRole("button", { name: "Browse all templates" }).click();
   const gallery = page.getByRole("dialog");
-  await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+  await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
   // Applying selects the first shot; the loop switch lives in the Video inspector.

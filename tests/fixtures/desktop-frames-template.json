@@ -11,19 +11,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -48,7 +35,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -70,19 +56,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -107,7 +80,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -129,19 +101,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -166,7 +125,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -188,19 +146,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -225,7 +170,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -247,19 +191,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -284,7 +215,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -306,19 +236,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -343,7 +260,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -365,19 +281,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -402,7 +305,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -424,19 +326,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -461,7 +350,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -483,19 +371,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -520,7 +395,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -542,19 +416,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -579,7 +440,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -601,19 +461,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -638,7 +485,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -660,19 +506,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -697,7 +530,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -719,19 +551,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -756,7 +575,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -778,19 +596,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -815,7 +620,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,
@@ -837,19 +641,6 @@
       "shadow": "none",
       "grain": 0,
       "vignette": 0,
-      "fonts": {
-        "display": {
-          "source": "builtin",
-          "family": "Inter Display",
-          "weight": 600
-        },
-        "body": {
-          "source": "builtin",
-          "family": "Inter",
-          "weight": 400
-        }
-      },
-      "textColor": "#18181B",
       "accent": "#7C93FF"
     },
     "shots": [
@@ -874,7 +665,6 @@
           "float": 0
         },
         "entrance": "none",
-        "texts": [],
         "transitionIn": {
           "kind": "cut",
           "duration": 0,

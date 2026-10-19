@@ -99,12 +99,8 @@ export function createEditorAssetProvider(): AssetProvider {
       return bmp;
     },
 
-    async getText(layer, style, frameHeightPx): Promise<TextRaster> {
-      return rasterizeText(layer, style, frameHeightPx);
-    },
-
-    async getAudio(assetId: string): Promise<Blob | null> {
-      return assetId ? getBlob(assetId) : null;
+    async getText(line, frameHeightPx): Promise<TextRaster> {
+      return rasterizeText(line, frameHeightPx);
     },
   };
 }

@@ -30,7 +30,6 @@ describe("exportWithEngine cancellation", () => {
         quality: "web",
         format: "webm",
         supersample: 1,
-        motionBlur: false,
       },
       controller.signal,
     );
