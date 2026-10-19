@@ -2,14 +2,7 @@ import { create } from "zustand";
 import { produce } from "immer";
 import { createDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type {
-  AssetMeta,
-  AssetRef,
-  AssetRole,
-  ProjectDoc,
-  Shot,
-  Style,
-} from "../doc/types";
+import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
