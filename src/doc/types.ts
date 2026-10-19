@@ -59,7 +59,7 @@ export interface Style {
   vignette: number;        // 0..1
   fonts: { display: FontRef; body: FontRef };
   textColor: string;       // default text colour; "" = auto contrast vs background
-  accent: string;          // cursor, highlights
+  accent: string;          // highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "tablet" | "laptop" | "card";
@@ -157,9 +157,6 @@ export interface Transition {
   direction?: "left" | "right" | "up" | "down";
 }
 
-export interface CursorKey { t: number; x: number; y: number; click?: boolean } // x,y 0..1 of device screen
-export interface CursorSpec { enabled: boolean; style: "arrow" | "pointer" | "dot"; keys: CursorKey[] }
-
 export interface Shot {
   id: string;
   duration: number;        // seconds, 1..30
@@ -167,7 +164,6 @@ export interface Shot {
   camera: CameraMove;
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
-  cursor?: CursorSpec;     // honoured only for single-device layouts
   texts: TextLayer[];
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;

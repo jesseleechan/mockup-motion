@@ -11,7 +11,6 @@ import { EntranceSection } from "./shot/EntranceSection";
 import { TransitionSection } from "./shot/TransitionSection";
 import { ScrollSection } from "./shot/ScrollSection";
 import { ResponsiveScrollSection } from "./shot/ResponsiveScrollSection";
-import { CursorSection } from "./shot/CursorSection";
 import { TextLayersSection } from "./shot/TextLayersSection";
 
 interface ShotInspectorProps {
@@ -73,7 +72,6 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
       <TransitionSection shot={shot} />
       <ScrollSection shot={shot} assets={doc.assets} />
       <ResponsiveScrollSection shot={shot} assets={doc.assets} />
-      <CursorSection shot={shot} />
       <TextLayersSection shot={shot} />
 
       <div className="pt-2 flex gap-2">
