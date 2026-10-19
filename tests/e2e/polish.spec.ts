@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 interface EditorStore {
   getState: () => {
-    doc: { templateId?: string; assets: { role?: string }[] };
+    doc: { id: string; templateId?: string; assets: { role?: string }[] };
     past: unknown[];
   };
 }
@@ -55,6 +55,23 @@ test.describe("WP-18 polish", () => {
     expect(new Set(applied.roles)).toEqual(new Set(["mobile"]));
     expect(applied.undoSteps).toBe(1);
     await expect(page.locator("canvas").first()).toBeVisible();
+
+    // A returning user lands on their last project, not on the gallery.
+    const projectId = await page.evaluate(
+      () => (window as unknown as { __editorStore: EditorStore }).__editorStore.getState().doc.id,
+    );
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await page.reload();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as unknown as { __editorStore: EditorStore }).__editorStore.getState().doc.id,
+        ),
+      )
+      .toBe(projectId);
+    expect((await state()).templateId).toBe("mobile-slider");
+    await expect(gallery).toBeHidden();
   });
 
   test("rejects corrupt and oversized screenshots", async ({ page }) => {

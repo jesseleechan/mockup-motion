@@ -23,9 +23,9 @@ Before, a new visitor landed on an empty stage ("Create a presentation") and had
 
 **Decided: option A, open on the gallery.** The other option was to start on the Desktop Slider demo.
 
-- The editor opens a new, empty project on every load; it doesn't reopen the last project. So the gallery opens whenever the editor starts on an empty project (no screenshots, no template), not only on a first visit.
+- The editor reopens the most recent saved project on load. The gallery opens only when there is none (a first visit), or when the saved projects can't be read, over the new, empty project. Returning users land on their last project.
 - The selected card's preview plays as soon as the gallery opens, and focus starts on it. Other cards play on hover or focus, so only one preview video downloads up front.
-- The footer offers "Try with demo content" next to "Apply template" while the selected template is missing screenshots. It applies the selected template and fills its empty slots with demo screenshots in one undo step. "Apply template" without screenshots leads to the stage's fill overlay, which asks for them.
+- While the selected template is missing screenshots, the footer offers "Choose screenshots" and "Try with demo content" next to "Apply template". "Choose screenshots" applies the template and opens the file picker; the uploads fill it. "Try with demo content" applies the template and fills its empty slots with demo screenshots in one undo step. The close button and Escape cancel.
 - Closing the gallery leaves the empty state, whose "Start with a template" opens it again.
 - The gallery the editor opened steps aside once the project has content or another project is opened. A gallery the user opened stays until they close it.
 
