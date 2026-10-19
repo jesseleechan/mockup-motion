@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import type { ProjectDoc } from "../../src/doc/types";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {

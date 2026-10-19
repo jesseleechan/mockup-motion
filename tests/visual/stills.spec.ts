@@ -26,8 +26,9 @@ interface Still {
 }
 
 // The sliders step every 2.0 s: 1.9 s is the rest pose (step 0 has settled) and 2.5 s is
-// mid-step (step 1 started at 2.0 s), presets plan P05.
-const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider"];
+// mid-step (step 1 started at 2.0 s), presets plan P05. The orbits step on the same timing, so
+// they use the same times (orbit plan D7).
+const SLIDER_TEMPLATES = ["desktop-slider", "mobile-slider", "desktop-orbit", "mobile-orbit"];
 const SLIDER_TIMES = [1.9, 2.5];
 
 const STILLS: Still[] = [];
@@ -70,13 +71,15 @@ for (const [aspect, times] of MOBILE_FRAMES_STILLS) {
     });
   }
 }
-// The dark option of the four presets, at 16:9 only: Frames mid-travel, the sliders mid-step, where
-// the neighbour fade (an sRGB blend) shows against the near-black fill.
+// The dark option of the flat presets, at 16:9 only: Frames mid-travel, the sliders and orbits
+// mid-step, where the neighbour fade (an sRGB blend) shows against the near-black fill.
 const DARK_STILLS: Record<string, number> = {
   frames: 2.4,
   "mobile-frames": 2.4,
   "desktop-slider": 2.5,
   "mobile-slider": 2.5,
+  "desktop-orbit": 2.5,
+  "mobile-orbit": 2.5,
 };
 for (const [id, t] of Object.entries(DARK_STILLS)) {
   STILLS.push({ name: `${id}-dark-16x9-t${t}`, fixture: `${id}-dark-16x9`, aspect: "16:9", t });

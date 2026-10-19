@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
+import { BUILTIN_TEMPLATES } from "../../src/templates";
 
 declare global {
   interface Window {
@@ -214,10 +214,12 @@ test("Presets D1: the gallery leads with the presets and starts on Desktop Slide
   const gallery = page.getByRole("dialog");
   await expect(gallery).toBeVisible();
   const cards = gallery.locator('[data-testid="template-card"]');
+  await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
   const order = await cards.evaluateAll((els) =>
     els.map((el) => el.getAttribute("data-template-id")),
   );
-  // The registry's order (tests/templates.test.ts pins it), Desktop Slider first.
+  // The gallery shows the registry order (tests/templates.test.ts pins it); the first card is
+  // the first-run default.
   expect(order).toEqual(BUILTIN_TEMPLATES.map((t) => t.id));
   expect(order[0]).toBe("desktop-slider");
 

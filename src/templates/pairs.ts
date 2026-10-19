@@ -6,6 +6,7 @@ import { getTemplateById } from "./registry";
 const SIZE_PAIRS: readonly (readonly [desktop: string, mobile: string])[] = [
   ["desktop-slider", "mobile-slider"],
   ["frames", "mobile-frames"],
+  ["desktop-orbit", "mobile-orbit"],
   ["scroll-story", "mobile-scroll-story"],
 ];
 

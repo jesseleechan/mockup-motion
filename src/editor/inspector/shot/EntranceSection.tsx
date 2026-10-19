@@ -19,7 +19,7 @@ export const EntranceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
   const hintId = `entrance-hint-${shot.id}`;
   // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
   const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
-  // A slider lasts one step per screenshot, so its loop stays seamless (contracts.md §5).
+  // A slider or orbit lasts one step per screenshot, so its loop stays seamless (contracts.md §5).
   const fixed = fixedShotDuration(shot.layout) !== null;
 
   return (
