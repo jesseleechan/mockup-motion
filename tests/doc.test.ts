@@ -450,3 +450,24 @@ describe("Slider layout validation (presets P01)", () => {
     });
   });
 });
+
+describe("Removed chrome and finishes load as preset looks", () => {
+  it("loads every saved device finish as the one finish, and minimal chrome as standard", () => {
+    for (const finish of ["graphite", "silver", "black", "sand"]) {
+      const saved = createDoc() as unknown as { style: Record<string, unknown> };
+      saved.style.deviceFinish = finish;
+      saved.style.browserChrome = "minimal";
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.style, finish).not.toHaveProperty("deviceFinish");
+      expect(doc.style.browserChrome, finish).toBe("standard");
+    }
+  });
+
+  it("migrates every v1 frame finish without a device finish", () => {
+    for (const finish of ["midnight", "titanium", "silver", "gold"] as const) {
+      const preset = createV1Project();
+      preset.composition.frame.finish = finish;
+      expect(migrateV1Project(preset).style, finish).not.toHaveProperty("deviceFinish");
+    }
+  });
+});

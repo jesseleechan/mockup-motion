@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { DeviceFinish, Style } from "../../doc/types";
+import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
 import { DeviceShadowGroup } from "../shadows/DeviceShadow";
@@ -7,7 +7,7 @@ import {
   createBodyMaterial,
   createRoundedExtrudeGeometry,
   createRoundedRectShape,
-  DEVICE_FINISH_COLORS,
+  DEVICE_BODY_COLOR,
 } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
@@ -18,7 +18,6 @@ export function buildLaptopDevice(
 ): DeviceInstance {
   const lidW = node.width;
   const lidH = node.height;
-  const finish: DeviceFinish = style.deviceFinish ?? "silver";
 
   // Quality-bar §3.4: Bezel 1.8% of width, base at 6% of lid height
   const bezel = lidW * 0.018;
@@ -48,7 +47,7 @@ export function buildLaptopDevice(
 
   // Lid chassis
   const lidGeo = createRoundedExtrudeGeometry(lidW, lidH, lidRadius, lidDepth, 0.0003);
-  const bodyMat = createBodyMaterial(finish);
+  const bodyMat = createBodyMaterial();
   const lidMesh = new THREE.Mesh(lidGeo, bodyMat);
   group.add(lidMesh);
 
@@ -86,7 +85,7 @@ export function buildLaptopDevice(
   const trackpadShape = createRoundedRectShape(trackpadW, trackpadH, lidW * 0.006);
   const trackpadGeo = new THREE.ShapeGeometry(trackpadShape);
   const trackpadMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(DEVICE_FINISH_COLORS[finish]).multiplyScalar(0.92),
+    color: new THREE.Color(DEVICE_BODY_COLOR).multiplyScalar(0.92),
     roughness: 0.5,
   });
   const trackpadMesh = new THREE.Mesh(trackpadGeo, trackpadMat);
@@ -111,10 +110,6 @@ export function buildLaptopDevice(
       borderRgba[3],
     );
     compositor.material.uniforms.uBorderWidth.value = 0.0005;
-
-    const finishHex = DEVICE_FINISH_COLORS[updatedStyle.deviceFinish ?? "silver"];
-    bodyMat.color.set(finishHex);
-    trackpadMat.color.set(finishHex).multiplyScalar(0.92);
   }
 
   function dispose(): void {

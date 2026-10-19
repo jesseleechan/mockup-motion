@@ -225,10 +225,10 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       const template = BUILTIN_TEMPLATES.find((t) => t.id === "desktop-slider")!;
       const doc = createDoc();
       doc.assets = sampleAssets;
-      doc.style.browserChrome = "minimal";
+      doc.style.browserChrome = "none";
 
       const applied = applyTemplate(template, doc);
-      expect(applied.style.browserChrome).toBe("minimal");
+      expect(applied.style.browserChrome).toBe("none");
     });
   });
 

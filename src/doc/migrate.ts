@@ -6,7 +6,6 @@ import type {
   Background,
   CameraMove,
   CameraPresetId,
-  DeviceFinish,
   DeviceKind,
   ExportSettings,
   Layout,
@@ -242,22 +241,10 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
   const shadow: ShadowPreset =
     shadowVal > 40 ? "dramatic" : shadowVal > 15 ? "medium" : shadowVal > 0 ? "soft" : "none";
 
-  // Device finish
-  const finishMap: Record<V1DeviceFrameFinish, DeviceFinish> = {
-    midnight: "graphite",
-    titanium: "silver",
-    silver: "silver",
-    gold: "sand",
-  };
-  const deviceFinish: DeviceFinish = comp?.frame?.finish
-    ? finishMap[comp.frame.finish] || "silver"
-    : "silver";
-
   const style: Style = {
     ...defaultStyle(),
     background,
     frameAppearance: comp?.frame?.appearance === "dark" ? "dark" : "light",
-    deviceFinish,
     browserChrome: frameType === "none" ? "none" : "standard",
     browserUrl: comp?.frame?.title || "",
     shadow,
