@@ -5,15 +5,18 @@ import { useEditorStore } from "../../state/store";
 import { createEditorAssetProvider } from "../asset-provider";
 import { exportWithEngine, type ExportProgress as Progress } from "../../export/engine-export";
 import { DESTINATION_PRESETS } from "../../export/destinations";
-import { exportFilename } from "../../export/plan";
+import { exportFilename, type ExportPlan } from "../../export/plan";
 import { changeAspect } from "../aspect";
 import { schedule } from "../../motion";
-import type { DestinationId, ExportSettings } from "../../doc/types";
+import type { Aspect, DestinationId, ExportSettings } from "../../doc/types";
 import { DestinationPicker } from "./DestinationPicker";
 import { EncodingSettings } from "./EncodingSettings";
 import { ExportSummary } from "./ExportSummary";
 import { ExportProgress } from "./ExportProgress";
 import { ExportResult, type ExportOutcome } from "./ExportResult";
+import { ExportFiles, FileList } from "./ExportFiles";
+import { SizePicker } from "./SizePicker";
+import { docAtAspect, orderSizes, runExportQueue } from "./queue";
 import { useExportPlan } from "./useExportPlan";
 
 interface ExportModalProps {
@@ -28,40 +31,69 @@ function presetSettings(id: DestinationId): ExportSettings {
 
 const notice = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs flex items-start gap-2";
 
+/** The file being rendered, for the progress view of an export with several sizes. */
+interface CurrentFile {
+  index: number;
+  aspect: Aspect;
+  plan: ExportPlan;
+}
+
 export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
-  const { total: duration } = useMemo(() => schedule(doc), [doc]);
-
   const rememberExport = useEditorStore((s) => s.rememberExport);
 
   // Opens on the project's last export settings: a new project's are this browser's last
-  // ones, or MP4 at 1080p.
+  // ones, or MP4 at 1080p. The sizes start at the project's aspect, and follow it when
+  // "Switch to" changes it.
   const [settings, setSettings] = useState<ExportSettings>(doc.export);
+  const [sizes, setSizes] = useState<Aspect[]>([doc.aspect]);
   const [wasOpen, setWasOpen] = useState(open);
+  const [lastAspect, setLastAspect] = useState(doc.aspect);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) setSettings(doc.export);
+    if (open) {
+      setSettings(doc.export);
+      setSizes([doc.aspect]);
+    }
   }
-  const { probing, plan } = useExportPlan(settings, doc.aspect, duration, open);
+  if (doc.aspect !== lastAspect) {
+    setLastAspect(doc.aspect);
+    setSizes((s) => [...new Set(s.map((a) => (a === lastAspect ? doc.aspect : a)))]);
+  }
+
+  // Each size renders a copy of the project re-fitted to it, which may change its length.
+  const targets = useMemo(
+    () =>
+      orderSizes(sizes, doc.aspect).map((aspect) => ({
+        aspect,
+        duration: schedule(docAtAspect(doc, aspect)).total,
+      })),
+    [sizes, doc],
+  );
+  const { probing, plans } = useExportPlan(settings, targets, open);
+  const files = plans?.flatMap((f) => (f.plan.ok ? [{ aspect: f.aspect, plan: f.plan.plan }] : []));
+  const ready = !!plans && files?.length === plans.length;
 
   const [progress, setProgress] = useState<Progress | null>(null);
-  const [outcome, setOutcome] = useState<ExportOutcome | null>(null);
+  const [current, setCurrent] = useState<CurrentFile | null>(null);
+  const [fileCount, setFileCount] = useState(0);
+  const [outcomes, setOutcomes] = useState<ExportOutcome[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
-  const urlRef = useRef<string | null>(null);
+  const urlsRef = useRef<string[]>([]);
 
-  const revokeUrl = () => {
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    urlRef.current = null;
+  const revokeUrls = () => {
+    for (const url of urlsRef.current) URL.revokeObjectURL(url);
+    urlsRef.current = [];
   };
 
   // Closing the editor mid-export must not leave a worker or an object URL behind.
   useEffect(
     () => () => {
       abortRef.current?.abort();
-      revokeUrl();
+      revokeUrls();
     },
     [],
   );
@@ -71,52 +103,77 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
     setSettings((s) => ({ ...s, ...patch, destination: "custom" }));
 
   const handleStart = async () => {
-    if (!plan?.ok) return;
-    const planned = plan.plan;
+    if (!ready || !files) return;
+    const source = doc;
+    const provider = createEditorAssetProvider();
     rememberExport(settings);
-    revokeUrl();
-    setOutcome(null);
+    revokeUrls();
+    setOutcomes([]);
     setError(null);
+    setFileCount(files.length);
     setProgress({ stage: "preparing", frame: 0, total: 1, percentage: 0 });
 
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const result = await exportWithEngine(
-        doc,
-        createEditorAssetProvider(),
-        planned.settings,
-        controller.signal,
-        (p) => {
-          if (!controller.signal.aborted) setProgress(p);
+      await runExportQueue(
+        files.map((f) => f.aspect),
+        (aspect, index) => {
+          setCurrent({ index, aspect, plan: files[index].plan });
+          return exportWithEngine(
+            docAtAspect(source, aspect),
+            provider,
+            files[index].plan.settings,
+            controller.signal,
+            (p) => {
+              if (!controller.signal.aborted) setProgress(p);
+            },
+          );
         },
+        (aspect, result, index) => {
+          const planned = files[index].plan;
+          const url = URL.createObjectURL(result.blob);
+          urlsRef.current.push(url);
+          setOutcomes((o) => [
+            ...o,
+            {
+              aspect,
+              url,
+              filename: exportFilename(source.name, aspect, planned.extension),
+              extension: planned.extension,
+              label: planned.label,
+              result,
+            },
+          ]);
+        },
+        controller.signal,
       );
-      if (controller.signal.aborted) return;
-      const url = URL.createObjectURL(result.blob);
-      urlRef.current = url;
-      setOutcome({
-        url,
-        filename: exportFilename(doc.name, doc.aspect, planned.extension),
-        extension: planned.extension,
-        label: planned.label,
-        result,
-      });
     } catch (err: unknown) {
-      // A cancel already returned to the settings view (handleCancel).
+      // A cancel already set its message (handleCancel).
       if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : "Export failed.");
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
-      if (!controller.signal.aborted) setProgress(null);
+      if (!controller.signal.aborted) {
+        setProgress(null);
+        setCurrent(null);
+      }
     }
   };
 
+  // Files that already finished stay available; an export of one file returns to the settings.
   const handleCancel = () => {
     abortRef.current?.abort();
     abortRef.current = null;
-    revokeUrl();
     setProgress(null);
+    setCurrent(null);
     setError("Export cancelled.");
+  };
+
+  const reset = () => {
+    revokeUrls();
+    setOutcomes([]);
+    setFileCount(0);
   };
 
   const handleClose = (nextOpen: boolean) => {
@@ -125,19 +182,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
       handleCancel();
     }
     if (!nextOpen) {
-      revokeUrl();
-      setOutcome(null);
+      reset();
       setError(null);
     }
     onOpenChange(nextOpen);
   };
 
   const handleExportAnother = () => {
-    revokeUrl();
-    setOutcome(null);
+    reset();
+    setError(null);
   };
 
-  const planned = plan?.ok ? plan.plan : null;
+  const showResult = !progress && outcomes.length > 0;
+  const firstPlan = files?.[0]?.plan;
+  const progressLabel = current
+    ? fileCount > 1
+      ? `File ${current.index + 1} of ${fileCount} · ${current.aspect} · ${current.plan.label}`
+      : current.plan.label
+    : "";
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -148,13 +210,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
       >
         <div className="space-y-5">
           {progress ? (
-            <ExportProgress
-              progress={progress}
-              label={planned?.label ?? ""}
-              onCancel={handleCancel}
+            <>
+              <ExportProgress progress={progress} label={progressLabel} onCancel={handleCancel} />
+              {outcomes.length > 0 && <FileList outcomes={outcomes} />}
+            </>
+          ) : showResult && fileCount === 1 ? (
+            <ExportResult outcome={outcomes[0]} onExportAnother={handleExportAnother} />
+          ) : showResult ? (
+            <ExportFiles
+              outcomes={outcomes}
+              total={fileCount}
+              onExportAnother={handleExportAnother}
             />
-          ) : outcome ? (
-            <ExportResult outcome={outcome} onExportAnother={handleExportAnother} />
           ) : (
             <>
               <DestinationPicker
@@ -167,16 +234,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
                   })
                 }
               />
+              <SizePicker projectAspect={doc.aspect} selected={sizes} onChange={setSizes} />
               <EncodingSettings settings={settings} onChange={updateSettings} />
 
-              {planned?.notice && (
+              {firstPlan?.notice && (
                 <div className={`${notice} border-amber-500/30 text-amber-300`} role="status">
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
-                  <span>{planned.notice}</span>
+                  <span>{firstPlan.notice}</span>
                 </div>
               )}
 
-              <ExportSummary probing={probing} plan={plan} />
+              <ExportSummary probing={probing} plans={plans} />
             </>
           )}
 
@@ -188,7 +256,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           )}
         </div>
 
-        {!progress && !outcome && (
+        {!progress && !showResult && (
           <div className="mt-5 pt-4 border-t border-[var(--color-line)] flex items-center justify-between">
             <Button variant="ghost" onClick={() => handleClose(false)}>
               Close
@@ -196,10 +264,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
             <Button
               variant="primary"
               onClick={handleStart}
-              disabled={!plan?.ok}
+              disabled={!ready}
               icon={<Download size={14} />}
             >
-              Start export
+              {files && files.length > 1 ? `Export ${files.length} files` : "Start export"}
             </Button>
           </div>
         )}

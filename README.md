@@ -69,6 +69,8 @@ Each destination is a starting point for the settings. A new project's dialog op
 
 Changing a setting by hand makes the settings Custom, and no destination is selected.
 
+**Several sizes at once.** Under the destinations, pick any of 16:9, 4:3, 4:5 and 9:16 to get one file per size in one export, for example for a site, Dribbble, an Instagram post and a Story. Each size renders the project re-fitted to that aspect, as "Switch to" would, without changing the project. Files render one after another, and each one can be downloaded as soon as it finishes.
+
 A destination doesn't change the project's aspect on its own. If they differ, the dialog says so and offers "Switch to 4:3" (for example). Until you switch, a 16:9 project exported for Dribbble comes out at 2134 × 1200.
 
 A web bundle holds an MP4, a WebM, a WebP poster and `embed.html` with the snippet. If the browser can't encode H.264, the bundle holds only the WebM. The dialog shows the snippet and a "Copy code" button. For a project named "Untitled presentation" at 720p, it is:

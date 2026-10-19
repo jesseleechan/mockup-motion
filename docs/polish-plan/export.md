@@ -4,12 +4,12 @@
 
 Each item is its own PR, with before and after screenshots of the dialog at 1440 × 900 and 1280 × 800 and a check that nothing in it overflows.
 
-| Item                         | PR      | Status      |
-| ---------------------------- | ------- | ----------- |
-| 1. Advanced section          | #80     | In review   |
-| 2. Remember the last choice  | #81     | In review   |
-| 3. Destinations              | pending | In review   |
-| 4. Export every size at once |         | Not started |
+| Item                         | PR      | Status    |
+| ---------------------------- | ------- | --------- |
+| 1. Advanced section          | #80     | In review |
+| 2. Remember the last choice  | #81     | In review |
+| 3. Destinations              | #83     | In review |
+| 4. Export every size at once | pending | In review |
 
 ## 1. An Advanced section
 
@@ -73,6 +73,7 @@ Added by the owner on 19 October 2026, from the audit's "Add" list.
 - The presets already re-fit to each aspect, so this is an export queue: each aspect renders in turn from a copy of the document at that aspect (`changeAspect`), and the project's own aspect never changes.
 - Progress shows per file, cancel stops the whole queue, and each file is offered as it finishes, the way a single export is today.
 - Tests: unit tests for the queue (order, cancel, the document is not changed); at most one e2e test, for a two-aspect export.
+- **Built:** a "Sizes" row of chips under the destinations; the project's aspect is selected when the dialog opens and follows "Switch to". The pure queue is `src/editor/export/queue.ts`. The summary lists each file with its size and estimate, plus the total. While rendering, the dialog shows "File 2 of 3 · 4:5" and the finished files with their download links; a cancel keeps them. One export of one size looks as before.
 
 ## Follow-ups
 
