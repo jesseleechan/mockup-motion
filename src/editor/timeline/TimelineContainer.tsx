@@ -21,7 +21,6 @@ export const TimelineContainer: React.FC = () => {
   const setShotDuration = useEditorStore((s) => s.setShotDuration);
   const setTransition = useEditorStore((s) => s.setTransition);
   const splitShot = useEditorStore((s) => s.splitShot);
-  const setTextLayerDelay = useEditorStore((s) => s.setTextLayerDelay);
 
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
@@ -82,9 +81,6 @@ export const TimelineContainer: React.FC = () => {
   const selectedShotIndex = useMemo(() => {
     if (selection.kind === "shot") {
       return doc.shots.findIndex((s) => s.id === selection.id);
-    }
-    if (selection.kind === "text") {
-      return doc.shots.findIndex((s) => s.id === selection.shotId);
     }
     return -1;
   }, [doc.shots, selection]);
@@ -328,10 +324,6 @@ export const TimelineContainer: React.FC = () => {
                       { label: "Change layout" },
                     );
                   }}
-                  onSelectText={(textId) =>
-                    setSelection({ kind: "text", shotId: shot.id, id: textId })
-                  }
-                  onTextDelayChange={(textId, delay) => setTextLayerDelay(idx, textId, delay)}
                   onNavigateLeft={() => handleNavigateShot(-1)}
                   onNavigateRight={() => handleNavigateShot(1)}
                 />

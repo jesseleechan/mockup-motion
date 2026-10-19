@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import type { Layout, Shot, TextLayer } from "../../doc/types";
+import type { Layout, Shot } from "../../doc/types";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -19,14 +19,13 @@ import {
   Scissors,
   Smartphone,
   Trash2,
-  Type,
   Maximize2,
   GalleryHorizontal,
   GalleryVertical,
   Orbit,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
-import { LAYOUT_LABELS, shotSummary } from "../labels";
+import { shotSummary } from "../labels";
 
 export interface ShotCardProps {
   shot: Shot;
@@ -45,15 +44,9 @@ export interface ShotCardProps {
   onDelete: () => void;
   onSplit: (splitLocalT: number) => void;
   onChangeLayout: (layout: Layout) => void;
-  onSelectText: (textId: string) => void;
-  onTextDelayChange: (textId: string, delay: number) => void;
   onNavigateLeft?: () => void;
   onNavigateRight?: () => void;
 }
-
-const TEXT_LANE_ROW_PX = 12;
-// Beyond three texts the rows repeat; the card body would get too short otherwise.
-const MAX_TEXT_LANE_ROWS = 3;
 
 export const ShotCard: React.FC<ShotCardProps> = ({
   shot,
@@ -72,8 +65,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   onDelete,
   onSplit,
   onChangeLayout,
-  onSelectText,
-  onTextDelayChange,
   onNavigateLeft,
   onNavigateRight,
 }) => {
@@ -83,13 +74,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
 
   const resizeStartXRef = useRef(0);
   const initialDurationRef = useRef(shot.duration);
-
-  // Text pill dragging state
-  const textDragRef = useRef<{
-    layerId: string;
-    startX: number;
-    initialDelay: number;
-  } | null>(null);
 
   const layout = shot.layout;
   const layoutKind = layout.kind;
@@ -145,45 +129,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
         onDurationChange(dragDuration);
       }
       setDragDuration(null);
-    }
-  };
-
-  // --- Text pill drag handlers ---
-  const handleTextPointerDown = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    e.stopPropagation();
-    if (e.button !== 0) return;
-    onSelectText(textLayer.id);
-    textDragRef.current = {
-      layerId: textLayer.id,
-      startX: e.clientX,
-      initialDelay: textLayer.delay,
-    };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleTextPointerMove = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    if (!textDragRef.current || textDragRef.current.layerId !== textLayer.id) return;
-    const dx = e.clientX - textDragRef.current.startX;
-    const dDelay = dx / pxPerSecond;
-    let nextDelay = textDragRef.current.initialDelay + dDelay;
-    const snap = e.shiftKey ? 0.5 : 0.1;
-    nextDelay = Math.round(nextDelay / snap) * snap;
-    nextDelay = Math.max(0, Math.min(shot.duration - 0.2, nextDelay));
-    onTextDelayChange(textLayer.id, Number(nextDelay.toFixed(2)));
-  };
-
-  const handleTextPointerUp = (e: React.PointerEvent<HTMLDivElement>, textLayer: TextLayer) => {
-    if (textDragRef.current?.layerId === textLayer.id) {
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-      textDragRef.current = null;
     }
   };
 
@@ -245,8 +190,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   // Header icon for device/layout
   const getLayoutIcon = () => {
     switch (layoutKind) {
-      case "title":
-        return <Icon icon={Type} size={13} />;
       case "single":
         if (device === "phone") return <Icon icon={Smartphone} size={13} />;
         return <Icon icon={Monitor} size={13} />;
@@ -263,7 +206,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
   };
 
   const subLabel = shotSummary(shot);
-  const laneRows = Math.min(shot.texts.length, MAX_TEXT_LANE_ROWS);
 
   return (
     <ContextMenu>
@@ -346,47 +288,12 @@ export const ShotCard: React.FC<ShotCardProps> = ({
                 </div>
               </div>
 
-              {/* Footer: device or layout, and camera move. Two lines in all, so the card
-                  body still fits above two text-lane rows. */}
+              {/* Footer: device or layout, and camera move. */}
               <div className="text-[10px] text-[var(--color-text-3)] font-mono min-w-0 truncate">
                 {subLabel}
               </div>
             </div>
           </div>
-
-          {/* Text Lanes (at bottom of card) */}
-          {shot.texts.length > 0 && (
-            <div
-              className="shrink-0 bg-[var(--color-bg)]/80 border-t border-[var(--color-line)]/50 relative px-1 overflow-hidden"
-              style={{ height: `${laneRows * TEXT_LANE_ROW_PX + 4}px` }}
-            >
-              {shot.texts.map((t, i) => {
-                const leftPct = (t.delay / shot.duration) * 100;
-                const widthPct = Math.max(10, ((shot.duration - t.delay) / shot.duration) * 100);
-                return (
-                  <div
-                    key={t.id}
-                    onPointerDown={(e) => handleTextPointerDown(e, t)}
-                    onPointerMove={(e) => handleTextPointerMove(e, t)}
-                    onPointerUp={(e) => handleTextPointerUp(e, t)}
-                    onPointerCancel={(e) => handleTextPointerUp(e, t)}
-                    style={{
-                      left: `${leftPct}%`,
-                      width: `${widthPct}%`,
-                      // One row per text so pills that start together don't cover each other.
-                      top: `${2 + (i % laneRows) * TEXT_LANE_ROW_PX}px`,
-                    }}
-                    title={`Text: "${t.text || "Untitled"}" · Delay ${t.delay.toFixed(1)}s`}
-                    className="absolute h-2.5 rounded-full bg-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/60 border border-[var(--color-accent)] text-[8px] font-mono text-[var(--color-text)] flex items-center px-1 truncate cursor-ew-resize select-none"
-                  >
-                    <span data-truncate className="truncate leading-none">
-                      {t.text || "Text"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
           {/* Right Duration Resize Handle. A slider's or orbit's length is screenshots × step. */}
           {layoutKind !== "slider" && layoutKind !== "orbit" && (
@@ -451,13 +358,6 @@ export const ShotCard: React.FC<ShotCardProps> = ({
               onClick={() => onChangeLayout({ kind: "single", device: "card", assetId: "" })}
             >
               Card
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={Type} size={12} />}
-              onClick={() => onChangeLayout({ kind: "title" })}
-            >
-              {LAYOUT_LABELS.title}
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>

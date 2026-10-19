@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
-import type { AssetProvider, Engine, TextRaster } from "../../src/engine/Engine";
+import type { AssetProvider, Engine } from "../../src/engine/Engine";
 import type { exportWithEngine } from "../../src/export/engine-export";
 import type { schedule } from "../../src/motion";
 import { keepResourceTimings } from "../helpers/resource-timing";
@@ -217,73 +217,6 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
   expect(missing, "every layout asset must be loaded before rendering").toEqual([]);
 });
 
-test("F03: a slower earlier setDocument cannot replace the newer text raster", async ({ page }) => {
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const textColors = await page.evaluate(async () => {
-    const base = window.__fixtures?.["card-hero"];
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc as
-      | ((
-          doc: ProjectDoc,
-          images: Record<string, ImageBitmap>,
-          provider: AssetProvider,
-        ) => Promise<void>)
-      | undefined;
-    const createProvider = window.__createLabAssetProvider;
-    if (!base || !engine || !setDoc || !createProvider)
-      throw new Error("F03 race fixture hooks are unavailable");
-    engine.resize(640, 360);
-    const provider = createProvider();
-    const makeDoc = (text: string, color: string) => {
-      const doc = structuredClone(base);
-      doc.shots[0].layout = { kind: "title" };
-      doc.shots[0].texts = [
-        {
-          id: "f03-race-shared-layer",
-          text,
-          role: "title",
-          font: "display",
-          size: 20,
-          anchor: "center",
-          align: "center",
-          color,
-          animation: "none",
-          delay: 0,
-        },
-      ];
-      doc.style.background = { kind: "solid", color: "#808080" };
-      doc.style.grain = 0;
-      doc.style.vignette = 0;
-      return doc;
-    };
-    const delayedProvider: AssetProvider = {
-      getImage: provider.getImage.bind(provider),
-      async getText(layer, style, frameHeightPx): Promise<TextRaster> {
-        if (layer.text === "OLD") await new Promise((resolve) => setTimeout(resolve, 300));
-        return provider.getText(layer, style, frameHeightPx);
-      },
-    };
-    const earlier = setDoc(makeDoc("OLD", "#FF0000"), {}, delayedProvider);
-    const newer = setDoc(makeDoc("NEW", "#00FF00"), {}, delayedProvider);
-    await Promise.all([earlier, newer]);
-    engine.renderAt(0);
-    const pixels = engine.readPixels();
-    let red = 0;
-    let green = 0;
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] > 150 && pixels[i + 1] < 100 && pixels[i + 2] < 100) red++;
-      if (pixels[i + 1] > 150 && pixels[i] < 100 && pixels[i + 2] < 100) green++;
-    }
-    return { red, green };
-  });
-  expect(
-    textColors.green,
-    "the final frame should use the newer green text raster",
-  ).toBeGreaterThan(20);
-  expect(textColors.red, "the final frame must not use the stale red text raster").toBe(0);
-});
-
 test("F03: alternating documents releases old textures", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
@@ -310,9 +243,6 @@ test("F03: alternating documents releases old textures", async ({ page }) => {
         width: 1600,
         height: 1000,
       });
-      // F11: the asset also feeds a blurred ambient background, whose cached render
-      // target must be released with it.
-      doc.style.background = { kind: "ambient", assetId, blur: 1, dim: 0.35 };
       return doc;
     };
     const bitmaps = await Promise.all([
@@ -372,34 +302,6 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
   }
   const browserRebuilt = built.browser.afterChrome - built.browser.afterBackground;
   expect(browserRebuilt, "a chrome change rebuilds the browser").toBe(1);
-});
-
-test("F03: text textures are released when their layers go away", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/lab?fixture=card-hero&t=0&aspect=16:9");
-  await page.waitForFunction(() => window.__labReady === true);
-  const counts = await page.evaluate(async () => {
-    const base = window.__fixtures?.["text-title"];
-    const engine = window.__labEngine;
-    const setDoc = window.__labSetDoc;
-    if (!base || !engine || !setDoc) throw new Error("F03 text fixture hooks are unavailable");
-    engine.resize(640, 360);
-    const snapshots = [];
-    for (let cycle = 1; cycle <= 20; cycle++) {
-      const doc = structuredClone(base);
-      doc.shots[0].texts = doc.shots[0].texts.map((layer) => ({
-        ...layer,
-        id: `${layer.id}-${cycle}`,
-        text: `${layer.text} ${cycle}`,
-      }));
-      await setDoc(doc);
-      // Text fades in from t = 0; render while it is visible so its texture uploads.
-      engine.renderAt(2.5);
-      snapshots.push(engine.debugInfo().textures);
-    }
-    return snapshots;
-  });
-  expect(counts[19], JSON.stringify(counts)).toBe(counts[1]);
 });
 
 test("F03: devices whose key disappears are disposed", async ({ page }) => {

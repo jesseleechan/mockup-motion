@@ -21,7 +21,6 @@ function fallbackFixture(): ProjectDoc {
   shot.transitionIn = loopWrapCrossfade();
   shot.entrance = "none";
   shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-  shot.texts = [];
   const doc: ProjectDoc = {
     ...createDoc(),
     name: "Responsive Scroll (no sections)",

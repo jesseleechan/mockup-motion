@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Layout, ProjectDoc } from "../../src/doc/types";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Presets P04 and Frames plan PF03: a Frames shot (rows or columns with travel "period") shows
 // no speed or tilt slider, and its duration control cannot go below the shortest duration under
@@ -12,7 +13,7 @@ interface EditorWindow {
 }
 
 async function openEditorWithDemo(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

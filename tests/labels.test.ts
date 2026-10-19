@@ -17,7 +17,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
     layout,
     camera: { preset, intensity: 1, easing: "smooth", float: 0 },
     entrance: "none",
-    texts: [],
     transitionIn: { kind: "cut", duration: 0, easing: "smooth" },
   };
 }
@@ -25,7 +24,6 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
 describe("editor labels (F08)", () => {
   it("covers every map the UI uses", () => {
     expect(LABEL_MAPS.map(([name]) => name).sort()).toEqual([
-      "ANCHOR_LABELS",
       "ASSET_ROLE_LABELS",
       "BROWSER_CHROME_LABELS",
       "CAMERA_LABELS",
@@ -37,8 +35,6 @@ describe("editor labels (F08)", () => {
       "LAYOUT_LABELS",
       "SHADOW_LABELS",
       "TEMPLATE_CATEGORY_LABELS",
-      "TEXT_ANIMATION_LABELS",
-      "TEXT_ROLE_LABELS",
       "TRANSITION_LABELS",
     ]);
   });
@@ -70,7 +66,6 @@ describe("editor labels (F08)", () => {
     expect(
       labels.shotSummary(shot({ kind: "single", device: "phone", assetId: "a" }, "isoDrift")),
     ).toBe("Phone · Isometric drift");
-    expect(labels.shotSummary(shot({ kind: "title" }, "heroTilt"))).toBe("Title card");
   });
 
   it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {

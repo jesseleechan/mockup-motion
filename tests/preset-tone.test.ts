@@ -35,15 +35,13 @@ function presetDoc(id: string): ProjectDoc {
 }
 
 describe("Preset tone: the Light / Dark background of the slider and Frames presets", () => {
-  it("dark is a flat Onyx fill with light text and dark frames; light is Ash", () => {
+  it("dark is a flat Onyx fill with dark frames; light is Ash", () => {
     expect(presetToneStyle("dark")).toEqual({
       background: ONYX,
-      textColor: "#F4F4F5",
       frameAppearance: "dark",
     });
     expect(presetToneStyle("light")).toEqual({
       background: ASH,
-      textColor: "#18181B",
       frameAppearance: "light",
     });
   });
@@ -77,7 +75,6 @@ describe("Preset tone: the Light / Dark background of the slider and Frames pres
     const dark = store.getState().doc.style;
     expect(presetToneOf(dark)).toBe("dark");
     expect(dark.frameAppearance).toBe("dark");
-    expect(dark.textColor).toBe("#F4F4F5");
     expect([dark.grain, dark.vignette, dark.shadow]).toEqual([0, 0, "none"]);
     expect(store.getState().past.length).toBe(pastBefore + 1);
 
@@ -121,7 +118,6 @@ describe("Preset tone: the Light / Dark background of the slider and Frames pres
     const { doc: sanitized } = sanitizeDoc(JSON.parse(JSON.stringify(doc)));
     expect(presetToneOf(sanitized.style)).toBe("dark");
     expect(sanitized.style.frameAppearance).toBe("dark");
-    expect(sanitized.style.textColor).toBe("#F4F4F5");
 
     await saveProject(doc);
     const loaded = await loadProject(doc.id);

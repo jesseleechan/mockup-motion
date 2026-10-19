@@ -3,7 +3,6 @@
  * "pushIn" or "row1:col3"; every control, card and hint reads its copy from here.
  */
 import type {
-  Anchor,
   AssetRole,
   BrowserChrome,
   CameraPresetId,
@@ -14,8 +13,6 @@ import type {
   Layout,
   Shot,
   ShadowPreset,
-  TextAnimId,
-  TextLayer,
   Transition,
 } from "../doc/types";
 import type { TemplateCategory } from "../templates";
@@ -27,7 +24,6 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   slider: "Slider",
   orbit: "Orbit",
   responsive: "Responsive scroll",
-  title: "Title card",
 };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
@@ -83,22 +79,6 @@ export const ENTRANCE_LABELS: Record<Shot["entrance"], string> = {
   stagger: "Stagger",
 };
 
-export const TEXT_ANIMATION_LABELS: Record<TextAnimId, string> = {
-  none: "None",
-  fadeUp: "Fade up",
-  maskReveal: "Mask reveal",
-  blurIn: "Blur in",
-  wordStagger: "Word stagger",
-  typewriter: "Typewriter",
-};
-
-export const TEXT_ROLE_LABELS: Record<TextLayer["role"], string> = {
-  title: "Title",
-  subtitle: "Subtitle",
-  caption: "Caption",
-  label: "Label",
-};
-
 export const EASING_LABELS: Record<EasingId, string> = {
   smooth: "Smooth",
   gentle: "Gentle",
@@ -139,18 +119,6 @@ export const ASSET_ROLE_LABELS: Record<AssetRole, string> = {
   other: "Other",
 };
 
-export const ANCHOR_LABELS: Record<Anchor, string> = {
-  "top-left": "Top left",
-  top: "Top",
-  "top-right": "Top right",
-  left: "Left",
-  center: "Center",
-  right: "Right",
-  "bottom-left": "Bottom left",
-  bottom: "Bottom",
-  "bottom-right": "Bottom right",
-};
-
 /** Short names for the export destination picker. LinkedIn and X share one preset. */
 export const DESTINATION_LABELS: Record<DestinationId, string> = {
   "web-embed": "Website",
@@ -181,12 +149,11 @@ export function optionsFor<T extends string>(
 /** One-line description of a shot for the timeline card: "Browser · Push in". */
 export function shotSummary(shot: Shot): string {
   const { layout } = shot;
-  if (layout.kind === "title") return LAYOUT_LABELS.title;
   return `${shotSubject(layout)} · ${CAMERA_LABELS[shot.camera.preset]}`;
 }
 
 /** The shot card's subject. The Frames presets read as their own names (Frames plan D3, D4). */
-function shotSubject(layout: Exclude<Layout, { kind: "title" }>): string {
+function shotSubject(layout: Layout): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
   if (layout.kind === "slider" && layout.arrangement === "deck") {
     return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";

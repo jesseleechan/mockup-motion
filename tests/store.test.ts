@@ -170,21 +170,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
         {
           ...defaultShot(),
           layout: { kind: "single", device: "browser", assetId },
-          texts: [
-            {
-              id: "t1",
-              text: "Hello",
-              role: "title",
-              font: "display",
-              size: 6,
-              anchor: "center",
-              align: "center",
-              color: "",
-              animation: "none",
-              delay: 0,
-              logoAssetId: assetId,
-            },
-          ],
         },
         {
           ...defaultShot(),
@@ -196,7 +181,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
             tilt: 0,
             travel: "period",
           },
-          texts: [],
         },
       ];
     });
@@ -210,8 +194,6 @@ describe("WP-01: Editor Store and Undo/Redo", () => {
     // Layout reference in single layout cleared to ""
     const l0 = doc.shots[0].layout as { assetId?: string };
     expect(l0.assetId).toBe("");
-    // Text logoAssetId cleared
-    expect(doc.shots[0].texts[0].logoAssetId).toBeUndefined();
     // The removed asset leaves the rows layout's list, the kept one stays
     const l1 = doc.shots[1].layout as { assetIds?: string[] };
     expect(l1.assetIds).toEqual([keptAssetId]);

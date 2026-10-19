@@ -1,7 +1,6 @@
 import React from "react";
 import { useEditorStore } from "../../state/store";
 import { BUILTIN_PALETTES } from "../../doc/palettes";
-import { CURATED_FONT_PAIRS } from "../../assets/fonts";
 import { schedule } from "../../motion";
 import { ColorField, Field, Section, SegmentedControl, Select, Slider, Switch } from "../../ui";
 import type { BrowserChrome, DeviceFinish, ShadowPreset } from "../../doc/types";
@@ -42,7 +41,6 @@ export const VideoInspector: React.FC = () => {
       (draft) => {
         draft.style.background = p.background;
         draft.style.frameAppearance = p.frameAppearance;
-        draft.style.textColor = p.textColor;
       },
       { label: `Apply ${p.name} palette` },
     );
@@ -68,18 +66,6 @@ export const VideoInspector: React.FC = () => {
         draft.style.background = { kind: "solid", color };
       },
       { label: "Change background color" },
-    );
-  };
-
-  const handleFontPairChange = (pairId: string) => {
-    const pair = CURATED_FONT_PAIRS.find((p) => p.id === pairId);
-    if (!pair) return;
-    apply(
-      (draft) => {
-        draft.style.fonts.display = pair.display;
-        draft.style.fonts.body = pair.body;
-      },
-      { label: `Apply font pair ${pair.name}` },
     );
   };
 
@@ -154,8 +140,6 @@ export const VideoInspector: React.FC = () => {
                   bgStyle = p.background.color;
                 } else if (p.background.kind === "gradient") {
                   bgStyle = `linear-gradient(${p.background.angle}deg, ${p.background.stops.join(", ")})`;
-                } else if (p.background.kind === "mesh") {
-                  bgStyle = `radial-gradient(circle at 50% 50%, ${p.background.colors[0]}, ${p.background.colors[1]})`;
                 }
 
                 return (
@@ -306,40 +290,6 @@ export const VideoInspector: React.FC = () => {
               }
             />
           </Field>
-        </div>
-      </Section>
-
-      <Section title="Typography">
-        <div className="space-y-3">
-          <Field label="Font pair">
-            <Select
-              aria-label="Font pair"
-              value={
-                CURATED_FONT_PAIRS.find((p) => p.display.family === doc.style.fonts.display.family)
-                  ?.id || "inter"
-              }
-              onChange={handleFontPairChange}
-              options={CURATED_FONT_PAIRS.map((p) => ({
-                value: p.id,
-                label: p.name,
-              }))}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)] min-w-0">
-              <span className="text-[10px] text-[var(--color-text-3)] block mb-1">Display</span>
-              <span data-truncate className="font-semibold truncate block">
-                {doc.style.fonts.display.family}
-              </span>
-            </div>
-            <div className="p-2 rounded bg-[var(--color-raised)] border border-[var(--color-line)] min-w-0">
-              <span className="text-[10px] text-[var(--color-text-3)] block mb-1">Body</span>
-              <span data-truncate className="font-normal truncate block">
-                {doc.style.fonts.body.family}
-              </span>
-            </div>
-          </div>
         </div>
       </Section>
     </div>

@@ -1,12 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Layout, ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
-import {
-  CAMERA_LABELS,
-  EASING_LABELS,
-  TEXT_ANIMATION_LABELS,
-  TEXT_ROLE_LABELS,
-} from "../../src/editor/labels";
+import { CAMERA_LABELS, EASING_LABELS } from "../../src/editor/labels";
+import { BLANK_PAGE } from "../helpers/blank-page";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
@@ -19,12 +15,7 @@ interface EditorStoreHandle {
 
 interface UIStoreHandle {
   getState: () => {
-    setSelection: (
-      selection:
-        | { kind: "video" }
-        | { kind: "shot"; id: string }
-        | { kind: "text"; shotId: string; id: string },
-    ) => void;
+    setSelection: (selection: { kind: "video" } | { kind: "shot"; id: string }) => void;
   };
 }
 
@@ -58,7 +49,7 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
 ];
 
 async function resetAndOpen(page: Page, theme: Theme) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async (theme) => {
     localStorage.clear();
     sessionStorage.clear();
@@ -96,9 +87,9 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
 }
 
 /**
- * A four-shot reel with every inspector layout: a title card with a label and a title, a single
- * browser, a phone and a closing title card. No built-in template has more
- * than one shot, so it is built on Scroll Story's demo screenshot through the store.
+ * A three-shot reel with every inspector layout: an opening browser, a single browser and a
+ * phone. No built-in template has more than one shot, so it is built on Scroll Story's demo
+ * screenshot through the store.
  */
 async function openReel(page: Page) {
   await applyTemplateWithDemo(page, "scroll-story");
@@ -110,45 +101,18 @@ async function openReel(page: Page) {
     if (single.layout.kind !== "single") throw new Error("Scroll Story has no single shot");
     const assetId = single.layout.assetId;
     delete single.scroll;
-    const text = (id: string, role: "title" | "subtitle" | "label", value: string) => ({
-      id,
-      role,
-      text: value,
-      color: "",
-      font: role === "subtitle" ? ("body" as const) : ("display" as const),
-      size: role === "title" ? 6 : 2.2,
-      anchor: "center" as const,
-      align: "center" as const,
-      animation: "fadeUp" as const,
-      delay: 0.2,
-    });
-    const opening = {
-      ...structuredClone(single),
-      id: "shot-title",
-      layout: { kind: "title" as const },
-      texts: [text("txt-intro", "label", "INTRODUCING"), text("txt-title", "title", "Studio")],
-    };
+    const opening = { ...structuredClone(single), id: "shot-intro" };
     const phone = {
       ...structuredClone(single),
       id: "shot-phone",
       layout: { kind: "single" as const, device: "phone" as const, assetId },
     };
     phone.camera.preset = "orbitRight";
-    const closing = {
-      ...structuredClone(single),
-      id: "shot-outro",
-      layout: { kind: "title" as const },
-      texts: [text("txt-end", "title", "Studio"), text("txt-sub", "subtitle", "studio.example")],
-    };
-    closing.camera.preset = "pullBack";
-    // Launch Reel's durations. With four equal shots a shot card's layout label clips at
-    // 1280 px (docs/plan/follow-ups.md).
+    opening.duration = 4;
     single.duration = 4;
     phone.duration = 4;
-    opening.duration = 2.5;
-    closing.duration = 2.5;
     store.getState().apply((draft) => {
-      draft.shots = [opening, single, phone, closing];
+      draft.shots = [opening, single, phone];
     });
   });
 }
@@ -160,11 +124,7 @@ async function currentDoc(page: Page): Promise<ProjectDoc> {
   });
 }
 
-async function select(
-  page: Page,
-  selection:
-    { kind: "video" } | { kind: "shot"; id: string } | { kind: "text"; shotId: string; id: string },
-) {
+async function select(page: Page, selection: { kind: "video" } | { kind: "shot"; id: string }) {
   await page.evaluate((selection) => {
     const ui = (window as unknown as { __uiStore?: UIStoreHandle }).__uiStore;
     if (!ui) throw new Error("__uiStore is unavailable");
@@ -264,33 +224,23 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll and the cursor.
+        // Every section of a single-device shot: turn on scroll.
         const doc = await currentDoc(page);
-        const singleShot = doc.shots.find((s) => s.layout.kind === "single");
-        if (!singleShot) throw new Error("the reel has no single-device shot");
+        const singleShot = doc.shots[1];
         await select(page, { kind: "shot", id: singleShot.id });
         await inspector.getByRole("switch", { name: "Scroll through page" }).click();
-        await inspector.getByRole("switch", { name: "Show cursor" }).click();
-        await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
+        await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
 
-        // Each shot in turn: single and title layouts show different sections.
+        // Each shot in turn: single browser and phone shots show different sections.
         for (const [index, shot] of doc.shots.entries()) {
           await select(page, { kind: "shot", id: shot.id });
           await expect(inspector.getByText(`Shot ${index + 1}`, { exact: true })).toBeVisible();
           await expectNoOverflow(page, `Shot ${index + 1} inspector`);
         }
 
-        const textShot = doc.shots.find((s) => s.texts.length > 0);
-        if (!textShot) throw new Error("the reel has no text layer");
-        await select(page, { kind: "text", shotId: textShot.id, id: textShot.texts[0].id });
-        await expect(inspector.getByText("Text layer", { exact: true })).toBeVisible();
-        await expectNoOverflow(page, "Text inspector");
-
-        // The other library tabs.
-        for (const tab of ["Media", "Brand"]) {
-          await page.getByRole("tab", { name: tab }).click();
-          await expectNoOverflow(page, `${tab} tab`);
-        }
+        // The other library tab.
+        await page.getByRole("tab", { name: "Media" }).click();
+        await expectNoOverflow(page, "Media tab");
 
         // Both Frames presets, whose speed row holds the loop length chips: the single shot
         // takes a Desktop Frames, then a Mobile Frames layout with six screenshots. Last, and
@@ -303,7 +253,7 @@ test.describe("F08 overflow guard", () => {
               if (!store) throw new Error("__editorStore is unavailable");
               store.getState().apply((draft) => {
                 const shot = draft.shots.find((s) => s.id === id);
-                if (!shot || shot.layout.kind === "title") throw new Error("no single shot");
+                if (!shot) throw new Error("no single shot");
                 const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
                 shot.duration = 30;
                 shot.layout = {
@@ -324,7 +274,7 @@ test.describe("F08 overflow guard", () => {
 });
 
 // Enum ids that are camelCase can only reach the UI by mistake (e.g. "pushIn").
-const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS, TEXT_ANIMATION_LABELS, TEXT_ROLE_LABELS]
+const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
 // Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
@@ -344,7 +294,7 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await resetAndOpen(page, "dark");
   await openReel(page);
 
-  // Shots on Hero tilt and Isometric drift, beside the reel's Push in, Orbit right, Pull back.
+  // Shots on Hero tilt and Isometric drift, beside the reel's Push in.
   // Set through the store, so the checks below don't depend on finding the labels first.
   await page.evaluate(() => {
     const store = (window as unknown as { __editorStore?: EditorStoreHandle }).__editorStore;
@@ -365,10 +315,6 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
     await select(page, { kind: "shot", id: shot.id });
     await expectNoRawIds(page, `Shot ${index + 1} inspector`);
   }
-  const textShot = doc.shots.find((s) => s.texts.length > 0);
-  if (!textShot) throw new Error("the reel has no text layer");
-  await select(page, { kind: "text", shotId: textShot.id, id: textShot.texts[0].id });
-  await expectNoRawIds(page, "Text inspector");
 
   // The human labels are the ones the task names.
   const timeline = page.locator('[data-panel="timeline"]');
