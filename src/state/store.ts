@@ -22,7 +22,6 @@ import {
   steppedAssetIds,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
-import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -74,7 +73,6 @@ export interface EditorStoreState {
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
-  applyBrandKit: (kit: BrandKit) => void;
 
   // Timeline / storyboard actions
   addShot: (layout?: Layout, insertAfterIndex?: number) => void;
@@ -482,20 +480,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },
-      );
-    },
-
-    applyBrandKit: (kit: BrandKit) => {
-      get().apply(
-        (draft) => {
-          if (kit.colors[1]) {
-            draft.style.accent = kit.colors[1];
-          }
-          if (kit.browserUrl !== undefined) {
-            draft.style.browserUrl = kit.browserUrl;
-          }
-        },
-        { label: `Apply brand kit "${kit.name}"` },
       );
     },
 

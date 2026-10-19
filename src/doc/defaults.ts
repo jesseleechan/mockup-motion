@@ -15,7 +15,6 @@ export function defaultStyle(): Style {
     shadow: "soft",
     grain: 0.25,
     vignette: 0.06,
-    accent: "#7C93FF",
   };
 }
 

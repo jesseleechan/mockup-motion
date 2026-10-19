@@ -220,14 +220,15 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       expect(validateTemplateRequirements(mobileFrames, [...mobile, fourth]).valid).toBe(true);
     });
 
-    it("applyTemplate preserves the user's accent", () => {
-      const template = BUILTIN_TEMPLATES.find((t) => t.id === "scroll-story")!;
+    it("applyTemplate preserves the user's browser chrome", () => {
+      // Scroll Story sets its own chrome; the slider keeps the document's.
+      const template = BUILTIN_TEMPLATES.find((t) => t.id === "desktop-slider")!;
       const doc = createDoc();
       doc.assets = sampleAssets;
-      doc.style.accent = "#FF5500";
+      doc.style.browserChrome = "minimal";
 
       const applied = applyTemplate(template, doc);
-      expect(applied.style.accent).toBe("#FF5500");
+      expect(applied.style.browserChrome).toBe("minimal");
     });
   });
 
