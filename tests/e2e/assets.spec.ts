@@ -72,7 +72,9 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "every built-in template is a lab fixture").toBe(BUILTIN_TEMPLATES.length);
+  expect(results.map((r) => r.id).sort(), "every built-in template is a lab fixture").toEqual(
+    BUILTIN_TEMPLATES.map((t) => t.id).sort(),
+  );
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",

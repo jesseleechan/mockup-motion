@@ -305,12 +305,12 @@ export class Engine {
     this.textPass.retainOnly(rasters.keys());
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
-    // Slider neighbours and orbit cards are faded cards (quality bar §3.1), mixed in sRGB like
-    // the slider reference.
+    // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
+    // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference.
     const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
     this.deviceFade.prepare(this.renderer, this.targetA, {
       fade: hasStepped || doc.shots.some((_, index) => shotEntrance(doc, index) !== "none"),
-      srgb: hasStepped,
+      srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) !== "linear"),
     });
 
     // Warm-up compilation
