@@ -63,7 +63,6 @@
     "fps": 30,
     "quality": "high",
     "format": "mp4",
-    "supersample": 1,
-    "motionBlur": false
+    "supersample": 1
   }
 }

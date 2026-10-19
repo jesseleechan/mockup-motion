@@ -1,12 +1,17 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { BUILTIN_TEMPLATES } from "../../src/templates";
+import { TEMPLATE_CATEGORY_LABELS } from "../../src/editor/labels";
+import { templateInCategory } from "../../src/templates/category";
+import { BUILTIN_TEMPLATES } from "../../src/templates/registry";
 
-// Each gallery tab lists the templates of its size, in registry order.
-const idsOf = (category: "desktop" | "mobile") =>
-  BUILTIN_TEMPLATES.filter((t) => t.category === category).map((t) => t.id);
+/** The templates a gallery tab shows, in gallery order, and the tab label on each card. */
+const tabTemplates = (tab: "desktop" | "mobile") =>
+  BUILTIN_TEMPLATES.filter((t) => templateInCategory(t, tab));
+const tabIds = (tab: "desktop" | "mobile") => tabTemplates(tab).map((t) => t.id);
+const tabLabels = (tab: "desktop" | "mobile") =>
+  tabTemplates(tab).map((t) => TEMPLATE_CATEGORY_LABELS[t.category]);
 
-test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
+test.describe("Wave 5: Templates & Gallery, Scroll, Export v2", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/lab/ui");
     await page.evaluate(async () => {
@@ -36,9 +41,9 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
         .getByTestId("library-template-card")
         .evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await library.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(idsOf("mobile"));
+    await expect.poll(libraryIds).toEqual(tabIds("mobile"));
     await library.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect.poll(libraryIds).toEqual(idsOf("desktop"));
+    await expect.poll(libraryIds).toEqual(tabIds("desktop"));
     await library.getByRole("button", { name: "All", exact: true }).click();
 
     // Open Library panel Templates tab
@@ -62,23 +67,21 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const cardIds = () =>
       cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-template-id")));
     await modal.getByRole("button", { name: "Mobile", exact: true }).click();
-    await expect.poll(cardIds).toEqual(idsOf("mobile"));
-    // Each card names its tab in words, never the raw id
-    await expect(modal.getByTestId("template-category")).toHaveText(
-      idsOf("mobile").map(() => "Mobile"),
-    );
+    // Each tab shows the registry's templates for that size (a desktop + mobile one under both),
+    // and each card names its tab in words, never the raw id.
+    await expect.poll(cardIds).toEqual(tabIds("mobile"));
+    await expect(modal.getByTestId("template-category")).toHaveText(tabLabels("mobile"));
     await modal.getByRole("button", { name: "Desktop", exact: true }).click();
-    await expect.poll(cardIds).toEqual(idsOf("desktop"));
-    await expect(modal.getByTestId("template-category")).toHaveText(
-      idsOf("desktop").map(() => "Desktop"),
-    );
+    await expect.poll(cardIds).toEqual(tabIds("desktop"));
+    await expect(modal.getByTestId("template-category")).toHaveText(tabLabels("desktop"));
     await modal.getByRole("button", { name: "All", exact: true }).click();
     await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
 
     // Search filter
     const searchInput = modal.getByPlaceholder(/Search templates/i);
     await searchInput.fill("Scroll");
-    await expect(modal.getByRole("heading", { name: "Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Desktop Scroll Story" })).toBeVisible();
+    await expect(modal.getByRole("heading", { name: "Mobile Scroll Story" })).toBeVisible();
 
     // Clear search
     await searchInput.fill("");
@@ -107,18 +110,16 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     expect(serious).toEqual([]);
   });
 
-  test("WP-15: Scroll Story and Cursor Overlay inspector controls toggle and configure", async ({
-    page,
-  }) => {
+  test("WP-15: Scroll Story inspector controls toggle and configure", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
 
-    // Scroll and cursor are single-device controls, and the first-run demo is Desktop Slider
+    // Scroll is a single-device control, and the first-run demo is Desktop Slider
     // (presets D1), so switch to Scroll Story's single browser first.
     await page.getByRole("button", { name: "Browse all templates" }).click();
     const gallery = page.getByRole("dialog");
-    await gallery.getByRole("button", { name: "Select template Scroll Story" }).click();
+    await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 
@@ -126,7 +127,7 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     const shot1Card = page.locator(".group", { hasText: "Shot 1" });
     await shot1Card.click();
 
-    // 1. Scroll section
+    // Scroll section
     await expect(page.getByText("Scroll through page")).toBeVisible();
     const scrollSwitch = page.getByRole("switch", { name: "Scroll through page" });
     await expect(scrollSwitch).toBeVisible();
@@ -144,22 +145,6 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     await scrollSwitch.click();
     await expect(scrollSwitch).toHaveAttribute("data-state", "checked");
     await expect(page.getByText("Hold", { exact: true })).toBeVisible();
-
-    // 2. Cursor section
-    await expect(page.getByText("Show cursor")).toBeVisible();
-    const cursorSwitch = page.getByRole("switch", { name: "Show cursor" });
-    await expect(cursorSwitch).toBeVisible();
-
-    // Toggle cursor ON
-    await cursorSwitch.click();
-    expect(await cursorSwitch.getAttribute("data-state")).toBe("checked");
-
-    // Cursor Style and Keyframes should be visible
-    await expect(page.getByRole("combobox", { name: "Cursor style" })).toBeVisible();
-    await expect(page.getByText(/Keyframes/i)).toBeVisible();
-
-    // Verify initial keyframe with Click badge is rendered
-    await expect(page.getByText("Click", { exact: true })).toBeVisible();
   });
 
   test("WP-16: Export v2 destination presets switch dimensions, formats, and passes Axe scan", async ({
@@ -194,10 +179,10 @@ test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
     // Select 4K presentation preset
     await dialog.getByRole("button", { name: "4K presentation", exact: true }).click();
 
-    // Verify format dropdown options include MP4, WebM, Web Bundle, GIF, Still Frame
+    // Verify format dropdown options include MP4, WebM, Web Bundle, Still Frame
     const formatSelect = dialog.getByRole("combobox").first();
     await formatSelect.click();
-    await expect(page.getByRole("option", { name: /Animated GIF/i })).toBeVisible();
+    await expect(page.getByRole("option", { name: /Still frame/i })).toBeVisible();
     await expect(page.getByRole("option", { name: /Web Bundle/i })).toBeVisible();
     await page.keyboard.press("Escape");
 

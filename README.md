@@ -30,37 +30,41 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 ## Choose a template
 
-Start with a template, or try the demo content. Seven templates: Desktop Slider, Mobile Slider, Desktop Frames, Mobile Frames, Desktop Orbit, Mobile Orbit and Scroll Story.
+Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
 
 Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
 
+## Responsive Scroll
+
+Responsive Scroll shows the desktop and mobile versions of one page side by side (stacked at 4:5 and 9:16), scrolling together and pausing on the same sections. It needs one desktop and one mobile full-page screenshot. Drop the JSON files `npm run capture` writes next to them, and both screens stop on the page's sections; without them, they stop at the same points down each page. Pick the sections in the shot inspector under Scroll stops.
+
 ## Scroll Story
 
-Scrolling is off unless you pick Scroll Story or turn on "Scroll through page" for a shot. A tall screenshot never starts moving on its own. When scroll is on, the shot inspector shows its stops, the hold at each stop and the easing.
+Scrolling is off unless you pick Desktop Scroll Story or Mobile Scroll Story, or turn on "Scroll through page" for a shot. Mobile Scroll Story scrolls a tall mobile screenshot on a phone. Both last 10 s, or longer when a page needs it to stay under 0.9 screen heights per second. A tall screenshot never starts moving on its own. When scroll is on, the shot inspector shows its stops, the hold at each stop and the easing.
 
 ## Reels
 
 Add shots on the timeline. Between two shots, pick a cut or a fade, blur, push, zoom or wipe transition. A looping video also has a wrap transition from the last shot back to the first, so the camera never reverses.
 
-## Music
+## Sound
 
-Optional. Add an MP3, M4A, WAV or OGG file from the timeline. Drag the clip to offset it, and set its volume and fades. Fades go up to 3 seconds; by default the fade-in is 0.5 seconds and the fade-out 1.5 seconds, so a loop doesn't cut the track. Music is mixed into MP4 (AAC) and WebM (Opus). GIF, PNG and the web bundle stay silent.
+Videos are silent. Music was removed in October 2026; a saved project with a music track still opens, without the music.
 
 ## Export
 
-Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip), animated GIF and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. GIFs are capped at 960 px on the short side and 20 fps.
+Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip) and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. Animated GIF export and motion blur were removed in October 2026; a saved project that used them opens with MP4 and no motion blur.
 
-Each destination is a starting point for the settings:
+Each destination is a starting point for the settings. The dialog opens on Custom, an MP4 at 1080p in your project's aspect:
 
-| Destination     | Format              | Resolution  | Suggested aspect   |
-| --------------- | ------------------- | ----------- | ------------------ |
-| Website         | Web bundle (.zip)   | 1080p       | 16:9               |
-| Dribbble        | MP4                 | 1200p       | 4:3 (1600 × 1200)  |
-| Instagram       | MP4                 | 1080p       | 4:5 (1080 × 1350)  |
-| Story           | MP4                 | 1080p       | 9:16 (1080 × 1920) |
-| LinkedIn & X    | MP4                 | 1080p       | 16:9               |
-| 4K presentation | MP4, master quality | 2160p       | 16:9               |
-| Custom          | Your choice         | Your choice | Your project's     |
+| Destination     | Format              | Resolution | Suggested aspect   |
+| --------------- | ------------------- | ---------- | ------------------ |
+| Custom          | MP4 (default)       | 1080p      | Your project's     |
+| Website         | Web bundle (.zip)   | 1080p      | 16:9               |
+| Dribbble        | MP4                 | 1200p      | 4:3 (1600 × 1200)  |
+| Instagram       | MP4                 | 1080p      | 4:5 (1080 × 1350)  |
+| Story           | MP4                 | 1080p      | 9:16 (1080 × 1920) |
+| LinkedIn & X    | MP4                 | 1080p      | 16:9               |
+| 4K presentation | MP4, master quality | 2160p      | 16:9               |
 
 A destination doesn't change the project's aspect on its own. If they differ, the dialog says so and offers "Switch to 4:3" (for example). Until you switch, a 16:9 project exported for Dribbble comes out at 2134 × 1200.
 
@@ -93,9 +97,7 @@ A web bundle holds an MP4, a WebM, a WebP poster and `embed.html` with the snipp
 
 Put the files next to the page. The script pauses the video when the visitor prefers reduced motion.
 
-Export stays on this machine. Each finished file is read back and checked ("Verified MP4"). Cancel stops the encode and leaves the editor usable. If this browser can't encode the audio codec, the video exports without music and the result says so.
-
-GIF export is slow and large. A 6-second GIF at the 1080p setting (1708 × 960, 20 fps) took over a minute, froze the page while encoding, and came out at 83 MB. For GIFs, use 720p or a shorter video.
+Export stays on this machine. Each finished file is read back and checked ("Verified MP4"). Cancel stops the encode and leaves the editor usable.
 
 ## Projects
 
@@ -128,9 +130,8 @@ Every claim above was checked on 7 Oct 2026 (F14) by running the app with `npm r
 | Uploads and assigning   | A PNG uploaded after demo content went to the library only; dragging it onto the stage device moved slot 1 to it. A WebP dropped on the window was added. `polish.spec.ts` "rejects corrupt and oversized screenshots"; types from `src/assets/decode.ts` |
 | Scroll Story            | "Scroll through page" is off on a new shot with a tall screenshot; turning it on shows stops, hold and easing. `tests/e2e/wave5.spec.ts` "WP-15: Scroll Story…"                                                                                           |
 | Reels                   | The transition picker lists Cut, Fade, Blur, Push, Zoom and Wipe, and the timeline has a "Loop wrap transition" chip. `tests/timeline.test.ts`, `tests/motion.test.ts` loop seams                                                                         |
-| Music                   | The file input accepts .mp3, .m4a, .wav and .ogg; fade sliders read 0.5 / 3 and 1.5 / 3. `tests/e2e/audio.spec.ts` (offset drag, fades, export track length, silent bundle and GIF), `tests/audio.test.ts` (codec fallback warning)                       |
 | Export                  | Destinations, formats and resolutions read from the dialog; "Switch to 4:3" changed Dribbble to 1600 × 1200. `tests/e2e/export.spec.ts` "F09 destination presets export at their size and length"                                                         |
 | Web bundle              | A 720p Website export: the zip held `untitled-presentation.mp4`, `.webm`, `-poster.webp` and `embed.html`; both videos verified; the snippet above is the dialog's text, formatted by Prettier                                                            |
-| GIF and PNG             | Exported both from the dialog and verified (GIF 1708 × 960, 83 MB; PNG 1920 × 1080)                                                                                                                                                                       |
+| PNG                     | Exported from the dialog and verified (PNG 1920 × 1080)                                                                                                                                                                                                   |
 | Cancel                  | `tests/e2e/export-dialog.spec.ts` "cancel stops the worker and returns to the settings"                                                                                                                                                                   |
 | Projects                | The Projects dialog lists rename, duplicate and delete. `polish.spec.ts` "projects can be duplicated and deleted" and "storage quota surfaces a calm error…"                                                                                              |

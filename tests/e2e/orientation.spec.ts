@@ -271,19 +271,9 @@ test("F01 decoded WebM frame preserves card quadrant orientation", async ({ page
     const provider = makeProvider();
     // The F01 fixture is 640x360; product presets intentionally omit this test-only size.
     const smallFixtureResolution = 360 as ProjectDoc["export"]["resolution"];
-    const result = await exportFn(
-      doc,
-      { ...provider, getImage: async () => images.quadrants(1600, 1000) },
-      {
-        destination: "custom",
-        resolution: smallFixtureResolution,
-        fps: 30,
-        quality: "high",
-        format: "webm",
-        supersample: 1,
-        motionBlur: false,
-      },
-    );
+    const result = await exportFn(doc, { ...provider, getImage: async () => images.quadrants(1600, 1000) }, {
+      destination: "custom", resolution: smallFixtureResolution, fps: 30, quality: "high", format: "webm", supersample: 1,
+    });
     const media = window.__mediabunnyTest;
     if (!media) throw new Error("Mediabunny browser test module is unavailable");
     const input = new media.Input({

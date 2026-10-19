@@ -72,7 +72,9 @@ test("F03: every built-in template loads a texture for every screen", async ({ p
     }
     return out;
   });
-  expect(results.length, "every built-in template is a lab fixture").toBe(BUILTIN_TEMPLATES.length);
+  expect(results.map((r) => r.id).sort(), "every built-in template is a lab fixture").toEqual(
+    BUILTIN_TEMPLATES.map((t) => t.id).sort(),
+  );
   expect(
     results.filter((result) => result.nodes === 0).map((result) => result.id),
     "templates that draw no devices at 50%",
@@ -323,7 +325,6 @@ test("F03: every multi-asset layout requests each independent image", async ({ p
           return bitmapById[id] ?? provider.getImage(id, width);
         },
         getText: provider.getText.bind(provider),
-        getAudio: provider.getAudio?.bind(provider),
       });
       engine.renderAt(3);
       missing.push(...ids.filter((id) => !requested.has(id)).map((id) => `${layout.kind}:${id}`));
@@ -405,7 +406,6 @@ test("F03: a pair's WebM export contains both screen assets", async ({ page }) =
         return bitmaps[id] ?? baseProvider.getImage(id, maxWidth);
       },
       getText: baseProvider.getText.bind(baseProvider),
-      getAudio: baseProvider.getAudio?.bind(baseProvider),
     };
     const result = await exportFn(doc, provider, {
       destination: "custom",
@@ -414,7 +414,6 @@ test("F03: a pair's WebM export contains both screen assets", async ({ page }) =
       quality: "web",
       format: "webm",
       supersample: 1,
-      motionBlur: false,
     });
     const input = new media.Input({
       source: new media.BlobSource(result.blob),

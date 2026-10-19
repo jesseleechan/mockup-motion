@@ -150,22 +150,6 @@ test("F02 grain is zero-mean monochrome, bounded and deterministic in every chan
     expect(deviation).toBeLessThan(8);
   }
 });
-test("F02 static accumulated frame preserves colour for 2, 4 and 8 samples", async ({ page }) => {
-  await ready(page, BACKGROUND_ONLY);
-  const base = await background(page, { kind: "solid", color: "#3366CC" });
-  const accumulated = await page.evaluate(() => {
-    const engine = window.__labEngine;
-    if (!engine) throw new Error("Engine unavailable");
-    return [2, 4, 8].map((samples) => {
-      engine.renderAccumulated(1, 0.2, samples);
-      return { width: 1280, height: 720, data: engine.readPixels() };
-    });
-  });
-  for (const frame of accumulated) {
-    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), [51, 102, 204], 1);
-    expectRgbNear(avgRegion(frame, 600, 320, 680, 400), avgRegion(base, 600, 320, 680, 400), 1);
-  }
-});
 test("F02 transition fade blends in linear light", async ({ page }) => {
   await ready(page, BACKGROUND_ONLY);
   const pixels = await page.evaluate(async () => {

@@ -78,12 +78,6 @@ describe("F03: collectAssetIds", () => {
     expect([...collectAssetIds(doc)].sort()).toEqual(["doc-ambient", "shot-ambient", "shot-image"]);
   });
 
-  it("excludes audio", () => {
-    const doc = docWith([{ kind: "single", device: "browser", assetId: "s" }]);
-    doc.audio = { assetId: "music", volume: 1, fadeIn: 0, fadeOut: 0, offset: 0 };
-    expect([...collectAssetIds(doc)]).toEqual(["s"]);
-  });
-
   it("deduplicates ids shared across shots and slots", () => {
     const doc = docWith([
       { kind: "single", device: "browser", assetId: "a" },

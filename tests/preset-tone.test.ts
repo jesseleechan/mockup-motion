@@ -21,8 +21,11 @@ const TONE_TEMPLATES = [
   "mobile-slider",
   "frames",
   "mobile-frames",
+  "desktop-stack",
+  "mobile-stack",
   "desktop-orbit",
   "mobile-orbit",
+  "responsive-scroll",
 ];
 
 function presetDoc(id: string): ProjectDoc {
