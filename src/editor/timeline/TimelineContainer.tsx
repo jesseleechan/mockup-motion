@@ -4,8 +4,7 @@ import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { schedule } from "../../motion";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
-import { shotSummary } from "../labels";
-import { formatSeconds } from "../loop-length";
+import { formatSeconds, shotSummary } from "../labels";
 import { scrubberKeyTime, timeToX, timelineMarks, xToTime } from "./marks";
 
 // A step tick within this distance of the pointer catches a scrub, so a step is easy to land on.
