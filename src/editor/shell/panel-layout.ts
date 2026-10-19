@@ -8,8 +8,8 @@ export type PanelWidths = Record<SidePanel, number>;
 
 export const PANEL_DEFAULT_WIDTHS: PanelWidths = { library: 280, inspector: 304 };
 // The narrowest each panel's content fits without clipping (tests/e2e/ui-overflow.spec.ts):
-// the library's tab row needs 272 px, and the inspector's selects clip below its 304 px.
-export const PANEL_MIN_WIDTHS: PanelWidths = { library: 272, inspector: 304 };
+// the library's cards and tab row read at 240 px; the inspector's selects clip below 304 px.
+export const PANEL_MIN_WIDTHS: PanelWidths = { library: 240, inspector: 304 };
 export const PANEL_MAX_WIDTH = 420;
 /** The stage never gets narrower than this because of a panel. */
 export const STAGE_MIN_WIDTH = 480;

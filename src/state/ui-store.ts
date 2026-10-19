@@ -6,8 +6,7 @@ import {
   type SidePanel,
 } from "../editor/shell/panel-layout";
 
-export type UISelection =
-  { kind: "video" } | { kind: "shot"; id: string } | { kind: "text"; shotId: string; id: string };
+export type UISelection = { kind: "video" } | { kind: "shot"; id: string };
 
 export interface UIState {
   selection: UISelection;

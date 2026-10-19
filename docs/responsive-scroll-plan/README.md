@@ -1,6 +1,6 @@
 # Responsive Scroll plan
 
-**Status: in progress.** Written 18 October 2026. The owner decided D1–D6 the same day: "go with your recommendations" (§3). The plan is [#45](https://github.com/jesseleechan/mockup-motion/pull/45); R01 is [#47](https://github.com/jesseleechan/mockup-motion/pull/47).
+**Status: done.** Written 18 October 2026; all tasks merged on 19 October 2026. The owner decided D1–D6 the same day: "go with your recommendations" (§3). The plan is [#45](https://github.com/jesseleechan/mockup-motion/pull/45); R01 is [#47](https://github.com/jesseleechan/mockup-motion/pull/47).
 
 On 18 October 2026 the owner approved four preset proposals from a shortlist with live previews. Each one is built in its own session. This plan covers **Responsive Scroll** only: the desktop and mobile versions of one page scroll together, section by section, and stop on the same sections.
 
@@ -88,15 +88,15 @@ Smaller choices this plan makes unless the owner says otherwise:
 
 ## 4. Tasks
 
-| Task | Title                                                                                        | Size | Depends on       | Status                                                                                       |
-| ---- | -------------------------------------------------------------------------------------------- | ---- | ---------------- | -------------------------------------------------------------------------------------------- |
-| R00  | This plan; decisions recorded in `quality-bar.md` and `contracts.md` once answered           | S    | —                | Done: [#45](https://github.com/jesseleechan/mockup-motion/pull/45)                           |
-| R01  | Demo section data: `sections-mobile.json` for the five demo sites, `demo:capture` writes it  | S    | —                | In review: [#47](https://github.com/jesseleechan/mockup-motion/pull/47)                      |
-| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | In review: [#52](https://github.com/jesseleechan/mockup-motion/pull/52)                      |
-| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | In review: [#54](https://github.com/jesseleechan/mockup-motion/pull/54)                      |
-| R04  | Rendering: lab fixtures and stills at five aspects                                           | S    | R03              | In review: [#55](https://github.com/jesseleechan/mockup-motion/pull/55)                      |
-| R05  | Template, gallery placement, slot pairing, inspector                                         | M    | R02, R03, R04    | In review: [#58](https://github.com/jesseleechan/mockup-motion/pull/58)                      |
-| R06  | Previews, contact sheet, owner review, visual baselines (**owner review gate**)              | S    | R05              | Waiting for the owner's review: [#59](https://github.com/jesseleechan/mockup-motion/pull/59) |
+| Task | Title                                                                                        | Size | Depends on       | Status                                                                                           |
+| ---- | -------------------------------------------------------------------------------------------- | ---- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| R00  | This plan; decisions recorded in `quality-bar.md` and `contracts.md` once answered           | S    | —                | Done: [#45](https://github.com/jesseleechan/mockup-motion/pull/45)                               |
+| R01  | Demo section data: `sections-mobile.json` for the five demo sites, `demo:capture` writes it  | S    | —                | Done: [#47](https://github.com/jesseleechan/mockup-motion/pull/47)                               |
+| R02  | Section data on assets: `AssetRef.meta.sections` and `page`, capture JSON import, validation | M    | R00 (D4, D6)     | Done: [#52](https://github.com/jesseleechan/mockup-motion/pull/52)                               |
+| R03  | Motion: the `responsive` layout, section stops, shared timing, fallback, duration            | M    | R00 (D3, D5, D6) | Done: [#54](https://github.com/jesseleechan/mockup-motion/pull/54)                               |
+| R04  | Rendering: lab fixtures and stills at five aspects                                           | S    | R03              | Done: [#55](https://github.com/jesseleechan/mockup-motion/pull/55)                               |
+| R05  | Template, gallery placement, slot pairing, inspector                                         | M    | R02, R03, R04    | Done: [#58](https://github.com/jesseleechan/mockup-motion/pull/58)                               |
+| R06  | Previews, contact sheet, owner review, visual baselines (**owner review gate**)              | S    | R05              | Done, stills approved by the owner: [#59](https://github.com/jesseleechan/mockup-motion/pull/59) |
 
 R01 needs no decision and runs while the owner answers. R02 and R03 can run side by side once the decisions are in.
 

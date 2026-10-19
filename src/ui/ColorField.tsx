@@ -9,7 +9,6 @@ export interface ColorFieldProps {
   value: string; // e.g. '#6366F1'
   onChange: (hex: string) => void;
   paletteSwatches?: string[];
-  brandSwatches?: string[];
   disabled?: boolean;
   className?: string;
   "aria-label"?: string;
@@ -28,7 +27,6 @@ export const ColorField: React.FC<ColorFieldProps> = ({
     "#F59E0B",
     "#EF4444",
   ],
-  brandSwatches,
   disabled = false,
   className,
   "aria-label": ariaLabel,
@@ -122,29 +120,6 @@ export const ColorField: React.FC<ColorFieldProps> = ({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {paletteSwatches.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => {
-                      onChange(color);
-                      setHexInput(color);
-                    }}
-                    className="w-5 h-5 rounded-xs border border-[var(--color-line)] cursor-pointer hover:scale-110 transition-transform"
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {brandSwatches && brandSwatches.length > 0 && (
-            <div>
-              <div className="text-[11px] font-medium text-[var(--color-text-3)] mb-1.5 uppercase tracking-wider">
-                Brand kit
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {brandSwatches.map((color) => (
                   <button
                     key={color}
                     type="button"

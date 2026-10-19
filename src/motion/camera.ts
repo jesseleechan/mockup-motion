@@ -25,46 +25,6 @@ export const PRESET_POSES: Record<CameraPresetId, { from: CameraPose; to: Camera
     from: { yaw: 0, pitch: 0, roll: 0, distance: 1.1, panX: 0, panY: 0, fov: 22 },
     to: { yaw: 0, pitch: 0, roll: 0, distance: 0.98, panX: 0, panY: 0, fov: 22 },
   },
-  pullBack: {
-    from: { yaw: 0, pitch: 0, roll: 0, distance: 0.92, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: 0, pitch: 0, roll: 0, distance: 1.06, panX: 0, panY: 0, fov: 22 },
-  },
-  orbitLeft: {
-    from: { yaw: 14, pitch: 6, roll: 0, distance: 1.05, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: -4, pitch: 6, roll: 0, distance: 1.05, panX: 0, panY: 0, fov: 22 },
-  },
-  orbitRight: {
-    from: { yaw: -14, pitch: 6, roll: 0, distance: 1.05, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: 4, pitch: 6, roll: 0, distance: 1.05, panX: 0, panY: 0, fov: 22 },
-  },
-  tiltUp: {
-    from: { yaw: 0, pitch: 14, roll: 0, distance: 1.04, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: 0, pitch: 4, roll: 0, distance: 1.04, panX: 0, panY: 0, fov: 22 },
-  },
-  tiltDown: {
-    from: { yaw: 0, pitch: 4, roll: 0, distance: 1.04, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: 0, pitch: 14, roll: 0, distance: 1.04, panX: 0, panY: 0, fov: 22 },
-  },
-  riseUp: {
-    from: { yaw: 0, pitch: 8, roll: 0, distance: 1.0, panX: 0, panY: -0.06, fov: 22 },
-    to: { yaw: 0, pitch: 3, roll: 0, distance: 1.0, panX: 0, panY: 0.02, fov: 22 },
-  },
-  dollyLeft: {
-    from: { yaw: 6, pitch: 0, roll: 0, distance: 1.0, panX: 0.08, panY: 0, fov: 22 },
-    to: { yaw: 6, pitch: 0, roll: 0, distance: 1.0, panX: -0.08, panY: 0, fov: 22 },
-  },
-  dollyRight: {
-    from: { yaw: -6, pitch: 0, roll: 0, distance: 1.0, panX: -0.08, panY: 0, fov: 22 },
-    to: { yaw: -6, pitch: 0, roll: 0, distance: 1.0, panX: 0.08, panY: 0, fov: 22 },
-  },
-  isoDrift: {
-    from: { yaw: 34, pitch: 28, roll: 0, distance: 1.0, panX: -0.025, panY: -0.025, fov: 22 },
-    to: { yaw: 34, pitch: 28, roll: 0, distance: 1.0, panX: 0.025, panY: 0.025, fov: 22 },
-  },
-  heroTilt: {
-    from: { yaw: -20, pitch: 10, roll: -2, distance: 1.08, panX: 0, panY: 0, fov: 22 },
-    to: { yaw: -10, pitch: 6, roll: 0, distance: 1.0, panX: 0, panY: 0, fov: 22 },
-  },
 };
 
 type NumericPoseKey = "yaw" | "pitch" | "roll" | "distance" | "panX" | "panY";
@@ -78,15 +38,8 @@ export function cameraPose(
   shotDuration: number,
 ): CameraPose {
   const base = PRESET_POSES[move.preset] ?? PRESET_POSES.static;
-  const [pStart, pEnd] = move.progressRange ?? [0, 1];
-  const clampedP = Math.max(0, Math.min(1, p));
-  const effectiveP = pStart + clampedP * (pEnd - pStart);
-  const easedP = ease(move.easing, effectiveP);
+  const easedP = ease(move.easing, Math.max(0, Math.min(1, p)));
   const intensity = Math.max(0, Math.min(1, move.intensity));
-
-  // Base aspect scaling for dolly
-  const isDolly = move.preset === "dollyLeft" || move.preset === "dollyRight";
-  const aspectScale = isDolly ? aspectRatioValue(aspect) / (16 / 9) : 1.0;
 
   const result: CameraPose = {
     yaw: 0,
@@ -99,12 +52,8 @@ export function cameraPose(
   };
 
   for (const key of POSE_KEYS) {
-    let fromVal = base.from[key];
-    let toVal = base.to[key];
-    if (key === "panX" && isDolly) {
-      fromVal *= aspectScale;
-      toVal *= aspectScale;
-    }
+    const fromVal = base.from[key];
+    const toVal = base.to[key];
     const mid = (fromVal + toVal) * 0.5;
     const delta = toVal - fromVal;
     // intensity scales delta around midpoint pose

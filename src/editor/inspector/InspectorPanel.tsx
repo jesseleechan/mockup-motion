@@ -3,7 +3,6 @@ import { useUIStore } from "../../state/ui-store";
 import { useEditorStore } from "../../state/store";
 import { VideoInspector } from "./VideoInspector";
 import { ShotInspector } from "./ShotInspector";
-import { TextInspector } from "./TextInspector";
 import { Icon, Tooltip } from "../../ui";
 import { ChevronRight, PanelRightClose } from "lucide-react";
 
@@ -18,8 +17,6 @@ export const InspectorPanel: React.FC = () => {
   if (selection.kind === "shot") {
     const idx = doc.shots.findIndex((s) => s.id === selection.id);
     title = idx !== -1 ? `Shot ${idx + 1}` : "Shot";
-  } else if (selection.kind === "text") {
-    title = "Text";
   }
 
   return (
@@ -61,9 +58,6 @@ export const InspectorPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-3 pr-2 space-y-4">
         {selection.kind === "video" && <VideoInspector />}
         {selection.kind === "shot" && <ShotInspector shotId={selection.id} />}
-        {selection.kind === "text" && (
-          <TextInspector shotId={selection.shotId} textId={selection.id} />
-        )}
       </div>
     </aside>
   );

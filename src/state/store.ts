@@ -1,19 +1,8 @@
 import { create } from "zustand";
-import { produce, current } from "immer";
-import { createDoc, defaultShot } from "../doc/defaults";
+import { produce } from "immer";
+import { createDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type {
-  AssetMeta,
-  AssetRef,
-  AssetRole,
-  AudioTrack,
-  Layout,
-  ProjectDoc,
-  Shot,
-  Style,
-  Transition,
-} from "../doc/types";
-import { clampAudioTrack, defaultAudioTrack } from "../audio/mix";
+import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -24,7 +13,6 @@ import {
   steppedAssetIds,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
-import type { BrandKit } from "../storage/brand-kits";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -72,29 +60,13 @@ export interface EditorStoreState {
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
-  /** Adds a screenshot to a layout that shows a list of them (rows, columns, wall, stack, slider). */
+  /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
-  applyBrandKit: (kit: BrandKit) => void;
 
-  // Music track (WP-17)
-  setMusic: (ref: AssetRef, blob: Blob) => Promise<void>;
-  updateMusic: (
-    patch: Partial<Omit<AudioTrack, "assetId">>,
-    opts?: { coalesceKey?: string },
-  ) => void;
-  removeMusic: () => void;
-
-  // Timeline / storyboard actions
-  addShot: (layout?: Layout, insertAfterIndex?: number) => void;
-  duplicateShot: (index: number) => void;
-  removeShot: (index: number) => void;
-  moveShot: (fromIndex: number, toIndex: number) => void;
+  // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
-  setTransition: (shotIndex: number, transition: Transition) => void;
-  splitShot: (index: number, splitLocalT: number) => void;
-  setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
@@ -106,9 +78,17 @@ const COALESCE_WINDOW_MS = 800;
  * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
  * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
  * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
+ * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
  */
-function fitSliderShots(draft: ProjectDoc): void {
+function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
+    if (shot.layout.kind === "responsive") {
+      const duration = fixedShotDuration(shot.layout, shot.scroll, draft.assets);
+      if (duration !== null && duration !== shot.duration) shot.duration = duration;
+      const camera = fixedShotCamera(shot.layout, shot.camera);
+      if (camera !== shot.camera) shot.camera = camera;
+      continue;
+    }
     if (!isSteppedLayout(shot.layout)) continue;
     shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
     shot.duration = sliderDuration(shot.layout);
@@ -136,7 +116,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       const current = get().doc;
       const next = produce(current, (draft) => {
         recipe(draft);
-        fitSliderShots(draft);
+        fitFixedShots(draft);
       });
 
       // No-op if doc reference didn't change (no modifications)
@@ -319,63 +299,13 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           draft.assets = draft.assets.filter((a) => a.id !== id);
-          if (draft.audio?.assetId === id) delete draft.audio;
-          // Sanitize references to removed asset across layouts/texts
+          // Sanitize references to the removed asset across layouts and backgrounds
           const { doc } = sanitizeDoc(draft);
           draft.style = doc.style;
           draft.shots = doc.shots;
         },
         { label: "Remove asset" },
       );
-    },
-
-    setMusic: async (ref: AssetRef, blob: Blob) => {
-      const previousId = get().doc.assets.find((a) => a.kind === "audio")?.id;
-      await putBlob(ref.id, blob);
-      if (previousId && previousId !== ref.id) {
-        try {
-          await deleteBlob(previousId);
-        } catch (error) {
-          console.error(`Failed to remove replaced audio blob ${previousId}:`, error);
-        }
-      }
-      get().apply(
-        (draft) => {
-          // One music track per project: replace any previous audio asset.
-          draft.assets = draft.assets.filter((a) => a.kind !== "audio");
-          draft.assets.push(ref);
-          draft.audio = defaultAudioTrack(ref.id);
-        },
-        { label: "Add music" },
-      );
-    },
-
-    updateMusic: (patch, opts) => {
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          draft.audio = clampAudioTrack({ ...draft.audio, ...patch });
-        },
-        { label: "Edit music", coalesceKey: opts?.coalesceKey },
-      );
-    },
-
-    removeMusic: () => {
-      const id = get().doc.audio?.assetId;
-      get().apply(
-        (draft) => {
-          if (!draft.audio) return;
-          const assetId = draft.audio.assetId;
-          delete draft.audio;
-          draft.assets = draft.assets.filter((a) => a.id !== assetId);
-        },
-        { label: "Remove music" },
-      );
-      if (id) {
-        void deleteBlob(id).catch((error) => {
-          console.error(`Failed to remove stored audio blob ${id}:`, error);
-        });
-      }
     },
 
     setAssetRole: (id: string, role: AssetRole) => {
@@ -460,17 +390,9 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
           if (layout.kind === "single") {
             layout.assetId = assetId;
-          } else if (layout.kind === "pair") {
+          } else if (layout.kind === "responsive") {
             if (slotKeyOrNodeId.includes("mobile")) {
               layout.mobileId = assetId;
-            } else {
-              layout.desktopId = assetId;
-            }
-          } else if (layout.kind === "trio") {
-            if (slotKeyOrNodeId.includes("mobile")) {
-              layout.mobileId = assetId;
-            } else if (slotKeyOrNodeId.includes("tablet")) {
-              layout.tabletId = assetId;
             } else {
               layout.desktopId = assetId;
             }
@@ -483,12 +405,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               const at = match && shown > 0 ? (parseInt(match[1], 10) % shown) + 1 : shown;
               layout.assetIds.splice(at, 0, assetId);
             }
-          } else if (
-            layout.kind === "rows" ||
-            layout.kind === "columns" ||
-            layout.kind === "wall" ||
-            layout.kind === "stack"
-          ) {
+          } else if (layout.kind === "rows" || layout.kind === "columns") {
             // Find target index in assetIds
             let targetIdx = -1;
             const match = slotKeyOrNodeId.match(/(\d+)/);
@@ -538,115 +455,12 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    applyBrandKit: (kit: BrandKit) => {
-      get().apply(
-        (draft) => {
-          if (kit.colors[0]) {
-            draft.style.textColor = kit.colors[0];
-          }
-          if (kit.colors[1]) {
-            draft.style.accent = kit.colors[1];
-          }
-          if (kit.browserUrl !== undefined) {
-            draft.style.browserUrl = kit.browserUrl;
-          }
-          if (kit.fontDisplay) {
-            draft.style.fonts.display.family = kit.fontDisplay;
-          }
-          if (kit.fontBody) {
-            draft.style.fonts.body.family = kit.fontBody;
-          }
-          // Update logo on text layers if kit defines one
-          const logoId = kit.logoDarkAssetId || kit.logoLightAssetId;
-          if (logoId) {
-            for (const shot of draft.shots) {
-              if (shot.texts) {
-                for (const text of shot.texts) {
-                  if (text.role === "title" || text.logoAssetId) {
-                    text.logoAssetId = logoId;
-                  }
-                }
-              }
-            }
-          }
-        },
-        { label: `Apply brand kit "${kit.name}"` },
-      );
-    },
-
-    // Timeline / storyboard actions
-    addShot: (layout?: Layout, insertAfterIndex?: number) => {
-      get().apply(
-        (draft) => {
-          const newS = defaultShot();
-          if (layout) {
-            newS.layout = layout;
-          } else if (draft.shots.length > 0) {
-            newS.layout = structuredClone(draft.shots[draft.shots.length - 1].layout);
-          }
-          newS.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          newS.duration = 4.0;
-
-          if (
-            insertAfterIndex !== undefined &&
-            insertAfterIndex >= 0 &&
-            insertAfterIndex < draft.shots.length
-          ) {
-            draft.shots.splice(insertAfterIndex + 1, 0, newS);
-          } else {
-            draft.shots.push(newS);
-          }
-        },
-        { label: "Add shot" },
-      );
-    },
-
-    duplicateShot: (index: number) => {
-      get().apply(
-        (draft) => {
-          const original = draft.shots[index];
-          if (!original) return;
-          const copy = structuredClone(current(original));
-          copy.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          draft.shots.splice(index + 1, 0, copy);
-        },
-        { label: "Duplicate shot" },
-      );
-    },
-
-    removeShot: (index: number) => {
-      get().apply(
-        (draft) => {
-          if (draft.shots.length <= 1) return; // Do not delete the last shot
-          draft.shots.splice(index, 1);
-        },
-        { label: "Delete shot" },
-      );
-    },
-
-    moveShot: (fromIndex: number, toIndex: number) => {
-      get().apply(
-        (draft) => {
-          if (
-            fromIndex < 0 ||
-            fromIndex >= draft.shots.length ||
-            toIndex < 0 ||
-            toIndex >= draft.shots.length ||
-            fromIndex === toIndex
-          ) {
-            return;
-          }
-          const [moved] = draft.shots.splice(fromIndex, 1);
-          draft.shots.splice(toIndex, 0, moved);
-        },
-        { label: "Reorder shots" },
-      );
-    },
-
+    // Timeline actions
     setShotDuration: (index: number, duration: number) => {
       // A slider sets its own length; skip it so the edit leaves no empty undo step.
-      const current = get().doc.shots[index];
-      if (current && fixedShotDuration(current.layout) !== null) return;
+      const { doc } = get();
+      const current = doc.shots[index];
+      if (current && fixedShotDuration(current.layout, current.scroll, doc.assets) !== null) return;
       get().apply(
         (draft) => {
           const shot = draft.shots[index];
@@ -656,63 +470,6 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: "Change shot duration" },
-      );
-    },
-
-    setTransition: (shotIndex: number, transition: Transition) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (shot) {
-            shot.transitionIn = structuredClone(transition);
-          }
-        },
-        { label: "Change transition" },
-      );
-    },
-
-    splitShot: (index: number, splitLocalT: number) => {
-      get().apply(
-        (draft) => {
-          const original = draft.shots[index];
-          if (!original) return;
-          const totalDur = original.duration;
-          const t = Math.max(0.5, Math.min(totalDur - 0.5, splitLocalT));
-
-          // Shot A
-          original.duration = t;
-
-          // Shot B
-          const shotB = structuredClone(current(original));
-          shotB.id = `shot-${crypto.randomUUID().slice(0, 8)}`;
-          shotB.duration = totalDur - t;
-          shotB.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
-
-          // Maintain camera continuity between Shot A and Shot B
-          const alpha = t / totalDur;
-          const [p0, p1] = original.camera.progressRange ?? [0, 1];
-          const splitProgress = p0 + alpha * (p1 - p0);
-
-          original.camera.progressRange = [p0, splitProgress];
-          shotB.camera.progressRange = [splitProgress, p1];
-
-          draft.shots.splice(index + 1, 0, shotB);
-        },
-        { label: "Split shot" },
-      );
-    },
-
-    setTextLayerDelay: (shotIndex: number, textLayerId: string, delay: number) => {
-      get().apply(
-        (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot) return;
-          const text = shot.texts.find((t) => t.id === textLayerId);
-          if (text) {
-            text.delay = Math.max(0, Math.min(shot.duration, delay));
-          }
-        },
-        { label: "Change text delay" },
       );
     },
 

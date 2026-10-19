@@ -7,26 +7,20 @@ import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { LoopLengthChips } from "./LoopLengthChips";
 import { useShotUpdate } from "./useShotUpdate";
 
-const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
-const STACK_DEVICES: ("browser" | "card")[] = ["browser", "card"];
-// Picking a layout here makes a single device or a title card (docs/plan/follow-ups.md); a slider
-// or an orbit comes from its templates, so the picker only lists it on a shot that already uses
-// it.
-const PICKER_LAYOUTS = (Object.keys(LAYOUT_LABELS) as Layout["kind"][]).filter(
-  (kind) => kind !== "slider" && kind !== "orbit",
-);
+const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
+// Picking a layout here makes a single device. Frames, sliders, orbits and Responsive Scroll come
+// from their templates, so the picker lists them only on a shot that already uses one.
+const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
   shot: Shot;
   assets: AssetRef[];
 }
 
-const percent = (value: number) => `${Math.round(value * 100)}%`;
-
 type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
 
 /**
- * Desktop Frames and Mobile Frames: the speed follows the shot length (travel "period"), so the
+ * Desktop Frames and Mobile Frames: the speed follows the shot length, so the
  * loop length chips are the speed control.
  */
 const FramesSpeedNote: React.FC<{ shot: Shot; layout: FramesLayout; aspect: Aspect }> = ({
@@ -50,7 +44,7 @@ const FramesSpeedNote: React.FC<{ shot: Shot; layout: FramesLayout; aspect: Aspe
   );
 };
 
-/** Layout kind plus the layout's own parameters (device, arrangement, tilt, speed). */
+/** Layout kind plus the layout's own parameters (device, lanes, steps). */
 export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
   const aspect = useEditorStore((s) => s.doc.aspect);
@@ -59,29 +53,11 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
   const handleKindChange = (kind: Layout["kind"]) => {
     update(
       (target) => {
-        if (kind === "title") {
-          target.layout = { kind: "title" };
-          if (target.texts.length === 0) {
-            target.texts.push({
-              id: crypto.randomUUID(),
-              text: "Headline",
-              role: "title",
-              font: "display",
-              size: 5.5,
-              anchor: "center",
-              align: "center",
-              color: "",
-              animation: "maskReveal",
-              delay: 0,
-            });
-          }
-        } else {
-          target.layout = {
-            kind: "single",
-            device: "browser",
-            assetId: assets.find((a) => a.kind === "image")?.id ?? "",
-          };
-        }
+        target.layout = {
+          kind: "single",
+          device: "browser",
+          assetId: assets.find((a) => a.kind === "image")?.id ?? "",
+        };
       },
       { label: `Change layout to ${LAYOUT_LABELS[kind].toLowerCase()}` },
     );
@@ -96,8 +72,13 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
             value={layout.kind}
             onChange={handleKindChange}
             options={optionsFor(
-              LAYOUT_LABELS,
-              isSteppedLayout(layout) ? [...PICKER_LAYOUTS, layout.kind] : PICKER_LAYOUTS,
+              // A deck is a slider arrangement (stack plan D4); it reads as a stack.
+              layout.kind === "slider" && layout.arrangement === "deck"
+                ? { ...LAYOUT_LABELS, slider: "Stack" }
+                : LAYOUT_LABELS,
+              PICKER_LAYOUTS.includes(layout.kind)
+                ? PICKER_LAYOUTS
+                : [...PICKER_LAYOUTS, layout.kind],
             )}
           />
         </Field>
@@ -116,27 +97,6 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 )
               }
               options={optionsFor(DEVICE_LABELS, SINGLE_DEVICES)}
-            />
-          </Field>
-        )}
-
-        {layout.kind === "pair" && (
-          <Field label="Arrangement">
-            <Select
-              aria-label="Arrangement"
-              value={layout.arrangement}
-              onChange={(arrangement) =>
-                update(
-                  (target) => {
-                    if (target.layout.kind === "pair") target.layout.arrangement = arrangement;
-                  },
-                  { label: "Change pair arrangement" },
-                )
-              }
-              options={[
-                { value: "overlap", label: "Overlap" },
-                { value: "side", label: "Side by side" },
-              ]}
             />
           </Field>
         )}
@@ -160,41 +120,8 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            {/* Frames has no tilt by design (quality bar §4), so a period layout hides it. */}
-            {layout.travel !== "period" && (
-              <Field label="Tilt" value={`${layout.tilt}°`}>
-                <Slider
-                  aria-label="Tilt"
-                  min={-30}
-                  max={30}
-                  step={1}
-                  value={layout.tilt}
-                  onChange={(val) =>
-                    update((target) => {
-                      if (target.layout.kind === "rows") target.layout.tilt = val;
-                    })
-                  }
-                />
-              </Field>
-            )}
-            {layout.travel === "period" ? (
-              <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
-            ) : (
-              <Field label="Speed" value={percent(layout.speed)}>
-                <Slider
-                  aria-label="Speed"
-                  min={0.05}
-                  max={1.0}
-                  step={0.05}
-                  value={layout.speed}
-                  onChange={(val) =>
-                    update((target) => {
-                      if (target.layout.kind === "rows") target.layout.speed = val;
-                    })
-                  }
-                />
-              </Field>
-            )}
+            {/* Frames has no tilt by design (quality bar §4). */}
+            <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
           </>
         )}
 
@@ -282,107 +209,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 ]}
               />
             </Field>
-            {layout.travel !== "period" && (
-              <Field label="Tilt" value={`${layout.tilt}°`}>
-                <Slider
-                  aria-label="Tilt"
-                  min={-30}
-                  max={30}
-                  step={1}
-                  value={layout.tilt}
-                  onChange={(val) =>
-                    update((target) => {
-                      if (target.layout.kind === "columns") target.layout.tilt = val;
-                    })
-                  }
-                />
-              </Field>
-            )}
-            {layout.travel === "period" ? (
-              <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
-            ) : (
-              <Field label="Speed" value={percent(layout.speed)}>
-                <Slider
-                  aria-label="Speed"
-                  min={0.05}
-                  max={1.0}
-                  step={0.05}
-                  value={layout.speed}
-                  onChange={(val) =>
-                    update((target) => {
-                      if (target.layout.kind === "columns") target.layout.speed = val;
-                    })
-                  }
-                />
-              </Field>
-            )}
-          </>
-        )}
-
-        {layout.kind === "wall" && (
-          <>
-            <Field label="Columns">
-              <Select
-                aria-label="Columns"
-                value={String(layout.columns)}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "wall")
-                      target.layout.columns = parseInt(val, 10) as 3 | 4 | 5;
-                  })
-                }
-                options={[
-                  { value: "3", label: "3 columns" },
-                  { value: "4", label: "4 columns" },
-                  { value: "5", label: "5 columns" },
-                ]}
-              />
-            </Field>
-            <Field label="Speed" value={percent(layout.speed)}>
-              <Slider
-                aria-label="Speed"
-                min={0.05}
-                max={1.0}
-                step={0.05}
-                value={layout.speed}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "wall") target.layout.speed = val;
-                  })
-                }
-              />
-            </Field>
-          </>
-        )}
-
-        {layout.kind === "stack" && (
-          <>
-            <Field label="Device">
-              <Select
-                aria-label="Device"
-                value={layout.device}
-                onChange={(device) =>
-                  update((target) => {
-                    if (target.layout.kind === "stack") target.layout.device = device;
-                  })
-                }
-                options={optionsFor(DEVICE_LABELS, STACK_DEVICES)}
-              />
-            </Field>
-            <Field label="Spread" value={percent(layout.spread)}>
-              <Slider
-                aria-label="Spread"
-                min={0.1}
-                max={1.0}
-                step={0.05}
-                value={layout.spread}
-                onChange={(val) =>
-                  update((target) => {
-                    if (target.layout.kind === "stack") target.layout.spread = val;
-                  })
-                }
-              />
-            </Field>
+            <FramesSpeedNote shot={shot} layout={layout} aspect={aspect} />
           </>
         )}
       </div>
