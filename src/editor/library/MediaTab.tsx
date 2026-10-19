@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,7 +10,7 @@ import {
 import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
-import { getBlob } from "../../storage/blobs";
+import { useAssetUrls } from "../assets/useAssetUrls";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { analyzeImage } from "../../assets/roles";
 import { validateAndDecodeAsset } from "../../assets/decode";
@@ -55,48 +55,12 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
   const selectedSlider = selectedLayout && isSteppedLayout(selectedLayout) ? selectedLayout : null;
   const steppedName = selectedLayout?.kind === "orbit" ? "orbit" : "slider";
 
-  const [assetThumbnails, setAssetThumbnails] = useState<Record<string, string>>({});
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
-  // Load thumbnail URLs
-  useEffect(() => {
-    let active = true;
-    const urls: Record<string, string> = {};
-
-    async function loadThumbs() {
-      for (const asset of doc.assets) {
-        if (
-          asset.id.startsWith("/") ||
-          asset.id.startsWith("http") ||
-          asset.id.startsWith("blob:") ||
-          asset.id.startsWith("data:")
-        ) {
-          urls[asset.id] = asset.id;
-        } else {
-          const blob = await getBlob(asset.id);
-          if (blob && active) {
-            urls[asset.id] = URL.createObjectURL(blob);
-          }
-        }
-      }
-      if (active) {
-        setAssetThumbnails(urls);
-      }
-    }
-
-    loadThumbs();
-
-    return () => {
-      active = false;
-      for (const [id, url] of Object.entries(urls)) {
-        if (!id.startsWith("/") && !id.startsWith("http")) {
-          URL.revokeObjectURL(url);
-        }
-      }
-    };
-  }, [doc.assets]);
+  const assetIds = useMemo(() => doc.assets.map((asset) => asset.id), [doc.assets]);
+  const assetThumbnails = useAssetUrls(assetIds);
 
   // Which shots use this asset?
   const getAssetUsage = (assetId: string): number[] => {
