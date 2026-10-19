@@ -276,10 +276,8 @@ const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
 // Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
-const NODE_ID = String.raw`\b(?:single|row\d+|col\d+):[a-z0-9]+`;
-const RAW_ID = new RegExp(
-  String.raw`pushIn|heroTilt|isoDrift|row\d+:col\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`,
-);
+const NODE_ID = String.raw`\\b(?:single|row\\d+|col\\d+):[a-z0-9]+`;
+const RAW_ID = new RegExp(String.raw`pushIn|row\\d+:col\\d+|${NODE_ID}|${RAW_ENUM_IDS.join("|")}`);
 
 async function expectNoRawIds(page: Page, context: string) {
   const text = await page.evaluate(() => document.body.innerText);
@@ -300,9 +298,8 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   const timeline = page.locator('[data-panel="timeline"]');
   const inspector = page.locator('[data-panel="inspector"]');
   for (const [look, camera] of [
-    ["browser", "heroTilt"],
-    ["phone", "isoDrift"],
     ["browser", "pushIn"],
+    ["phone", "static"],
   ] as const) {
     await setShotLook(page, look, camera);
     await select(page, { kind: "shot", id: shotId });
@@ -310,14 +307,11 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   }
 
   // The human labels are the ones the task names.
-  await setShotLook(page, "browser", "heroTilt");
-  await expect(timeline.getByText("Browser · Hero tilt")).toBeVisible();
-  await setShotLook(page, "phone", "isoDrift");
+  await setShotLook(page, "browser", "pushIn");
+  await expect(timeline.getByText("Browser · Push in")).toBeVisible();
+  await setShotLook(page, "phone", "static");
   await select(page, { kind: "shot", id: shotId });
-  await expect(inspector.getByRole("button", { name: "Isometric drift" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(inspector.getByRole("radio", { name: "Still", exact: true })).toBeChecked();
 
   // The drop hint over a Frames row, whose nodes are "row1:item0" and so on.
   await resetAndOpen(page, "dark");

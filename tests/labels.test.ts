@@ -60,8 +60,8 @@ describe("editor labels (F08)", () => {
       labels.shotSummary(shot({ kind: "single", device: "browser", assetId: "a" }, "pushIn")),
     ).toBe("Browser · Push in");
     expect(
-      labels.shotSummary(shot({ kind: "single", device: "phone", assetId: "a" }, "isoDrift")),
-    ).toBe("Phone · Isometric drift");
+      labels.shotSummary(shot({ kind: "single", device: "phone", assetId: "a" }, "static")),
+    ).toBe("Phone · Still");
   });
 
   it("names the Frames presets' shots after the presets (Frames plan D3, D4)", () => {
@@ -74,7 +74,7 @@ describe("editor labels (F08)", () => {
       device: "card" as const,
       travel: "period" as const,
     };
-    expect(labels.shotSummary(shot(mobile, "static"))).toBe("Mobile frames · Static");
+    expect(labels.shotSummary(shot(mobile, "static"))).toBe("Mobile frames · Still");
     const desktop = {
       kind: "rows" as const,
       assetIds: ids,
@@ -83,7 +83,7 @@ describe("editor labels (F08)", () => {
       tilt: 0,
       travel: "period" as const,
     };
-    expect(labels.shotSummary(shot(desktop, "static"))).toBe("Desktop frames · Static");
+    expect(labels.shotSummary(shot(desktop, "static"))).toBe("Desktop frames · Still");
   });
 
   it("names a deck slider as the Stack preset of its card shape (stack plan S03)", () => {
@@ -95,12 +95,12 @@ describe("editor labels (F08)", () => {
       step: 2,
       arrangement: "deck" as const,
     };
-    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Static");
+    expect(labels.shotSummary(shot(deck, "static"))).toBe("Desktop stack · Still");
     expect(labels.shotSummary(shot({ ...deck, axis: "x", shape: "mobile" }, "static"))).toBe(
-      "Mobile stack · Static",
+      "Mobile stack · Still",
     );
     expect(labels.shotSummary(shot({ ...deck, arrangement: undefined }, "static"))).toBe(
-      "Slider · Static",
+      "Slider · Still",
     );
   });
 

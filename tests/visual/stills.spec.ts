@@ -92,12 +92,6 @@ for (const device of DEVICES) {
     aspect: "16:9",
     t: 1,
   });
-  STILLS.push({
-    name: `device-${device}-tilted`,
-    fixture: `device-${device}-tilted`,
-    aspect: "16:9",
-    t: 4.2,
-  });
 }
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });

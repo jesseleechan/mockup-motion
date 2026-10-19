@@ -83,9 +83,8 @@ export type Layout =
 // travel: always "period". Saved rows and columns from before 19 Oct 2026 without it were tilted
 // marquees; loading maps them to Frames (src/doc/legacy-layouts.ts).
 
-export type CameraPresetId =
-  | "static" | "pushIn" | "pullBack" | "orbitLeft" | "orbitRight" | "tiltUp" | "tiltDown"
-  | "riseUp" | "dollyLeft" | "dollyRight" | "isoDrift" | "heroTilt";
+// The other ten moves were removed on 19 October 2026; a saved one loads as "static".
+export type CameraPresetId = "static" | "pushIn";
 
 export interface CameraMove {
   preset: CameraPresetId;

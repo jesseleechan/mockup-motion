@@ -175,11 +175,8 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
   // Camera Move migration
   let cameraPreset: CameraPresetId;
   const motionType = comp?.motion?.type ?? "zoom";
-  if (motionType === "drift") {
-    cameraPreset = "riseUp";
-  } else if (motionType === "glide") {
-    cameraPreset = layout.kind === "single" ? "dollyRight" : "static";
-  } else if (motionType === "still") {
+  // v1 "drift" and "glide" mapped to Rise and Dolly right, which were removed; they load still.
+  if (motionType === "still" || motionType === "drift" || motionType === "glide") {
     cameraPreset = "static";
   } else {
     cameraPreset = "pushIn";

@@ -358,7 +358,7 @@ test.describe("slider editing", () => {
 
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
     await openMobileSlider(page);
-    await expect(page.getByRole("group", { name: "Camera move" })).toHaveCount(0);
+    await expect(page.getByRole("radiogroup", { name: "Camera move" })).toHaveCount(0);
     await expect(page.getByRole("slider", { name: "Float" })).toHaveCount(0);
     const camera = await page.evaluate(
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].camera,
