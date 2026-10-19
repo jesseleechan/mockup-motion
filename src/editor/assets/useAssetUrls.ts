@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import type { AssetRef } from "../../doc/types";
+import { DEMO_ASSETS } from "../../lab/demo-assets";
 import { getBlob } from "../../storage/blobs";
 
-/** Demo and remote assets are their own URL; uploads live in IndexedDB as blobs. */
+/** Remote assets are their own URL; demo content has a manifest URL; uploads are stored blobs. */
 function isUrlId(id: string): boolean {
   return (
     id.startsWith("/") || id.startsWith("http") || id.startsWith("blob:") || id.startsWith("data:")
@@ -30,11 +31,14 @@ export function useAssetUrls(assets: AssetRef[]): Record<string, string> {
           continue;
         }
         const blob = await getBlob(id);
+        const demo = DEMO_ASSETS.get(id);
         if (!active) return;
         if (blob) {
           const url = URL.createObjectURL(blob);
           created.push(url);
           next[id] = url;
+        } else if (demo) {
+          next[id] = demo.url;
         }
       }
       if (active) setUrls(next);
