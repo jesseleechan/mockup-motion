@@ -6,6 +6,8 @@ on:
   pull_request:
     # ready_for_review: a draft skips e2e, so marking it ready has to run it.
     types: [opened, synchronize, reopened, ready_for_review]
+  # GitHub's merge queue for main. A merge group runs the same fast gate as a pull request.
+  merge_group:
   # The full e2e suite every night, so flaky or environment-dependent failures show up even on
   # days when nothing merges.
   schedule:
@@ -17,13 +19,16 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Branch protection on main requires the `unit`, `e2e` and `visual` checks.
-# `unit` and `visual` run on every pull request. `e2e` always reports, but on a pull request it
-# runs Playwright only when the PR is ready for review (not a draft), targets main, and touches a
-# path in `scripts/e2e-paths.ts` (src/, public/, tests/e2e/, tests/helpers/, Vite, Playwright and
-# npm config, this workflow). Drafts and PRs stacked on another branch iterate without it; the
-# suite runs once a PR is ready to merge. Pushes to main, the nightly schedule and manual runs
-# always run the full suite, split across four shards (file groups in `scripts/e2e-shards.ts`).
+# Branch protection on main requires the `unit`, `e2e` and `visual` checks, and all three report on
+# pull requests and merge groups. `unit` and `visual` always run in full. `e2e` always reports, but
+# on a pull request it runs Playwright only when the PR is ready for review (not a draft), targets
+# main, and touches a path in `scripts/e2e-paths.ts` (src/, public/, tests/e2e/, tests/helpers/,
+# Vite, Playwright and npm config, this workflow). Drafts and PRs stacked on another branch iterate
+# without it. Pull requests and merge groups run only the smoke subset, the tests tagged `@smoke`
+# (`--grep @smoke`), on one job. Pushes to main, the nightly schedule and manual runs always run the
+# full suite, split across four shards (file groups in `scripts/e2e-shards.ts`). When main's full
+# run fails, the merge queue pauses until the failure is fixed or the culprit PR is reverted
+# (CLAUDE.md, "Tests").
 # The `perf` project is not gated: it measures GPU throughput, which the runner's SwiftShader
 # cannot reach. Run `npm run test:perf` by hand on a machine with a real GPU.
 
@@ -66,6 +71,8 @@ jobs:
     outputs:
       run: ${{ steps.decide.outputs.run }}
       reason: ${{ steps.decide.outputs.reason }}
+      # The e2e-shard matrix: the smoke job for pull requests and merge groups, else the four shards.
+      shards: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && '["smoke"]' || '[1, 2, 3, 4]' }}
     env:
       # Only a pull request that is ready to merge into main can need the suite.
       CANDIDATE: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.base.ref == 'main' }}
@@ -94,6 +101,11 @@ jobs:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
           set -euo pipefail
+          if [ "$EVENT" = "merge_group" ]; then
+            echo "A merge group always runs the @smoke subset."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$EVENT" != "pull_request" ]; then
             echo "$EVENT always runs the full e2e suite."
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -127,7 +139,7 @@ jobs:
           fi
 
   e2e-shard:
-    name: e2e shard ${{ matrix.shard }}/4
+    name: e2e ${{ matrix.shard == 'smoke' && 'smoke' || format('shard {0}/4', matrix.shard) }}
     needs: e2e-paths
     if: needs.e2e-paths.outputs.run == 'true'
     runs-on: ubuntu-latest
@@ -135,7 +147,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: ${{ fromJSON(needs.e2e-paths.outputs.shards) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -149,19 +161,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The browser download is cached on the @playwright/test version; the system libraries
+      # still come from apt on every run.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      # Shards are file groups from scripts/e2e-shards.ts, balanced on measured durations;
-      # Playwright's --shard put every slow export spec on one shard. The blob report is merged
-      # into one HTML report by the `e2e` job.
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Pull requests and merge groups run the tests tagged @smoke. The full shards are file groups
+      # from scripts/e2e-shards.ts, balanced on measured durations; Playwright's --shard put every
+      # slow export spec on one shard. The blob report is merged into one HTML report by `e2e`.
       - name: End-to-end tests
         env:
           PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.shard }}.zip
+          SHARD: ${{ matrix.shard }}
         run: |
-          specs=$(node --experimental-strip-types --no-warnings scripts/e2e-shards.ts ${{ matrix.shard }})
-          echo "Shard ${{ matrix.shard }}: $specs"
-          npm run test:e2e -- --reporter=list,blob $specs
+          if [ "$SHARD" = "smoke" ]; then
+            echo "The @smoke subset."
+            npm run test:e2e -- --reporter=list,blob --grep @smoke
+          else
+            specs=$(node --experimental-strip-types --no-warnings scripts/e2e-shards.ts "$SHARD")
+            echo "Shard $SHARD: $specs"
+            npm run test:e2e -- --reporter=list,blob $specs
+          fi
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
@@ -262,8 +298,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The browser download is cached on the @playwright/test version; the system libraries
+      # still come from apt on every run.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Visual stills
         run: npm run test:visual

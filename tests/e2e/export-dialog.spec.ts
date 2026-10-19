@@ -6,7 +6,11 @@ import { BLANK_PAGE } from "../helpers/blank-page";
 
 interface EditorWindow {
   __editorStore?: {
-    getState: () => { doc: ProjectDoc; apply: (recipe: (draft: ProjectDoc) => void) => void };
+    getState: () => {
+      doc: ProjectDoc;
+      apply: (recipe: (draft: ProjectDoc) => void) => void;
+      newDoc: () => void;
+    };
   };
   __liveExportWorkers?: () => number;
   __releaseProbe?: () => void;
@@ -133,6 +137,9 @@ async function dialogLayout(page: Page): Promise<LayoutReport> {
   });
 }
 
+/** Format, Resolution and Quality, plus Frame rate and Anti-aliasing with Advanced open. */
+const ENCODING_FIELDS = 5;
+
 async function expectCleanLayout(page: Page, context: string, minFields: number) {
   const report = await dialogLayout(page);
   expect(report.width, `${context}: dialog width`).toBe(600);
@@ -154,16 +161,18 @@ test.describe("F09 export dialog", () => {
 
     await expect(summary).not.toContainText("Checking encoder");
     await expect(dialog.getByRole("combobox", { name: "Format" })).toContainText("MP4");
-    await expectCleanLayout(page, "Custom", 5);
+    // Frame rate and anti-aliasing sit under Advanced, which stays open while the dialog is.
+    await dialog.getByRole("button", { name: /^Advanced/ }).click();
+    await expectCleanLayout(page, "Custom", ENCODING_FIELDS);
     for (const card of ["Website", "Dribbble", "Story", "4K presentation", "Custom"]) {
       await dialog.getByRole("button", { name: card, exact: true }).click();
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, card, 5);
+      await expectCleanLayout(page, card, ENCODING_FIELDS);
     }
     for (const format of [/Still frame/, /WebM/]) {
       await choose(page, dialog, "Format", format);
       await expect(summary).not.toContainText("Checking encoder");
-      await expectCleanLayout(page, `Format ${format.source}`, 5);
+      await expectCleanLayout(page, `Format ${format.source}`, ENCODING_FIELDS);
     }
     // The longest option of every select fits on one line (a still frame disables the
     // video-only fields, so it comes last).
@@ -174,7 +183,7 @@ test.describe("F09 export dialog", () => {
       ["Format", /Still frame/],
     ] as const) {
       await choose(page, dialog, field, option);
-      await expectCleanLayout(page, `${field} ${option.source}`, 5);
+      await expectCleanLayout(page, `${field} ${option.source}`, ENCODING_FIELDS);
     }
 
     await choose(page, dialog, "Format", /WebM/);
@@ -187,7 +196,9 @@ test.describe("F09 export dialog", () => {
     await expectCleanLayout(page, "Result", 0);
   });
 
-  test("the summary shows the probed container, and the file matches it", async ({ page }) => {
+  test("the summary shows the probed container, and the file matches it @smoke", async ({
+    page,
+  }) => {
     test.setTimeout(300_000);
     // This browser "lacks" H.264, and the probe waits until the test releases it.
     await page.addInitScript(() => {
@@ -234,7 +245,9 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByTestId("export-verification")).toContainText("1280 × 720");
   });
 
-  test("cancel stops the worker and returns to the settings", async ({ page }) => {
+  test("cancel stops the worker and returns to the settings, which are remembered", async ({
+    page,
+  }) => {
     test.setTimeout(300_000);
     await openEditorWithDemo(page);
     const dialog = await openExportDialog(page);
@@ -250,5 +263,18 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByRole("button", { name: "Start export" })).toBeEnabled();
     await expect(dialog.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
     await expect.poll(workers, { message: "no export worker left after cancel" }).toBe(0);
+
+    // A started export's settings are remembered: by this project when the dialog reopens,
+    // and by this browser for a new project.
+    await dialog.getByRole("button", { name: "Close" }).first().click();
+    await expect(dialog).toBeHidden();
+    const reopened = await openExportDialog(page);
+    await expect(reopened.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
+    await reopened.getByRole("button", { name: "Close" }).first().click();
+    await page.evaluate(() =>
+      (window as unknown as EditorWindow).__editorStore?.getState().newDoc(),
+    );
+    const fresh = await openExportDialog(page);
+    await expect(fresh.getByRole("combobox", { name: "Format" })).toHaveText(/WebM/);
   });
 });

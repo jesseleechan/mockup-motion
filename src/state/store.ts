@@ -3,7 +3,16 @@ import { produce } from "immer";
 import { createDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
 import { replaceLayoutAssetIds } from "../doc/assets";
-import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { readLastExport, writeLastExport } from "../export/last-settings";
+import type {
+  AssetMeta,
+  AssetRef,
+  AssetRole,
+  ExportSettings,
+  ProjectDoc,
+  Shot,
+  Style,
+} from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
@@ -41,6 +50,11 @@ export interface EditorStoreState {
   redo: () => void;
   loadDoc: (doc: ProjectDoc) => void;
   newDoc: () => void;
+  /**
+   * Saves the settings of an export that was started, with the project and as this browser's
+   * starting point for new projects. Not an undo step: it doesn't change the video.
+   */
+  rememberExport: (settings: ExportSettings) => void;
   applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
   /**
    * Adds assets. `replace` swaps screen asset ids in every shot (old id to new id) in the same
@@ -107,8 +121,14 @@ function fitFixedShots(draft: ProjectDoc): void {
   }
 }
 
+/** A new project starts from the last export settings used in this browser, if any. */
+function createNewProjectDoc(): ProjectDoc {
+  const lastExport = readLastExport();
+  return createDoc(lastExport ? { export: lastExport } : undefined);
+}
+
 export function createEditorStore(initialDoc?: ProjectDoc) {
-  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createDoc();
+  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createNewProjectDoc();
 
   let transactionSnapshot: ProjectDoc | null = null;
   let lastCoalesceKey: string | null = null;
@@ -226,7 +246,18 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     newDoc: () => {
-      get().loadDoc(createDoc());
+      get().loadDoc(createNewProjectDoc());
+    },
+
+    rememberExport: (settings) => {
+      writeLastExport(settings);
+      // Undo and redo restore whole documents, so the snapshots take the settings too.
+      const withExport = (d: ProjectDoc) => ({ ...d, export: { ...settings } });
+      set((state) => ({
+        doc: withExport(state.doc),
+        past: state.past.map(withExport),
+        future: state.future.map(withExport),
+      }));
     },
 
     applyTemplateResult: ({ style, shots, loop }, templateId) => {
