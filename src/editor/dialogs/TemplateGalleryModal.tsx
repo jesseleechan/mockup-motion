@@ -16,7 +16,11 @@ import {
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
+import { fillUserTemplateSlots, type UserTemplate } from "../../storage/user-templates";
+import { UserTemplateCard } from "./UserTemplateCard";
+import { useUserTemplates } from "./useUserTemplates";
 import {
+  Bookmark,
   Check,
   Film,
   Monitor,
@@ -26,7 +30,11 @@ import {
   UploadCloud,
   Wand2,
   X,
+  type LucideIcon,
 } from "lucide-react";
+
+/** The gallery's tabs: the built-in categories, and the user's saved templates. */
+type GalleryCategory = TemplateCategory | "all" | "yours";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
@@ -34,12 +42,14 @@ export const TemplateGalleryModal: React.FC = () => {
   const open = useUIStore((s) => s.templateGalleryOpen);
   const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
   const requestScreenshotPicker = useUIStore((s) => s.requestScreenshotPicker);
+  const applyTemplateResult = useEditorStore((s) => s.applyTemplateResult);
+  const userTemplates = useUserTemplates(open);
   const { applyTemplateById, applyTemplateWithDemo } = useTemplateActions();
   const onOpenChange = (next: boolean) => {
     if (!next) closeTemplateGallery();
   };
 
-  const [activeCategory, setActiveCategory] = useState<TemplateCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<GalleryCategory>("all");
   const [searchQuery, setSearchQuery] = useState("");
   // A saved project may name a template that has since been removed; select the first one.
   // When every screenshot is the other size, start on that size's variant instead (Frames plan §8).
@@ -58,22 +68,32 @@ export const TemplateGalleryModal: React.FC = () => {
     if (open) setSelectedTemplateId(initialTemplateId());
   }
 
-  const categories = [
+  const categories: { id: GalleryCategory; label: string; icon: LucideIcon }[] = [
     { id: "all", label: "All", icon: Sparkles },
     { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop, icon: Monitor },
     { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile, icon: Smartphone },
-  ] as const;
+    // Saved templates get their own tab, shown once there is one.
+    ...(userTemplates.templates.length > 0
+      ? [{ id: "yours" as const, label: "Yours", icon: Bookmark }]
+      : []),
+  ];
+  // Deleting the last saved template removes the "Yours" tab.
+  const category =
+    activeCategory === "yours" && userTemplates.templates.length === 0 ? "all" : activeCategory;
 
-  const filteredTemplates = BUILTIN_TEMPLATES.filter((t) => {
-    const matchesCategory = templateInCategory(t, activeCategory);
-    const matchesQuery =
-      searchQuery.trim() === "" ||
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesQuery;
-  });
+  const matchesQuery = (t: { name: string; description: string }) =>
+    searchQuery.trim() === "" ||
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTemplates =
+    category === "yours"
+      ? []
+      : BUILTIN_TEMPLATES.filter((t) => templateInCategory(t, category) && matchesQuery(t));
+  const filteredUserTemplates =
+    category === "yours" ? userTemplates.templates.filter(matchesQuery) : [];
 
   const selectedTemplate = BUILTIN_TEMPLATES.find((t) => t.id === selectedTemplateId);
+  const selectedUserTemplate = userTemplates.templates.find((t) => t.id === selectedTemplateId);
   const selectedValidation = selectedTemplate
     ? validateTemplateRequirements(selectedTemplate, doc.assets)
     : { valid: true };
@@ -100,6 +120,15 @@ export const TemplateGalleryModal: React.FC = () => {
   const handleApplyWithDemo = async (template: Template) => {
     closeTemplateGallery();
     await applyTemplateWithDemo(template);
+  };
+  // A saved template fills its slots from the library by role.
+  const handleApplyUserTemplate = (template: UserTemplate) => {
+    applyTemplateResult(fillUserTemplateSlots(template, doc.assets, doc.aspect), template.id);
+    closeTemplateGallery();
+  };
+  const handleDeleteUserTemplate = async (template: UserTemplate) => {
+    await userTemplates.remove(template.id);
+    if (selectedTemplateId === template.id) setSelectedTemplateId(initialTemplateId());
   };
 
   return (
@@ -159,7 +188,7 @@ export const TemplateGalleryModal: React.FC = () => {
         <div className="px-6 py-2.5 border-b border-[var(--color-line)] flex items-center gap-1.5 bg-[var(--color-panel)] shrink-0 overflow-x-auto">
           {categories.map((cat) => {
             const IconComponent = cat.icon;
-            const isSelected = activeCategory === cat.id;
+            const isSelected = category === cat.id;
             return (
               <button
                 key={cat.id}
@@ -181,7 +210,7 @@ export const TemplateGalleryModal: React.FC = () => {
 
         {/* Templates Grid */}
         <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg)]">
-          {filteredTemplates.length === 0 ? (
+          {filteredTemplates.length === 0 && filteredUserTemplates.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center text-center">
               <Film size={32} className="text-[var(--color-text-3)] mb-2 opacity-50" />
               <p className="text-sm font-medium text-[var(--color-text-2)]">No templates found</p>
@@ -191,6 +220,16 @@ export const TemplateGalleryModal: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredUserTemplates.map((template) => (
+                <UserTemplateCard
+                  key={template.id}
+                  template={template}
+                  selected={selectedTemplateId === template.id}
+                  onSelect={() => setSelectedTemplateId(template.id)}
+                  onRename={(name) => userTemplates.rename(template.id, name)}
+                  onDelete={() => handleDeleteUserTemplate(template)}
+                />
+              ))}
               {filteredTemplates.map((template) => {
                 const isSelected = selectedTemplateId === template.id;
                 // The selected card always plays, so something moves as soon as the gallery opens.
@@ -294,6 +333,11 @@ export const TemplateGalleryModal: React.FC = () => {
         {/* Footer with Apply Action */}
         <div className="px-6 py-3.5 border-t border-[var(--color-line)] bg-[var(--color-panel)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
+            {selectedUserTemplate && (
+              <span className="text-xs font-medium text-[var(--color-text)]">
+                Selected: {selectedUserTemplate.name}
+              </span>
+            )}
             {selectedTemplate && (
               <>
                 <span className="text-xs font-medium text-[var(--color-text)]">
@@ -347,8 +391,11 @@ export const TemplateGalleryModal: React.FC = () => {
             )}
             <Button
               variant="primary"
-              disabled={!selectedTemplate}
-              onClick={() => selectedTemplate && handleApply(selectedTemplate)}
+              disabled={!selectedTemplate && !selectedUserTemplate}
+              onClick={() => {
+                if (selectedUserTemplate) handleApplyUserTemplate(selectedUserTemplate);
+                else if (selectedTemplate) handleApply(selectedTemplate);
+              }}
               icon={<Icon icon={Sparkles} size={14} />}
             >
               Apply template

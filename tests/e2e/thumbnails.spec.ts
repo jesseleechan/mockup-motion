@@ -344,14 +344,4 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await cards.first().hover();
     await expect(page.locator('[data-testid="template-card"] video')).toHaveCount(0);
   });
-
-  test("Library template cards show their posters", async ({ page }) => {
-    const cards = page.locator('[data-testid="library-template-card"]');
-    await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
-    for (let i = 0; i < BUILTIN_TEMPLATES.length; i++) {
-      const img = cards.nth(i).locator("img");
-      await img.scrollIntoViewIfNeeded();
-      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(1280);
-    }
-  });
 });

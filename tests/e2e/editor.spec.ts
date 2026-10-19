@@ -279,7 +279,6 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test("Media cards show each screenshot, and the badge switches its role", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try with demo content" }).click();
-    await page.getByRole("tab", { name: "Media" }).click();
 
     // Demo screenshots have no stored blob; each card still loads its image (it showed a
     // generic icon before).

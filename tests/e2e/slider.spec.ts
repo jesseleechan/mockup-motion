@@ -407,7 +407,6 @@ test.describe("slider editing", () => {
     await openMobileSlider(page);
     const before = await sliderShot(page);
 
-    await page.getByRole("tab", { name: "Media" }).click();
     const png = await sharp({
       create: { width: 780, height: 1688, channels: 3, background: "#3366CC" },
     })
