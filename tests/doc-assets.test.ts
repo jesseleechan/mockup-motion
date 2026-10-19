@@ -18,35 +18,34 @@ describe("F03: collectAssetIds", () => {
   const cases: { layout: Layout; ids: string[] }[] = [
     { layout: { kind: "single", device: "browser", assetId: "s" }, ids: ["s"] },
     {
-      layout: { kind: "pair", desktopId: "pd", mobileId: "pm", arrangement: "overlap" },
-      ids: ["pd", "pm"],
-    },
-    {
-      layout: { kind: "trio", desktopId: "td", tabletId: "tt", mobileId: "tm" },
-      ids: ["td", "tt", "tm"],
-    },
-    { layout: { kind: "trio", desktopId: "td", mobileId: "tm" }, ids: ["td", "tm"] },
-    {
       layout: {
         kind: "rows",
         assetIds: ["r1", "r2", "r3"],
         rows: 2,
         device: "browser",
         tilt: 0,
-        speed: 0.5,
+        travel: "period",
       },
       ids: ["r1", "r2", "r3"],
     },
     {
-      layout: { kind: "columns", assetIds: ["c1", "c2", "c3"], columns: 3, tilt: 0, speed: 0.5 },
+      layout: {
+        kind: "columns",
+        assetIds: ["c1", "c2", "c3"],
+        columns: 3,
+        tilt: 0,
+        travel: "period",
+      },
       ids: ["c1", "c2", "c3"],
     },
     {
-      layout: { kind: "wall", assetIds: ["w1", "w2", "w3"], columns: 3, speed: 0.5 },
-      ids: ["w1", "w2", "w3"],
-    },
-    {
-      layout: { kind: "stack", assetIds: ["k1", "k2", "k3"], device: "card", spread: 0.5 },
+      layout: {
+        kind: "slider",
+        assetIds: ["k1", "k2", "k3"],
+        axis: "y",
+        shape: "desktop",
+        step: 2,
+      },
       ids: ["k1", "k2", "k3"],
     },
   ];
@@ -65,7 +64,7 @@ describe("F03: collectAssetIds", () => {
   it("deduplicates ids shared across shots and slots", () => {
     const doc = docWith([
       { kind: "single", device: "browser", assetId: "a" },
-      { kind: "pair", desktopId: "a", mobileId: "b", arrangement: "side" },
+      { kind: "rows", assetIds: ["a", "b"], rows: 2, device: "card", tilt: 0, travel: "period" },
     ]);
     expect([...collectAssetIds(doc)].sort()).toEqual(["a", "b"]);
   });
@@ -123,10 +122,10 @@ describe("F03: texture sizing", () => {
     expect(supersampled).toBe(Math.ceil((0.68 * 1920 * 2 * 1.5) / 256) * 256);
   });
 
-  it("gives small wall tiles less than a full-frame width, never below 256", () => {
+  it("gives small Frames cards less than a full-frame width, never below 256", () => {
     const ids = ["w1", "w2", "w3", "w4", "w5"];
     const doc = docWith(
-      [{ kind: "wall", assetIds: ids, columns: 5, speed: 0.5 }],
+      [{ kind: "rows", assetIds: ids, rows: 3, device: "card", tilt: 0, travel: "period" }],
       ids.map((id) => image(id, 2880, 1800)),
     );
     const widths = textureWidths(doc, { outputWidthPx: 640, supersample: 1 });
@@ -140,7 +139,7 @@ describe("F03: texture sizing", () => {
 
   it("clamps to the asset's real width", () => {
     const doc = docWith(
-      [{ kind: "pair", desktopId: "d", mobileId: "m", arrangement: "overlap" }],
+      [{ kind: "rows", assetIds: ["d", "m"], rows: 2, device: "card", tilt: 0, travel: "period" }],
       [image("d", 1000, 625), image("m", 780, 1688)],
     );
     const widths = textureWidths(doc, { outputWidthPx: 3840, supersample: 2 });

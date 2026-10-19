@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
-const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
+const DEVICES = ["browser", "phone", "card"];
 const BACKGROUNDS = ["solid", "gradient"];
 const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
 

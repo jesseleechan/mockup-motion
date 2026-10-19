@@ -1,10 +1,12 @@
 import type { AssetRef, DeviceKind, Shot } from "../../doc/types";
 import { ease } from "../easing";
 import { MAX_SHOT_DURATION } from "./limits";
-import { FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND } from "./marquee";
 import { type LayoutNode, screenAspectFor } from "./types";
 
 const ENTRANCE_DURATION = 0.8;
+// Quality-bar §2.5: Frames moves at most 0.20 frame heights (stage units) per second along the
+// lane, so a whole asset period fits in one loop at every aspect.
+export const FRAMES_MAX_FRAME_HEIGHTS_PER_SECOND = 0.2;
 
 /**
  * The axis lanes move on. "x": the lanes are rows moving sideways (Desktop Frames). "y": the

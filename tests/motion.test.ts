@@ -437,19 +437,6 @@ describe("Layouts (src/motion/layouts.ts)", () => {
     );
     expect(phoneNodes[0].screenAspect).toBeCloseTo(0.4615);
   });
-
-  it("resolves pair layout", () => {
-    const pairNodes = resolveLayout(
-      { kind: "pair", desktopId: "d1", mobileId: "m1", arrangement: "overlap" },
-      "16:9",
-      [{ id: "d1", kind: "image", name: "d1", mime: "image/png", bytes: 100 }],
-      0,
-      5,
-    );
-    expect(pairNodes).toHaveLength(2);
-    expect(pairNodes[0].device).toBe("browser");
-    expect(pairNodes[1].device).toBe("phone");
-  });
 });
 
 describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {

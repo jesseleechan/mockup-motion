@@ -23,7 +23,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -67,7 +66,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -111,7 +109,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -155,7 +152,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -199,7 +195,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -243,7 +238,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -287,7 +281,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -331,7 +324,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -375,7 +367,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -419,7 +410,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -463,7 +453,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -507,7 +496,6 @@
           "cardHeight": 0.32,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -551,7 +539,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -595,7 +582,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },
@@ -639,7 +625,6 @@
           "cardHeight": 0.42,
           "device": "card",
           "tilt": 0,
-          "speed": 0.35,
           "gap": 0.065,
           "travel": "period"
         },

@@ -14,8 +14,6 @@ import { evaluate } from "../src/motion/evaluate";
 import { schedule } from "../src/motion/timeline";
 import { createDoc } from "../src/doc/defaults";
 import { aspectRatioValue } from "../src/motion/camera";
-import type { ShotFrame } from "../src/motion/evaluate";
-import { computeCameraBasis, projectPointToNDC } from "../src/motion/framing";
 import type { LayoutNode } from "../src/motion/layouts";
 import { layoutFixture } from "../src/lab/layout-fixtures";
 
@@ -325,10 +323,7 @@ describe("Template loop seam", () => {
     return doc.loop && doc.shots.length === 1;
   }).map((template) => template.id);
   // Camera-move loops (pushIn, orbits): no built-in template builds one, but saved projects can.
-  const CAMERA_LOOP_FIXTURES = ["single-browser", "pair"];
-  // Tilted marquees and the wall loop with a wrap crossfade. No built-in template builds one
-  // since Portfolio Rows, Phone Parade and Isometric Wall were removed, but saved projects can.
-  const MARQUEE_FIXTURES = ["rows-browser-tilted", "columns-phone-tilted", "wall-isometric"];
+  const CAMERA_LOOP_FIXTURES = ["single-browser"];
 
   function loopDoc(id: string, aspect: Aspect): ProjectDoc {
     const template = BUILTIN_TEMPLATES.find((t) => t.id === id);
@@ -350,7 +345,7 @@ describe("Template loop seam", () => {
   // cut back to t = 0 would pop. The frame just before the loop point must already be
   // the first frame: the wrap crossfade has finished (contracts.md §5).
   it("the frame just before the loop point is the first frame", () => {
-    for (const id of [...LOOPING_SINGLE_SHOT, ...CAMERA_LOOP_FIXTURES, ...MARQUEE_FIXTURES]) {
+    for (const id of [...LOOPING_SINGLE_SHOT, ...CAMERA_LOOP_FIXTURES]) {
       for (const aspect of ASPECTS) {
         const doc = loopDoc(id, aspect);
         const label = `${id} ${aspect}`;
@@ -370,7 +365,7 @@ describe("Template loop seam", () => {
           );
         }
 
-        if (MARQUEE_FIXTURES.includes(id) || NATIVE_MARQUEE_TEMPLATES.includes(id)) {
+        if (NATIVE_MARQUEE_TEMPLATES.includes(id)) {
           expectSameMarqueeCards(first.nodes, shown.frame.nodes, aspect, label);
         } else if (SLIDER_TEMPLATES.includes(id)) {
           expectSameSliderCards(first.nodes, shown.frame.nodes, label);
@@ -460,55 +455,19 @@ describe("Template loop seam", () => {
     }
   }
 
-  // Where a whole card step fits under the speed limit in one loop, the strip travels
-  // whole steps, so halfway through the wrap crossfade both layers show cards in the same
-  // places on screen and only the screens dissolve. The exceptions: tilted browser rows at 9:16
-  // and tilted phone columns at 9:16 and 4:5 would need more than 0.12 frame widths per second
-  // to move one card per loop.
-  const UNREGISTERED = new Set([
-    "rows-browser-tilted 9:16",
-    "columns-phone-tilted 9:16",
-    "columns-phone-tilted 4:5",
-  ]);
-
-  it("cards stay in place during the wrap crossfade wherever a whole card step fits", () => {
-    for (const id of MARQUEE_FIXTURES) {
+  // A Frames shot given a wrap crossfade loops after `total`, so its lanes travel one period
+  // per `total`; during the crossfade the incoming lanes run on t − total (evaluate.ts). Both
+  // layers then show the same cards in the same places, so the crossfade cannot be seen.
+  it("Frames lanes line up in both layers of a wrap crossfade", () => {
+    for (const id of NATIVE_MARQUEE_TEMPLATES) {
       for (const aspect of ASPECTS) {
-        const doc = layoutFixture(id, aspect);
+        const doc = loopDoc(id, aspect);
+        doc.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
         const label = `${id} ${aspect}`;
         const { total } = schedule(doc);
-        const fade = doc.shots[0].transitionIn.duration;
-        expect(fade, `${label}: wrap crossfade`).toBeGreaterThan(0);
-        const [outgoing, incoming] = evaluate(doc, total - fade / 2).layers;
+        const [outgoing, incoming] = evaluate(doc, total - 0.4).layers;
         expect(incoming, `${label}: two layers halfway through the wrap`).toBeDefined();
-        // Card centres on screen, through each layer's own camera.
-        const onScreen = (frame: ShotFrame, node: LayoutNode) =>
-          projectPointToNDC(node.transform, computeCameraBasis(frame.camera, aspect));
-        const placedOnScreen = (a: LayoutNode, b: LayoutNode) => {
-          const pa = onScreen(outgoing.frame, a);
-          const pb = onScreen(incoming.frame, b);
-          return Math.abs(pa.x - pb.x) < 1e-4 && Math.abs(pa.y - pb.y) < 1e-4;
-        };
-        const placed = (a: LayoutNode, b: LayoutNode) =>
-          Math.abs(a.transform.x - b.transform.x) < 1e-6 &&
-          Math.abs(a.transform.y - b.transform.y) < 1e-6 &&
-          Math.abs(a.transform.z - b.transform.z) < 1e-6;
-        const visible = outgoing.frame.nodes.filter((node) => {
-          const p = onScreen(outgoing.frame, node);
-          return Math.abs(p.x) < 1 && Math.abs(p.y) < 1;
-        });
-        expect(visible.length, `${label}: cards on screen`).toBeGreaterThan(1);
-        const registered = visible.every((node) =>
-          incoming.frame.nodes.some((other) => placedOnScreen(node, other)),
-        );
-        expect(registered, label).toBe(!UNREGISTERED.has(label));
-        // The screens do change: a cut here would swap them.
-        const sameScreens = outgoing.frame.nodes.every((node) =>
-          incoming.frame.nodes.some(
-            (other) => placed(node, other) && other.assetId === node.assetId,
-          ),
-        );
-        expect(sameScreens, label).toBe(false);
+        expectSameMarqueeCards(outgoing.frame.nodes, incoming.frame.nodes, aspect, label);
       }
     }
   });

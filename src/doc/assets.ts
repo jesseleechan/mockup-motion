@@ -5,15 +5,10 @@ export function layoutAssetIds(layout: Layout): string[] {
   switch (layout.kind) {
     case "single":
       return [layout.assetId];
-    case "pair":
     case "responsive":
       return [layout.desktopId, layout.mobileId];
-    case "trio":
-      return [layout.desktopId, layout.tabletId ?? "", layout.mobileId];
     case "rows":
     case "columns":
-    case "wall":
-    case "stack":
     case "slider":
     case "orbit":
       return [...layout.assetIds];

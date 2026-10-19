@@ -1,8 +1,5 @@
 import * as THREE from "three";
 
-/** The silver body colour of the tablet and laptop, their only finish. */
-export const DEVICE_BODY_COLOR = "#D9DADD";
-
 /**
  * Creates a 2D rounded rectangle shape centered at (0, 0).
  */
@@ -50,15 +47,4 @@ export function createRoundedExtrudeGeometry(
   // Center along Z so front face is at z = 0, back face is at z = -depth
   geo.translate(0, 0, -depth);
   return geo;
-}
-
-/**
- * Creates the standard PBR body material.
- */
-export function createBodyMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color: new THREE.Color(DEVICE_BODY_COLOR),
-    roughness: 0.35,
-    metalness: 0.5,
-  });
 }

@@ -26,17 +26,14 @@ export function resolveSingleLayout(
   if (device === "phone") {
     height = 0.74; // 70-78% of frame height (quality-bar §4)
     width = height * PHONE_BODY_ASPECT; // quality-bar §3.3
-  } else if (device === "tablet") {
-    height = 0.72;
-    width = 0.72 * 0.75;
   } else {
-    // browser, laptop, card
+    // browser, card
     const targetWidthFraction = aspect === "16:9" || aspect === "4:3" ? 0.68 : 0.86;
     width = targetWidthFraction * W;
     height = width / screenAspect;
 
-    // Chrome adds height for browser/laptop
-    if (device === "browser" || device === "laptop") {
+    // Chrome adds height for a browser
+    if (device === "browser") {
       height += width * 0.042;
     }
 
