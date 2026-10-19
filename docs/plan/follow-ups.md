@@ -63,12 +63,13 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 
 ## Demo content and capture
 
-| Item                                                                                                                        | Source   |
-| --------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `public/demo/aurelia.png` (2 MB) is unreferenced but still ships.                                                           | F04, F12 |
-| `tests/sections.test.ts` builds the mobile ground truth by scaling desktop section tops, so the mobile comparison is loose. | F12      |
-| Section detection precision is about 25% (recall meets the ≥ 80% bar).                                                      | F12      |
-| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                    | F12      |
+| Item                                                                                                                                                                                                         | Source                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `public/demo/aurelia.png` (2 MB) is unreferenced but still ships.                                                                                                                                            | F04, F12                    |
+| `tests/sections.test.ts` builds the mobile ground truth by scaling desktop section tops, so the mobile comparison is loose.                                                                                  | F12                         |
+| Section detection precision is about 25% (recall meets the ≥ 80% bar).                                                                                                                                       | F12                         |
+| The fixed-element branch of `preparePage({ unstick })` isn't exercised by any demo site.                                                                                                                     | F12                         |
+| Vite warns in dev that the demo JSON under `public/demo/` (`manifest.json`, `sections*.json`) can't be imported from JavaScript; dev and build work. Moving the imported JSON under `src/` would silence it. | Responsive Scroll R02 (#52) |
 
 ## Tests and CI
 

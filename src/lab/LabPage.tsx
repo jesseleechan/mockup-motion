@@ -28,6 +28,7 @@ import {
 } from "../templates";
 import { VISUAL_FIXTURES } from "./visual-fixtures";
 import { LAYOUT_FIXTURES } from "./layout-fixtures";
+import { RESPONSIVE_FIXTURES } from "./responsive-fixtures";
 import { presetToneStyle } from "../templates/looks";
 
 declare global {
@@ -63,7 +64,7 @@ for (const t of BUILTIN_TEMPLATES) {
   FIXTURES[`template-${t.id}`] = pDoc;
   FIXTURES[t.id] = pDoc;
 }
-Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES);
+Object.assign(FIXTURES, VISUAL_FIXTURES, LAYOUT_FIXTURES, RESPONSIVE_FIXTURES);
 
 // Both Frames presets also get a fixture per aspect, because their lane count depends on the
 // aspect: the `frames` and `mobile-frames` fixtures above are built at 16:9. Use

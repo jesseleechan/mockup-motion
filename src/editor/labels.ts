@@ -25,6 +25,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   columns: "Mobile frames",
   slider: "Slider",
   orbit: "Orbit",
+  responsive: "Responsive scroll",
   title: "Title card",
 };
 

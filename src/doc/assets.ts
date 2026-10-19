@@ -5,6 +5,8 @@ export function layoutAssetIds(layout: Layout): string[] {
   switch (layout.kind) {
     case "single":
       return [layout.assetId];
+    case "responsive":
+      return [layout.desktopId, layout.mobileId];
     case "rows":
     case "columns":
     case "slider":
