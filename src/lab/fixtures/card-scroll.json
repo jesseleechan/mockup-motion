@@ -27,7 +27,6 @@
       "color": "#EEF1F4"
     },
     "frameAppearance": "light",
-    "deviceFinish": "silver",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "soft",
