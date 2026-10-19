@@ -27,18 +27,11 @@
       "color": "#141417"
     },
     "frameAppearance": "dark",
-    "deviceFinish": "graphite",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "medium",
     "grain": 0.25,
-    "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "#FFFFFF",
-    "accent": "#FFFFFF"
+    "vignette": 0.06
   },
   "shots": [
     {
@@ -50,13 +43,12 @@
         "assetId": "demo-studio-kova-desktop-hero"
       },
       "camera": {
-        "preset": "orbitLeft",
+        "preset": "pushIn",
         "intensity": 1,
         "easing": "smooth",
         "float": 0.3
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "fade",
         "duration": 0.8,

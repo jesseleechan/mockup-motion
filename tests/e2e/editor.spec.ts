@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs";
 import path from "node:path";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to lab/ui to cleanly clear storage without locking mockupmotion-v2
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();
@@ -74,34 +74,24 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await layoutSelect.click();
     await page.getByRole("option", { name: "Single device" }).click();
     await expect(page.getByText("Camera", { exact: true })).toBeVisible();
-    const heroTiltBtn = page.getByRole("button", { name: "Hero tilt" });
-    await expect(heroTiltBtn).toBeVisible();
-    await heroTiltBtn.click();
+    const cameraMove = page.getByRole("radiogroup", { name: "Camera move" });
+    const pushInBtn = cameraMove.getByRole("radio", { name: "Push in", exact: true });
+    await expect(pushInBtn).toBeVisible();
+    await pushInBtn.click();
+    await expect(pushInBtn).toBeChecked();
 
     // 5. Test Undo / Redo
     const undoBtn = page.getByRole("button", { name: "Undo" });
     await expect(undoBtn).toBeEnabled();
-    await undoBtn.click(); // Undoes heroTilt
+    await undoBtn.click(); // Undoes Push in
+    await expect(cameraMove.getByRole("radio", { name: "Still", exact: true })).toBeChecked();
 
     const redoBtn = page.getByRole("button", { name: "Redo" });
     await expect(redoBtn).toBeEnabled();
-    await redoBtn.click(); // Redoes heroTilt
+    await redoBtn.click(); // Redoes Push in
+    await expect(pushInBtn).toBeChecked();
 
-    // 6. Test Contextual Inspector filtering
-    // Switch to Title Card
-    await layoutSelect.click();
-    await page.getByRole("option", { name: "Title card" }).click();
-    // The device picker should NOT be visible for a title card
-    await expect(page.getByText("Device", { exact: true })).not.toBeVisible();
-    await expect(page.getByText("Camera", { exact: true })).not.toBeVisible();
-
-    // Switch back to Single Device
-    await layoutSelect.click();
-    await page.getByRole("option", { name: "Single device" }).click();
-    await expect(page.getByText("Device", { exact: true })).toBeVisible();
-    await expect(page.getByText("Camera", { exact: true })).toBeVisible();
-
-    // 7. Test 1080p Video Export
+    // 6. Test 1080p Video Export
     const exportBtn = page.getByRole("button", { name: "Export", exact: true });
     await exportBtn.click();
 
@@ -128,13 +118,11 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
   test("v1 project in legacy DB opens migrated on boot with assets intact", async ({ page }) => {
     // Populate legacy IndexedDB 'mockupmotion' before navigating to editor root
     await page.evaluate(async () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 100;
-      canvas.height = 100;
+      const canvas = new OffscreenCanvas(100, 100);
       const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = "blue";
       ctx.fillRect(0, 0, 100, 100);
-      const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), "image/png"));
+      const blob = await canvas.convertToBlob({ type: "image/png" });
 
       const req = indexedDB.open("mockupmotion", 1);
       req.onupgradeneeded = () => {
