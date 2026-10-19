@@ -9,7 +9,7 @@ import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
 const STACK_DEVICES: ("browser" | "card")[] = ["browser", "card"];
-// Picking a layout here makes a single device or a title card (docs/plan/follow-ups.md); a slider
+// Picking a layout here makes a single device (docs/plan/follow-ups.md); a slider
 // or an orbit comes from its templates, so the picker only lists it on a shot that already uses
 // it.
 const PICKER_LAYOUTS = (Object.keys(LAYOUT_LABELS) as Layout["kind"][]).filter(
@@ -59,29 +59,11 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
   const handleKindChange = (kind: Layout["kind"]) => {
     update(
       (target) => {
-        if (kind === "title") {
-          target.layout = { kind: "title" };
-          if (target.texts.length === 0) {
-            target.texts.push({
-              id: crypto.randomUUID(),
-              text: "Headline",
-              role: "title",
-              font: "display",
-              size: 5.5,
-              anchor: "center",
-              align: "center",
-              color: "",
-              animation: "maskReveal",
-              delay: 0,
-            });
-          }
-        } else {
-          target.layout = {
-            kind: "single",
-            device: "browser",
-            assetId: assets.find((a) => a.kind === "image")?.id ?? "",
-          };
-        }
+        target.layout = {
+          kind: "single",
+          device: "browser",
+          assetId: assets.find((a) => a.kind === "image")?.id ?? "",
+        };
       },
       { label: `Change layout to ${LAYOUT_LABELS[kind].toLowerCase()}` },
     );

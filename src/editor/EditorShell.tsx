@@ -104,8 +104,7 @@ export const EditorShell: React.FC = () => {
   // Move the selection to the first shot instead of leaving the inspector empty (F06).
   useEffect(() => {
     if (selection.kind === "video") return;
-    const shotId = selection.kind === "shot" ? selection.id : selection.shotId;
-    if (doc.shots.some((s) => s.id === shotId)) return;
+    if (doc.shots.some((s) => s.id === selection.id)) return;
     const first = doc.shots[0];
     setSelection(first ? { kind: "shot", id: first.id } : { kind: "video" });
   }, [doc.shots, selection, setSelection]);
@@ -211,18 +210,6 @@ export const EditorShell: React.FC = () => {
             { label: "Delete shot" },
           );
           setSelection({ kind: "video" });
-        } else if (selection.kind === "text") {
-          e.preventDefault();
-          apply(
-            (draft) => {
-              const targetShot = draft.shots.find((s) => s.id === selection.shotId);
-              if (targetShot) {
-                targetShot.texts = targetShot.texts.filter((t) => t.id !== selection.id);
-              }
-            },
-            { label: "Delete text layer" },
-          );
-          setSelection({ kind: "shot", id: selection.shotId });
         }
         return;
       }

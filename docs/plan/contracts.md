@@ -9,23 +9,23 @@ src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
   storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
-  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts · fonts.ts
+  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
                framing.ts · timeline.ts (scheduling, transitions, loop wrap) · scroll.ts
-               text-anim.ts · cursor.ts · evaluate.ts (doc, t) → FrameState
+               cursor.ts · evaluate.ts (doc, t) → FrameState
   engine/      three.js, no React (except react/)
                Engine.ts · stage.ts (camera fit) · devices/ · backgrounds/ · shadows/ · materials/
-               textures/ (tiling, downscale cache) · text/ (screen-space text pass)
+               textures/ (tiling, downscale cache) · text/ (browser URL pill rasters)
                compositor.ts (shots → RT → transition) · post/ (final pass, motion blur)
                react/EngineCanvas.tsx (thin preview wrapper)
-  text/        rasterize.ts (main thread only: text layer → ImageBitmap + word boxes)
+  text/        rasterize.ts (main thread only: one line of Inter → ImageBitmap, for the URL pill)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
                verify.ts · bundle.ts · gif.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
   editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
-               Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
+               Inspector/ (VideoPanel, ShotPanel) · dialogs/
   lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
 demo-sites/    static HTML/CSS sources for demo screenshots (WP-04)
@@ -63,12 +63,6 @@ export interface AssetRef {
   peaks?: number[]; // audio: 200 normalised (0..1) waveform peak buckets (WP-17)
 }
 
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string; // builtin family name or AssetRef.family
-  weight: number; // 100..900
-}
-
 export type Background =
   | { kind: "solid"; color: string }
   | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // 2-3 stops, OKLCH-interpolated
@@ -89,8 +83,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string; // default text colour; "" = auto contrast vs background
   accent: string; // cursor, highlights
 }
 
@@ -133,8 +125,7 @@ export type Layout =
       arrangement?: "carousel" | "deck";
     }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string }
-  | { kind: "title" };
+  | { kind: "responsive"; desktopId: string; mobileId: string };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // rows.cardHeight: stage units (default: today's per-row-count value). rows.gap: stage units between
 // cards and rows (default: today's 0.14 × width across, 0.06 down). rows.travel "steps" (default) is
@@ -197,32 +188,6 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor =
-  | "top-left"
-  | "top"
-  | "top-right"
-  | "left"
-  | "center"
-  | "right"
-  | "bottom-left"
-  | "bottom"
-  | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number; // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string; // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number; // seconds from shot start
-  logoAssetId?: string; // render a logo above the text
-}
-
 export interface Transition {
   kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
   duration: number; // seconds, overlaps the previous shot (see §5)
@@ -250,7 +215,6 @@ export interface Shot {
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec; // honoured for single-device and responsive layouts
   cursor?: CursorSpec; // honoured only for single-device layouts
-  texts: TextLayer[];
   transitionIn: Transition; // for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
@@ -307,7 +271,6 @@ Gradient angles use CSS direction in normalized frame coordinates: 0° runs bott
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
 - **Fit distance.** `d_fit = 0.5 / tan(fov/2)`. A camera with `distance = 1`, `yaw = pitch = roll = 0`, `pan = 0` sees exactly the stage. Because `distance` is a multiple of `d_fit`, changing `fov` at the same `distance` keeps the framing constant and only changes the amount of perspective.
 - **Orbit.** The camera orbits the target point `(panX, panY, 0)` by yaw and pitch at radius `distance × d_fit`, looking at the target, then rolls.
-- **Text and overlays** render in screen space (§6), not in the 3D scene, so camera moves never distort typography.
 
 ## 4. Layout resolution (`src/motion/layouts.ts`)
 
@@ -368,14 +331,8 @@ export interface ShotFrame {
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
   cursor?: { x: number; y: number; pressed: number; nodeId: string }; // pressed 0..1 ripple
   style: Style; // resolved (doc.style + overrides)
-}
-export interface TextFrame {
-  layerId: string;
-  words: { index: number; opacity: number; dy: number; blur: number; clip: number }[]; // dy in % frame height
-  opacity: number;
 }
 export interface FrameState {
   t: number;
@@ -401,20 +358,27 @@ export interface EngineOptions {
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
   cameraDistanceOverride?: number; // isolated fixture override, not serialized
+  hideDevices?: boolean; // lab/test fixture: draw the background only; not serialized
 }
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
+}
+/** One line of Inter: the browser URL pill's domain. */
+export interface TextLine {
+  id: string; // raster key, used to hand rasters to the export worker
+  text: string;
+  size: number; // % of frame height
+  color: string; // #RRGGBB
 }
 export interface TextRaster {
   bitmap: ImageBitmap;
-  words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
-  color?: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
+  color: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
 }
 
 export class Engine {
@@ -442,15 +406,15 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, and ambient and image backgrounds in the style and shot overrides) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and any transition into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
 Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision. Motion-blur accumulation averages `renderComposite` results (transitions included) in a linear half-float target, then runs the final pass once. Exports use 8 samples over a 180° shutter (`0.5 / fps`).
 
-`TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
-`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
+`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract. `EngineOptions.hideDevices` is the same kind of override: the development-only `devices=0` URL parameter draws the background alone, for tests of backgrounds, transitions and grain.
 
 ## 8. Templates (`src/templates/`)
 
@@ -514,4 +478,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises all text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.

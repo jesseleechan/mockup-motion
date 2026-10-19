@@ -121,7 +121,6 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         lay.assetIds.includes(assetId)
       )
         used = true;
-      if (shot.texts?.some((t) => t.logoAssetId === assetId)) used = true;
 
       if (used) shotIndices.push(idx + 1);
     });

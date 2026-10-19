@@ -147,10 +147,8 @@ export function applyTemplate(
 ): { style: Style; shots: Shot[]; loop: boolean } {
   const slots = fillSlots(template, doc.assets, previousAssignments);
 
-  // Preserve user's brand style (fonts, text color, accent)
+  // Preserve the user's accent and browser chrome
   const brandStyle: Partial<Style> = {
-    fonts: doc.style.fonts,
-    textColor: doc.style.textColor,
     accent: doc.style.accent,
     browserChrome: doc.style.browserChrome,
   };

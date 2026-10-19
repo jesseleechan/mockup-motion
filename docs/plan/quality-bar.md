@@ -19,7 +19,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 |---|---|---|
 | `gentle` | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out) | Long camera drifts, background, float |
 | `smooth` | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out) | Default camera moves, scroll segments |
-| `expoOut` | cubic-bezier(0.16, 1, 0.3, 1) | Entrances, text reveals |
+| `expoOut` | cubic-bezier(0.16, 1, 0.3, 1) | Entrances |
 | `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1) | Transitions, decisive pushes |
 | `backOut` | cubic-bezier(0.34, 1.32, 0.64, 1) | Small UI-like pops only (cursor click). Overshoot 3% or less |
 | `spring` | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Device entrances in reels |
@@ -28,10 +28,9 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 ### 2.2 Durations
 
-- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Title cards: 2–3 s. Two layouts set their own length instead: a `slider` shot lasts screenshots × step (carousel steps, below), and a Frames shot (Desktop Frames or Mobile Frames) lasts at least `framesDuration` (§2.5), 15 s by default. A Frames shot must also fit in 30 s, so it shows at most the screenshots whose period fits 30 s at 0.20 stage units per second: for Desktop Frames, 10 with the 3-row cards (4:5, 9:16, 1:1) and 8 with the 2-row cards (16:9, 4:3); for Mobile Frames, 9 at 16:9, 4:3 and 1:1 and 10 at 4:5 and 9:16. Later ones are left out, and the inspector says so.
+- Shot: 3–7 s (default 5 s single-shot, 4 s per shot in reels). Two layouts set their own length instead: a `slider` shot lasts screenshots × step (carousel steps, below), and a Frames shot (Desktop Frames or Mobile Frames) lasts at least `framesDuration` (§2.5), 15 s by default. A Frames shot must also fit in 30 s, so it shows at most the screenshots whose period fits 30 s at 0.20 stage units per second: for Desktop Frames, 10 with the 3-row cards (4:5, 9:16, 1:1) and 8 with the 2-row cards (16:9, 4:3); for Mobile Frames, 9 at 16:9, 4:3 and 1:1 and 10 at 4:5 and 9:16. Later ones are left out, and the inspector says so.
 - Transitions: 0.5–0.9 s (default 0.7 s, `quintInOut`). Loop wrap crossfade: 0.8 s.
 - Entrances: 0.7–1.0 s with `expoOut`. Stagger between sibling elements: 80–120 ms.
-- Text: 0.6–0.9 s per reveal, 60–90 ms per-word stagger. Hold text fully visible for at least 1.2 s before any exit.
 - Carousel steps (`slider` layout, both arrangements: the carousel of the sliders and the deck of Desktop Stack and Mobile Stack): one step per screenshot, 1.6–4.0 s per step (default 2.0 s). Step `k` starts on its step boundary, `k × step`, with a 1.85 s move on the `slide` curve, then holds for the rest of the step, so a longer step only adds hold. A step shorter than 1.85 s moves for the whole step. Position, scale and opacity follow the same progress. A slider shot lasts screenshots × step and must fit in 30 s, so the step is at most min(4.0, 30 / N) s, and a slider shows at most its first 18 screenshots (18 × 1.6 s = 28.8 s). An `orbit` steps on the same timing: one step turns the ring one card, and it shows at most its first 6 screenshots.
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
 - Responsive Scroll: two screens scroll together, so each segment takes the time the screen that travels further needs at 0.9 screen heights per second, and both hold together (1.0 s by default). Defaults stop at the top and three sections both pages share (not the header or footer), each the farthest from the stops already chosen. The shot lasts holds plus moves plus the 0.8 s wrap crossfade, so the loop is holds plus moves and the fade falls inside the last hold; it fits in 30 s.
@@ -79,7 +78,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 ### 3.2 Browser window
 
 - Corner radius: 1.1% of window width. Hairline border: 1 px at 1080p equivalent (0.0009 stage units), `rgba(0,0,0,0.08)` light or `rgba(255,255,255,0.08)` dark.
-- `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in the body font at 42% of toolbar height, 55% opacity.
+- `standard` chrome: toolbar height 4.2% of window width (minimum 0.028 stage units). Traffic lights: diameter 0.85% of width, gap 0.55%, left inset 1.6%, colors `#FF5F57 #FEBC2E #28C840` with a 0.5 px darker ring. URL pill centered, 34% of width, height 56% of the toolbar, radius fully round, domain text in Inter Regular (+2% tracking) at 42% of toolbar height, 55% opacity.
 - `minimal`: no toolbar; traffic lights float inside the top-left corner over a 6% top fade. `none`: the screen only, with radius and border kept.
 - Light toolbar `#F6F6F7`, dark `#1E1E21`.
 
@@ -121,7 +120,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 - **Orbit** (`orbit`; Desktop Orbit and Mobile Orbit, `docs/orbit-plan/README.md`): the screenshots on a ring seen from slightly above, still camera, cards always facing the camera (never tilted). Card i at phase φ has angle θ = 2π(i − φ)/N, x = R sin θ, depth z = cos θ, scale 0.58 + 0.42 × (1 + z)/2, and sits lift × (1 − z)/2 higher than the front card; nearer cards draw over further ones. The front card's centre is (lift − 0.21 × h0)/2 below the frame centre, so the ring is centred between the front card's bottom and the back card's top (h0 = front card height). Each step turns the next card in from the right. Mobile Orbit: portrait cards at 0.4615, h0 = min(0.58, 0.42 × frame width / 0.4615), R = min(1.25 × card width, frame width/2 − 0.25 × card width), lift = 0.42 × h0. Desktop Orbit: landscape cards, card width = min(0.62 × frame width, 0.672), R = min(0.62 × card width, frame width/2 − 0.2 × card width), lift = 0.34 × h0. Side cards may be cropped by the frame edge, as slider neighbours are. Orbits need 4 screenshots, read best with 5–6, and show at most the first 6, each once. These are the approved preview's values, kept unchanged in the O04 contact sheet review (owner, 19 October 2026).
 - **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
 
-- **Vertical formats:** keep text and primary content inside the central 80% of the height (social UI overlays).
+- **Vertical formats:** keep primary content inside the central 80% of the height (social UI overlays).
 
 ## 5. Light, shadow, and atmosphere
 
@@ -144,11 +143,7 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 
 ## 7. Typography
 
-- Curated pairs (self-hosted, WP-10): **Inter Display / Inter**, **Instrument Serif / Inter**, **Fraunces / Inter**, **Geist / Geist**, **DM Serif Display / DM Sans**, **Space Grotesk / Inter**. Users can also upload their own fonts.
-- Title 5–7% of frame height, tracking −1.5% to −2.5%, line height 1.05–1.12, weight 500–650 (display serifs 400). Subtitle 2.2–2.8%, 70% opacity. Captions and labels 1.6–1.9%, uppercase optional with +6% tracking.
-- Text is never smaller than 1.6% of frame height (about 17 px at 1080p).
-- Text color is auto-contrasted against the local background luminance (WCAG ≥ 4.5:1 for captions, ≥ 3:1 for titles).
-- Text renders in screen space, crisp, never perspective-distorted. Max line length 22 characters for titles; wrap with balanced lines.
+Removed (owner, 19 October 2026). Videos carry no text layers, title cards or brand fonts. The only text drawn is the domain in the browser URL pill (§3.2), set in Inter, which the UI also uses.
 
 ## 8. Review checklist (paste into visual PRs)
 
@@ -156,6 +151,5 @@ Float is optional ambient sway layered on top of the main move, the only allowed
 - [ ] No reversing motion. Each shot has one dominant move, and the easing comes from §2.1.
 - [ ] Safe margins (§4) hold at all 5 aspects. Checked on the contact sheet.
 - [ ] Shadow, grain, and vignette are within §5 ranges. No banding visible on the gradient frame at 1080p export.
-- [ ] Text is at least 1.6% of frame height, with contrast that passes.
 - [ ] The loop is seamless: frame(0) equals frame(total) (unit test), and there is no visible pop when watching 3 loops.
 - [ ] No shimmer on screenshot text during camera moves in a 1080p30 export.

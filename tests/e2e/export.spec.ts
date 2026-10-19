@@ -91,14 +91,12 @@ test.describe("F09 export correctness", () => {
       const doc = structuredClone(w.__fixtures?.["device-card-frontal"]);
       if (!media || !doc || !w.__exportWithEngine || !w.__createLabAssetProvider)
         throw new Error("Lab export hooks are unavailable");
-      // Two static 1 s title shots, black then white, with a 0.6 s linear fade: 0.4 s to 1.0 s.
+      // Two static 1 s card shots, black then white, with a 0.6 s linear fade: 0.4 s to 1.0 s.
       doc.loop = false;
       doc.style.background = { kind: "solid", color: "#000000" };
       doc.style.grain = 0;
       doc.style.vignette = 0;
       const shot = doc.shots[0];
-      shot.layout = { kind: "title" };
-      shot.texts = [];
       shot.duration = 1;
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
       doc.shots = [

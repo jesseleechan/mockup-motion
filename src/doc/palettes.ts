@@ -6,7 +6,6 @@ export interface BuiltinPalette {
   name: string;
   background: Background;
   frameAppearance: FrameAppearance;
-  textColor: string;
   shadowTint: string;
 }
 
@@ -65,7 +64,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#1C1917",
     shadowTint: shadowTintFor({ kind: "solid", color: "#E3DCD0" }),
   },
   // 2. Fog (Cool Light Grey) - OKLCH C ~0.01
@@ -79,7 +77,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#0F172A",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D9DFE6" }),
   },
   // 3. Graphite (Deep Neutral Charcoal) - OKLCH C ~0.01
@@ -93,7 +90,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "dark",
-    textColor: "#F4F4F5",
     shadowTint: shadowTintFor({ kind: "solid", color: "#141417" }),
   },
   // 4. Ink (Atmospheric Midnight Navy) - OKLCH C ~0.04
@@ -107,7 +103,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "dark",
-    textColor: "#F8FAFC",
     shadowTint: shadowTintFor({ kind: "solid", color: "#0D1424" }),
   },
   // 5. Sage (Soft Organic Green) - OKLCH C ~0.02
@@ -121,7 +116,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#1B221B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#C9D3C4" }),
   },
   // 6. Clay (Warm Earthen Terracotta) - OKLCH C ~0.03
@@ -135,7 +129,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       angleConvention: "css",
     },
     frameAppearance: "light",
-    textColor: "#261914",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D2B8A6" }),
   },
   // 7. Dusk (Moody Warm Twilight Mesh) - OKLCH C ~0.04-0.06
@@ -149,7 +142,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       seed: 42,
     },
     frameAppearance: "dark",
-    textColor: "#FAF5FF",
     shadowTint: shadowTintFor({ kind: "solid", color: "#1B1B2F" }),
   },
   // 8. Mist (Ethereal Morning Pastel Mesh) - OKLCH C ~0.02
@@ -163,7 +155,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
       seed: 108,
     },
     frameAppearance: "light",
-    textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#D7E0EE" }),
   },
   // 9. Ash (Flat Light Grey, sampled from the Frames and slider references) - OKLCH C ~0.004
@@ -172,7 +163,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     name: "Ash",
     background: { kind: "solid", color: "#DFE1E3" },
     frameAppearance: "light",
-    textColor: "#18181B",
     shadowTint: shadowTintFor({ kind: "solid", color: "#DFE1E3" }),
   },
   // 10. Onyx (Flat Near-Black, Graphite's first stop as a solid): the dark option of the
@@ -182,7 +172,6 @@ export const BUILTIN_PALETTES: BuiltinPalette[] = [
     name: "Onyx",
     background: { kind: "solid", color: "#141417" },
     frameAppearance: "dark",
-    textColor: "#F4F4F5",
     shadowTint: shadowTintFor({ kind: "solid", color: "#141417" }),
   },
 ];

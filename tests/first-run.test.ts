@@ -182,7 +182,6 @@ describe("F06: add assets and apply a template in one undo step", () => {
     const store = createEditorStore();
     store.getState().apply((draft) => {
       draft.style.accent = "#FF5500";
-      draft.style.textColor = "#112233";
     });
     const story = template("scroll-story");
     await store
@@ -191,7 +190,6 @@ describe("F06: add assets and apply a template in one undo step", () => {
         applyTemplate(story, doc),
       );
     expect(store.getState().doc.style.accent).toBe("#FF5500");
-    expect(store.getState().doc.style.textColor).toBe("#112233");
     expect(store.getState().doc.templateId).toBe("scroll-story");
   });
 });

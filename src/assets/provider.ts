@@ -1,11 +1,10 @@
-import type { Style, TextLayer } from "../doc/types";
-import { rasterizeText, type TextRaster } from "../text/rasterize";
+import { rasterizeText, type TextLine, type TextRaster } from "../text/rasterize";
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width <= maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height. */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height. */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
 }
 
 export function bucketWidth(targetWidth: number): number {
@@ -140,8 +139,8 @@ export function createAssetProvider(
       return bitmap;
     },
 
-    async getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster> {
-      return rasterizeText(layer, style, frameHeightPx, getBlob);
+    async getText(line: TextLine, frameHeightPx: number): Promise<TextRaster> {
+      return rasterizeText(line, frameHeightPx);
     },
   };
 }

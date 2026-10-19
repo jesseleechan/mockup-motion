@@ -19,12 +19,6 @@ export interface AssetRef {
   peaks?: number[];        // audio: 200 normalised (0..1) waveform peak buckets
 }
 
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string;          // builtin family name or AssetRef.family
-  weight: number;          // 100..900
-}
-
 export type Background =
   | { kind: "solid"; color: string }
   | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // CSS: 0 up, 90 right, 180 down. Unmarked persisted v2 = legacy math.
@@ -46,8 +40,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number;           // 0..1 (0.25 ≈ quality-bar default)
   vignette: number;        // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string;       // default text colour; "" = auto contrast vs background
   accent: string;          // cursor, highlights
 }
 
@@ -65,8 +57,7 @@ export type Layout =
   | { kind: "stack"; assetIds: string[]; device: "browser" | "card"; spread: number }
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
-  | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "title" };
+  | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
@@ -116,24 +107,6 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor = "top-left" | "top" | "top-right" | "left" | "center" | "right"
-  | "bottom-left" | "bottom" | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number;            // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string;           // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number;           // seconds from shot start
-  logoAssetId?: string;    // render a logo above the text
-}
-
 export interface Transition {
   kind: "cut" | "fade" | "blur" | "push" | "zoom" | "wipe";
   duration: number;        // seconds, overlaps the previous shot (see §5)
@@ -152,7 +125,6 @@ export interface Shot {
   entrance: "none" | "rise" | "scale" | "stagger"; // how layout nodes appear at shot start (quality-bar §2.2)
   scroll?: ScrollSpec;     // honoured only for single-device layouts
   cursor?: CursorSpec;     // honoured only for single-device layouts
-  texts: TextLayer[];
   transitionIn: Transition;// for shots[0], used as the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }

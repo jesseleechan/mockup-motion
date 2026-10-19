@@ -21,6 +21,8 @@ export interface EngineCanvasProps {
   supersample?: 1 | 1.5 | 2;
   /** Isolated lab fixtures only; does not change CameraMove or saved projects. */
   cameraDistanceOverride?: number;
+  /** Isolated lab fixtures only: draws the background without the document's devices. */
+  hideDevices?: boolean;
 }
 
 const DEFAULT_SUPERSAMPLE = 1.5;
@@ -58,6 +60,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
   pixelRatio,
   supersample,
   cameraDistanceOverride,
+  hideDevices,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +97,7 @@ export const EngineCanvas: React.FC<EngineCanvasProps> = ({
       height: devicePixels(container.clientHeight || 450, ratio),
       supersample: supersampleRef.current,
       cameraDistanceOverride,
+      hideDevices,
     }).then((next) => {
       if (disposed) {
         next.dispose();
