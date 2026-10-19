@@ -342,7 +342,8 @@ test.describe("slider editing", () => {
       });
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Start with a template" }).click();
+    // The editor opens on the gallery when it starts on an empty project.
+    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
     await page.locator('[data-testid="template-card"][data-template-id="mobile-slider"]').click();
     await page.getByRole("button", { name: "Apply template" }).click();
     await page.getByRole("button", { name: "Use demo content" }).click();
@@ -395,6 +396,29 @@ test.describe("slider editing", () => {
     expect(await sliderShot(page)).toEqual(before);
   });
 
+  test("the screenshot list reorders by keyboard, keeping focus on the moved row", async ({
+    page,
+  }) => {
+    await openMobileSlider(page);
+    const before = (await sliderShot(page)).assetIds;
+    const list = page.getByRole("list", { name: "Slider screenshots" });
+    const first = list.getByRole("listitem").first();
+    await first.focus();
+
+    // Two moves in a row: React reorders the row's element, so focus must be put back after each.
+    await page.keyboard.press("Alt+ArrowDown");
+    await page.keyboard.press("Alt+ArrowDown");
+    const moved = [before[1], before[2], before[0], ...before.slice(3)];
+    await expect.poll(async () => (await sliderShot(page)).assetIds).toEqual(moved);
+    await expect(list.getByRole("listitem").nth(2)).toBeFocused();
+
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect
+      .poll(async () => (await sliderShot(page)).assetIds)
+      .toEqual([before[1], before[0], ...before.slice(2)]);
+    await expect(list.getByRole("listitem").nth(1)).toBeFocused();
+  });
+
   test("a screenshot added from the Media tab joins the slider and adds one step", async ({
     page,
   }) => {
@@ -412,7 +436,7 @@ test.describe("slider editing", () => {
       mimeType: "image/png",
       buffer: png,
     });
-    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    const card = page.getByTestId("media-card").filter({ hasText: "extra-mobile.png" });
     await expect(card).toBeVisible();
     await card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to slider" }).click();

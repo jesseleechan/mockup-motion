@@ -19,6 +19,7 @@ export {
   isSteppedLayout,
   isStillCamera,
   minShotDuration,
+  minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
   SLIDER_MAX_SCREENSHOTS,

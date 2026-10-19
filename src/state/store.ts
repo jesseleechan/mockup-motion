@@ -1,13 +1,25 @@
 import { create } from "zustand";
 import { produce } from "immer";
-import { createDoc } from "../doc/defaults";
+import { newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
-import type { AssetMeta, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { replaceLayoutAssetIds } from "../doc/assets";
+import { readLastExport, writeLastExport } from "../export/last-settings";
+import type {
+  AssetMeta,
+  AssetRef,
+  AssetRole,
+  DeviceKind,
+  ExportSettings,
+  ProjectDoc,
+  Shot,
+  Style,
+} from "../doc/types";
 import {
   clampSliderStep,
   fixedShotCamera,
   fixedShotDuration,
   minShotDuration,
+  minShotScreenshots,
   isSteppedLayout,
   sliderDuration,
   steppedAssetIds,
@@ -40,8 +52,21 @@ export interface EditorStoreState {
   redo: () => void;
   loadDoc: (doc: ProjectDoc) => void;
   newDoc: () => void;
+  /**
+   * Saves the settings of an export that was started, with the project and as this browser's
+   * starting point for new projects. Not an undo step: it doesn't change the video.
+   */
+  rememberExport: (settings: ExportSettings) => void;
   applyTemplateResult: (result: TemplateResult, templateId?: string) => void;
-  addAssets: (refs: AssetRef[], blobs?: Record<string, Blob>) => Promise<void>;
+  /**
+   * Adds assets. `replace` swaps screen asset ids in every shot (old id to new id) in the same
+   * undo step, such as a full-page screenshot taking a short one's place in Scroll Story.
+   */
+  addAssets: (
+    refs: AssetRef[],
+    blobs?: Record<string, Blob>,
+    replace?: Record<string, string>,
+  ) => Promise<void>;
   /**
    * Adds assets and applies a template in one undo step. `build` receives the document with
    * the new assets already in it, so the template's slots can fill from them.
@@ -62,13 +87,33 @@ export interface EditorStoreState {
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
   /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
-  /** Takes a screenshot out of a list layout. */
+  /**
+   * Adds new screenshots to the project and to a list layout's shot in one undo step (the
+   * screenshot list's Upload).
+   */
+  addScreenshotsToShot: (
+    shotIndex: number,
+    refs: AssetRef[],
+    blobs: Record<string, Blob>,
+  ) => Promise<void>;
+  /** Takes a screenshot out of a list layout; not below the layout's minimum (quality-bar §4). */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
+  /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
+  moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
 
   // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
+}
+
+/** Appends a screenshot to a list layout's shot and lengthens the shot if the layout needs it. */
+function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
+  const shot = draft.shots[shotIndex];
+  if (!shot || !("assetIds" in shot.layout)) return;
+  if (shot.layout.assetIds.includes(assetId)) return;
+  shot.layout.assetIds.push(assetId);
+  shot.duration = Math.min(30, Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)));
 }
 
 const MAX_HISTORY = 100;
@@ -98,8 +143,38 @@ function fitFixedShots(draft: ProjectDoc): void {
   }
 }
 
+/** The screenshot role each single device shows. */
+const DEVICE_ROLE: Partial<Record<DeviceKind, AssetRole>> = {
+  browser: "desktop",
+  phone: "mobile",
+};
+
+/**
+ * Puts the first added screenshot of the device's role on every single-device shot whose screen
+ * is empty, such as a new project's browser, so an upload shows at once. A browser takes a
+ * desktop screenshot and a phone a mobile one; other screenshots only join the library.
+ */
+function fillEmptyScreens(draft: ProjectDoc, refs: AssetRef[]): void {
+  for (const shot of draft.shots) {
+    if (shot.layout.kind !== "single" || shot.layout.assetId) continue;
+    const role = DEVICE_ROLE[shot.layout.device];
+    const match = refs.find((ref) => ref.kind === "image" && ref.role === role);
+    if (match) shot.layout.assetId = match.id;
+  }
+}
+
+/**
+ * A new project: the preset look (`newProjectDoc`), with the last export settings used in this
+ * browser, if any.
+ */
+function createNewProjectDoc(): ProjectDoc {
+  const doc = newProjectDoc();
+  const lastExport = readLastExport();
+  return lastExport ? { ...doc, export: { ...doc.export, ...lastExport } } : doc;
+}
+
 export function createEditorStore(initialDoc?: ProjectDoc) {
-  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createDoc();
+  const startDoc = initialDoc ? sanitizeDoc(initialDoc).doc : createNewProjectDoc();
 
   let transactionSnapshot: ProjectDoc | null = null;
   let lastCoalesceKey: string | null = null;
@@ -217,7 +292,18 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     newDoc: () => {
-      get().loadDoc(createDoc());
+      get().loadDoc(createNewProjectDoc());
+    },
+
+    rememberExport: (settings) => {
+      writeLastExport(settings);
+      // Undo and redo restore whole documents, so the snapshots take the settings too.
+      const withExport = (d: ProjectDoc) => ({ ...d, export: { ...settings } });
+      set((state) => ({
+        doc: withExport(state.doc),
+        past: state.past.map(withExport),
+        future: state.future.map(withExport),
+      }));
     },
 
     applyTemplateResult: ({ style, shots, loop }, templateId) => {
@@ -232,7 +318,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       );
     },
 
-    addAssets: async (refs: AssetRef[], blobs?: Record<string, Blob>) => {
+    addAssets: async (refs, blobs, replace) => {
       if (blobs) {
         for (const [id, blob] of Object.entries(blobs)) {
           await putBlob(id, blob);
@@ -245,6 +331,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               draft.assets.push(ref);
             }
           }
+          if (replace) {
+            for (const shot of draft.shots) replaceLayoutAssetIds(shot.layout, replace);
+          }
+          fillEmptyScreens(draft, refs);
         },
         { label: "Add assets" },
       );
@@ -429,18 +519,23 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
     },
 
     addAssetToShot: (shotIndex: number, assetId: string) => {
+      get().apply((draft) => pushShotAsset(draft, shotIndex, assetId), {
+        label: "Add screenshot to shot",
+      });
+    },
+
+    addScreenshotsToShot: async (shotIndex, refs, blobs) => {
+      for (const [id, blob] of Object.entries(blobs)) {
+        await putBlob(id, blob);
+      }
       get().apply(
         (draft) => {
-          const shot = draft.shots[shotIndex];
-          if (!shot || !("assetIds" in shot.layout)) return;
-          if (shot.layout.assetIds.includes(assetId)) return;
-          shot.layout.assetIds.push(assetId);
-          shot.duration = Math.min(
-            30,
-            Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)),
-          );
+          for (const ref of refs) {
+            if (!draft.assets.some((a) => a.id === ref.id)) draft.assets.push(ref);
+            pushShotAsset(draft, shotIndex, ref.id);
+          }
         },
-        { label: "Add screenshot to shot" },
+        { label: refs.length === 1 ? "Add screenshot" : "Add screenshots" },
       );
     },
 
@@ -449,9 +544,28 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         (draft) => {
           const shot = draft.shots[shotIndex];
           if (!shot || !("assetIds" in shot.layout)) return;
+          if (shot.layout.assetIds.length <= minShotScreenshots(shot.layout)) return;
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },
+      );
+    },
+
+    moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => {
+      const shot = get().doc.shots[shotIndex];
+      if (!shot || !("assetIds" in shot.layout)) return;
+      const from = shot.layout.assetIds.indexOf(assetId);
+      const to = Math.max(0, Math.min(shot.layout.assetIds.length - 1, toIndex));
+      // A move to its own place is not an edit, so it leaves no undo step.
+      if (from < 0 || from === to) return;
+      get().apply(
+        (draft) => {
+          const target = draft.shots[shotIndex];
+          if (!target || !("assetIds" in target.layout)) return;
+          target.layout.assetIds.splice(from, 1);
+          target.layout.assetIds.splice(to, 0, assetId);
+        },
+        { label: "Reorder screenshots" },
       );
     },
 

@@ -54,17 +54,20 @@ Videos are silent. Music was removed in October 2026; a saved project with a mus
 
 Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip) and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. Animated GIF export and motion blur were removed in October 2026; a saved project that used them opens with MP4 and no motion blur.
 
-Each destination is a starting point for the settings. The dialog opens on Custom, an MP4 at 1080p in your project's aspect:
+Each destination is a starting point for the settings. A new project's dialog opens on Video, an MP4 at 1080p in your project's aspect; after that it opens on the settings of your last export:
 
-| Destination     | Format              | Resolution | Suggested aspect   |
-| --------------- | ------------------- | ---------- | ------------------ |
-| Custom          | MP4 (default)       | 1080p      | Your project's     |
-| Website         | Web bundle (.zip)   | 1080p      | 16:9               |
-| Dribbble        | MP4                 | 1200p      | 4:3 (1600 × 1200)  |
-| Instagram       | MP4                 | 1080p      | 4:5 (1080 × 1350)  |
-| Story           | MP4                 | 1080p      | 9:16 (1080 × 1920) |
-| LinkedIn & X    | MP4                 | 1080p      | 16:9               |
-| 4K presentation | MP4, master quality | 2160p      | 16:9               |
+| Destination     | Format                                  | Resolution | Suggested aspect   |
+| --------------- | --------------------------------------- | ---------- | ------------------ |
+| Video           | MP4 (default), also for LinkedIn and X  | 1080p      | Your project's     |
+| Dribbble        | MP4                                     | 1200p      | 4:3 (1600 × 1200)  |
+| Instagram       | MP4                                     | 1080p      | 4:5 (1080 × 1350)  |
+| Story           | MP4                                     | 1080p      | 9:16 (1080 × 1920) |
+| 4K presentation | MP4, master quality                     | 2160p      | 16:9               |
+| Web bundle      | MP4, WebM, poster and embed code (.zip) | 1080p      | 16:9               |
+
+Changing a setting by hand makes the settings Custom, and no destination is selected.
+
+**Several sizes at once.** Under the destinations, pick any of 16:9, 4:3, 4:5 and 9:16 to get one file per size in one export, for example for a site, Dribbble, an Instagram post and a Story. Each size renders the project re-fitted to that aspect, as "Switch to" would, without changing the project. Files render one after another, and each one can be downloaded as soon as it finishes.
 
 A destination doesn't change the project's aspect on its own. If they differ, the dialog says so and offers "Switch to 4:3" (for example). Until you switch, a 16:9 project exported for Dribbble comes out at 2134 × 1200.
 
