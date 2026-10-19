@@ -33,7 +33,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
   const apply = useEditorStore((s) => s.apply);
   const { total: duration } = useMemo(() => schedule(doc), [doc]);
 
-  const [settings, setSettings] = useState<ExportSettings>(() => presetSettings("web-embed"));
+  // Opens on MP4 at the project's aspect; the web bundle stays one card away.
+  const [settings, setSettings] = useState<ExportSettings>(() => presetSettings("custom"));
   const { probing, plan } = useExportPlan(settings, doc.aspect, duration, open);
 
   const [progress, setProgress] = useState<Progress | null>(null);

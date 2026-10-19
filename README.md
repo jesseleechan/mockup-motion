@@ -60,17 +60,17 @@ Videos are silent. Music was removed in October 2026; a saved project with a mus
 
 Export uses the same renderer as the preview. Formats: MP4 (H.264), WebM (VP9), web bundle (.zip), animated GIF and a still frame (PNG). Resolutions run from 720p to 2160p and set the short side of the video. GIFs are capped at 960 px on the short side and 20 fps.
 
-Each destination is a starting point for the settings:
+Each destination is a starting point for the settings. The dialog opens on Custom, an MP4 at 1080p in your project's aspect:
 
-| Destination     | Format              | Resolution  | Suggested aspect   |
-| --------------- | ------------------- | ----------- | ------------------ |
-| Website         | Web bundle (.zip)   | 1080p       | 16:9               |
-| Dribbble        | MP4                 | 1200p       | 4:3 (1600 × 1200)  |
-| Instagram       | MP4                 | 1080p       | 4:5 (1080 × 1350)  |
-| Story           | MP4                 | 1080p       | 9:16 (1080 × 1920) |
-| LinkedIn & X    | MP4                 | 1080p       | 16:9               |
-| 4K presentation | MP4, master quality | 2160p       | 16:9               |
-| Custom          | Your choice         | Your choice | Your project's     |
+| Destination     | Format              | Resolution | Suggested aspect   |
+| --------------- | ------------------- | ---------- | ------------------ |
+| Custom          | MP4 (default)       | 1080p      | Your project's     |
+| Website         | Web bundle (.zip)   | 1080p      | 16:9               |
+| Dribbble        | MP4                 | 1200p      | 4:3 (1600 × 1200)  |
+| Instagram       | MP4                 | 1080p      | 4:5 (1080 × 1350)  |
+| Story           | MP4                 | 1080p      | 9:16 (1080 × 1920) |
+| LinkedIn & X    | MP4                 | 1080p      | 16:9               |
+| 4K presentation | MP4, master quality | 2160p      | 16:9               |
 
 A destination doesn't change the project's aspect on its own. If they differ, the dialog says so and offers "Switch to 4:3" (for example). Until you switch, a 16:9 project exported for Dribbble comes out at 2134 × 1200.
 
