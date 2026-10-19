@@ -15,6 +15,7 @@ const SHORTCUTS = [
   { keys: ["⇧", "⌘ / Ctrl", "Z"], desc: "Redo last undone edit" },
   { keys: ["⌘ / Ctrl", "E"], desc: "Open export video dialog" },
   { keys: ["⌘ / Ctrl", "D"], desc: "Duplicate selected shot" },
+  { keys: ["⌘ / Ctrl", "V"], desc: "Paste a screenshot into the library" },
   { keys: ["Delete / Backspace"], desc: "Remove selected shot or text" },
   { keys: ["["], desc: "Toggle templates & media library" },
   { keys: ["]"], desc: "Toggle contextual inspector" },

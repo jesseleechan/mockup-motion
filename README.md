@@ -32,7 +32,7 @@ This writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) 
 
 Start with a template, or try the demo content. Seven templates: Desktop Slider, Mobile Slider, Desktop Frames, Mobile Frames, Desktop Orbit, Mobile Orbit and Scroll Story.
 
-Drop PNG, JPEG, WebP or AVIF files onto the stage, or upload them in the Media tab. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
+Drop PNG, JPEG, WebP or AVIF files or a whole folder anywhere on the editor, paste an image with ⌘V / Ctrl+V, or upload them in the Media tab. A dropped `captures` folder brings each screenshot's role (desktop or mobile) and section data. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. Demo images stay in place until you do.
 
 ## Scroll Story
 

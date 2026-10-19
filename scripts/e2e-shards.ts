@@ -41,6 +41,7 @@ export const E2E_SHARDS: readonly (readonly string[])[] = [
     "ui",
     "preset-tone",
     "orbit",
+    "import",
   ],
   ["export", "frames", "slider", "mobile-frames"],
 ];

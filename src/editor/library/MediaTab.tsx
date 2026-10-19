@@ -5,17 +5,14 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
   Icon,
-  useToast,
 } from "../../ui";
 import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { getBlob } from "../../storage/blobs";
 import type { AssetRef, AssetRole } from "../../doc/types";
-import { analyzeImage } from "../../assets/roles";
-import { validateAndDecodeAsset } from "../../assets/decode";
-import { useTemplateActions } from "../template-actions";
-import { SCREENSHOT_ACCEPT, applyCaptures, splitCaptureFiles } from "./capture-import";
+import { useImportFiles } from "../import/use-import-files";
+import { SCREENSHOT_ACCEPT } from "./capture-import";
 import {
   Copy,
   GalleryHorizontal,
@@ -38,7 +35,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     () => ({ ...fullDoc, assets: fullDoc.assets.filter((a) => a.kind === "image") }),
     [fullDoc],
   );
-  const { addScreenshots } = useTemplateActions();
+  const importFiles = useImportFiles();
   const replaceAsset = useEditorStore((s) => s.replaceAsset);
   const removeAsset = useEditorStore((s) => s.removeAsset);
   const setAssetRole = useEditorStore((s) => s.setAssetRole);
@@ -129,59 +126,6 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     return shotIndices;
   };
 
-  const { toast } = useToast();
-
-  const handleFileUpload = async (files: File[]) => {
-    const newRefs: AssetRef[] = [];
-    const blobs: Record<string, Blob> = {};
-    const { images, captures, errors } = await splitCaptureFiles(files);
-
-    for (const file of images) {
-      let validated: { ref: AssetRef; blob: Blob };
-      try {
-        validated = await validateAndDecodeAsset(file, file.name);
-      } catch (err) {
-        errors.push(
-          err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`,
-        );
-        continue;
-      }
-
-      const { ref } = validated;
-      blobs[ref.id] = validated.blob;
-      let hasStatusBar = false;
-      let bottomColor = "#000000";
-      try {
-        const bmp = await createImageBitmap(file);
-        const canvas = new OffscreenCanvas(Math.min(bmp.width, 390), Math.min(bmp.height, 844));
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-          const analysis = analyzeImage({
-            width: canvas.width,
-            height: canvas.height,
-            rgba: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
-          });
-          hasStatusBar = analysis.hasStatusBar;
-          bottomColor = analysis.bottomColor;
-        }
-        bmp.close();
-      } catch {
-        // Dimensions already came from validation.
-      }
-
-      newRefs.push({
-        ...ref,
-        meta: { ...ref.meta, hasStatusBar, bottomColor },
-      });
-    }
-
-    const attached = applyCaptures(newRefs, captures);
-    for (const message of [...errors, ...attached.errors]) toast(message);
-    // Fills the template when it is waiting for screenshots (F06).
-    if (attached.refs.length > 0) await addScreenshots(attached.refs, blobs);
-  };
-
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!replacingAssetId || !e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
@@ -252,7 +196,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         className="hidden"
         onChange={async (e) => {
           if (e.target.files) {
-            await handleFileUpload(Array.from(e.target.files));
+            await importFiles(Array.from(e.target.files));
           }
         }}
       />
