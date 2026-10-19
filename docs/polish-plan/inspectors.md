@@ -66,9 +66,20 @@ Tests: unit tests for the visibility rules. Update e2e selectors that read the r
 From the audit's "Add" list. **Calm, Default and Brisk**, shared by every preset, in the Shot inspector. It replaces the step-length slider on the sliders and the loop-length chips on Frames, and covers Stack, Orbit and Responsive Scroll.
 
 - **Default** keeps today's timing exactly, so no still changes.
-- **Calm and Brisk** are fixed multipliers on each preset's own timing (step length, travel speed, hold), noted in `quality-bar.md` §2. Loops stay seamless: a multiplier changes the loop length, never the loop's shape.
-- **Saved projects:** a step or loop length that isn't one of the three loads as the nearest.
-- Tests: unit tests of the timing per preset at each pace, and of the nearest-pace mapping. No e2e test.
+- **Calm ×1.2 and Brisk ×0.8 on time**, the same pair for every preset. ×1.2 rather than ×1.25 keeps every Calm value inside an existing range (the slider step and the Responsive hold) without clamping. Values are rounded, then clamped by the existing limits:
+
+  | Preset               | Knob            | Brisk         | Default | Calm  | Limits                                                             |
+  | -------------------- | --------------- | ------------- | ------- | ----- | ------------------------------------------------------------------ |
+  | Slider, Stack, Orbit | `layout.step`   | 1.6 s         | 2.0 s   | 2.4 s | 1.6–4.0 s and N × step ≤ 30 s (shown N)                            |
+  | Frames               | `shot.duration` | Default × 0.8 | today's | × 1.2 | speed ≤ 0.20 stage units/s (`framesDuration`), ≤ 30 s, 0.5 s steps |
+  | Responsive Scroll    | `scroll.hold`   | 0.8 s         | 1.0 s   | 1.2 s | moves already run at the scroll speed limit, so they stay          |
+
+- **Where a limit makes two paces equal, the UI says so.** Frames is often already at its speed limit, so Brisk equals Default with 5 or 6 screenshots in most aspects. A slider with 15 or more screenshots can't be calmer within 30 s. The equal option is disabled with its reason ("Already at the speed limit"), the way the loop-length chips do today.
+- **Stored, not derived.** An optional `Shot.pace?: "calm" | "brisk"` (absent is Default; no version bump). The timing fields become outputs: `sanitizeDoc` and the store's shot fitting recompute `step`, `duration` or `hold` from the pace, so a choice survives a clamp that is later lifted (an aspect change, adding or removing screenshots).
+- **Saved projects:** a shot without `pace` gets the nearest one once, on load (ties go to Default). Saved 20 s and 30 s Frames loops become Calm.
+- **Scroll Story** isn't covered: it doesn't loop and its duration is free to edit. It goes to `follow-ups.md`.
+- **Code:** a pure `src/motion/pace.ts` (`paceTargets`, `nearestPace`, `applyPace`, `paceLimited`); a `PaceSection` segmented control in the Shot inspector replacing the step slider, `LoopLengthChips` and Responsive Scroll's Hold slider. Fixes on the way: the step clamp uses the shown screenshot count (an orbit with more than 6 screenshots is under-capped today).
+- **Tests:** `tests/pace.test.ts`. Every registry template at all five aspects: Default equals today's build, Calm and Brisk match the table, Frames stays under its speed limit and 30 s. Nearest-pace mapping on load. A choice survives an aspect round trip and removing screenshots. Loops stay seamless at every pace. Existing e2e specs that use "Step length" or the loop chips move to the pace control; no new e2e test.
 
 ## Evidence for every PR
 
