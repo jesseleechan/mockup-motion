@@ -74,9 +74,14 @@ test("a dropped captures folder imports its full pages with roles and sections; 
   await expect(page.getByTestId("import-drop-overlay")).toContainText("Drop to add to the library");
   await drag("drop");
   await expect(page.getByTestId("import-drop-overlay")).toHaveCount(0);
-  await expect(page.getByText("Not imported: notes.txt.", { exact: false })).toBeVisible();
-  await expect(page.getByText("Skipped 1 viewport capture", { exact: false })).toBeVisible();
-  await expect.poll(async () => (await storedAssets(page)).length).toBe(2);
+  // Decoding two full pages takes a few seconds on CI's software GL, with the gallery's
+  // previews playing.
+  const importing = { timeout: 20_000 };
+  await expect(page.getByText("Not imported: notes.txt.", { exact: false })).toBeVisible(importing);
+  await expect(page.getByText("Skipped 1 viewport capture", { exact: false })).toBeVisible(
+    importing,
+  );
+  await expect.poll(async () => (await storedAssets(page)).length, importing).toBe(2);
   const assets = await storedAssets(page);
   const desktop = assets.find((a) => a.name === "aurelia-desktop-1440-full.webp");
   const mobile = assets.find((a) => a.name === "aurelia-mobile-390@2x-full.webp");
@@ -97,7 +102,7 @@ test("a dropped captures folder imports its full pages with roles and sections; 
       new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }),
     );
   });
-  await expect.poll(async () => (await storedAssets(page)).length).toBe(3);
+  await expect.poll(async () => (await storedAssets(page)).length, importing).toBe(3);
   const pasted = (await storedAssets(page)).find((a) => a.name === "Pasted screenshot.webp");
   expect(pasted?.role).toBe("mobile");
 });
