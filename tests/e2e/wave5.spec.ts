@@ -124,8 +124,8 @@ test.describe("Wave 5: Templates & Gallery, Scroll, Export v2", () => {
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
 
-    // Select Shot 1 in the timeline to view ShotInspector
-    const shot1Card = page.locator(".group", { hasText: "Shot 1" });
+    // Select the shot in the timeline to view ShotInspector
+    const shot1Card = page.getByTestId("shot-card");
     await shot1Card.click();
 
     // Scroll section

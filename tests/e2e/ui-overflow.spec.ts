@@ -22,6 +22,11 @@ interface UIStoreHandle {
 type Theme = "dark" | "light";
 
 const PANELS = ["library", "inspector", "timeline"] as const;
+const MIN_CHECKED: Record<(typeof PANELS)[number], number> = {
+  library: 20,
+  inspector: 20,
+  timeline: 8,
+};
 
 // Desktop Frames and Mobile Frames at 16:9 (src/templates/frames-template.ts), without assets.
 type FramesLayout = Extract<Layout, { kind: "rows" | "columns" }>;
@@ -194,8 +199,11 @@ async function expectNoOverflow(
 ) {
   const reports = await overflowReport(page, panels);
   for (const report of reports) {
-    // A panel that renders almost nothing would pass trivially.
-    expect(report.checked, `${context}: elements checked in ${report.panel}`).toBeGreaterThan(20);
+    // A panel that renders almost nothing would pass trivially. The slim timeline is one row (shot,
+    // scrubber, loop length) of about a dozen elements; the side panels hold far more.
+    expect(report.checked, `${context}: elements checked in ${report.panel}`).toBeGreaterThan(
+      MIN_CHECKED[report.panel as (typeof PANELS)[number]],
+    );
     expect(report.offenders, `${context}: overflow in ${report.panel}`).toEqual([]);
   }
 }

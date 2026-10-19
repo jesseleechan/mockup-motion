@@ -1,188 +1,146 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { schedule } from "../../motion";
-import { TimeRuler } from "./TimeRuler";
-import { ShotCard } from "./ShotCard";
-import { Icon, Tooltip } from "../../ui";
-import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
-import type { Layout } from "../../doc/types";
+import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
+import { shotSummary } from "../labels";
+import { formatSeconds } from "../loop-length";
+import { timeToX, timelineMarks, xToTime } from "./marks";
 
+// A step tick within this distance of the pointer catches a scrub, so a step is easy to land on.
+const STEP_SNAP_PX = 6;
+
+/**
+ * The slim timeline: one shot that loops, so a scrubber with the loop length and, where the
+ * preset has them, its steps (docs/polish-plan/stage-timeline.md, item 2). Play, the timecode
+ * and loop are in the stage's transport bar; the shot's length is set in the inspector.
+ */
 export const TimelineContainer: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
-  const apply = useEditorStore((s) => s.apply);
-  const setShotDuration = useEditorStore((s) => s.setShotDuration);
-
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
   const setSelection = useUIStore((s) => s.setSelection);
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
 
-  // Zoom state: "fit" or manual multiplier
-  const [zoomMode, setZoomMode] = useState<"fit" | "manual">("fit");
-  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
-  const [containerWidth, setContainerWidth] = useState<number>(800);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [scrubbing, setScrubbing] = useState(false);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const trackWrapperRef = useRef<HTMLDivElement>(null);
-
-  // Measure container width
-  useEffect(() => {
-    const el = trackWrapperRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0) {
-          setContainerWidth(entry.contentRect.width);
-        }
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // The loop length: the shot, less a wrap crossfade's overlap
+  // The loop length: the shot, less a wrap crossfade's overlap.
   const { total } = useMemo(() => schedule(doc), [doc]);
   // A document has one shot (multi-shot reels were cut on 19 Oct 2026).
   const shot = doc.shots[0];
+  const marks = useMemo(() => timelineMarks(shot.layout, total), [shot.layout, total]);
+  const summary = shotSummary(shot);
+  const isSelected =
+    (selection.kind === "shot" && selection.id === shot.id) ||
+    (selection.kind === "text" && selection.shotId === shot.id);
 
-  // Pixels per second
-  const pxPerSecond = useMemo(() => {
-    if (total <= 0) return 60;
-    if (zoomMode === "fit") {
-      // Fit the shot in the available width, with some padding
-      const availableWidth = Math.max(200, containerWidth - 120);
-      return Math.max(25, availableWidth / total);
-    }
-    return Math.max(25, (containerWidth / total) * zoomLevel);
-  }, [containerWidth, total, zoomMode, zoomLevel]);
-
-  // Shift-snap points: the start and the loop point
-  const shotBoundaries = useMemo(() => [0, total], [total]);
-
-  const isSelected = selection.kind === "shot" && selection.id === shot.id;
-
-  // Wheel zoom with Ctrl / trackpad pinch
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      setZoomMode("manual");
-      setZoomLevel((prev) => {
-        const delta = -e.deltaY * 0.005;
-        return Math.max(0.5, Math.min(4.0, prev + delta));
-      });
-    }
+  const seekTo = (clientX: number) => {
+    const rect = trackRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPlayhead(xToTime(clientX - rect.left, total, rect.width, marks.steps, STEP_SNAP_PX));
+  };
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setPlaying(false);
+    setScrubbing(true);
+    seekTo(e.clientX);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (scrubbing) seekTo(e.clientX);
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubbing) return;
+    setScrubbing(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  const playheadX = playhead * pxPerSecond;
+  const progress = total > 0 ? Math.min(1, Math.max(0, playhead / total)) : 0;
+  const stepLabel = marks.steps.length > 1 ? `${marks.steps.length} steps` : null;
 
   return (
     <div
-      onWheel={handleWheel}
       data-testid="timeline"
       data-panel="timeline"
-      style={{ height: 148 }}
-      className="bg-[var(--color-panel)] border-t border-[var(--color-line)] flex flex-col select-none shrink-0 z-20 overflow-hidden"
+      className="h-11 px-3 bg-[var(--color-panel)] border-t border-[var(--color-line)] flex items-center gap-3 select-none shrink-0 z-20"
     >
-      {/* Top toolbar (28px): zoom only; play and the timecode live in the stage's transport bar. */}
-      <div className="h-7 px-3 bg-[var(--color-panel)] border-b border-[var(--color-line)] flex items-center justify-end shrink-0 text-xs">
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1">
-          <Tooltip content="Fit timeline to view">
-            <button
-              type="button"
-              aria-label="Fit timeline"
-              onClick={() => {
-                setZoomMode("fit");
-                setZoomLevel(1.0);
-              }}
-              className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                zoomMode === "fit"
-                  ? "bg-[var(--color-accent-soft)] text-[var(--color-accent)] font-semibold"
-                  : "text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)]"
-              }`}
-            >
-              <Icon icon={Maximize} size={11} className="inline mr-1" />
-              Fit
-            </button>
-          </Tooltip>
+      {/* The shot: selects it for the inspector. */}
+      <button
+        type="button"
+        data-testid="shot-card"
+        aria-pressed={isSelected}
+        aria-label={`Shot: ${summary}`}
+        onClick={() => setSelection({ kind: "shot", id: shot.id })}
+        className={clsx(
+          "h-8 max-w-[220px] pl-1 pr-2.5 flex items-center gap-2 rounded-[var(--radius-sm)] border shrink-0 transition-colors",
+          isSelected
+            ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-text)]"
+            : "border-[var(--color-line)] text-[var(--color-text-2)] hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]",
+        )}
+      >
+        <ShotThumbnail
+          shot={shot}
+          className="h-6 rounded-[3px] overflow-hidden bg-black shrink-0"
+        />
+        <span data-truncate className="text-[11px] font-medium truncate">
+          {summary}
+        </span>
+      </button>
 
-          <Tooltip content="Zoom out (Ctrl + -)">
-            <button
-              type="button"
-              aria-label="Zoom out"
-              onClick={() => {
-                setZoomMode("manual");
-                setZoomLevel((z) => Math.max(0.5, z * 0.8));
-              }}
-              className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)]"
-            >
-              <Icon icon={ZoomOut} size={13} />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Zoom in (Ctrl + +)">
-            <button
-              type="button"
-              aria-label="Zoom in"
-              onClick={() => {
-                setZoomMode("manual");
-                setZoomLevel((z) => Math.min(4.0, z * 1.25));
-              }}
-              className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)]"
-            >
-              <Icon icon={ZoomIn} size={13} />
-            </button>
-          </Tooltip>
-        </div>
+      {/* The scrubber: the whole loop, with a tick where each step starts. */}
+      <div
+        ref={trackRef}
+        role="slider"
+        aria-label="Playhead"
+        aria-valuemin={0}
+        aria-valuemax={Number(total.toFixed(2))}
+        aria-valuenow={Number(playhead.toFixed(2))}
+        aria-valuetext={`${playhead.toFixed(1)} of ${formatSeconds(Number(total.toFixed(1)))}`}
+        tabIndex={0}
+        data-testid="scrubber"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        className="group relative flex-1 min-w-0 h-full cursor-pointer outline-none"
+      >
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--color-line-strong)]" />
+        <div
+          className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--color-accent)] opacity-50"
+          style={{ width: `${progress * 100}%` }}
+        />
+        {marks.steps.map((time, index) => (
+          <div
+            key={time}
+            data-testid="step-tick"
+            title={`Screenshot ${index + 1}`}
+            className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-[var(--color-text-3)]"
+            style={{ left: `${(timeToX(time, total, 1) * 100).toFixed(3)}%` }}
+          />
+        ))}
+        {marks.loopPoint && (
+          <div
+            data-testid="loop-point"
+            title="Loop point"
+            className="absolute right-0 top-1/2 h-2.5 w-px -translate-y-1/2 bg-[var(--color-text-3)]"
+          />
+        )}
+        <div
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-panel)] group-focus-visible:ring-[var(--color-accent-soft)]"
+          style={{ left: `${progress * 100}%` }}
+        />
       </div>
 
-      {/* Main Track & Ruler Area */}
-      <div
-        ref={trackWrapperRef}
-        data-scroll-x
-        className="flex-1 flex flex-col min-h-0 overflow-x-auto overflow-y-hidden"
-      >
-        {/* Time Ruler (24px) */}
-        <TimeRuler
-          totalDuration={total}
-          playhead={playhead}
-          pxPerSecond={pxPerSecond}
-          shotBoundaries={shotBoundaries}
-          onSeek={setPlayhead}
-          onScrubStart={() => setPlaying(false)}
-        />
-
-        {/* Shot Cards Track (flex-1, relative) */}
-        <div
-          ref={scrollContainerRef}
-          className="relative flex-1 px-3 py-1.5 flex items-center gap-1 min-w-max"
-        >
-          {/* Continuous Playhead Needle spanning through the cards track */}
-          <div
-            style={{ left: `${playheadX + 12}px` }}
-            className="absolute top-0 bottom-0 w-[2px] bg-[var(--color-accent)] pointer-events-none z-30 opacity-80"
-          />
-
-          <ShotCard
-            shot={shot}
-            index={0}
-            isSelected={isSelected}
-            widthPx={shot.duration * pxPerSecond}
-            pxPerSecond={pxPerSecond}
-            onSelect={() => setSelection({ kind: "shot", id: shot.id })}
-            onDurationChange={(newDuration) => setShotDuration(0, newDuration)}
-            onChangeLayout={(newLayout: Layout) => {
-              apply(
-                (draft) => {
-                  draft.shots[0].layout = newLayout;
-                },
-                { label: "Change layout" },
-              );
-            }}
-          />
-        </div>
+      {/* The loop length, and the steps that make it up. */}
+      <div className="shrink-0 font-mono text-[11px] text-[var(--color-text-3)] whitespace-nowrap">
+        {stepLabel && <span>{stepLabel} · </span>}
+        <span className="text-[var(--color-text-2)]">
+          {formatSeconds(Number(total.toFixed(1)))}
+        </span>{" "}
+        loop
       </div>
     </div>
   );

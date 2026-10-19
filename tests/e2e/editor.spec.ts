@@ -52,8 +52,8 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(page.locator("canvas")).toBeVisible();
     await expect(page.getByText("Create Motion Mockups")).not.toBeVisible();
 
-    // Verify timeline shows Shot 1
-    const shot1Card = page.locator(".group", { hasText: "Shot 1" });
+    // Verify the timeline shows the shot
+    const shot1Card = page.getByTestId("shot-card");
     await expect(shot1Card).toBeVisible();
 
     // 3. Change Background Palette in Inspector
@@ -63,7 +63,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await inkPalette.click();
 
     // 4. Change Camera Preset in Inspector
-    // Click Shot 1 card in the timeline to select it
+    // Click the shot in the timeline to select it
     await shot1Card.click();
 
     // The demo is Desktop Slider (presets D1), whose camera is still: no Camera section. Switching
