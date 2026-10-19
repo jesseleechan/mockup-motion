@@ -1,6 +1,6 @@
 import React from "react";
 import type { Aspect, AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
-import { framesAssetIds, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
+import { framesAssetIds, isSteppedLayout, SLIDER_MIN_STEP, sliderStepMax } from "../../../motion";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Select, Slider } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
@@ -10,10 +10,10 @@ import { useShotUpdate } from "./useShotUpdate";
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "laptop", "tablet", "card"];
 const STACK_DEVICES: ("browser" | "card")[] = ["browser", "card"];
 // Picking a layout here makes a single device or a title card (docs/plan/follow-ups.md); a slider
-// comes from the Mobile Slider and Desktop Slider templates, so the picker only lists it on a
-// shot that already uses it.
+// or an orbit comes from its templates, so the picker only lists it on a shot that already uses
+// it.
 const PICKER_LAYOUTS = (Object.keys(LAYOUT_LABELS) as Layout["kind"][]).filter(
-  (kind) => kind !== "slider",
+  (kind) => kind !== "slider" && kind !== "orbit",
 );
 
 interface LayoutSectionProps {
@@ -100,7 +100,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               layout.kind === "slider" && layout.arrangement === "deck"
                 ? { ...LAYOUT_LABELS, slider: "Stack" }
                 : LAYOUT_LABELS,
-              layout.kind === "slider" ? [...PICKER_LAYOUTS, "slider"] : PICKER_LAYOUTS,
+              isSteppedLayout(layout) ? [...PICKER_LAYOUTS, layout.kind] : PICKER_LAYOUTS,
             )}
           />
         </Field>
@@ -202,25 +202,28 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         )}
 
         {layout.kind === "slider" && (
+          <Field label="Direction">
+            <Select
+              aria-label="Direction"
+              value={layout.axis}
+              onChange={(axis) =>
+                update(
+                  (target) => {
+                    if (target.layout.kind === "slider") target.layout.axis = axis;
+                  },
+                  { label: "Change slider direction" },
+                )
+              }
+              options={[
+                { value: "x", label: "Horizontal" },
+                { value: "y", label: "Vertical" },
+              ]}
+            />
+          </Field>
+        )}
+
+        {isSteppedLayout(layout) && (
           <>
-            <Field label="Direction">
-              <Select
-                aria-label="Direction"
-                value={layout.axis}
-                onChange={(axis) =>
-                  update(
-                    (target) => {
-                      if (target.layout.kind === "slider") target.layout.axis = axis;
-                    },
-                    { label: "Change slider direction" },
-                  )
-                }
-                options={[
-                  { value: "x", label: "Horizontal" },
-                  { value: "y", label: "Vertical" },
-                ]}
-              />
-            </Field>
             <Field label="Card shape">
               <Select
                 aria-label="Card shape"
@@ -228,7 +231,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 onChange={(shape) =>
                   update(
                     (target) => {
-                      if (target.layout.kind === "slider") target.layout.shape = shape;
+                      if (isSteppedLayout(target.layout)) target.layout.shape = shape;
                     },
                     { label: "Change card shape" },
                   )
@@ -251,7 +254,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                   update(
                     (target) => {
                       // Whole tenths; the store sets the shot length to screenshots × step.
-                      if (target.layout.kind === "slider")
+                      if (isSteppedLayout(target.layout))
                         target.layout.step = Math.round(val * 10) / 10;
                     },
                     { label: "Change step length", coalesceKey: `slider-step-${shot.id}` },

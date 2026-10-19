@@ -23,6 +23,8 @@ const TONE_TEMPLATES = [
   "mobile-frames",
   "desktop-stack",
   "mobile-stack",
+  "desktop-orbit",
+  "mobile-orbit",
 ];
 
 function presetDoc(id: string): ProjectDoc {
@@ -52,7 +54,7 @@ describe("Preset tone: the Light / Dark background of the slider and Frames pres
     expect(presetToneOf(createDoc().style)).toBeUndefined();
   });
 
-  it("only the slider, Frames and Stack presets show the switch, and they still default to Ash", () => {
+  it("only the flat presets show the switch, and they still default to Ash", () => {
     const withSwitch = BUILTIN_TEMPLATES.filter((t) => t.toneSwitch).map((t) => t.id);
     expect(withSwitch.sort()).toEqual([...TONE_TEMPLATES].sort());
     for (const id of TONE_TEMPLATES) {
