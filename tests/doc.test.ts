@@ -14,8 +14,6 @@ describe("WP-01: Document Defaults and Validation", () => {
     expect(sanitized.style.shadow).toBe("soft");
     expect(sanitized.style.grain).toBe(0.25);
     expect(sanitized.style.vignette).toBe(0.06);
-    expect(sanitized.style.fonts.display.family).toBe("Inter Display");
-    expect(sanitized.style.fonts.body.family).toBe("Inter");
     expect(sanitized.export.resolution).toBe(1080);
     expect(sanitized.export.fps).toBe(30);
     expect(sanitized.export.quality).toBe("high");
@@ -133,31 +131,39 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.style.background).toEqual(createDoc().style.background);
     });
 
-    it("9. clamps font weights to [100, 900]", () => {
-      const brokenDoc = createDoc();
-      brokenDoc.style.fonts.display.weight = 1500;
-      brokenDoc.style.fonts.body.weight = 10;
-      const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.style.fonts.display.weight).toBe(900);
-      expect(doc.style.fonts.body.weight).toBe(100);
+    it("9. drops text layers and title cards from a saved document", () => {
+      // Saved before typography was removed (October 2026): a title card, then a browser shot
+      // with a text layer, with the old typography style fields.
+      const saved = JSON.parse(JSON.stringify(createDoc())) as Record<string, unknown> & {
+        style: Record<string, unknown>;
+        shots: Record<string, unknown>[];
+      };
+      saved.style.fonts = {
+        display: { source: "builtin", family: "Fraunces", weight: 600 },
+        body: { source: "builtin", family: "Inter", weight: 400 },
+      };
+      saved.style.textColor = "#112233";
+      const browser = saved.shots[0];
+      browser.texts = [{ id: "t1", text: "Headline", role: "title", animation: "fadeUp" }];
+      saved.shots = [{ ...browser, id: "title", layout: { kind: "title" } }, browser];
+
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.shots).toHaveLength(1);
+      expect(doc.shots[0].id).toBe(browser.id);
+      expect(doc.shots[0].layout.kind).toBe("single");
+      expect(doc.shots[0]).not.toHaveProperty("texts");
+      expect(doc.style).not.toHaveProperty("fonts");
+      expect(doc.style).not.toHaveProperty("textColor");
+
+      // A document of title cards only gets a default shot.
+      saved.shots = [{ ...browser, id: "title", layout: { kind: "title" } }];
+      const titleOnly = sanitizeDoc(saved).doc;
+      expect(titleOnly.shots).toHaveLength(1);
+      expect(titleOnly.shots[0].layout).toEqual(defaultShot().layout);
     });
 
-    it("10. sanitizes text layer size, delay, and transition duration", () => {
+    it("10. sanitizes transition duration", () => {
       const shot = defaultShot();
-      shot.texts = [
-        {
-          id: "t1",
-          text: "Headline",
-          role: "title",
-          font: "display",
-          size: 0.5, // below 1.6% min
-          anchor: "center",
-          align: "center",
-          color: "",
-          animation: "none",
-          delay: -4,
-        },
-      ];
       shot.transitionIn = {
         kind: "wipe",
         duration: -1,
@@ -165,10 +171,22 @@ describe("WP-01: Document Defaults and Validation", () => {
       };
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].texts[0].size).toBe(1.6);
-      expect(doc.shots[0].texts[0].delay).toBe(0);
       expect(doc.shots[0].transitionIn.duration).toBe(0);
     });
+  });
+
+  it("loads a shot saved with the removed cursor and drops the cursor", () => {
+    const saved = createDoc();
+    const shot = {
+      ...saved.shots[0],
+      cursor: { enabled: true, style: "pointer", keys: [{ t: 1, x: 0.5, y: 0.5, click: true }] },
+    };
+    const { doc, warnings } = sanitizeDoc({ ...saved, shots: [shot] });
+    expect(warnings).toEqual([]);
+    expect(doc.shots).toHaveLength(1);
+    expect(doc.shots[0].id).toBe(saved.shots[0].id);
+    expect(doc.shots[0].layout).toEqual(saved.shots[0].layout);
+    expect("cursor" in doc.shots[0]).toBe(false);
   });
 
   describe("v1 to v2 migration produces valid docs for all 8 presets", () => {
@@ -248,7 +266,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       });
     }
 
-    it("migrates brand title, subtitle, and scrolling correctly", () => {
+    it("migrates scrolling and drops the brand title and subtitle", () => {
       const v1Project: V1Project = {
         version: 1,
         name: "Brand & Scroll Test",
@@ -292,15 +310,9 @@ describe("WP-01: Document Defaults and Validation", () => {
       };
 
       const doc = migrateV1Project(v1Project);
-      expect(doc.shots[0].texts.length).toBe(2);
-      expect(doc.shots[0].texts[0].text).toBe("Super Brand");
-      expect(doc.shots[0].texts[0].role).toBe("title");
-      expect(doc.shots[0].texts[0].anchor).toBe("bottom");
-      expect(doc.shots[0].texts[0].animation).toBe("fadeUp");
-
-      expect(doc.shots[0].texts[1].text).toBe("Award Winning Design");
-      expect(doc.shots[0].texts[1].role).toBe("subtitle");
-      expect(doc.shots[0].texts[1].anchor).toBe("bottom");
+      // Text layers were removed (October 2026), so the V1 brand text has no equivalent.
+      expect(doc.shots).toHaveLength(1);
+      expect(doc.shots[0]).not.toHaveProperty("texts");
 
       expect(doc.shots[0].scroll?.enabled).toBe(true);
       expect(doc.shots[0].scroll?.stops).toEqual([0, 0.75]);

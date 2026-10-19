@@ -10,22 +10,10 @@ import {
 } from "../../storage/brand-kits";
 import { Plus, Sparkles, Trash2 } from "lucide-react";
 
-const BUILTIN_FONTS = [
-  "Inter",
-  "Instrument Serif",
-  "Fraunces",
-  "Geist",
-  "DM Sans",
-  "DM Serif Display",
-  "Space Grotesk",
-];
-
 const DEFAULT_KIT: BrandKit = {
   id: "default-kit",
   name: "Studio default",
   colors: ["#FFFFFF", "#6366F1", "#1E1E24", "#F4F4F5", "#3B82F6", "#10B981"],
-  fontDisplay: "Inter",
-  fontBody: "Inter",
   browserUrl: "acme.design",
   isDefault: true,
   updatedAt: Date.now(),
@@ -197,37 +185,6 @@ export const BrandTab: React.FC = () => {
               </button>
             )}
           </div>
-        </div>
-
-        {/* Typography */}
-        <div className="space-y-2">
-          <Field label="Display font">
-            <select
-              value={activeKit.fontDisplay || "Inter"}
-              onChange={(e) => handleUpdateKit({ fontDisplay: e.target.value })}
-              className="w-full h-8 px-2 rounded border border-[var(--color-line)] bg-[var(--color-raised)] text-xs text-[var(--color-text)] outline-none"
-            >
-              {BUILTIN_FONTS.map((font) => (
-                <option key={font} value={font}>
-                  {font}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Body font">
-            <select
-              value={activeKit.fontBody || "Inter"}
-              onChange={(e) => handleUpdateKit({ fontBody: e.target.value })}
-              className="w-full h-8 px-2 rounded border border-[var(--color-line)] bg-[var(--color-raised)] text-xs text-[var(--color-text)] outline-none"
-            >
-              {BUILTIN_FONTS.map((font) => (
-                <option key={font} value={font}>
-                  {font}
-                </option>
-              ))}
-            </select>
-          </Field>
         </div>
 
         {/* Default Website URL */}

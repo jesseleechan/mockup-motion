@@ -1,7 +1,7 @@
 /**
  * Destination presets, platform dimensions, bitrates, and file size estimation.
  * Current platform specifications verified as of 2026-10-05:
- * - Dribbble: 4:3 or 16:9, max 1600x1200 or 1920x1080, MP4/GIF under 20MB. (Source: Dribbble Help Center)
+ * - Dribbble: 4:3 or 16:9, max 1600x1200 or 1920x1080, MP4 under 20MB. (Source: Dribbble Help Center)
  * - Instagram Feed: 4:5 vertical (1080x1350) or 1:1 square (1080x1080), 30 fps, MP4 H.264. (Source: Meta for Creators)
  * - Instagram/TikTok Story: 9:16 vertical (1080x1920), 30 fps, MP4 H.264. (Source: Meta & TikTok Business Help)
  * - LinkedIn / X: 16:9 landscape (1920x1080), 30 fps, MP4 H.264. (Source: LinkedIn Marketing Solutions & X Developer Platform)
@@ -26,7 +26,6 @@ export interface DestinationPreset {
   quality: ExportQuality;
   format: ExportFormat;
   supersample: number;
-  motionBlur: boolean;
 }
 
 export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
@@ -40,7 +39,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "web",
     format: "bundle",
     supersample: 1.0,
-    motionBlur: false,
   },
   dribbble: {
     id: "dribbble",
@@ -52,7 +50,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   "instagram-feed": {
     id: "instagram-feed",
@@ -64,7 +61,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   "instagram-story": {
     id: "instagram-story",
@@ -76,7 +72,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   linkedin: {
     id: "linkedin",
@@ -88,7 +83,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   x: {
     id: "x",
@@ -100,7 +94,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   "presentation-4k": {
     id: "presentation-4k",
@@ -112,7 +105,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "master",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
   custom: {
     id: "custom",
@@ -124,7 +116,6 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
     quality: "high",
     format: "mp4",
     supersample: 1.0,
-    motionBlur: false,
   },
 };
 
@@ -205,28 +196,6 @@ export function keyframeIntervalFor(quality: ExportQuality): number {
   return quality === "web" ? 4 : 2;
 }
 
-/**
- * Motion blur (quality-bar §5, WP-08): 8 sub-frame samples over a 180° shutter, i.e. half
- * a frame interval centred on the frame time.
- */
-export const MOTION_BLUR_SAMPLES = 8;
-
-export function motionBlurShutter(fps: number): number {
-  return 0.5 / Math.max(1, fps);
-}
-
-/** GIF output: short side capped at 960 px (WP-16 §7), 10–20 fps. */
-export function gifOutput(
-  aspect: Aspect,
-  resolution: number,
-  fps: number,
-): { width: number; height: number; fps: number } {
-  return {
-    ...outputDimensions(aspect, Math.min(960, resolution)),
-    fps: Math.min(20, Math.max(10, fps || 15)),
-  };
-}
-
 /** Which videos a web bundle holds; each needs its encoder in this browser. */
 export interface BundleParts {
   mp4: boolean;
@@ -242,13 +211,6 @@ export function estimateFileSize(
   durationSeconds: number,
   bundleParts: BundleParts = { mp4: true, webm: true },
 ): number {
-  if (settings.format === "gif") {
-    const { width, height, fps } = gifOutput(aspect, settings.resolution, settings.fps);
-    const totalFrames = Math.max(1, Math.round(durationSeconds * fps));
-    // GIFs with global palette and dither average ~0.25 bytes per pixel per frame
-    return Math.round(width * height * totalFrames * 0.25);
-  }
-
   if (settings.format === "png") {
     const { width, height } = outputDimensions(aspect, settings.resolution);
     // Typical uncompressed/deflated RGBA PNG size ~1.5MB at 1080p

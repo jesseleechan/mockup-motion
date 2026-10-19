@@ -10,10 +10,13 @@ test.beforeEach(async ({ page }) => {
 
 // Hooks are declared on Window in assets.spec.ts (dev /lab).
 
+// The lab draws the background alone, without the document's devices.
+const BACKGROUND_ONLY = "&devices=0";
+
 // The still page renders at pixel ratio 1 and supersample 1 with no playback loop, so the
 // adaptive-quality drop of the interactive lab never changes the output mid-test.
-async function openLab(page: Page) {
-  await page.goto("/lab?still=1&fixture=single-browser&w=640&aspect=16:9");
+async function openLab(page: Page, extra = "") {
+  await page.goto(`/lab?still=1&fixture=single-browser&w=640&aspect=16:9${extra}`);
   await page.waitForFunction(() => window.__labReady === true);
 }
 
@@ -114,9 +117,9 @@ test.describe("F11 browser URL pill", () => {
         async getImage() {
           return bitmap;
         },
-        async getText(layer, style, frameHeightPx) {
-          if (layer.text === "old.example") await new Promise((r) => setTimeout(r, 300));
-          return provider.getText(layer, style, frameHeightPx);
+        async getText(line, frameHeightPx) {
+          if (line.text === "old.example") await new Promise((r) => setTimeout(r, 300));
+          return provider.getText(line, frameHeightPx);
         },
       };
       const makeDoc = (url: string) => {
@@ -230,7 +233,6 @@ test.describe("F11 browser URL pill", () => {
         quality: "high",
         format: "webm",
         supersample: 1,
-        motionBlur: false,
       });
       const input = new media.Input({
         source: new media.BlobSource(exported.blob),
@@ -240,7 +242,8 @@ test.describe("F11 browser URL pill", () => {
       if (!track) throw new Error("The exported WebM has no video track");
       const wrapped = await new media.CanvasSink(track).getCanvas(0);
       if (!wrapped) throw new Error("Could not decode the exported WebM at 0 s");
-      const context = wrapped.canvas.getContext("2d");
+      const context = wrapped.canvas.getContext("2d") as
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
       if (!context) throw new Error("The decoded frame has no 2D context");
       if (wrapped.canvas.width !== width || wrapped.canvas.height !== height)
         throw new Error(`Exported ${wrapped.canvas.width}x${wrapped.canvas.height}`);
@@ -307,7 +310,7 @@ test.describe("F11 screens and grain", () => {
   });
 
   test("grain is zero-mean across a 1080x1920 frame", async ({ page }) => {
-    await openLab(page);
+    await openLab(page, BACKGROUND_ONLY);
     const cells = await page.evaluate(async () => {
       const base = window.__fixtures?.["single-browser"];
       const engine = window.__labEngine;
@@ -318,7 +321,7 @@ test.describe("F11 screens and grain", () => {
       engine.resize(width, height);
       const doc = structuredClone(base);
       doc.aspect = "9:16";
-      doc.shots = [{ ...doc.shots[0], layout: { kind: "title" }, texts: [] }];
+      doc.shots = [{ ...doc.shots[0], layout: { kind: "single", device: "card", assetId: "" } }];
       doc.style.background = { kind: "solid", color: "#404040" };
       doc.style.vignette = 0;
       const means = async (grain: number) => {

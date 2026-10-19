@@ -7,10 +7,8 @@ import { ShotCard } from "./ShotCard";
 import { TransitionChip } from "./TransitionChip";
 import { AddShotMenu } from "./AddShotMenu";
 import { BUILTIN_TEMPLATES } from "../../templates/registry";
-import { Icon, Tooltip, useToast } from "../../ui";
-import { AudioLane, LANE_HEIGHT, MusicControls } from "./AudioLane";
-import { AUDIO_ACCEPT, validateAndDecodeAudio } from "../../audio/decode";
-import { Maximize, Music2, Pause, Play, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Icon, Tooltip } from "../../ui";
+import { Maximize, Pause, Play, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import type { AssetRef, Layout, Transition } from "../../doc/types";
 
 export const TimelineContainer: React.FC = () => {
@@ -23,11 +21,6 @@ export const TimelineContainer: React.FC = () => {
   const setShotDuration = useEditorStore((s) => s.setShotDuration);
   const setTransition = useEditorStore((s) => s.setTransition);
   const splitShot = useEditorStore((s) => s.splitShot);
-  const setTextLayerDelay = useEditorStore((s) => s.setTextLayerDelay);
-  const setMusic = useEditorStore((s) => s.setMusic);
-  const removeMusic = useEditorStore((s) => s.removeMusic);
-  const { toast } = useToast();
-  const musicInputRef = useRef<HTMLInputElement>(null);
 
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
@@ -88,9 +81,6 @@ export const TimelineContainer: React.FC = () => {
   const selectedShotIndex = useMemo(() => {
     if (selection.kind === "shot") {
       return doc.shots.findIndex((s) => s.id === selection.id);
-    }
-    if (selection.kind === "text") {
-      return doc.shots.findIndex((s) => s.id === selection.shotId);
     }
     return -1;
   }, [doc.shots, selection]);
@@ -166,36 +156,14 @@ export const TimelineContainer: React.FC = () => {
 
   const playheadX = playhead * pxPerSecond;
 
-  const handleMusicFile = async (file: File | undefined) => {
-    if (!file) return;
-    try {
-      const { ref, blob } = await validateAndDecodeAudio(file);
-      await setMusic(ref, blob);
-    } catch (err) {
-      toast(err instanceof Error ? err.message : "That audio file couldn't be added.");
-    }
-  };
-
   return (
     <div
       onWheel={handleWheel}
       data-testid="timeline"
       data-panel="timeline"
-      style={{ height: 148 + (doc.audio ? LANE_HEIGHT : 0) }}
+      style={{ height: 148 }}
       className="bg-[var(--color-panel)] border-t border-[var(--color-line)] flex flex-col select-none shrink-0 z-20 overflow-hidden"
     >
-      <input
-        ref={musicInputRef}
-        type="file"
-        accept={AUDIO_ACCEPT}
-        aria-label="Music file"
-        data-testid="music-input"
-        className="hidden"
-        onChange={async (e) => {
-          await handleMusicFile(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
       {/* Top Toolbar: Time & Zoom controls (28px) */}
       <div className="h-7 px-3 bg-[var(--color-panel)] border-b border-[var(--color-line)] flex items-center justify-between shrink-0 text-xs">
         {/* Playback Controls & Time Display */}
@@ -230,20 +198,6 @@ export const TimelineContainer: React.FC = () => {
             <span className="text-[var(--color-text-3)]"> / {formatTime(total)}</span>
           </div>
         </div>
-
-        {/* Music */}
-        {doc.audio ? (
-          <MusicControls onRemove={removeMusic} />
-        ) : (
-          <button
-            type="button"
-            onClick={() => musicInputRef.current?.click()}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
-          >
-            <Icon icon={Music2} size={11} />
-            Add music
-          </button>
-        )}
 
         {/* Zoom Controls */}
         <div className="flex items-center gap-1">
@@ -370,10 +324,6 @@ export const TimelineContainer: React.FC = () => {
                       { label: "Change layout" },
                     );
                   }}
-                  onSelectText={(textId) =>
-                    setSelection({ kind: "text", shotId: shot.id, id: textId })
-                  }
-                  onTextDelayChange={(textId, delay) => setTextLayerDelay(idx, textId, delay)}
                   onNavigateLeft={() => handleNavigateShot(-1)}
                   onNavigateRight={() => handleNavigateShot(1)}
                 />
@@ -400,9 +350,6 @@ export const TimelineContainer: React.FC = () => {
             />
           </div>
         </div>
-
-        {/* Music lane */}
-        <AudioLane total={total} pxPerSecond={pxPerSecond} />
       </div>
     </div>
   );
