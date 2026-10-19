@@ -262,6 +262,34 @@ describe("Editing a slider keeps its loop seamless", () => {
     expect(shot().duration).toBe(8);
   });
 
+  it("moving a screenshot reorders the list in one undo step, clamped to its ends", () => {
+    const { store, shot } = storeWith(sliderDoc(4));
+    const ids = () => (shot().layout as SliderLayout).assetIds;
+    const past = store.getState().past.length;
+
+    store.getState().moveAssetInShot(0, "mobile-3", 1);
+    expect(ids()).toEqual(["mobile-0", "mobile-3", "mobile-1", "mobile-2"]);
+    expect(store.getState().past).toHaveLength(past + 1);
+    // The step and length don't change with the order.
+    expect(shot().duration).toBe(8);
+
+    store.getState().moveAssetInShot(0, "mobile-0", 99);
+    expect(ids()).toEqual(["mobile-3", "mobile-1", "mobile-2", "mobile-0"]);
+    store.getState().moveAssetInShot(0, "mobile-2", -5);
+    expect(ids()).toEqual(["mobile-2", "mobile-3", "mobile-1", "mobile-0"]);
+
+    // A move to its own place, or of a screenshot the shot doesn't show, is not an edit.
+    const steps = store.getState().past.length;
+    store.getState().moveAssetInShot(0, "mobile-2", 0);
+    store.getState().moveAssetInShot(0, "mobile-9", 2);
+    expect(store.getState().past).toHaveLength(steps);
+
+    store.getState().undo();
+    store.getState().undo();
+    store.getState().undo();
+    expect(ids()).toEqual(["mobile-0", "mobile-1", "mobile-2", "mobile-3"]);
+  });
+
   it("removing a screenshot from the project takes it out of the slider", async () => {
     const { store, shot } = storeWith(sliderDoc(4));
     await store.getState().removeAsset("mobile-2");

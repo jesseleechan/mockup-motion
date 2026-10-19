@@ -64,6 +64,8 @@ export interface EditorStoreState {
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /** Takes a screenshot out of a list layout. */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
+  /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
+  moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
   applyBrandKit: (kit: BrandKit) => void;
 
   // Music track (WP-17)
@@ -485,6 +487,24 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
         },
         { label: "Remove screenshot from shot" },
+      );
+    },
+
+    moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => {
+      const shot = get().doc.shots[shotIndex];
+      if (!shot || !("assetIds" in shot.layout)) return;
+      const from = shot.layout.assetIds.indexOf(assetId);
+      const to = Math.max(0, Math.min(shot.layout.assetIds.length - 1, toIndex));
+      // A move to its own place is not an edit, so it leaves no undo step.
+      if (from < 0 || from === to) return;
+      get().apply(
+        (draft) => {
+          const target = draft.shots[shotIndex];
+          if (!target || !("assetIds" in target.layout)) return;
+          target.layout.assetIds.splice(from, 1);
+          target.layout.assetIds.splice(to, 0, assetId);
+        },
+        { label: "Reorder screenshots" },
       );
     },
 
