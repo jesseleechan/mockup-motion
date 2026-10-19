@@ -1,7 +1,7 @@
 import { createDoc, defaultShot, defaultStyle } from "../doc/defaults";
 import type { Aspect, CameraMove, ProjectDoc } from "../doc/types";
 import { demoBrowserUrl } from "../templates/demo-preview";
-import { loopWrapCrossfade, paletteBackground, paletteTextColor } from "../templates/looks";
+import { loopWrapCrossfade, paletteBackground } from "../templates/looks";
 import { demoAssetId, demoAssetRef, type DemoSite } from "./demo-assets";
 
 /**
@@ -104,7 +104,6 @@ function rowsBrowserTiltedFixture(aspect: Aspect = "9:16"): ProjectDoc {
     style: {
       ...defaultStyle(),
       background: paletteBackground("graphite"),
-      textColor: paletteTextColor("graphite"),
       frameAppearance: "dark",
       shadow: "soft",
       deviceFinish: "graphite",
@@ -140,7 +139,6 @@ function columnsPhoneTiltedFixture(aspect: Aspect = "9:16"): ProjectDoc {
     style: {
       ...defaultStyle(),
       background: paletteBackground("fog"),
-      textColor: "",
       frameAppearance: "light",
       shadow: "soft",
       deviceFinish: "graphite",

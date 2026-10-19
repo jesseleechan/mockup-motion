@@ -56,7 +56,8 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
   test("gradient quality: OKLab interpolation between #1F2B45 and #C3A6A0 has vibrant midpoint", async ({
     page,
   }) => {
-    await page.goto("/lab?fixture=orbit-loop&t=0&aspect=16:9");
+    // The lab draws the background alone, without the fixture's cards.
+    await page.goto("/lab?fixture=orbit-loop&t=0&aspect=16:9&devices=0");
     await page.waitForFunction(() => window.__labReady === true, { timeout: 15000 });
 
     const midpointColor = await page.evaluate(async () => {
@@ -72,8 +73,6 @@ test.describe("WP-07 Backgrounds, Palettes & Atmosphere E2E", () => {
         angle: 90,
       };
       doc.style.vignette = 0;
-      doc.shots[0].layout = { kind: "title" };
-      doc.shots[0].texts = [];
       doc.shots[0].transitionIn = { kind: "cut", duration: 0, easing: "linear" };
       doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
 

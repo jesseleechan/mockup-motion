@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { ease } from "../../src/motion/easing";
 import { avgRegion, expectRgbNear, inkBounds, type PixelBuffer } from "../helpers/pixels";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Layout entrances (quality-bar §2.5) take 0.8 s on an expoOut curve; stagger delays each
 // further device by 0.1 s (src/motion/layouts).
@@ -249,7 +250,7 @@ test.describe("entrance inspector", () => {
   /** Scroll Story, which does not loop, with a second shot of the same layout. */
   async function openTwoShotStory(page: Page): Promise<void> {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();

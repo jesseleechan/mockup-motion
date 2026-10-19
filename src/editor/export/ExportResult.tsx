@@ -24,11 +24,10 @@ const DOWNLOAD_LABELS: Record<ExportExtension, string> = {
   mp4: "MP4",
   webm: "WebM",
   zip: "bundle",
-  gif: "GIF",
   png: "PNG",
 };
 
-/** One exported file as verify.ts re-read it: size, duration, codec, audio, or what is wrong. */
+/** One exported file as verify.ts re-read it: size, duration, codec, or what is wrong. */
 const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }) => {
   const { label, result } = item;
   const actual = result.actual;
@@ -52,12 +51,6 @@ const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }) => {
           {facts.join(" · ")}
         </span>
       </div>
-      {actual?.audioDuration !== undefined && (
-        <div className="flex justify-between gap-3 text-[var(--color-text-3)]">
-          <span data-testid="verify-audio">Audio: {actual.audioDuration.toFixed(2)} s</span>
-          <span>{actual.audioCodec}</span>
-        </div>
-      )}
       {result.warnings.map((w) => (
         <div key={w} className="text-amber-300">
           {w}
@@ -71,7 +64,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
   const { url, filename, extension, result } = outcome;
   const [copied, setCopied] = useState(false);
   const isVideo = extension === "mp4" || extension === "webm";
-  const isImage = extension === "gif" || extension === "png";
+  const isImage = extension === "png";
 
   useEffect(() => {
     if (!copied) return;

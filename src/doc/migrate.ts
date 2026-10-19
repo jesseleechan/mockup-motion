@@ -14,7 +14,6 @@ import type {
   ShadowPreset,
   Shot,
   Style,
-  TextLayer,
 } from "./types";
 
 // V1 types copied verbatim so migrate.ts has zero dependencies on legacy src/types.ts
@@ -266,38 +265,6 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     vignette: 0.06,
   };
 
-  // Text layers from brand
-  const texts: TextLayer[] = [];
-  if (comp?.brand?.title) {
-    texts.push({
-      id: crypto.randomUUID(),
-      text: comp.brand.title,
-      role: "title",
-      font: "display",
-      size: comp.brand.size ? comp.brand.size * 0.1 : 6,
-      anchor: comp.brand.position === "bottom" ? "bottom" : "top",
-      align: "center",
-      color: comp.brand.color || "",
-      animation: "fadeUp",
-      delay: 0.2,
-      logoAssetId: comp.brand.logoId || undefined,
-    });
-  }
-  if (comp?.brand?.subtitle) {
-    texts.push({
-      id: crypto.randomUUID(),
-      text: comp.brand.subtitle,
-      role: "subtitle",
-      font: "body",
-      size: comp.brand.size ? comp.brand.size * 0.05 : 3,
-      anchor: comp.brand.position === "bottom" ? "bottom" : "top",
-      align: "center",
-      color: comp.brand.color || "",
-      animation: "fadeUp",
-      delay: 0.4,
-    });
-  }
-
   // Shot construction
   const shot: Shot = {
     id: crypto.randomUUID(),
@@ -305,7 +272,6 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     layout,
     camera,
     entrance: "none",
-    texts,
     transitionIn: {
       kind: "cut",
       duration: 0,

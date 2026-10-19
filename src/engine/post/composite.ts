@@ -3,7 +3,7 @@ import type { Transition } from "../../doc/types";
 
 // Blends the outgoing and incoming shot targets into one linear composite at the internal
 // (supersampled) resolution. Vignette, sRGB encoding, grain and dither are left to the final
-// pass, so motion blur can accumulate composites and still finish each frame exactly once.
+// pass, so each frame is finished exactly once.
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
