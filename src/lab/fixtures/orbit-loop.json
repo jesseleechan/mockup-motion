@@ -27,7 +27,6 @@
       "color": "#141417"
     },
     "frameAppearance": "dark",
-    "deviceFinish": "graphite",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "medium",
@@ -44,7 +43,7 @@
         "assetId": "demo-studio-kova-desktop-hero"
       },
       "camera": {
-        "preset": "orbitLeft",
+        "preset": "pushIn",
         "intensity": 1,
         "easing": "smooth",
         "float": 0.3

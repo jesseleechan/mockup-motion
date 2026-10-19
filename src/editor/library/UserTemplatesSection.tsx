@@ -34,7 +34,7 @@ export const UserTemplatesSection: React.FC = () => {
   }, []);
 
   const handleApply = (template: UserTemplate) => {
-    const res = fillUserTemplateSlots(template, doc.assets);
+    const res = fillUserTemplateSlots(template, doc.assets, doc.aspect);
     applyTemplateResult(res, template.id);
   };
 

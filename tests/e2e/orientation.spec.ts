@@ -58,8 +58,8 @@ async function ready(page: import("@playwright/test").Page, extra = ""): Promise
 
 async function prepareQuadrants(
   page: import("@playwright/test").Page,
-  device: "card" | "browser" | "phone" | "tablet" | "laptop",
-): Promise<{ start: PixelBuffer; end?: PixelBuffer }> {
+  device: "card" | "browser" | "phone",
+): Promise<{ start: PixelBuffer }> {
   return page.evaluate(async (currentDevice) => {
     const engine = window.__labEngine;
     const setDoc = window.__labSetDoc;
@@ -69,7 +69,7 @@ async function prepareQuadrants(
     engine.resize(1280, 720);
     const layout = doc.shots[0].layout;
     if (layout.kind !== "single") throw new Error(`Expected a single ${currentDevice} layout`);
-    const portrait = currentDevice === "phone" || currentDevice === "tablet";
+    const portrait = currentDevice === "phone";
     const width = portrait ? 780 : 1600;
     const height = portrait ? 1688 : 1000;
     const assetId = `f01-quadrants-${currentDevice}`;
@@ -87,33 +87,25 @@ async function prepareQuadrants(
     doc.style.grain = 0;
     doc.style.vignette = 0;
     doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-    if (currentDevice === "tablet") {
-      doc.shots[0].duration = 10;
-      doc.shots[0].scroll = { enabled: true, stops: [0, 1], hold: 0.5, easing: "smooth" };
-    }
     await setDoc(doc, { [assetId]: await images.quadrants(width, height) });
     engine.renderAt(0);
-    const start = { width: 1280, height: 720, data: engine.readPixels() };
-    if (currentDevice !== "tablet") return { start };
-    engine.renderAt(10);
-    return { start, end: { width: 1280, height: 720, data: engine.readPixels() } };
+    return { start: { width: 1280, height: 720, data: engine.readPixels() } };
   }, device);
 }
 
-for (const device of ["card", "browser", "phone", "tablet", "laptop"] as const) {
+for (const device of ["card", "browser", "phone"] as const) {
   test(`F01 ${device} screen maps all four source quadrants upright`, async ({ page }) => {
     await ready(page);
     const frames = await prepareQuadrants(page, device);
     const first = quadrantCentroids(frames.start);
-    const lower = quadrantCentroids(frames.end ?? frames.start);
     expect(first.red.count, "top-left red quadrant must be visible").toBeGreaterThan(50);
     expect(first.green.count, "top-right green quadrant must be visible").toBeGreaterThan(50);
-    expect(lower.blue.count, "bottom-left blue quadrant must be visible").toBeGreaterThan(50);
-    expect(lower.yellow.count, "bottom-right yellow quadrant must be visible").toBeGreaterThan(50);
+    expect(first.blue.count, "bottom-left blue quadrant must be visible").toBeGreaterThan(50);
+    expect(first.yellow.count, "bottom-right yellow quadrant must be visible").toBeGreaterThan(50);
     expect(first.red.x, "red must be left of green").toBeLessThan(first.green.x);
-    expect(lower.blue.x, "blue must be left of yellow").toBeLessThan(lower.yellow.x);
-    expect(first.red.y, "red must be above blue").toBeLessThan(lower.blue.y);
-    expect(first.green.y, "green must be above yellow").toBeLessThan(lower.yellow.y);
+    expect(first.blue.x, "blue must be left of yellow").toBeLessThan(first.yellow.x);
+    expect(first.red.y, "red must be above blue").toBeLessThan(first.blue.y);
+    expect(first.green.y, "green must be above yellow").toBeLessThan(first.yellow.y);
 
     const frameBackground = avgRegion(frames.start, 8, 8, 16, 16) as [number, number, number];
     const bounds = inkBounds(frames.start, frameBackground, 12);
@@ -126,9 +118,8 @@ for (const device of ["card", "browser", "phone", "tablet", "laptop"] as const) 
     };
     expectRgbNear(sample(frames.start, 0.25, 0.25), colors.red, 40);
     expectRgbNear(sample(frames.start, 0.75, 0.25), colors.green, 40);
-    const lowerFrame = frames.end ?? frames.start;
-    expectRgbNear(sample(lowerFrame, 0.25, 0.75), colors.blue, 40);
-    expectRgbNear(sample(lowerFrame, 0.75, 0.75), colors.yellow, 40);
+    expectRgbNear(sample(frames.start, 0.25, 0.75), colors.blue, 40);
+    expectRgbNear(sample(frames.start, 0.75, 0.75), colors.yellow, 40);
   });
 }
 

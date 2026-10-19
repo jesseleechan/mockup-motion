@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
-const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
+const DEVICES = ["browser", "phone", "card"];
 const BACKGROUNDS = ["solid", "gradient"];
 const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
 
@@ -92,12 +92,6 @@ for (const device of DEVICES) {
     fixture: `device-${device}-frontal`,
     aspect: "16:9",
     t: 1,
-  });
-  STILLS.push({
-    name: `device-${device}-tilted`,
-    fixture: `device-${device}-tilted`,
-    aspect: "16:9",
-    t: 4.2,
   });
 }
 for (const name of BACKGROUNDS) {

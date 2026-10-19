@@ -4,6 +4,7 @@ import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
 import { V1_PRESETS, createV1Project } from "./fixtures/v1-presets";
 import { getTemplateById } from "../src/templates";
+import type { Layout } from "../src/doc/types";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -57,7 +58,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.style.vignette).toBe(0);
     });
 
-    it("5. sanitizes camera moves: invalid preset defaults to pushIn, clamps intensity and float", () => {
+    it("5. sanitizes camera moves: invalid preset defaults to static, clamps intensity and float", () => {
       const shot = defaultShot();
       const cameraRecord = shot.camera as unknown as Record<string, unknown>;
       cameraRecord.preset = "invalid_3d_spin";
@@ -65,7 +66,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       shot.camera.float = -1;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].camera.preset).toBe("pushIn");
+      expect(doc.shots[0].camera.preset).toBe("static");
       expect(doc.shots[0].camera.intensity).toBe(1);
       expect(doc.shots[0].camera.float).toBe(0);
     });
@@ -83,7 +84,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.shots[0].layout.kind).toBe("single");
     });
 
-    it("7. removes missing asset references in single, pair, rows layout", () => {
+    it("7. removes missing asset references in single, saved pair and rows layouts", () => {
       const brokenDoc = createDoc({
         assets: [{ id: "asset-1", kind: "image", name: "test", mime: "image/png", bytes: 10 }],
         shots: [
@@ -93,12 +94,13 @@ describe("WP-01: Document Defaults and Validation", () => {
           },
           {
             ...defaultShot(),
+            // A saved pair (cut on 19 Oct 2026) loads as a browser with its desktop capture.
             layout: {
               kind: "pair",
               desktopId: "missing-desk",
               mobileId: "asset-1",
               arrangement: "overlap",
-            },
+            } as unknown as Layout,
           },
           {
             ...defaultShot(),
@@ -107,8 +109,8 @@ describe("WP-01: Document Defaults and Validation", () => {
               assetIds: ["asset-1", "missing-id"],
               rows: 2,
               device: "browser",
-              tilt: 10,
-              speed: 0.2,
+              tilt: 0,
+              travel: "period",
             },
           },
         ],
@@ -116,11 +118,10 @@ describe("WP-01: Document Defaults and Validation", () => {
       const { doc, warnings } = sanitizeDoc(brokenDoc);
       expect(warnings.length).toBeGreaterThan(0);
       const l0 = doc.shots[0].layout as { assetId?: string };
-      const l1 = doc.shots[1].layout as { desktopId?: string; mobileId?: string };
+      const l1 = doc.shots[1].layout;
       const l2 = doc.shots[2].layout as { assetIds?: string[] };
       expect(l0.assetId).toBe("");
-      expect(l1.desktopId).toBe("");
-      expect(l1.mobileId).toBe("asset-1");
+      expect(l1).toEqual({ kind: "single", device: "browser", assetId: "" });
       expect(l2.assetIds).toEqual(["asset-1"]);
     });
 
@@ -249,14 +250,18 @@ describe("WP-01: Document Defaults and Validation", () => {
         // Layout verification
         if (preset.id === "clean-hero" || preset.id === "soft-studio") {
           expect(doc.shots[0].layout.kind).toBe("single");
-        } else if (preset.id === "midnight-rows" || preset.id === "angled-gallery") {
-          expect(doc.shots[0].layout.kind).toBe("rows");
-        } else if (preset.id === "gallery-wall") {
-          expect(doc.shots[0].layout.kind).toBe("wall");
+        } else if (
+          preset.id === "midnight-rows" ||
+          preset.id === "angled-gallery" ||
+          preset.id === "gallery-wall"
+        ) {
+          // Desktop Frames (src/doc/legacy-layouts.ts)
+          expect(doc.shots[0].layout).toMatchObject({ kind: "rows", travel: "period", tilt: 0 });
         } else if (preset.id === "phone-columns") {
-          expect(doc.shots[0].layout.kind).toBe("columns");
+          // Mobile Frames
+          expect(doc.shots[0].layout).toMatchObject({ kind: "columns", travel: "period" });
         } else if (preset.id === "responsive-pair") {
-          expect(doc.shots[0].layout.kind).toBe("pair");
+          expect(doc.shots[0].layout).toMatchObject({ kind: "single", device: "browser" });
         }
 
         // Assets verification
@@ -448,5 +453,26 @@ describe("Slider layout validation (presets P01)", () => {
     expect(repaired({ kind: "slider", assetIds: ["m2"], step: Number.NaN })).toMatchObject({
       step: 2,
     });
+  });
+});
+
+describe("Removed chrome and finishes load as preset looks", () => {
+  it("loads every saved device finish as the one finish, and minimal chrome as standard", () => {
+    for (const finish of ["graphite", "silver", "black", "sand"]) {
+      const saved = createDoc() as unknown as { style: Record<string, unknown> };
+      saved.style.deviceFinish = finish;
+      saved.style.browserChrome = "minimal";
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.style, finish).not.toHaveProperty("deviceFinish");
+      expect(doc.style.browserChrome, finish).toBe("standard");
+    }
+  });
+
+  it("migrates every v1 frame finish without a device finish", () => {
+    for (const finish of ["midnight", "titanium", "silver", "gold"] as const) {
+      const preset = createV1Project();
+      preset.composition.frame.finish = finish;
+      expect(migrateV1Project(preset).style, finish).not.toHaveProperty("deviceFinish");
+    }
   });
 });

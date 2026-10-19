@@ -14,22 +14,18 @@ import {
 } from "../../ui";
 import {
   Copy,
-  Laptop,
-  Layers,
   LayoutGrid,
   Monitor,
   Scissors,
   Smartphone,
-  Tablet,
   Trash2,
   Maximize2,
-  Columns,
   GalleryHorizontal,
   GalleryVertical,
   Orbit,
 } from "lucide-react";
 import { ShotThumbnail } from "../thumbnails/ShotThumbnail";
-import { LAYOUT_LABELS, shotSummary } from "../labels";
+import { shotSummary } from "../labels";
 
 export interface ShotCardProps {
   shot: Shot;
@@ -196,17 +192,9 @@ export const ShotCard: React.FC<ShotCardProps> = ({
     switch (layoutKind) {
       case "single":
         if (device === "phone") return <Icon icon={Smartphone} size={13} />;
-        if (device === "tablet") return <Icon icon={Tablet} size={13} />;
-        if (device === "laptop") return <Icon icon={Laptop} size={13} />;
         return <Icon icon={Monitor} size={13} />;
-      case "pair":
-        return <Icon icon={Columns} size={13} />;
-      case "trio":
-        return <Icon icon={Layers} size={13} />;
       case "rows":
       case "columns":
-      case "wall":
-      case "stack":
         return <Icon icon={LayoutGrid} size={13} />;
       case "slider":
         return <Icon icon={layout.axis === "y" ? GalleryVertical : GalleryHorizontal} size={13} />;
@@ -366,104 +354,10 @@ export const ShotCard: React.FC<ShotCardProps> = ({
               Phone
             </ContextMenuItem>
             <ContextMenuItem
-              icon={<Icon icon={Tablet} size={12} />}
-              onClick={() => onChangeLayout({ kind: "single", device: "tablet", assetId: "" })}
-            >
-              Tablet
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Laptop} size={12} />}
-              onClick={() => onChangeLayout({ kind: "single", device: "laptop", assetId: "" })}
-            >
-              Laptop
-            </ContextMenuItem>
-            <ContextMenuItem
               icon={<Icon icon={Maximize2} size={12} />}
               onClick={() => onChangeLayout({ kind: "single", device: "card", assetId: "" })}
             >
               Card
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={Columns} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "pair",
-                  desktopId: "",
-                  mobileId: "",
-                  arrangement: "overlap",
-                })
-              }
-            >
-              {LAYOUT_LABELS.pair}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Layers} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "trio",
-                  desktopId: "",
-                  mobileId: "",
-                })
-              }
-            >
-              {LAYOUT_LABELS.trio}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              icon={<Icon icon={LayoutGrid} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "rows",
-                  assetIds: [],
-                  rows: 2,
-                  device: "browser",
-                  tilt: 20,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.rows}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Columns} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "columns",
-                  assetIds: [],
-                  columns: 3,
-                  tilt: 15,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.columns}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={LayoutGrid} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "wall",
-                  assetIds: [],
-                  columns: 4,
-                  speed: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.wall}
-            </ContextMenuItem>
-            <ContextMenuItem
-              icon={<Icon icon={Layers} size={12} />}
-              onClick={() =>
-                onChangeLayout({
-                  kind: "stack",
-                  assetIds: [],
-                  device: "browser",
-                  spread: 0.5,
-                })
-              }
-            >
-              {LAYOUT_LABELS.stack}
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
