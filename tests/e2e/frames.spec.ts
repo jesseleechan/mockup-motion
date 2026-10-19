@@ -3,7 +3,7 @@ import type { Layout, ProjectDoc } from "../../src/doc/types";
 import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Presets P04 and Frames plan PF03: a Frames shot (rows or columns with travel "period") shows
-// no speed or tilt slider, and its duration control cannot go below the shortest duration under
+// no speed or tilt slider, and its pace (P5) cannot take it below the shortest duration under
 // the speed limit.
 
 interface EditorWindow {
@@ -106,14 +106,15 @@ async function setFramesShot(page: Page, c: FramesCase, count: number, duration:
 }
 
 for (const c of CASES) {
-  test(`a ${c.name} shot replaces the speed and tilt sliders and keeps its minimum duration`, async ({
+  test(`a ${c.name} shot replaces the speed and tilt sliders and sets its length by pace`, async ({
     page,
   }) => {
     await openEditorWithDemo(page);
     await setFramesShot(page, c, 4, 15);
 
     await page.getByTestId("shot-card").click();
-    await expect(page.getByText("Speed follows shot length")).toBeVisible();
+    const pace = page.getByRole("radiogroup", { name: "Pace" });
+    await expect(pace).toBeVisible();
     await expect(page.getByRole("slider", { name: "Speed" })).toHaveCount(0);
     // Frames has no tilt by design (quality bar §4); the lane count stays editable.
     await expect(page.getByRole("slider", { name: "Tilt" })).toHaveCount(0);
@@ -124,12 +125,13 @@ for (const c of CASES) {
       }),
     ).toBeVisible();
 
-    const duration = page.getByRole("slider", { name: "Duration" });
-    await expect(duration).toHaveAttribute("aria-valuemin", String(c.minimum));
-    await expect(duration).toHaveAttribute("aria-valuenow", "15");
-    // Home moves the thumb to the minimum; the shot keeps the Frames minimum, not 1 s.
-    await duration.focus();
-    await page.keyboard.press("Home");
+    // The pace sets the length, so the inspector shows it as a read-out, not a control.
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
+    await expect(page.getByText("Loop length", { exact: true })).toBeVisible();
+    await expect(page.getByText("15.0 s", { exact: true })).toBeVisible();
+    // Brisk is 15 s × 0.8 = 12 s, which is exactly this shot's minimum, so the shot lands on it.
+    // The clamp below the minimum is covered by tests/pace.test.ts.
+    await pace.getByRole("radio", { name: "Brisk" }).click();
     await expect
       .poll(() =>
         page.evaluate(
@@ -137,6 +139,7 @@ for (const c of CASES) {
         ),
       )
       .toBe(c.minimum);
+    await expect(page.getByText(`${c.minimum.toFixed(1)} s`, { exact: true })).toBeVisible();
   });
 
   test(`a ${c.name} shot with more screenshots than fit 30 s shows the first ones and says so`, async ({
@@ -150,10 +153,11 @@ for (const c of CASES) {
     await expect(
       page.getByText("Shows the first 10 screenshots, so the loop fits in 30 s."),
     ).toBeVisible();
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "aria-valuemin",
-      String(c.capped),
-    );
+    // Default is the speed limit for the ten shown, so Brisk can't be faster.
+    await expect(page.getByText(`${c.capped.toFixed(1)} s`, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("radiogroup", { name: "Pace" }).getByRole("radio", { name: "Brisk" }),
+    ).toHaveAttribute("aria-disabled", "true");
   });
 }
 
@@ -238,12 +242,12 @@ test("changing the aspect re-fits both Frames presets, and one undo restores the
   }
 });
 
-test("loop length chips set a Frames shot's duration in one undo step and explain a disabled chip", async ({
+test("the pace sets a Frames shot's length in one undo step and explains an unavailable pace", async ({
   page,
 }) => {
   await openEditorWithDemo(page);
-  // Mobile Frames at 16:9 with six screenshots: the shortest loop is 19.5 s, so "15 s" is
-  // disabled (docs/phone-frames-plan/README.md §8, suggestion 4).
+  // Mobile Frames at 16:9 with six screenshots: Default is the 19.5 s speed limit, so Brisk is
+  // unavailable, and Calm is 19.5 s × 1.2, 23.5 s (quality bar §2.2).
   await page.evaluate(() => {
     const store = (window as unknown as EditorWindow).__editorStore;
     if (!store) throw new Error("__editorStore is unavailable");
@@ -251,7 +255,7 @@ test("loop length chips set a Frames shot's duration in one undo step and explai
       const ids = draft.assets.filter((a) => a.kind === "image").map((a) => a.id);
       draft.aspect = "16:9";
       draft.shots = draft.shots.slice(0, 1);
-      draft.shots[0].duration = 30;
+      delete draft.shots[0].pace;
       draft.shots[0].layout = {
         kind: "columns",
         assetIds: Array.from({ length: 6 }, (_, i) => ids[i % ids.length]),
@@ -270,49 +274,49 @@ test("loop length chips set a Frames shot's duration in one undo step and explai
     );
 
   await page.getByTestId("shot-card").click();
-  const chips = page.getByRole("group", { name: "Loop length" });
-  const chip = (label: string) => chips.getByRole("button", { name: label, exact: true });
-  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip("20 s")).toHaveAttribute("aria-pressed", "false");
-  await expect(chip("15 s")).toHaveAttribute("aria-pressed", "false");
+  const pace = page.getByRole("radiogroup", { name: "Pace" });
+  const option = (label: string) => pace.getByRole("radio", { name: label, exact: true });
+  await expect(option("Default")).toHaveAttribute("aria-checked", "true");
+  await expect(option("Calm")).toHaveAttribute("aria-checked", "false");
+  expect(await duration()).toBe(19.5);
 
-  // The disabled chip stays focusable, so its reason shows on focus and reaches screen readers.
-  const reason = "6 screenshots need at least 19.5 s";
-  await expect(chip("15 s")).toHaveAttribute("aria-disabled", "true");
-  await expect(chip("15 s")).toHaveAccessibleDescription(reason);
-  await chip("15 s").focus();
+  // The unavailable option stays focusable, so its reason shows on focus and reaches screen
+  // readers.
+  const reason = "Already at the speed limit";
+  await expect(option("Brisk")).toHaveAttribute("aria-disabled", "true");
+  await expect(option("Brisk")).toHaveAccessibleDescription(reason);
+  await option("Brisk").focus();
   await expect(page.getByRole("tooltip")).toHaveText(reason);
   await page.keyboard.press("Enter");
-  expect(await duration()).toBe(30);
+  expect(await duration()).toBe(19.5);
+  await expect(option("Default")).toHaveAttribute("aria-checked", "true");
   await page.keyboard.press("Escape");
-  await chip("20 s").hover();
+  await option("Calm").hover();
   await expect(page.getByRole("tooltip")).toHaveCount(0);
-  await chip("15 s").hover();
+  await option("Brisk").hover();
   await expect(page.getByRole("tooltip")).toHaveText(reason);
 
-  // A click sets the loop length; the duration field follows; one undo restores it.
-  await chip("20 s").click();
-  await expect.poll(duration).toBe(20);
-  await expect(chip("20 s")).toHaveAttribute("aria-pressed", "true");
-  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-    "aria-valuenow",
-    "20",
-  );
+  // A click sets the pace; the loop length follows; one undo restores it.
+  await option("Calm").click();
+  await expect.poll(duration).toBe(23.5);
+  await expect(option("Calm")).toHaveAttribute("aria-checked", "true");
+  await expect(
+    page.locator('[data-panel="inspector"] [data-field]').filter({ hasText: "Loop length" }),
+  ).toContainText("23.5 s");
   await page.getByRole("button", { name: "Undo" }).click();
-  await expect.poll(duration).toBe(30);
-  await expect(chip("30 s")).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(duration).toBe(19.5);
+  await expect(option("Default")).toHaveAttribute("aria-checked", "true");
 
-  // From the keyboard: Tab reaches the next chip with a visible focus ring, Enter sets it.
-  // (Space plays the video everywhere in the editor, docs/plan/follow-ups.md.)
-  await chip("15 s").focus();
-  await page.keyboard.press("Tab");
-  await expect(chip("20 s")).toBeFocused();
+  // From the keyboard: the arrow keys reach the next option with a visible focus ring, Enter
+  // sets it. (Space plays the video everywhere in the editor, docs/plan/follow-ups.md.)
+  await option("Default").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(option("Calm")).toBeFocused();
   expect(
-    await chip("20 s").evaluate(
+    await option("Calm").evaluate(
       (el) => el.matches(":focus-visible") && getComputedStyle(el).boxShadow !== "none",
     ),
   ).toBe(true);
   await page.keyboard.press("Enter");
-  await expect.poll(duration).toBe(20);
+  await expect.poll(duration).toBe(23.5);
 });

@@ -65,7 +65,9 @@ export type Layout =
 // whole group (the presets use 0).
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
-// slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
+// slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step. The
+// step follows Shot.pace (Brisk 1.6, Default 2.0, Calm 2.4 s, clamped); so does a Frames shot's
+// duration and Responsive Scroll's hold.
 // slider.arrangement: "carousel" (default when unset: Desktop Slider, Mobile Slider) or "deck"
 // (Desktop Stack, Mobile Stack): the front card leaves along the axis and the deck moves forward
 // one slot per step, with the same step timing and duration.
@@ -128,6 +130,9 @@ export interface Shot {
   scroll?: ScrollSpec;     // honoured for single-device and responsive layouts
   transitionIn: Transition;// the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
+  // Calm or Brisk; unset is Default. Sliders, stacks, orbits, Frames and Responsive Scroll set
+  // their step, duration or hold from it (src/motion/pace.ts, quality-bar §2.2).
+  pace?: "calm" | "brisk";
 }
 
 // "custom" is a state, not a card: the settings differ from every preset. Saved "linkedin" and

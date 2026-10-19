@@ -3,7 +3,7 @@ import { normalizeStyleAngles } from "../doc/gradient-angle";
 import { applyLegacyLook, legacyLook, mapLegacyLayout } from "../doc/legacy-layouts";
 import type { Aspect, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot } from "../doc/defaults";
-import { clampSliderStep, sliderDuration } from "../motion";
+import { fitPace, isPacedShot, nearestPace } from "../motion";
 
 export interface UserTemplate {
   id: string;
@@ -177,6 +177,12 @@ export function fillUserTemplateSlots(
       // saved project of that kind loads as (src/doc/legacy-layouts.ts).
       const raw = shot.layout as unknown as Record<string, unknown>;
       const look = legacyLook(raw);
+      // A template saved before paces existed takes the pace nearest its saved timing, read
+      // before its slots resolve (src/motion/pace.ts).
+      if (!look && shot.pace === undefined && isPacedShot(shot)) {
+        const pace = nearestPace(shot, aspect);
+        if (pace !== "default") shot.pace = pace;
+      }
       if (look) {
         const ids = Array.isArray(raw.assetIds)
           ? [...new Set(raw.assetIds.map((id) => resolveSlot(String(id))).filter(Boolean))]
@@ -203,11 +209,11 @@ export function fillUserTemplateSlots(
           // Fewer assets than slots reuse one; a slider or orbit never shows a screenshot twice
           // (quality bar §4), and its length follows its screenshots so the loop stays native.
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
-          layout.step = clampSliderStep(layout.step, layout.assetIds.length);
-          shot.duration = sliderDuration(layout);
           break;
         }
       }
+      // Its pace sets its step or duration for the screenshots it got.
+      fitPace(shot, aspect, assets);
 
       return shot;
     });

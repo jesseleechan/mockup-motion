@@ -343,19 +343,25 @@ describe("Frames in the editor store (presets P04)", () => {
     return store;
   }
 
-  it("keeps the shot duration at or above framesDuration", () => {
+  it("keeps the shot duration at or above framesDuration: its pace sets it", () => {
     const store = frameStore(6);
     const layout = store.getState().doc.shots[0].layout as Parameters<typeof framesDuration>[0];
     const shortest = framesDuration(layout, "4:5");
+    const built = store.getState().doc.shots[0].duration;
+    const steps = store.getState().past.length;
+    // A direct duration edit can't move a paced shot off its pace, so it leaves no undo step.
     store.getState().setShotDuration(0, 3);
-    expect(store.getState().doc.shots[0].duration).toBe(shortest);
     store.getState().setShotDuration(0, 25);
-    expect(store.getState().doc.shots[0].duration).toBe(25);
+    expect(store.getState().doc.shots[0].duration).toBe(built);
+    expect(store.getState().past).toHaveLength(steps);
+    // Brisk, the fastest pace, stops at the speed limit.
+    store.getState().setShotPace(0, "brisk");
+    expect(store.getState().doc.shots[0].duration).toBe(shortest);
   });
 
   it("lengthens the shot when another screenshot lengthens the period", () => {
     const store = frameStore(5);
-    store.getState().setShotDuration(0, 1);
+    store.getState().setShotPace(0, "brisk");
     const before = store.getState().doc.shots[0].duration;
     store.getState().assignAssetToSlot(0, "add", "d6");
     const after = store.getState().doc.shots[0];

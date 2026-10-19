@@ -7,7 +7,7 @@ import {
   responsiveShownStops,
   sharedSectionKeys,
 } from "../../../motion/responsive-scroll";
-import { Button, Field, Section, Slider, Switch } from "../../../ui";
+import { Button, Field, Section, Switch } from "../../../ui";
 import { useShotUpdate } from "./useShotUpdate";
 
 interface ResponsiveScrollSectionProps {
@@ -22,8 +22,8 @@ function sectionLabel(key: string): string {
 }
 
 /**
- * Responsive Scroll's stops: which sections both screens stop on and how long they hold
- * (quality bar §2.2: holds 0.6–1.2 s). The shot length follows from them.
+ * Responsive Scroll's stops: which sections both screens stop on. The hold at each stop follows
+ * the shot's pace (Pace section, quality bar §2.2), and the shot length follows from both.
  */
 export const ResponsiveScrollSection: React.FC<ResponsiveScrollSectionProps> = ({
   shot,
@@ -118,24 +118,6 @@ export const ResponsiveScrollSection: React.FC<ResponsiveScrollSectionProps> = (
             </div>
           </Field>
         )}
-
-        <Field label="Hold" value={`${scroll.hold.toFixed(1)} s`}>
-          <Slider
-            aria-label="Hold at each stop"
-            min={0.6}
-            max={1.2}
-            step={0.1}
-            value={scroll.hold}
-            onChange={(val) =>
-              update(
-                (target) => {
-                  if (target.scroll) target.scroll.hold = val;
-                },
-                { coalesceKey: `responsive-hold-${shot.id}` },
-              )
-            }
-          />
-        </Field>
       </div>
     </Section>
   );

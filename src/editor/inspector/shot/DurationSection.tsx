@@ -1,18 +1,20 @@
 import React from "react";
 import type { Aspect, Shot } from "../../../doc/types";
-import { fixedShotDuration, minShotDuration, schedule } from "../../../motion";
+import { fixedShotDuration, isPacedShot, minShotDuration, schedule } from "../../../motion";
 import { useEditorStore } from "../../../state/store";
 import { Field, Section, Slider } from "../../../ui";
 import { useShotUpdate } from "./useShotUpdate";
 
 /**
  * The shot's duration: the loop length. A slider, orbit or scrolling responsive shot sets its own
- * length so its loop stays seamless (contracts.md §5); there it is a read-out, not a control.
+ * length so its loop stays seamless (contracts.md §5), and a Frames shot's pace sets its length
+ * (src/motion/pace.ts); there it is a read-out, not a control.
  */
 export const DurationSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot, aspect }) => {
   const update = useShotUpdate(shot.id);
   const doc = useEditorStore((s) => s.doc);
-  const fixed = fixedShotDuration(shot.layout, shot.scroll, doc.assets) !== null;
+  const fixed =
+    fixedShotDuration(shot.layout, shot.scroll, doc.assets) !== null || isPacedShot(shot);
   // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
   const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
   const seconds = `${shot.duration.toFixed(1)} s`;

@@ -15,14 +15,16 @@ import type {
   Style,
 } from "../doc/types";
 import {
-  clampSliderStep,
+  fitPace,
   fixedShotCamera,
   fixedShotDuration,
+  isPacedShot,
+  isSteppedLayout,
   minShotDuration,
   minShotScreenshots,
-  isSteppedLayout,
-  sliderDuration,
+  setPace,
   steppedAssetIds,
+  type Pace,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 
@@ -103,30 +105,34 @@ export interface EditorStoreState {
 
   // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
+  /** Sets a looping shot's pace (src/motion/pace.ts); its timing follows. One undo step. */
+  setShotPace: (index: number, pace: Pace) => void;
 
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
 
-/** Appends a screenshot to a list layout's shot and lengthens the shot if the layout needs it. */
+/** Appends a screenshot to a list layout's shot. fitFixedShots refits a Frames shot's duration. */
 function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
   const shot = draft.shots[shotIndex];
   if (!shot || !("assetIds" in shot.layout)) return;
   if (shot.layout.assetIds.includes(assetId)) return;
   shot.layout.assetIds.push(assetId);
-  shot.duration = Math.min(30, Math.max(shot.duration, minShotDuration(shot.layout, draft.aspect)));
 }
 
 const MAX_HISTORY = 100;
 const COALESCE_WINDOW_MS = 800;
 
 /**
- * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
- * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
- * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
- * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
+ * Keeps every looping shot loop-safe after any edit. Its pace sets its timing (src/motion/pace.ts):
+ * a slider's or orbit's step, which fits the shown screenshots in a 30 s shot, a Frames shot's
+ * duration, which keeps it under its speed limit, and Responsive Scroll's hold. A slider or orbit
+ * lasts one step per shown screenshot and keeps a still camera (contracts.md §5). Edits that set
+ * such a shot's duration or camera directly are undone here. A responsive shot keeps a still
+ * camera and, while it scrolls, lasts its holds plus moves.
  */
 function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
+    fitPace(shot, draft.aspect, draft.assets);
     if (shot.layout.kind === "responsive") {
       const duration = fixedShotDuration(shot.layout, shot.scroll, draft.assets);
       if (duration !== null && duration !== shot.duration) shot.duration = duration;
@@ -135,8 +141,6 @@ function fitFixedShots(draft: ProjectDoc): void {
       continue;
     }
     if (!isSteppedLayout(shot.layout)) continue;
-    shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
-    shot.duration = sliderDuration(shot.layout);
     // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
     const camera = fixedShotCamera(shot.layout, shot.camera);
     if (camera !== shot.camera) shot.camera = camera;
@@ -508,11 +512,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               layout.assetIds.push(assetId);
             }
           }
-          // Another screenshot lengthens a Frames period; keep it under its speed limit.
-          shot.duration = Math.min(
-            30,
-            Math.max(shot.duration, minShotDuration(layout, draft.aspect)),
-          );
+          // Another screenshot lengthens a Frames period: fitFixedShots refits its duration.
         },
         { label: "Assign media to slot" },
       );
@@ -571,9 +571,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
     // Timeline actions
     setShotDuration: (index: number, duration: number) => {
-      // A slider sets its own length; skip it so the edit leaves no empty undo step.
+      // A looping shot's pace sets its length; skip it so the edit leaves no empty undo step.
       const { doc } = get();
       const current = doc.shots[index];
+      if (current && isPacedShot(current)) return;
       if (current && fixedShotDuration(current.layout, current.scroll, doc.assets) !== null) return;
       get().apply(
         (draft) => {
@@ -584,6 +585,16 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           }
         },
         { label: "Change shot duration" },
+      );
+    },
+
+    setShotPace: (index: number, pace: Pace) => {
+      get().apply(
+        (draft) => {
+          const shot = draft.shots[index];
+          if (shot && isPacedShot(shot)) setPace(shot, pace);
+        },
+        { label: "Change pace" },
       );
     },
 
