@@ -96,6 +96,13 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     [addScreenshots, toast],
   );
 
+  // The gallery's "Choose screenshots" opens this picker (polish item 1). The click stays
+  // within the user's activation from the gallery button, so the browser allows the dialog.
+  const screenshotPickerRequests = useUIStore((s) => s.screenshotPickerRequests);
+  useEffect(() => {
+    if (screenshotPickerRequests > 0) fileInputRef.current?.click();
+  }, [screenshotPickerRequests]);
+
   // Global drag-and-drop listener
   useEffect(() => {
     const onDragOver = (e: DragEvent) => {

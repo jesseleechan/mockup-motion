@@ -15,13 +15,24 @@ import {
 import { TEMPLATE_CATEGORY_LABELS } from "../labels";
 import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplatePreview } from "../library/TemplatePreview";
-import { Check, Film, Monitor, Search, Smartphone, Sparkles, Wand2, X } from "lucide-react";
+import {
+  Check,
+  Film,
+  Monitor,
+  Search,
+  Smartphone,
+  Sparkles,
+  UploadCloud,
+  Wand2,
+  X,
+} from "lucide-react";
 
 /** Rendered once, in EditorShell; its open state lives in the UI store (F06). */
 export const TemplateGalleryModal: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const open = useUIStore((s) => s.templateGalleryOpen);
   const closeTemplateGallery = useUIStore((s) => s.closeTemplateGallery);
+  const requestScreenshotPicker = useUIStore((s) => s.requestScreenshotPicker);
   const { applyTemplateById, applyTemplateWithDemo } = useTemplateActions();
   const onOpenChange = (next: boolean) => {
     if (!next) closeTemplateGallery();
@@ -80,6 +91,11 @@ export const TemplateGalleryModal: React.FC = () => {
   const canUseDemo = selectedTemplate
     ? demoAssetsToFill(selectedTemplate, doc.assets).length > 0
     : false;
+  // Applies the template, then opens the stage's file picker: the uploads fill it (F06).
+  const handleChooseScreenshots = (template: Template) => {
+    handleApply(template);
+    requestScreenshotPicker();
+  };
   const handleApplyWithDemo = async (template: Template) => {
     closeTemplateGallery();
     await applyTemplateWithDemo(template);
@@ -307,18 +323,25 @@ export const TemplateGalleryModal: React.FC = () => {
             )}
           </div>
 
+          {/* The close button and Escape cancel, so the footer has room for the ways in. */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
             {selectedTemplate && canUseDemo && (
-              <Button
-                variant="secondary"
-                onClick={() => handleApplyWithDemo(selectedTemplate)}
-                icon={<Icon icon={Wand2} size={14} />}
-              >
-                Try with demo content
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleChooseScreenshots(selectedTemplate)}
+                  icon={<Icon icon={UploadCloud} size={14} />}
+                >
+                  Choose screenshots
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleApplyWithDemo(selectedTemplate)}
+                  icon={<Icon icon={Wand2} size={14} />}
+                >
+                  Try with demo content
+                </Button>
+              </>
             )}
             <Button
               variant="primary"
