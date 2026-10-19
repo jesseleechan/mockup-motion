@@ -45,7 +45,7 @@ describe("e2e path filter", () => {
       "src/assets/fonts.ts",
       "src/editor/EditorShell.tsx",
       "src/ui/Button.tsx",
-      "public/demo/aurelia.png",
+      "public/demo/manifest.json",
       "index.html",
       "vite.config.ts",
       "tsconfig.json",

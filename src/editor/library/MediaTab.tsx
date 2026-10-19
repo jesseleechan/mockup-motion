@@ -105,24 +105,14 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
       const lay = shot.layout;
       let used = false;
       if (lay.kind === "single" && lay.assetId === assetId) used = true;
-      if (lay.kind === "pair" && (lay.desktopId === assetId || lay.mobileId === assetId))
-        used = true;
-      if (
-        lay.kind === "trio" &&
-        (lay.desktopId === assetId || lay.tabletId === assetId || lay.mobileId === assetId)
-      )
-        used = true;
       if (
         (lay.kind === "rows" ||
           lay.kind === "columns" ||
-          lay.kind === "wall" ||
-          lay.kind === "stack" ||
           lay.kind === "slider" ||
           lay.kind === "orbit") &&
         lay.assetIds.includes(assetId)
       )
         used = true;
-      if (shot.texts?.some((t) => t.logoAssetId === assetId)) used = true;
 
       if (used) shotIndices.push(idx + 1);
     });

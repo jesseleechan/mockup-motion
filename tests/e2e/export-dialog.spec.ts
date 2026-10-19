@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // F09: the export dialog's layout, its summary of what will really be written, and cancel.
 
@@ -15,9 +16,9 @@ interface EditorWindow {
   __releaseProbe?: () => void;
 }
 
-/** Clears the project database from /lab/ui, then opens the editor with demo content. */
+/** Clears the project database from a blank page, then opens the editor with demo content. */
 async function openEditorWithDemo(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

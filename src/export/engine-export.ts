@@ -158,22 +158,12 @@ export async function exportWithEngine(
     images[id] = await createImageBitmap(source);
   }
 
-  // Pre-rasterize all text layers at export resolution
+  // The browser URL pills, rasterized at export resolution.
   const ss = settings.supersample ?? 1;
   const frameHeightPx = Math.round(height * ss);
   const texts: Record<string, TextRaster> = {};
-  for (const shot of doc.shots) {
-    if (shot.texts && shot.texts.length > 0) {
-      const shotStyle = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
-      for (const layer of shot.texts) {
-        texts[layer.id] = await provider.getText(layer, shotStyle, frameHeightPx);
-        signal?.throwIfAborted();
-      }
-    }
-  }
-  // The browser URL pills: synthetic `chrome-url` layers, rasterized here like any text.
   for (const request of chromeUrlRequests(doc)) {
-    texts[request.layer.id] = await provider.getText(request.layer, request.style, frameHeightPx);
+    texts[request.line.id] = await provider.getText(request.line, frameHeightPx);
     signal?.throwIfAborted();
   }
 

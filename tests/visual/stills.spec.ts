@@ -7,16 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
-const DEVICES = ["browser", "phone", "tablet", "laptop", "card"];
-const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
-const TRANSITIONS = ["fade", "blur", "push", "zoom", "wipe"];
-const TEXT_ANIMS: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
+const DEVICES = ["browser", "phone", "card"];
+const BACKGROUNDS = ["solid", "gradient"];
 
 interface Still {
   name: string;
@@ -100,12 +92,6 @@ for (const device of DEVICES) {
     aspect: "16:9",
     t: 1,
   });
-  STILLS.push({
-    name: `device-${device}-tilted`,
-    fixture: `device-${device}-tilted`,
-    aspect: "16:9",
-    t: 4.2,
-  });
 }
 for (const name of BACKGROUNDS) {
   STILLS.push({ name: `bg-${name}`, fixture: `bg-${name}`, aspect: "16:9", t: 1 });
@@ -127,17 +113,6 @@ STILLS.push({
   aspect: "16:9",
   t: 2.05,
 });
-for (const kind of TRANSITIONS) {
-  STILLS.push({
-    name: `transition-${kind}`,
-    fixture: `transition-${kind}`,
-    aspect: "16:9",
-    t: 3.6,
-  });
-}
-for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
-  STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });
-}
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
   STILLS.push({ name: `orient-${device}`, fixture: `orient-${device}`, aspect: "16:9", t: 1 });

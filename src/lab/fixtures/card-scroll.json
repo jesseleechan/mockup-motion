@@ -27,18 +27,11 @@
       "color": "#EEF1F4"
     },
     "frameAppearance": "light",
-    "deviceFinish": "silver",
     "browserChrome": "standard",
     "browserUrl": "aurelia.studio",
     "shadow": "soft",
     "grain": 0.25,
-    "vignette": 0.06,
-    "fonts": {
-      "display": { "source": "builtin", "family": "Inter", "weight": 600 },
-      "body": { "source": "builtin", "family": "Inter", "weight": 400 }
-    },
-    "textColor": "",
-    "accent": "#000000"
+    "vignette": 0.06
   },
   "shots": [
     {
@@ -62,7 +55,6 @@
         "easing": "smooth"
       },
       "entrance": "none",
-      "texts": [],
       "transitionIn": {
         "kind": "cut",
         "duration": 0,

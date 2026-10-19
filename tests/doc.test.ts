@@ -4,6 +4,7 @@ import { sanitizeDoc } from "../src/doc/validate";
 import { migrateV1Project, LEGACY_PRESET_TO_TEMPLATE, type V1Project } from "../src/doc/migrate";
 import { V1_PRESETS, createV1Project } from "./fixtures/v1-presets";
 import { getTemplateById } from "../src/templates";
+import type { AssetRef, Layout, Transition } from "../src/doc/types";
 
 describe("WP-01: Document Defaults and Validation", () => {
   it("defaults validate cleanly without any warnings", () => {
@@ -14,8 +15,6 @@ describe("WP-01: Document Defaults and Validation", () => {
     expect(sanitized.style.shadow).toBe("soft");
     expect(sanitized.style.grain).toBe(0.25);
     expect(sanitized.style.vignette).toBe(0.06);
-    expect(sanitized.style.fonts.display.family).toBe("Inter Display");
-    expect(sanitized.style.fonts.body.family).toBe("Inter");
     expect(sanitized.export.resolution).toBe(1080);
     expect(sanitized.export.fps).toBe(30);
     expect(sanitized.export.quality).toBe("high");
@@ -38,15 +37,11 @@ describe("WP-01: Document Defaults and Validation", () => {
     });
 
     it("3. clamps shot duration to range [1, 30]", () => {
-      const brokenDoc = createDoc({
-        shots: [
-          { ...defaultShot(), duration: -5 },
-          { ...defaultShot(), duration: 100 },
-        ],
-      });
-      const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].duration).toBe(1);
-      expect(doc.shots[1].duration).toBe(30);
+      const duration = (value: number) =>
+        sanitizeDoc(createDoc({ shots: [{ ...defaultShot(), duration: value }] })).doc.shots[0]
+          .duration;
+      expect(duration(-5)).toBe(1);
+      expect(duration(100)).toBe(30);
     });
 
     it("4. clamps grain and vignette to [0, 1]", () => {
@@ -59,7 +54,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.style.vignette).toBe(0);
     });
 
-    it("5. sanitizes camera moves: invalid preset defaults to pushIn, clamps intensity and float", () => {
+    it("5. sanitizes camera moves: invalid preset defaults to static, clamps intensity and float", () => {
       const shot = defaultShot();
       const cameraRecord = shot.camera as unknown as Record<string, unknown>;
       cameraRecord.preset = "invalid_3d_spin";
@@ -67,7 +62,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       shot.camera.float = -1;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].camera.preset).toBe("pushIn");
+      expect(doc.shots[0].camera.preset).toBe("static");
       expect(doc.shots[0].camera.intensity).toBe(1);
       expect(doc.shots[0].camera.float).toBe(0);
     });
@@ -85,98 +80,106 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.shots[0].layout.kind).toBe("single");
     });
 
-    it("7. removes missing asset references in single, pair, rows layout", () => {
-      const brokenDoc = createDoc({
-        assets: [{ id: "asset-1", kind: "image", name: "test", mime: "image/png", bytes: 10 }],
-        shots: [
-          {
-            ...defaultShot(),
-            layout: { kind: "single", device: "browser", assetId: "missing-asset" },
-          },
-          {
-            ...defaultShot(),
-            layout: {
-              kind: "pair",
-              desktopId: "missing-desk",
-              mobileId: "asset-1",
-              arrangement: "overlap",
-            },
-          },
-          {
-            ...defaultShot(),
-            layout: {
-              kind: "rows",
-              assetIds: ["asset-1", "missing-id"],
-              rows: 2,
-              device: "browser",
-              tilt: 10,
-              speed: 0.2,
-            },
-          },
-        ],
-      });
-      const { doc, warnings } = sanitizeDoc(brokenDoc);
-      expect(warnings.length).toBeGreaterThan(0);
-      const l0 = doc.shots[0].layout as { assetId?: string };
-      const l1 = doc.shots[1].layout as { desktopId?: string; mobileId?: string };
-      const l2 = doc.shots[2].layout as { assetIds?: string[] };
-      expect(l0.assetId).toBe("");
-      expect(l1.desktopId).toBe("");
-      expect(l1.mobileId).toBe("asset-1");
-      expect(l2.assetIds).toEqual(["asset-1"]);
-    });
-
-    it("8. resets missing asset in ambient and image background to empty", () => {
-      const brokenDoc = createDoc();
-      brokenDoc.style.background = {
-        kind: "ambient",
-        assetId: "nonexistent",
-        blur: 0.5,
-        dim: 0.2,
-      };
-      const { doc, warnings } = sanitizeDoc(brokenDoc);
-      expect(warnings.length).toBeGreaterThan(0);
-      expect(doc.style.background.kind).toBe("ambient");
-      const bg = doc.style.background as { assetId?: string };
-      expect(bg.assetId).toBe("");
-    });
-
-    it("9. clamps font weights to [100, 900]", () => {
-      const brokenDoc = createDoc();
-      brokenDoc.style.fonts.display.weight = 1500;
-      brokenDoc.style.fonts.body.weight = 10;
-      const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.style.fonts.display.weight).toBe(900);
-      expect(doc.style.fonts.body.weight).toBe(100);
-    });
-
-    it("10. sanitizes text layer size, delay, and transition duration", () => {
-      const shot = defaultShot();
-      shot.texts = [
-        {
-          id: "t1",
-          text: "Headline",
-          role: "title",
-          font: "display",
-          size: 0.5, // below 1.6% min
-          anchor: "center",
-          align: "center",
-          color: "",
-          animation: "none",
-          delay: -4,
-        },
+    it("7. removes missing asset references in single, saved pair and rows layouts", () => {
+      const assets: AssetRef[] = [
+        { id: "asset-1", kind: "image", name: "test", mime: "image/png", bytes: 10 },
       ];
+      const load = (layout: Layout) => {
+        const { doc, warnings } = sanitizeDoc(
+          createDoc({ assets, shots: [{ ...defaultShot(), layout }] }),
+        );
+        expect(warnings.length, layout.kind).toBeGreaterThan(0);
+        return doc.shots[0].layout;
+      };
+      expect(load({ kind: "single", device: "browser", assetId: "missing-asset" })).toEqual({
+        kind: "single",
+        device: "browser",
+        assetId: "",
+      });
+      // A saved pair (cut on 19 Oct 2026) loads as a browser with its desktop capture.
+      const pair = {
+        kind: "pair",
+        desktopId: "missing-desk",
+        mobileId: "asset-1",
+        arrangement: "overlap",
+      } as unknown as Layout;
+      expect(load(pair)).toEqual({ kind: "single", device: "browser", assetId: "" });
+      const rows = load({
+        kind: "rows",
+        assetIds: ["asset-1", "missing-id"],
+        rows: 2,
+        device: "browser",
+        tilt: 0,
+        travel: "period",
+      }) as { assetIds?: string[] };
+      expect(rows.assetIds).toEqual(["asset-1"]);
+    });
+
+    it("8. replaces an unknown background kind with the default background", () => {
+      const brokenDoc = createDoc() as unknown as { style: { background: unknown } };
+      brokenDoc.style.background = { kind: "video", assetId: "clip" };
+      const { doc } = sanitizeDoc(brokenDoc);
+      expect(doc.style.background).toEqual(createDoc().style.background);
+    });
+
+    it("9. drops text layers and title cards from a saved document", () => {
+      // Saved before typography was removed (October 2026): a title card, then a browser shot
+      // with a text layer, with the old typography style fields.
+      const saved = JSON.parse(JSON.stringify(createDoc())) as Record<string, unknown> & {
+        style: Record<string, unknown>;
+        shots: Record<string, unknown>[];
+      };
+      saved.style.fonts = {
+        display: { source: "builtin", family: "Fraunces", weight: 600 },
+        body: { source: "builtin", family: "Inter", weight: 400 },
+      };
+      saved.style.textColor = "#112233";
+      const browser = saved.shots[0];
+      browser.texts = [{ id: "t1", text: "Headline", role: "title", animation: "fadeUp" }];
+      saved.shots = [{ ...browser, id: "title", layout: { kind: "title" } }, browser];
+
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.shots).toHaveLength(1);
+      expect(doc.shots[0].id).toBe(browser.id);
+      expect(doc.shots[0].layout.kind).toBe("single");
+      expect(doc.shots[0]).not.toHaveProperty("texts");
+      expect(doc.style).not.toHaveProperty("fonts");
+      expect(doc.style).not.toHaveProperty("textColor");
+
+      // A document of title cards only gets a default shot.
+      saved.shots = [{ ...browser, id: "title", layout: { kind: "title" } }];
+      const titleOnly = sanitizeDoc(saved).doc;
+      expect(titleOnly.shots).toHaveLength(1);
+      expect(titleOnly.shots[0].layout).toEqual(defaultShot().layout);
+    });
+
+    it("10. sanitizes transition duration", () => {
+      const shot = defaultShot();
+      // A saved wipe (cut with reels on 19 Oct 2026) loads as a fade.
       shot.transitionIn = {
         kind: "wipe",
         duration: -1,
         easing: "quintInOut",
-      };
+      } as unknown as Transition;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
-      expect(doc.shots[0].texts[0].size).toBe(1.6);
-      expect(doc.shots[0].texts[0].delay).toBe(0);
       expect(doc.shots[0].transitionIn.duration).toBe(0);
+      expect(doc.shots[0].transitionIn.kind).toBe("fade");
     });
+  });
+
+  it("loads a shot saved with the removed cursor and drops the cursor", () => {
+    const saved = createDoc();
+    const shot = {
+      ...saved.shots[0],
+      cursor: { enabled: true, style: "pointer", keys: [{ t: 1, x: 0.5, y: 0.5, click: true }] },
+    };
+    const { doc, warnings } = sanitizeDoc({ ...saved, shots: [shot] });
+    expect(warnings).toEqual([]);
+    expect(doc.shots).toHaveLength(1);
+    expect(doc.shots[0].id).toBe(saved.shots[0].id);
+    expect(doc.shots[0].layout).toEqual(saved.shots[0].layout);
+    expect("cursor" in doc.shots[0]).toBe(false);
   });
 
   describe("v1 to v2 migration produces valid docs for all 8 presets", () => {
@@ -239,14 +242,18 @@ describe("WP-01: Document Defaults and Validation", () => {
         // Layout verification
         if (preset.id === "clean-hero" || preset.id === "soft-studio") {
           expect(doc.shots[0].layout.kind).toBe("single");
-        } else if (preset.id === "midnight-rows" || preset.id === "angled-gallery") {
-          expect(doc.shots[0].layout.kind).toBe("rows");
-        } else if (preset.id === "gallery-wall") {
-          expect(doc.shots[0].layout.kind).toBe("wall");
+        } else if (
+          preset.id === "midnight-rows" ||
+          preset.id === "angled-gallery" ||
+          preset.id === "gallery-wall"
+        ) {
+          // Desktop Frames (src/doc/legacy-layouts.ts)
+          expect(doc.shots[0].layout).toMatchObject({ kind: "rows", travel: "period", tilt: 0 });
         } else if (preset.id === "phone-columns") {
-          expect(doc.shots[0].layout.kind).toBe("columns");
+          // Mobile Frames
+          expect(doc.shots[0].layout).toMatchObject({ kind: "columns", travel: "period" });
         } else if (preset.id === "responsive-pair") {
-          expect(doc.shots[0].layout.kind).toBe("pair");
+          expect(doc.shots[0].layout).toMatchObject({ kind: "single", device: "browser" });
         }
 
         // Assets verification
@@ -256,7 +263,7 @@ describe("WP-01: Document Defaults and Validation", () => {
       });
     }
 
-    it("migrates brand title, subtitle, and scrolling correctly", () => {
+    it("migrates scrolling and drops the brand title and subtitle", () => {
       const v1Project: V1Project = {
         version: 1,
         name: "Brand & Scroll Test",
@@ -300,15 +307,9 @@ describe("WP-01: Document Defaults and Validation", () => {
       };
 
       const doc = migrateV1Project(v1Project);
-      expect(doc.shots[0].texts.length).toBe(2);
-      expect(doc.shots[0].texts[0].text).toBe("Super Brand");
-      expect(doc.shots[0].texts[0].role).toBe("title");
-      expect(doc.shots[0].texts[0].anchor).toBe("bottom");
-      expect(doc.shots[0].texts[0].animation).toBe("fadeUp");
-
-      expect(doc.shots[0].texts[1].text).toBe("Award Winning Design");
-      expect(doc.shots[0].texts[1].role).toBe("subtitle");
-      expect(doc.shots[0].texts[1].anchor).toBe("bottom");
+      // Text layers were removed (October 2026), so the V1 brand text has no equivalent.
+      expect(doc.shots).toHaveLength(1);
+      expect(doc.shots[0]).not.toHaveProperty("texts");
 
       expect(doc.shots[0].scroll?.enabled).toBe(true);
       expect(doc.shots[0].scroll?.stops).toEqual([0, 0.75]);
@@ -352,6 +353,48 @@ describe("F02 CSS angle compatibility", () => {
       kind: "gradient",
       angle: 180,
       angleConvention: "css",
+    });
+  });
+});
+
+describe("Removed backgrounds load as preset looks", () => {
+  it("loads mesh as a gradient of its colours, and ambient and image as the Ash solid", () => {
+    const saved = createDoc() as unknown as {
+      style: { background: unknown };
+      shots: { styleOverrides?: { background?: unknown } }[];
+    };
+    saved.style.background = {
+      kind: "mesh",
+      colors: ["#1B1B2F", "#3A2F4F", "#6B4E71", "#C3A6A0"],
+      drift: 0.05,
+      seed: 42,
+    };
+    saved.shots = [defaultShot()];
+    saved.shots[0].styleOverrides = {
+      background: { kind: "ambient", assetId: "shot", blur: 0.8, dim: 0.2 },
+    };
+
+    const { doc } = sanitizeDoc(saved);
+    expect(doc.style.background).toEqual({
+      kind: "gradient",
+      stops: ["#1B1B2F", "#C3A6A0"],
+      angle: 315,
+      angleConvention: "css",
+    });
+    const ash = { kind: "solid", color: "#DFE1E3" };
+    expect(doc.shots[0].styleOverrides?.background).toEqual(ash);
+
+    // A video has one shot, so the image override loads on its own.
+    saved.shots[0].styleOverrides = { background: { kind: "image", assetId: "shot", dim: 0 } };
+    expect(sanitizeDoc(saved).doc.shots[0].styleOverrides?.background).toEqual(ash);
+  });
+
+  it("migrates a v1 image background to the Ash solid", () => {
+    const preset = createV1Project();
+    preset.composition.background.type = "image";
+    expect(migrateV1Project(preset).style.background).toEqual({
+      kind: "solid",
+      color: "#DFE1E3",
     });
   });
 });
@@ -404,5 +447,26 @@ describe("Slider layout validation (presets P01)", () => {
     expect(repaired({ kind: "slider", assetIds: ["m2"], step: Number.NaN })).toMatchObject({
       step: 2,
     });
+  });
+});
+
+describe("Removed chrome and finishes load as preset looks", () => {
+  it("loads every saved device finish as the one finish, and minimal chrome as standard", () => {
+    for (const finish of ["graphite", "silver", "black", "sand"]) {
+      const saved = createDoc() as unknown as { style: Record<string, unknown> };
+      saved.style.deviceFinish = finish;
+      saved.style.browserChrome = "minimal";
+      const { doc } = sanitizeDoc(saved);
+      expect(doc.style, finish).not.toHaveProperty("deviceFinish");
+      expect(doc.style.browserChrome, finish).toBe("standard");
+    }
+  });
+
+  it("migrates every v1 frame finish without a device finish", () => {
+    for (const finish of ["midnight", "titanium", "silver", "gold"] as const) {
+      const preset = createV1Project();
+      preset.composition.frame.finish = finish;
+      expect(migrateV1Project(preset).style, finish).not.toHaveProperty("deviceFinish");
+    }
   });
 });
