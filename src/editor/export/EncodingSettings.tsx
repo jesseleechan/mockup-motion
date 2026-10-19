@@ -77,7 +77,14 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
 
   return (
     <section>
-      <span className={sectionHeading}>Encoding</span>
+      <span className={sectionHeading}>
+        Encoding
+        {settings.destination === "custom" && (
+          <span className="ml-1.5 font-medium normal-case tracking-normal text-[var(--color-text-2)]">
+            · Custom
+          </span>
+        )}
+      </span>
       <div className="grid grid-cols-3 gap-x-4 gap-y-3">
         <Field label="Format" stacked>
           <Select

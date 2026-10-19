@@ -163,8 +163,8 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByRole("combobox", { name: "Format" })).toContainText("MP4");
     // Frame rate and anti-aliasing sit under Advanced, which stays open while the dialog is.
     await dialog.getByRole("button", { name: /^Advanced/ }).click();
-    await expectCleanLayout(page, "Custom", ENCODING_FIELDS);
-    for (const card of ["Website", "Dribbble", "Story", "4K presentation", "Custom"]) {
+    await expectCleanLayout(page, "Video", ENCODING_FIELDS);
+    for (const card of ["Web bundle", "Dribbble", "Story", "4K presentation", "Video"]) {
       await dialog.getByRole("button", { name: card, exact: true }).click();
       await expect(summary).not.toContainText("Checking encoder");
       await expectCleanLayout(page, card, ENCODING_FIELDS);
@@ -223,8 +223,8 @@ test.describe("F09 export dialog", () => {
     await expect(dialog.getByRole("button", { name: "Start export" })).toBeDisabled();
     await page.evaluate(() => (window as unknown as EditorWindow).__releaseProbe?.());
 
-    // Website: a bundle with the WebM only, and why.
-    await dialog.getByRole("button", { name: "Website", exact: true }).click();
+    // Web bundle: a bundle with the WebM only, and why.
+    await dialog.getByRole("button", { name: "Web bundle", exact: true }).click();
     await expect(summary).toContainText("Web bundle · WebM");
     await expect(summary).not.toContainText("MP4");
     await expect(dialog.getByRole("status")).toContainText("MP4 isn't available");
