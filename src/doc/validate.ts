@@ -168,10 +168,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
       0,
       1,
     ),
-    accent:
-      typeof rawStyle.accent === "string" && rawStyle.accent
-        ? rawStyle.accent
-        : defaults.style.accent,
   };
 
   // Export

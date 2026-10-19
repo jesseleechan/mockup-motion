@@ -52,7 +52,7 @@ export function useTemplateActions() {
     [setSelection],
   );
 
-  /** Keeps the assets and brand style, fills the slots and selects the first shot. */
+  /** Keeps the assets and browser chrome, fills the slots and selects the first shot. */
   const applyTemplateById = useCallback(
     (templateId: string) => {
       const template = getTemplateById(templateId);

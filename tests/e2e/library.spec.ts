@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { BLANK_PAGE } from "../helpers/blank-page";
 
-test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
+test.describe("WP-13 Media Library, Roles and Projects", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
@@ -19,9 +19,7 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
     });
   });
 
-  test("Media Tab & Brand Kit flow: upload demo -> brand kit edit -> apply -> reload -> projects dialog", async ({
-    page,
-  }) => {
+  test("Media Tab flow: upload demo -> projects dialog", async ({ page }) => {
     const screenshotDir = path.resolve(process.cwd(), "tests/e2e/screenshots");
     if (!fs.existsSync(screenshotDir)) {
       fs.mkdirSync(screenshotDir, { recursive: true });
@@ -41,32 +39,7 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
     await expect(page.locator(".grid").first()).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "library-media-tab.png") });
 
-    // 2. Brand Tab
-    const brandTabBtn = page.getByRole("tab", { name: "Brand" });
-    await expect(brandTabBtn).toBeVisible();
-    await brandTabBtn.click();
-
-    // Verify brand kit controls
-    const brandNameInput = page.locator("#kit-name");
-    await expect(brandNameInput).toBeVisible();
-    await brandNameInput.fill("Nexus Design Kit");
-
-    // Click "Apply to project"
-    const applyBrandBtn = page.getByRole("button", { name: "Apply to project" });
-    await expect(applyBrandBtn).toBeVisible();
-    await applyBrandBtn.click();
-
-    await page.screenshot({ path: path.join(screenshotDir, "library-brand-tab.png") });
-
-    // 3. Verify Brand Kit persists across reload
-    await page.reload();
-    // A reload starts on an empty project, so the editor opens on the gallery; close it.
-    await expect(page.getByRole("dialog", { name: /Template gallery/ })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await brandTabBtn.click();
-    await expect(page.locator("#kit-name")).toHaveValue("Nexus Design Kit");
-
-    // 4. Projects Dialog
+    // 2. Projects Dialog
     const menuBtn = page.getByRole("button", { name: /MockupMotion/i });
     await menuBtn.click();
     const projectsMenuItem = page.getByRole("menuitem", { name: /Projects/i });
@@ -80,7 +53,7 @@ test.describe("WP-13 Media Library, Roles, Brand Kit, and Projects", () => {
     await page.screenshot({ path: path.join(screenshotDir, "projects-dialog.png") });
   });
 
-  test("accessibility: Axe check on Media and Brand tabs", async ({ page }) => {
+  test("accessibility: Axe check on the Media tab", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try with demo content" }).click();
     await expect(page.locator("canvas")).toBeVisible();
