@@ -1,4 +1,5 @@
 import type { Aspect, AssetRef, Layout, Shot } from "../../doc/types";
+import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
 import { resolvePairLayout } from "./pair";
 import { resolveRowsLayout } from "./rows";
@@ -41,6 +42,7 @@ export { resolveWallLayout } from "./wall";
 export { resolveStackLayout } from "./stack";
 export { resolveTitleLayout } from "./title";
 export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider";
+export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
 export type { OrbitGeometry } from "./orbit";
 
@@ -68,7 +70,9 @@ export function resolveLayout(
     case "stack":
       return resolveStackLayout(layout, aspect, assets, shotT, shotDuration, entrance);
     case "slider":
-      return resolveSliderLayout(layout, aspect, assets, shotT);
+      return layout.arrangement === "deck"
+        ? resolveDeckLayout(layout, aspect, assets, shotT)
+        : resolveSliderLayout(layout, aspect, assets, shotT);
     case "orbit":
       return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "title":
