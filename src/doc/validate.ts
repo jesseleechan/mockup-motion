@@ -7,6 +7,7 @@ import {
   fixedShotDuration,
   MAX_SHOT_DURATION,
 } from "../motion/layouts/duration";
+import { fitPace, isPacedShot, nearestPace } from "../motion/pace";
 import type {
   Aspect,
   AssetMeta,
@@ -202,9 +203,11 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
     shots.push(defaultShot());
   }
 
-  // A scrolling responsive layout lasts its holds plus moves, which depend on its screenshots
-  // (contracts.md §5), so its length is set once the assets are known.
+  // A looping shot's timing follows its pace (src/motion/pace.ts), and a scrolling responsive
+  // layout lasts its holds plus moves, which depend on its screenshots (contracts.md §5), so
+  // both are set once the assets are known.
   for (const shot of shots) {
+    fitPace(shot, aspect, assets);
     const fixed = fixedShotDuration(shot.layout, shot.scroll, assets);
     if (fixed !== null) shot.duration = fixed;
   }
@@ -335,6 +338,15 @@ function sanitizeShot(
     }
   }
 
+  // Calm or Brisk; unset is Default. A looping shot saved before paces existed takes the pace
+  // nearest its saved timing, once (ties go to Default).
+  if (s.pace === "calm" || s.pace === "brisk") {
+    shot.pace = s.pace;
+  } else if (!look && isPacedShot(shot)) {
+    const pace = nearestPace(savedTiming(s, shot), aspect);
+    if (pace !== "default") shot.pace = pace;
+  }
+
   if (s.styleOverrides && typeof s.styleOverrides === "object") {
     // Preserve partial overrides; normalize their background using the same
     // persistence boundary as document style. Other fields keep existing semantics.
@@ -346,6 +358,31 @@ function sanitizeShot(
   }
 
   return shot;
+}
+
+/**
+ * The shot's timing as saved: its step and duration before any clamp, and its screenshot list
+ * before missing ones are dropped. A library edit runs sanitizeDoc on a shot that still lists the
+ * removed screenshot, so a Default shot compares against the targets it was fitted to and stays
+ * Default.
+ */
+function savedTiming(
+  s: Record<string, unknown>,
+  shot: Shot,
+): Pick<Shot, "layout" | "scroll" | "duration"> {
+  const raw = (s.layout ?? {}) as Record<string, unknown>;
+  const layout = structuredClone(shot.layout);
+  if ("assetIds" in layout && Array.isArray(raw.assetIds)) {
+    layout.assetIds = raw.assetIds.filter(
+      (id): id is string => typeof id === "string" && id !== "",
+    );
+  }
+  if ("step" in layout && typeof raw.step === "number" && Number.isFinite(raw.step)) {
+    layout.step = raw.step;
+  }
+  const duration =
+    typeof s.duration === "number" && Number.isFinite(s.duration) ? s.duration : shot.duration;
+  return { layout, scroll: shot.scroll, duration };
 }
 
 function sanitizeLayout(

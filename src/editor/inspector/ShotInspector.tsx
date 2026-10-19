@@ -5,6 +5,7 @@ import { LayoutSection } from "./shot/LayoutSection";
 import { AssetsSection } from "./shot/AssetsSection";
 import { CameraSection } from "./shot/CameraSection";
 import { DurationSection } from "./shot/DurationSection";
+import { PaceSection } from "./shot/PaceSection";
 import { ScrollSection } from "./shot/ScrollSection";
 import { ResponsiveScrollSection } from "./shot/ResponsiveScrollSection";
 
@@ -27,6 +28,7 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
   return (
     <div className="space-y-4">
       <LayoutSection shot={shot} assets={doc.assets} />
+      <PaceSection shot={shot} aspect={doc.aspect} />
       <AssetsSection shot={shot} assets={doc.assets} />
       {/* Slider, orbit and Responsive Scroll cameras are still (quality bar §4), so no controls. */}
       {!isSteppedLayout(shot.layout) && shot.layout.kind !== "responsive" && (

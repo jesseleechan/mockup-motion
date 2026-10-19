@@ -61,6 +61,19 @@ export function clampSliderStep(step: number, count: number): number {
 }
 
 /**
+ * The longest step of a slider or orbit, counting only the screenshots it shows: an orbit shows
+ * at most 6, so its 7th and later screenshots don't shorten its step.
+ */
+export function steppedStepMax(layout: SteppedLayout): number {
+  return sliderStepMax(steppedAssetIds(layout).length);
+}
+
+/** `step` limited to 1.6 s … steppedStepMax(layout). */
+export function clampSteppedStep(step: number, layout: SteppedLayout): number {
+  return Math.min(steppedStepMax(layout), Math.max(SLIDER_MIN_STEP, step));
+}
+
+/**
  * Shot length that keeps a slider or orbit loop seamless: one step per shown screenshot.
  */
 export function sliderDuration(layout: SteppedLayout): number {

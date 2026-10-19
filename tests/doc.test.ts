@@ -416,15 +416,17 @@ describe("Slider layout validation (presets P01)", () => {
       assetIds: ["m1", "m2", "m3"],
       axis: "y" as const,
       shape: "desktop" as const,
-      step: 3.2,
+      step: 2.4,
     };
     const doc = createDoc({
       assets: ["m1", "m2", "m3"].map(image),
-      shots: [{ ...defaultShot(layout), duration: 9.6 }],
+      shots: [{ ...defaultShot(layout), duration: 7.2, pace: "calm" as const }],
     });
     const { doc: sanitized, warnings } = sanitizeDoc(doc);
     expect(warnings).toEqual([]);
     expect(sanitized.shots[0].layout).toEqual(layout);
+    expect(sanitized.shots[0].pace).toBe("calm");
+    expect(sanitized.shots[0].duration).toBeCloseTo(7.2, 9);
   });
 
   it("repairs an invalid slider layout", () => {
@@ -436,12 +438,13 @@ describe("Slider layout validation (presets P01)", () => {
     expect(
       repaired({ kind: "slider", assetIds: ["m1", "gone", 7, "m2"], axis: "z", shape: "watch" }),
     ).toEqual({ kind: "slider", assetIds: ["m1", "m2"], axis: "x", shape: "mobile", step: 2 });
+    // A saved step takes the nearest pace (src/motion/pace.ts): 9 s is nearest Calm's 2.4 s.
     expect(repaired({ kind: "slider", assetIds: "m1", step: 9 })).toEqual({
       kind: "slider",
       assetIds: [],
       axis: "x",
       shape: "mobile",
-      step: 4,
+      step: 2.4,
     });
     expect(repaired({ kind: "slider", assetIds: ["m2"], step: 0.5 })).toMatchObject({ step: 1.6 });
     expect(repaired({ kind: "slider", assetIds: ["m2"], step: Number.NaN })).toMatchObject({

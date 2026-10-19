@@ -1,14 +1,13 @@
 import type { Aspect, AssetRole, Layout, Style } from "../doc/types";
 import { defaultShot, defaultStyle } from "../doc/defaults";
-import { framesDuration } from "../motion/layouts/rows";
+import { framesDefaultLoop, FRAMES_MIN_LOOP } from "../motion/pace";
 import type { SlotSpec, Template, TemplateBuildContext } from "./types";
 import { presetToneStyle } from "./looks";
 
 type RowsLayout = Extract<Layout, { kind: "rows" }>;
 type ColumnsLayout = Extract<Layout, { kind: "columns" }>;
 
-// The reference loop is 15 s (docs/presets-plan/reference.md); shorter loops feel hurried.
-export const FRAMES_MIN_LOOP = 15;
+export { FRAMES_MIN_LOOP };
 // Quality bar §4: Frames needs 4 screenshots; the slots take up to 6.
 const REQUIRED_SLOTS = 4;
 const SLOT_COUNT = 6;
@@ -127,7 +126,8 @@ export function framesTemplate(spec: FramesTemplateSpec): Template {
           ? mobileFramesLayout(ctx.aspect, ids)
           : framesLayout(ctx.aspect, ids);
       const shot = defaultShot(layout);
-      shot.duration = Math.max(FRAMES_MIN_LOOP, framesDuration(layout, ctx.aspect));
+      // The Default pace: 15 s, or longer to stay under the speed limit (src/motion/pace.ts).
+      shot.duration = framesDefaultLoop(layout, ctx.aspect);
       // Every lane travels one whole period per loop, so the loop is native (contracts.md §5).
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };

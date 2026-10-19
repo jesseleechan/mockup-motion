@@ -274,15 +274,21 @@ describe("Mobile Frames in the editor store (Frames plan PF03)", () => {
     expect(layout.kind).toBe("columns");
     const shortest = framesDuration(layout, "4:5");
     expect(shortest).toBeGreaterThan(3);
+    const built = store.getState().doc.shots[0].duration;
+    const steps = store.getState().past.length;
+    // A direct duration edit can't move a paced shot off its pace, so it leaves no undo step.
     store.getState().setShotDuration(0, 3);
-    expect(store.getState().doc.shots[0].duration).toBe(shortest);
     store.getState().setShotDuration(0, 25);
-    expect(store.getState().doc.shots[0].duration).toBe(25);
+    expect(store.getState().doc.shots[0].duration).toBe(built);
+    expect(store.getState().past).toHaveLength(steps);
+    // Brisk, the fastest pace, stops at the speed limit.
+    store.getState().setShotPace(0, "brisk");
+    expect(store.getState().doc.shots[0].duration).toBe(shortest);
   });
 
   it("lengthens the shot when another screenshot lengthens the period", () => {
     const store = frameStore(5);
-    store.getState().setShotDuration(0, 1);
+    store.getState().setShotPace(0, "brisk");
     const before = store.getState().doc.shots[0].duration;
     store.getState().assignAssetToSlot(0, "add", "m6");
     const after = store.getState().doc.shots[0];
@@ -310,14 +316,9 @@ describe("Changing the aspect re-fits Frames shots (Frames plan D13)", () => {
           const label = `N=${count} ${from} → ${to}`;
           expect(doc.aspect, label).toBe(to);
           expect(doc.shots[0].layout, label).toEqual(fresh.shots[0].layout);
-          // Moving to an aspect that needs a longer loop lengthens the shot; a shorter
-          // minimum keeps the shot's length.
-          expect(doc.shots[0].duration, label).toBe(
-            Math.max(
-              mobileFramesDoc(from, mobiles(count)).shots[0].duration,
-              fresh.shots[0].duration,
-            ),
-          );
+          // Its pace (Default) sets the length again at the new aspect, so it is the length the
+          // template builds there, and a round trip comes back to where it started.
+          expect(doc.shots[0].duration, label).toBe(fresh.shots[0].duration);
         }
       }
     }

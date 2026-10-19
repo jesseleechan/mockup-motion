@@ -241,7 +241,7 @@ test.describe("F08 overflow guard", () => {
         await page.getByRole("tab", { name: "Media" }).click();
         await expectNoOverflow(page, "Media tab");
 
-        // Both Frames presets, whose speed row holds the loop length chips: the shot takes a
+        // Both Frames presets, whose Pace section holds the pace control: the shot takes a
         // Desktop Frames, then a Mobile Frames layout with six screenshots. The inspector only.
         for (const layout of FRAMES_LAYOUTS) {
           await page.evaluate(
@@ -263,7 +263,7 @@ test.describe("F08 overflow guard", () => {
             { id: shotId, layout },
           );
           await select(page, { kind: "shot", id: shotId });
-          await expect(inspector.getByRole("group", { name: "Loop length" })).toBeVisible();
+          await expect(inspector.getByRole("radiogroup", { name: "Pace" })).toBeVisible();
           await expectNoOverflow(page, `${layout.kind} Frames inspector`, ["inspector"]);
         }
       });

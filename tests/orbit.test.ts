@@ -266,8 +266,10 @@ describe("Orbit shots set their own length and keep a still camera", () => {
     doc.shots[0].duration = 3;
     doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
     const { doc: clean } = sanitizeDoc(doc);
-    expect(clean.shots[0].layout).toEqual({ ...layout, step: 4 });
-    expect(clean.shots[0].duration).toBe(20);
+    // A saved 9 s step takes the nearest pace, Calm (src/motion/pace.ts): 2.4 s per step.
+    expect(clean.shots[0].layout).toEqual({ ...layout, step: 2.4 });
+    expect(clean.shots[0].pace).toBe("calm");
+    expect(clean.shots[0].duration).toBe(12);
     expect(clean.shots[0].camera.preset).toBe("static");
   });
 });
@@ -332,14 +334,14 @@ describe("Desktop Orbit and Mobile Orbit templates", () => {
 });
 
 describe("Editing an orbit keeps its loop seamless", () => {
-  it("a step change sets the duration to N × step, and undo restores both", () => {
+  it("a pace change sets the step and the duration to N × step, and undo restores both", () => {
     const store = createEditorStore(orbitDoc("mobile", 5));
     const shot = () => store.getState().doc.shots[0];
-    store.getState().apply((draft) => {
-      (draft.shots[0].layout as OrbitLayout).step = 3;
-    });
-    expect(shot().duration).toBe(15);
+    store.getState().setShotPace(0, "calm");
+    expect((shot().layout as OrbitLayout).step).toBe(2.4);
+    expect(shot().duration).toBe(12);
     store.getState().undo();
+    expect((shot().layout as OrbitLayout).step).toBe(2);
     expect(shot().duration).toBe(10);
   });
 

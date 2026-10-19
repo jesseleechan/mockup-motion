@@ -353,7 +353,7 @@ test.describe("slider editing", () => {
       .locator('[data-testid="shot-card"]')
       .first()
       .click({ position: { x: 6, y: 6 } });
-    await expect(page.getByRole("slider", { name: "Step length" })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Pace" })).toBeVisible();
   }
 
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
@@ -366,7 +366,7 @@ test.describe("slider editing", () => {
     expect(camera).toMatchObject({ preset: "static", intensity: 0, float: 0 });
   });
 
-  test("changing the step length sets the shot length, and undo restores both", async ({
+  test("changing the pace sets the step and the shot length, and undo restores both", async ({
     page,
   }) => {
     await openMobileSlider(page);
@@ -375,26 +375,21 @@ test.describe("slider editing", () => {
     expect(before.step).toBe(2);
     expect(before.duration).toBe(n * 2);
 
-    // The duration control is read-only for a slider and says why.
-    const hint = page.getByText("Set by step length × screenshots");
-    await expect(hint).toBeVisible();
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "aria-describedby",
-      (await hint.getAttribute("id")) ?? "",
-    );
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "data-disabled",
-      "",
-    );
+    // A slider sets its own length, so the inspector shows it as a read-out, not a control.
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
+    await expect(page.getByText("Loop length", { exact: true })).toBeVisible();
 
-    // Page Up moves the slider ten 0.1 s steps at once, 2.0 → 3.0 s, as one edit. (Ten arrow
-    // presses are ten edits, which coalesce into one undo step only within 800 ms.)
-    const step = page.getByRole("slider", { name: "Step length" });
-    await step.focus();
-    await step.press("PageUp");
-    await expect.poll(async () => (await sliderShot(page)).step).toBe(3);
-    expect((await sliderShot(page)).duration).toBe(n * 3);
-    await expect(page.getByText(`${(n * 3).toFixed(1)} s`).first()).toBeVisible();
+    // Calm is 2.4 s per step (quality bar §2.2), one edit.
+    const pace = page.getByRole("radiogroup", { name: "Pace" });
+    await expect(pace.getByRole("radio", { name: "Default" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await pace.getByRole("radio", { name: "Calm" }).click();
+    await expect.poll(async () => (await sliderShot(page)).step).toBe(2.4);
+    expect((await sliderShot(page)).duration).toBeCloseTo(n * 2.4, 9);
+    await expect(page.getByText(`${(n * 2.4).toFixed(1)} s`).first()).toBeVisible();
+    await expect(pace.getByRole("radio", { name: "Calm" })).toHaveAttribute("aria-checked", "true");
 
     await page.getByRole("button", { name: "Undo" }).click();
     expect(await sliderShot(page)).toEqual(before);
