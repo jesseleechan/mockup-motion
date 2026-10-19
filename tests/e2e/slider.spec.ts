@@ -417,7 +417,7 @@ test.describe("slider editing", () => {
       mimeType: "image/png",
       buffer: png,
     });
-    const card = page.locator("[draggable=true]", { has: page.getByAltText("extra-mobile.png") });
+    const card = page.getByTestId("media-card").filter({ hasText: "extra-mobile.png" });
     await expect(card).toBeVisible();
     await card.click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to slider" }).click();
