@@ -19,8 +19,9 @@ import {
   fixedShotCamera,
   fixedShotDuration,
   minShotDuration,
-  SLIDER_MAX_SCREENSHOTS,
+  isSteppedLayout,
   sliderDuration,
+  steppedAssetIds,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
 import type { BrandKit } from "../storage/brand-kits";
@@ -102,9 +103,9 @@ const MAX_HISTORY = 100;
 const COALESCE_WINDOW_MS = 800;
 
 /**
- * Keeps every slider shot loop-safe after any edit: the step fits the screenshot count in a
- * 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
- * (contracts.md §5). Edits that set a slider's duration or camera directly are undone here.
+ * Keeps every slider and orbit shot loop-safe after any edit: the step fits the screenshot count
+ * in a 30 s shot, the shot lasts one step per shown screenshot, and the camera stays still
+ * (contracts.md §5). Edits that set such a shot's duration or camera directly are undone here.
  * A responsive shot keeps a still camera and, while it scrolls, lasts its holds plus moves.
  */
 function fitFixedShots(draft: ProjectDoc): void {
@@ -116,7 +117,7 @@ function fitFixedShots(draft: ProjectDoc): void {
       if (camera !== shot.camera) shot.camera = camera;
       continue;
     }
-    if (shot.layout.kind !== "slider") continue;
+    if (!isSteppedLayout(shot.layout)) continue;
     shot.layout.step = clampSliderStep(shot.layout.step, shot.layout.assetIds.length);
     shot.duration = sliderDuration(shot.layout);
     // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
@@ -481,11 +482,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
             } else {
               layout.desktopId = assetId;
             }
-          } else if (layout.kind === "slider") {
-            // A slider adds the screenshot after the card it was dropped on. Its nodes are a ring
-            // of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
+          } else if (isSteppedLayout(layout)) {
+            // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
+            // are a ring of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
             if (!layout.assetIds.includes(assetId)) {
-              const shown = Math.min(layout.assetIds.length, SLIDER_MAX_SCREENSHOTS);
+              const shown = steppedAssetIds(layout).length;
               const match = slotKeyOrNodeId.match(/(\d+)/);
               const at = match && shown > 0 ? (parseInt(match[1], 10) % shown) + 1 : shown;
               layout.assetIds.splice(at, 0, assetId);

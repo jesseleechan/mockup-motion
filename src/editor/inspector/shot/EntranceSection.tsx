@@ -19,7 +19,8 @@ export const EntranceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
   const hintId = `entrance-hint-${shot.id}`;
   // Frames needs a long enough shot to stay under its speed limit (quality-bar §2.5).
   const shortest = Math.min(30, minShotDuration(shot.layout, aspect));
-  // A slider lasts one step per screenshot, so its loop stays seamless (contracts.md §5).
+  // A slider or orbit lasts one step per screenshot, so its loop stays seamless; a scrolling
+  // responsive shot lasts its stops (contracts.md §5).
   const assets = useEditorStore((s) => s.doc.assets);
   const fixed = fixedShotDuration(shot.layout, shot.scroll, assets) !== null;
 
@@ -31,9 +32,9 @@ export const EntranceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
           value={`${shot.duration.toFixed(1)} s`}
           hint={
             fixed
-              ? shot.layout.kind === "slider"
-                ? "Set by step length × screenshots"
-                : "Set by the scroll stops"
+              ? shot.layout.kind === "responsive"
+                ? "Set by the scroll stops"
+                : "Set by step length × screenshots"
               : undefined
           }
           hintId={`duration-hint-${shot.id}`}

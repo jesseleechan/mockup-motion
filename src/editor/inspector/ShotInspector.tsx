@@ -1,4 +1,5 @@
 import React from "react";
+import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { Button, Icon } from "../../ui";
@@ -63,8 +64,8 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
     <div className="space-y-4">
       <LayoutSection shot={shot} assets={doc.assets} />
       <AssetsSection shot={shot} assets={doc.assets} />
-      {/* A slider's camera is still (quality bar §4), so it has no camera controls. */}
-      {shot.layout.kind !== "title" && shot.layout.kind !== "slider" && (
+      {/* A slider's or orbit's camera is still (quality bar §4), so it has no camera controls. */}
+      {shot.layout.kind !== "title" && !isSteppedLayout(shot.layout) && (
         <CameraSection shot={shot} />
       )}
       <EntranceSection shot={shot} aspect={doc.aspect} />
