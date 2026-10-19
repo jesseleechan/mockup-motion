@@ -3,10 +3,13 @@ import { Images, X } from "lucide-react";
 import { Button, Icon, useToast } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { applyDemoSwap, planDemoSwap } from "../demo-swap";
+import { unfilledSlots } from "../template-actions";
 
 /**
  * Offered while demo screenshots are on screen and the library has uploads that can take their
- * place: one click swaps them, in one undo step.
+ * place: one click swaps them, in one undo step. It sits between the stage and the transport bar,
+ * not over the stage, so it never covers the video; the stage re-fits around it. The fill-template
+ * bar takes its place while a template has empty slots.
  */
 export const UseMyScreenshotsBanner: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
@@ -17,7 +20,9 @@ export const UseMyScreenshotsBanner: React.FC = () => {
   const offer = [...plan.replacements].map(([demo, upload]) => `${demo}>${upload}`).join(",");
   const [dismissed, setDismissed] = useState("");
 
-  if (plan.replacements.size === 0 || dismissed === offer) return null;
+  const filling = unfilledSlots(doc).length > 0;
+
+  if (filling || plan.replacements.size === 0 || dismissed === offer) return null;
 
   const useMine = () => {
     apply((draft) => applyDemoSwap(draft, plan.replacements), { label: "Use my screenshots" });

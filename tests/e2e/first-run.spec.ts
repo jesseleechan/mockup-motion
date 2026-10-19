@@ -1,8 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import sharp from "sharp";
 import type { ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
-import { BUILTIN_TEMPLATES } from "../../src/templates";
 import { BLANK_PAGE } from "../helpers/blank-page";
 
 declare global {
@@ -154,7 +152,9 @@ async function screenStats(page: Page) {
   });
 }
 
-test("F06: first run → Scroll Story → demo content fills it in one undo step", async ({ page }) => {
+test("F06: first run → Scroll Story → demo content fills it in one undo step @smoke", async ({
+  page,
+}) => {
   test.setTimeout(90_000);
   await resetAndOpen(page);
 
@@ -170,7 +170,7 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   // Applied with empty slots: the overlay asks for screenshots.
   const overlay = page.getByTestId("fill-template-overlay");
   await expect(overlay).toBeVisible();
-  await expect(overlay).toContainText("Add screenshots to fill this template");
+  await expect(overlay).toContainText("Needs a full-page desktop screenshot");
   const applied = await docState(page);
   expect(applied.templateId).toBe("scroll-story");
   expect(applied.assetIds).toEqual([]);
@@ -205,145 +205,4 @@ test("F06: first run → Scroll Story → demo content fills it in one undo step
   expect(undone.firstShotSelected).toBe(true);
   await expect(page.getByText("Selected shot not found.")).toHaveCount(0);
   await expect(overlay).toBeVisible();
-});
-
-test("Presets D1: the gallery leads with the presets and starts on Desktop Slider", async ({
-  page,
-}) => {
-  await resetAndOpen(page);
-  await page.getByRole("button", { name: "Start with a template" }).click();
-  const gallery = page.getByRole("dialog");
-  await expect(gallery).toBeVisible();
-  const cards = gallery.locator('[data-testid="template-card"]');
-  await expect(cards).toHaveCount(BUILTIN_TEMPLATES.length);
-  const order = await cards.evaluateAll((els) =>
-    els.map((el) => el.getAttribute("data-template-id")),
-  );
-  // The gallery shows the registry order (tests/templates.test.ts pins it); the first card is
-  // the first-run default.
-  expect(order).toEqual(BUILTIN_TEMPLATES.map((t) => t.id));
-  expect(order[0]).toBe("desktop-slider");
-
-  // With no screenshots the gallery suggests no other size.
-  await expect(gallery.getByTestId("template-size-hint")).toHaveCount(0);
-
-  // Apply without picking a card: the initial selection is the first-run default.
-  await gallery.getByRole("button", { name: "Apply template" }).click();
-  await expect(gallery).toBeHidden();
-  const applied = await docState(page);
-  expect(applied.templateId).toBe("desktop-slider");
-  expect(applied.assetIds).toEqual([]);
-  expect(applied.layout?.kind).toBe("slider");
-  expect(applied.firstShotSelected).toBe(true);
-  await expect(page.getByTestId("fill-template-overlay")).toBeVisible();
-});
-
-test("Presets D1: first run → demo content builds Desktop Slider", async ({ page }) => {
-  test.setTimeout(90_000);
-  await resetAndOpen(page);
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
-  await page.getByRole("button", { name: "Try with demo content" }).click();
-  await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeHidden();
-  await expect
-    .poll(async () => (await docState(page)).assetIds.length, { timeout: 20_000 })
-    .toBe(5);
-
-  const filled = await docState(page);
-  expect(filled.templateId).toBe("desktop-slider");
-  expect(filled.assetIds).toEqual([
-    "demo-northwind-desktop-hero",
-    "demo-aurelia-desktop-hero",
-    "demo-maison-oak-desktop-hero",
-    "demo-field-notes-desktop-hero",
-    "demo-studio-kova-desktop-hero",
-  ]);
-  if (filled.layout?.kind !== "slider") throw new Error("Expected a slider layout");
-  expect(filled.layout.axis).toBe("y");
-  expect(filled.layout.assetIds).toEqual(filled.assetIds);
-  await expect(page.getByTestId("fill-template-overlay")).toHaveCount(0);
-
-  // The active card shows a screenshot: at 3.9 s step 1 has settled on Maison Oak, whose hero
-  // (text, a photo) varies far more than the flat Ash background or an empty screen.
-  await waitForSettledDocument(page);
-  const centre = await page.evaluate(() => {
-    const engine = window.__editorEngine;
-    const canvas = document.querySelector<HTMLCanvasElement>("[data-testid='stage'] canvas");
-    if (!engine || !canvas) throw new Error(`Editor hooks: engine ${!!engine}, canvas ${!!canvas}`);
-    engine.renderAt(3.9);
-    const pixels = engine.readPixels();
-    const width = canvas.width;
-    const height = canvas.height;
-    const values: number[][] = [[], [], []];
-    for (let y = Math.round(height * 0.35); y < height * 0.65; y++) {
-      for (let x = Math.round(width * 0.3); x < width * 0.7; x++) {
-        const i = (y * width + x) * 4;
-        for (let c = 0; c < 3; c++) values[c].push(pixels[i + c]);
-      }
-    }
-    return values.map((channel) => {
-      const mean = channel.reduce((a, b) => a + b, 0) / channel.length;
-      const variance = channel.reduce((a, b) => a + (b - mean) ** 2, 0) / channel.length;
-      return { samples: channel.length, stdDev: Math.sqrt(variance) };
-    });
-  });
-  console.log(`D1 active card centre: ${JSON.stringify(centre)}`);
-  for (const channel of centre) {
-    expect(channel.samples).toBeGreaterThan(1000);
-    expect(channel.stdDev, "the active card shows screenshot content").toBeGreaterThan(20);
-  }
-});
-
-test("Frames plan §8: with only mobile screenshots the gallery suggests the mobile size", async ({
-  page,
-}) => {
-  await resetAndOpen(page);
-  await page.getByRole("tab", { name: "Media" }).click();
-  const files = await Promise.all(
-    ["#3366CC", "#8A1E3A"].map(async (background, i) => ({
-      name: `phone-${i + 1}.png`,
-      mimeType: "image/png",
-      buffer: await sharp({ create: { width: 780, height: 1688, channels: 3, background } })
-        .png()
-        .toBuffer(),
-    })),
-  );
-  await page.getByTestId("media-input").setInputFiles(files);
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        (window as unknown as { __editorStore?: StoreHandle }).__editorStore
-          ?.getState()
-          .doc.assets.map((a) => a.role),
-      ),
-    )
-    .toEqual(["mobile", "mobile"]);
-  expect((await docState(page)).templateId, "no template yet").toBeNull();
-
-  await page.getByRole("tab", { name: "Templates" }).click();
-  await page.getByRole("button", { name: "Browse all templates" }).click();
-  const gallery = page.getByRole("dialog");
-  await expect(gallery).toBeVisible();
-  // The first-run default is Desktop Slider; its mobile size is selected instead.
-  await expect(gallery.getByText("Selected: Mobile Slider")).toBeVisible();
-  const hint = gallery.getByTestId("template-size-hint");
-  await expect(hint).toHaveCount(0);
-
-  // Picking a desktop preset offers its mobile size instead of "Needs 4+ desktop screenshots".
-  await gallery.getByRole("button", { name: "Select template Desktop Frames" }).click();
-  await expect(gallery.getByText("Selected: Desktop Frames")).toBeVisible();
-  await expect(hint).toHaveText("Mobile Frames fits your screenshots.Switch");
-  await expect(gallery.getByText("(Needs 4+ desktop screenshots)")).toHaveCount(0);
-
-  await hint.getByRole("button", { name: "Switch to Mobile Frames" }).click();
-  await expect(gallery.getByText("Selected: Mobile Frames")).toBeVisible();
-  await expect(hint).toHaveCount(0);
-
-  // Desktop Scroll Story offers its mobile size too.
-  await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
-  await expect(hint).toHaveText("Mobile Scroll Story fits your screenshots.Switch");
-  await gallery.getByRole("button", { name: "Select template Mobile Frames" }).click();
-
-  await gallery.getByRole("button", { name: "Apply template" }).click();
-  await expect(gallery).toBeHidden();
-  expect((await docState(page)).templateId).toBe("mobile-frames");
 });

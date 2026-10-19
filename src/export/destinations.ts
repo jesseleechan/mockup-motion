@@ -4,7 +4,7 @@
  * - Dribbble: 4:3 or 16:9, max 1600x1200 or 1920x1080, MP4 under 20MB. (Source: Dribbble Help Center)
  * - Instagram Feed: 4:5 vertical (1080x1350) or 1:1 square (1080x1080), 30 fps, MP4 H.264. (Source: Meta for Creators)
  * - Instagram/TikTok Story: 9:16 vertical (1080x1920), 30 fps, MP4 H.264. (Source: Meta & TikTok Business Help)
- * - LinkedIn / X: 16:9 landscape (1920x1080), 30 fps, MP4 H.264. (Source: LinkedIn Marketing Solutions & X Developer Platform)
+ * - Video (also LinkedIn / X): 16:9 landscape (1920x1080), 30 fps, MP4 H.264. (Source: LinkedIn Marketing Solutions & X Developer Platform)
  * - Presentation 4K: 16:9 UHD (3840x2160), 30 fps, high bitrate master MP4.
  */
 
@@ -20,7 +20,8 @@ export interface DestinationPreset {
   id: DestinationId;
   name: string;
   description: string;
-  aspect: Aspect;
+  /** The aspect the destination wants, or null for any: Video and Custom use the project's. */
+  aspect: Aspect | null;
   resolution: number; // short side
   fps: number;
   quality: ExportQuality;
@@ -29,10 +30,21 @@ export interface DestinationPreset {
 }
 
 export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
+  video: {
+    id: "video",
+    name: "Video",
+    description: "An MP4 at 1080p in the project's aspect, for LinkedIn, X, a site or a talk.",
+    aspect: null,
+    resolution: 1080,
+    fps: 30,
+    quality: "high",
+    format: "mp4",
+    supersample: 1.0,
+  },
   "web-embed": {
     id: "web-embed",
     name: "Website Embed",
-    description: "Self-hosted video bundle with MP4, WebM, poster, and copyable embed code.",
+    description: "A .zip for your own site: MP4, WebM, a poster and embed code.",
     aspect: "16:9",
     resolution: 1080,
     fps: 30,
@@ -43,7 +55,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   dribbble: {
     id: "dribbble",
     name: "Dribbble",
-    description: "Optimized for Dribbble shots (1600 × 1200) with crisp 4:3 presentation.",
+    description: "A 4:3 Dribbble shot at 1600 × 1200.",
     aspect: "4:3",
     resolution: 1200, // short side -> 1600 x 1200
     fps: 30,
@@ -54,7 +66,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "instagram-feed": {
     id: "instagram-feed",
     name: "Instagram Feed",
-    description: "Portrait 4:5 framing (1080 × 1350) maximizing mobile feed vertical real estate.",
+    description: "A 4:5 Instagram post at 1080 × 1350.",
     aspect: "4:5",
     resolution: 1080, // short side -> 1080 x 1350
     fps: 30,
@@ -65,31 +77,9 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "instagram-story": {
     id: "instagram-story",
     name: "Instagram / TikTok",
-    description: "Full vertical 9:16 (1080 × 1920) for Stories, Reels, and TikTok.",
+    description: "A 9:16 video at 1080 × 1920 for Stories, Reels and TikTok.",
     aspect: "9:16",
     resolution: 1080, // short side -> 1080 x 1920
-    fps: 30,
-    quality: "high",
-    format: "mp4",
-    supersample: 1.0,
-  },
-  linkedin: {
-    id: "linkedin",
-    name: "LinkedIn",
-    description: "Standard 16:9 landscape (1920 × 1080) for professional feeds and carousels.",
-    aspect: "16:9",
-    resolution: 1080,
-    fps: 30,
-    quality: "high",
-    format: "mp4",
-    supersample: 1.0,
-  },
-  x: {
-    id: "x",
-    name: "X (Twitter)",
-    description: "Landscape 16:9 video optimized for X media timeline cards.",
-    aspect: "16:9",
-    resolution: 1080,
     fps: 30,
     quality: "high",
     format: "mp4",
@@ -98,7 +88,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "presentation-4k": {
     id: "presentation-4k",
     name: "Presentation 4K",
-    description: "Master quality 4K UHD (3840 × 2160) for keynote screens and stage displays.",
+    description: "A master-quality 4K video at 3840 × 2160 for large screens.",
     aspect: "16:9",
     resolution: 2160,
     fps: 30,
@@ -109,8 +99,8 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   custom: {
     id: "custom",
     name: "Custom",
-    description: "Manual control over all resolution, frame rate, quality, and container options.",
-    aspect: "16:9",
+    description: "Settings that differ from every destination.",
+    aspect: null,
     resolution: 1080,
     fps: 30,
     quality: "high",
