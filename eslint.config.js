@@ -49,6 +49,26 @@ export default tseslint.config(
     },
   },
   {
+    // The capture package is plain JavaScript for Node; its page.evaluate callbacks run in the
+    // browser, so it sees both sets of globals.
+    files: ["packages/capture/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        URL: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        window: "readonly",
+        document: "readonly",
+      },
+    },
+    rules: {
+      "no-empty": ["error", { allowEmptyCatch: false }],
+      "@typescript-eslint/no-unused-vars": ["error", { caughtErrorsIgnorePattern: "^_" }],
+    },
+  },
+  {
     files: ["src/motion/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
