@@ -16,12 +16,6 @@ import type { V1Project } from "../src/doc/migrate";
 import type { AssetRef } from "../src/doc/types";
 import { V1_PRESETS } from "./fixtures/v1-presets";
 import {
-  saveBrandKit,
-  loadBrandKit,
-  getDefaultBrandKit,
-  type BrandKit,
-} from "../src/storage/brand-kits";
-import {
   convertDocToUserTemplate,
   fillUserTemplateSlots,
   saveUserTemplate,
@@ -29,7 +23,6 @@ import {
   deleteUserTemplate,
   renameUserTemplate,
 } from "../src/storage/user-templates";
-import { useEditorStore } from "../src/state/store";
 
 describe("WP-01: Storage with fake-indexeddb", () => {
   beforeEach(async () => {
@@ -204,53 +197,7 @@ describe("WP-01: Storage with fake-indexeddb", () => {
     expect(projects.length).toBe(2);
   });
 
-  describe("WP-13: Brand Kit & User Templates Storage", () => {
-    it("brand kit persists across reloads, applies in one undo step, and default kit applies", async () => {
-      const kit1: BrandKit = {
-        id: "kit-1",
-        name: "Acme Corp",
-        colors: ["#111111", "#FF5500", "#FFFFFF"],
-        fontDisplay: "Fraunces",
-        fontBody: "Inter",
-        browserUrl: "acme.io",
-        isDefault: true,
-        updatedAt: Date.now(),
-      };
-      await saveBrandKit(kit1);
-
-      const loadedKit = await loadBrandKit("kit-1");
-      expect(loadedKit).not.toBeNull();
-      expect(loadedKit?.name).toBe("Acme Corp");
-      expect(loadedKit?.browserUrl).toBe("acme.io");
-
-      const defaultKit = await getDefaultBrandKit();
-      expect(defaultKit?.id).toBe("kit-1");
-
-      // Verify applying kit to editor store in one undo step
-      const store = useEditorStore;
-      const initialDoc = createDoc({ name: "Brand Test Doc" });
-      store.getState().loadDoc(initialDoc);
-
-      const beforeTextColor = store.getState().doc.style.textColor;
-      const beforeAccent = store.getState().doc.style.accent;
-
-      store.getState().applyBrandKit(kit1);
-      expect(store.getState().doc.style.textColor).toBe("#111111");
-      expect(store.getState().doc.style.accent).toBe("#FF5500");
-      expect(store.getState().doc.style.browserUrl).toBe("acme.io");
-      expect(store.getState().doc.style.fonts.display.family).toBe("Fraunces");
-
-      // Undo restores the previous state in one step
-      store.getState().undo();
-      expect(store.getState().doc.style.textColor).toBe(beforeTextColor);
-      expect(store.getState().doc.style.accent).toBe(beforeAccent);
-
-      // Redo reapplies
-      store.getState().redo();
-      expect(store.getState().doc.style.textColor).toBe("#111111");
-      expect(store.getState().doc.style.accent).toBe("#FF5500");
-    });
-
+  describe("WP-13: User Templates Storage", () => {
     it("user template replaces asset IDs with slot keys, re-applies to new assets, and persists", async () => {
       const doc = createDoc({ name: "Responsive Template Doc" });
       const desktopAsset: AssetRef = {
@@ -271,22 +218,23 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       };
       doc.assets = [desktopAsset, mobileAsset];
       doc.shots[0].layout = {
-        kind: "pair",
-        desktopId: "asset-desktop-1",
-        mobileId: "asset-mobile-1",
-        arrangement: "overlap",
+        kind: "rows",
+        assetIds: ["asset-desktop-1", "asset-mobile-1"],
+        rows: 2,
+        device: "card",
+        tilt: 0,
+        travel: "period",
       };
 
       // Convert doc to template
-      const template = convertDocToUserTemplate(doc, "Responsive Showcase", "Pair layout demo");
+      const template = convertDocToUserTemplate(doc, "Responsive Showcase", "Frames demo");
       expect(template.name).toBe("Responsive Showcase");
 
       // Check slot keys
       const templatedLayout = template.shots[0].layout;
-      expect(templatedLayout.kind).toBe("pair");
-      if (templatedLayout.kind === "pair") {
-        expect(templatedLayout.desktopId).toBe("slot:desktop:0");
-        expect(templatedLayout.mobileId).toBe("slot:mobile:0");
+      expect(templatedLayout.kind).toBe("rows");
+      if (templatedLayout.kind === "rows") {
+        expect(templatedLayout.assetIds).toEqual(["slot:desktop:0", "slot:mobile:0"]);
       }
 
       // Save to IndexedDB
@@ -316,10 +264,9 @@ describe("WP-01: Storage with fake-indexeddb", () => {
       const filled = fillUserTemplateSlots(retrieved!, [newDesktop, newMobile]);
       expect(filled.shots.length).toBe(1);
       const filledLayout = filled.shots[0].layout;
-      expect(filledLayout.kind).toBe("pair");
-      if (filledLayout.kind === "pair") {
-        expect(filledLayout.desktopId).toBe("client-desktop-99");
-        expect(filledLayout.mobileId).toBe("client-mobile-99");
+      expect(filledLayout.kind).toBe("rows");
+      if (filledLayout.kind === "rows") {
+        expect(filledLayout.assetIds).toEqual(["client-desktop-99", "client-mobile-99"]);
       }
 
       // Cleanup

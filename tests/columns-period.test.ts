@@ -52,7 +52,6 @@ function mobileFramesLayout(aspect: Aspect, assetIds: string[]): ColumnsLayout {
     device: "card",
     gap: GAP,
     tilt: 0,
-    speed: 0.35,
     travel: "period",
   };
 }
@@ -223,8 +222,6 @@ describe("Columns with travel period (Mobile Frames, PF02)", () => {
         expect(period / (duration - 0.5), text).toBeGreaterThan(FRAMES_LIMIT);
         expect(duration, text).toBeLessThanOrEqual(30);
         expect(minShotDuration(layout, aspect), text).toBe(duration);
-        // The tilted phone marquee (travel steps) sets no minimum.
-        expect(minShotDuration({ ...layout, travel: "steps" }, aspect), text).toBe(1);
       }
     }
   });
@@ -238,8 +235,6 @@ describe("Columns with travel period (Mobile Frames, PF02)", () => {
         resolveLayout(layout, aspect, mobiles(20), 0, 30).map((n) => n.assetId),
       );
       expect(shown.size, aspect).toBe(cap[aspect]);
-      // The tilted phone marquee keeps every screenshot.
-      expect(framesAssetIds({ ...layout, travel: "steps" }, aspect), aspect).toEqual(ids(20));
     }
   });
 
@@ -278,46 +273,42 @@ describe("Columns fields in sanitizeDoc (PF02)", () => {
     (doc.shots[0] as { layout: unknown }).layout = layout;
     return sanitizeDoc(doc).doc.shots[0].layout;
   };
-  // A saved Phone Parade shot: the tilted phone marquee with none of the new fields.
-  const phoneParade = {
+  // A saved Frames columns layout with none of the optional fields.
+  const columns = {
     kind: "columns",
     assetIds: ["m1", "m2", "m3"],
     columns: 3,
-    tilt: 12,
-    speed: 0.4,
+    tilt: 0,
+    travel: "period",
   };
 
-  it("round-trips a saved Phone Parade layout unchanged, with no new fields", () => {
-    const layout = sanitizedLayout(phoneParade);
-    expect(layout).toEqual(phoneParade);
-    expect(Object.keys(layout).sort()).toEqual(Object.keys(phoneParade).sort());
+  it("round-trips a columns layout unchanged, with no new fields", () => {
+    const layout = sanitizedLayout(columns);
+    expect(layout).toEqual(columns);
+    expect(Object.keys(layout).sort()).toEqual(Object.keys(columns).sort());
   });
 
   it("keeps valid Frames fields", () => {
-    const frames = { ...phoneParade, device: "card", cardWidth: 0.246, gap: 0.065, tilt: 0 };
-    for (const travel of ["steps", "period"]) {
-      expect(sanitizedLayout({ ...frames, travel })).toEqual({ ...frames, travel });
-    }
+    const frames = { ...columns, device: "card", cardWidth: 0.246, gap: 0.065 };
+    expect(sanitizedLayout(frames)).toEqual(frames);
   });
 
   it("drops or clamps invalid Frames fields", () => {
     // "phone" is the default, so it stays unset; other devices are not columns devices.
     for (const device of ["phone", "browser", "tablet", 1, null]) {
-      expect(sanitizedLayout({ ...phoneParade, device }), String(device)).toEqual(phoneParade);
+      expect(sanitizedLayout({ ...columns, device }), String(device)).toEqual(columns);
     }
-    expect(sanitizedLayout({ ...phoneParade, cardWidth: 5, gap: -1, travel: "warp" })).toEqual({
-      ...phoneParade,
+    expect(sanitizedLayout({ ...columns, cardWidth: 5, gap: -1 })).toEqual({
+      ...columns,
       cardWidth: 0.8,
       gap: 0,
     });
-    expect(sanitizedLayout({ ...phoneParade, cardWidth: 0.01, gap: 2 })).toEqual({
-      ...phoneParade,
+    expect(sanitizedLayout({ ...columns, cardWidth: 0.01, gap: 2 })).toEqual({
+      ...columns,
       cardWidth: 0.1,
       gap: 0.5,
     });
-    expect(
-      sanitizedLayout({ ...phoneParade, cardWidth: Number.NaN, gap: "0.1", travel: 1 }),
-    ).toEqual(phoneParade);
-    expect(sanitizedLayout({ ...phoneParade, cardWidth: Infinity })).toEqual(phoneParade);
+    expect(sanitizedLayout({ ...columns, cardWidth: Number.NaN, gap: "0.1" })).toEqual(columns);
+    expect(sanitizedLayout({ ...columns, cardWidth: Infinity })).toEqual(columns);
   });
 });

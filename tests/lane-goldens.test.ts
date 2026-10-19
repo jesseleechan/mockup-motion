@@ -9,8 +9,7 @@ import {
 } from "./fixtures/lane-golden-cases";
 
 // PF02: the nodes recorded before the Frames period mode moved into `lanes.ts` must come out
-// exactly the same after it, with no tolerance. Desktop Frames' pixels and saved tilted rows and
-// columns depend on it (docs/phone-frames-plan/README.md §1, "Extraction risk").
+// exactly the same after it, with no tolerance. Desktop Frames' pixels depend on it (docs/phone-frames-plan/README.md §1, "Extraction risk").
 // The Desktop Frames group was re-recorded once on purpose, when odd rows started showing the
 // screenshots in reverse order (PF04 review follow-up): only the asset ids of odd rows changed.
 const golden = JSON.parse(
@@ -18,9 +17,7 @@ const golden = JSON.parse(
 ) as GoldenFile;
 
 const GROUPS: Record<GoldenGroup, string> = {
-  frames: "Desktop Frames (rows, travel period)",
-  columnsSteps: "tilted phone columns (travel steps)",
-  rowsSteps: "tilted browser rows (travel steps)",
+  frames: "Desktop Frames (rows)",
 };
 
 describe("lane goldens (PF02)", () => {

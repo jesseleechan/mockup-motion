@@ -4,7 +4,6 @@ import { createDoc } from "../src/doc/defaults";
 import { sanitizeDoc } from "../src/doc/validate";
 import { aspectRatioValue } from "../src/motion/camera";
 import { evaluate } from "../src/motion/evaluate";
-import { MARQUEE_MAX_FRAME_WIDTHS_PER_SECOND } from "../src/motion/layouts/marquee";
 import {
   framesAssetIds,
   framesDuration,
@@ -45,7 +44,7 @@ function framesDoc(aspect: Aspect, count: number): ProjectDoc {
 
 const nodesAt = (doc: ProjectDoc, t: number) => {
   const shot = doc.shots[0];
-  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration, shot.entrance);
+  return resolveLayout(shot.layout, doc.aspect, doc.assets, t, shot.duration);
 };
 // Rounds to 4 decimals without a "-0.0000" for values just below zero.
 const round4 = (v: number) => (Math.round(v * 1e4) / 1e4 + 0).toFixed(4);
@@ -224,34 +223,25 @@ describe("Frames: rows with travel period (presets P04)", () => {
     }
   });
 
-  it("keeps older rows layouts as they were when the new fields are unset", () => {
-    const old = {
+  it("leaves 0.14 frame widths between cards when the gap is unset", () => {
+    const layout = {
       kind: "rows" as const,
       assetIds: ["d1", "d2", "d3"],
       rows: 2 as const,
       device: "browser" as const,
-      tilt: 8,
-      speed: 0.35,
+      tilt: 0,
+      travel: "period" as const,
     };
     const assets = desktops(3);
     for (const aspect of ASPECTS) {
-      for (const t of [0, 2.5, 7.9]) {
-        expect(resolveLayout({ ...old, travel: "steps" }, aspect, assets, t, 8)).toEqual(
-          resolveLayout(old, aspect, assets, t, 8),
-        );
-        // Unset gap: 0.14 frame widths between cards, as before the Frames fields (measured
-        // without tilt, which rotates the rows).
-        const flat = { ...old, tilt: 0 };
-        const nodes = resolveLayout(flat, aspect, assets, 0, 8).filter((n) => rowOf(n) === 0);
-        const xs = nodes.map((n) => n.transform.x);
-        const steps = xs.slice(1).map((x, i) => Math.abs(x - xs[i]));
-        const W = aspectRatioValue(aspect);
-        expect(Math.min(...steps.filter((s) => s > 1e-9)), aspect).toBeCloseTo(
-          nodes[0].width + 0.14 * W,
-          3,
-        );
-        expect(MARQUEE_MAX_FRAME_WIDTHS_PER_SECOND).toBe(0.12);
-      }
+      const nodes = resolveLayout(layout, aspect, assets, 0, 8).filter((n) => rowOf(n) === 0);
+      const xs = nodes.map((n) => n.transform.x).sort((a, b) => a - b);
+      const steps = xs.slice(1).map((x, i) => Math.abs(x - xs[i]));
+      const W = aspectRatioValue(aspect);
+      expect(Math.min(...steps.filter((s) => s > 1e-9)), aspect).toBeCloseTo(
+        nodes[0].width + 0.14 * W,
+        3,
+      );
     }
   });
 });
@@ -268,18 +258,18 @@ describe("Rows fields in sanitizeDoc (presets P04)", () => {
     rows: 3,
     device: "card",
     tilt: 0,
-    speed: 0.35,
+    travel: "period",
   };
 
   it("keeps valid Frames fields and leaves absent ones unset", () => {
-    const frames = { ...base, cardHeight: 0.32, gap: 0.065, travel: "period" };
+    const frames = { ...base, cardHeight: 0.32, gap: 0.065 };
     expect(sanitizedLayout(frames)).toEqual(frames);
     expect(sanitizedLayout(base)).toEqual(base);
-    expect(Object.keys(sanitizedLayout(base))).not.toContain("travel");
+    expect(Object.keys(sanitizedLayout(base))).not.toContain("gap");
   });
 
   it("repairs invalid Frames fields", () => {
-    expect(sanitizedLayout({ ...base, cardHeight: 5, gap: -1, travel: "warp" })).toEqual({
+    expect(sanitizedLayout({ ...base, cardHeight: 5, gap: -1 })).toEqual({
       ...base,
       cardHeight: 0.8,
       gap: 0,

@@ -5,9 +5,7 @@ import type { ScreenCompositor } from "../materials/screen";
 import type { ChromeUrlText } from "../text/ChromeUrlTextures";
 import { buildBrowserDevice } from "./browser";
 import { buildCardDevice } from "./card";
-import { buildLaptopDevice } from "./laptop";
 import { buildPhoneDevice } from "./phone";
-import { buildTabletDevice } from "./tablet";
 
 export interface DeviceBuilderContext {
   outputWidthPx: number;
@@ -37,20 +35,10 @@ export function buildDevice(
       return buildBrowserDevice(node, style, ctx);
     case "phone":
       return buildPhoneDevice(node, style, ctx);
-    case "tablet":
-      return buildTabletDevice(node, style, ctx);
-    case "laptop":
-      return buildLaptopDevice(node, style, ctx);
     case "card":
     default:
       return buildCardDevice(node, style, ctx);
   }
 }
 
-export {
-  buildBrowserDevice,
-  buildCardDevice,
-  buildLaptopDevice,
-  buildPhoneDevice,
-  buildTabletDevice,
-};
+export { buildBrowserDevice, buildCardDevice, buildPhoneDevice };
