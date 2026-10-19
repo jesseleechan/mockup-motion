@@ -33,7 +33,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   video: {
     id: "video",
     name: "Video",
-    description: "MP4 at 1080p in the project's aspect, for LinkedIn, X, a site or a presentation.",
+    description: "An MP4 at 1080p in the project's aspect, for LinkedIn, X, a site or a talk.",
     aspect: null,
     resolution: 1080,
     fps: 30,
@@ -44,7 +44,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "web-embed": {
     id: "web-embed",
     name: "Website Embed",
-    description: "Self-hosted video bundle with MP4, WebM, poster, and copyable embed code.",
+    description: "A .zip for your own site: MP4, WebM, a poster and embed code.",
     aspect: "16:9",
     resolution: 1080,
     fps: 30,
@@ -55,7 +55,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   dribbble: {
     id: "dribbble",
     name: "Dribbble",
-    description: "Optimized for Dribbble shots (1600 × 1200) with crisp 4:3 presentation.",
+    description: "A 4:3 Dribbble shot at 1600 × 1200.",
     aspect: "4:3",
     resolution: 1200, // short side -> 1600 x 1200
     fps: 30,
@@ -66,7 +66,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "instagram-feed": {
     id: "instagram-feed",
     name: "Instagram Feed",
-    description: "Portrait 4:5 framing (1080 × 1350) maximizing mobile feed vertical real estate.",
+    description: "A 4:5 Instagram post at 1080 × 1350.",
     aspect: "4:5",
     resolution: 1080, // short side -> 1080 x 1350
     fps: 30,
@@ -77,7 +77,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "instagram-story": {
     id: "instagram-story",
     name: "Instagram / TikTok",
-    description: "Full vertical 9:16 (1080 × 1920) for Stories, Reels, and TikTok.",
+    description: "A 9:16 video at 1080 × 1920 for Stories, Reels and TikTok.",
     aspect: "9:16",
     resolution: 1080, // short side -> 1080 x 1920
     fps: 30,
@@ -88,7 +88,7 @@ export const DESTINATION_PRESETS: Record<DestinationId, DestinationPreset> = {
   "presentation-4k": {
     id: "presentation-4k",
     name: "Presentation 4K",
-    description: "Master quality 4K UHD (3840 × 2160) for keynote screens and stage displays.",
+    description: "A master-quality 4K video at 3840 × 2160 for large screens.",
     aspect: "16:9",
     resolution: 2160,
     fps: 30,

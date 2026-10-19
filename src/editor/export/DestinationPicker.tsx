@@ -12,7 +12,7 @@ const CARDS: {
   icon: React.ComponentType<{ size: number; className?: string }>;
   detail: string;
 }[] = [
-  { id: "video", icon: Video, detail: "MP4 · your aspect" },
+  { id: "video", icon: Video, detail: "MP4 · LinkedIn, X, your site" },
   { id: "dribbble", icon: Film, detail: "4:3 · 1600 × 1200" },
   { id: "instagram-feed", icon: Smartphone, detail: "4:5 · 1080 × 1350" },
   { id: "instagram-story", icon: Play, detail: "9:16 · 1080 × 1920" },
@@ -50,6 +50,7 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
               type="button"
               aria-pressed={isSelected}
               aria-label={DESTINATION_LABELS[id]}
+              title={DESTINATION_PRESETS[id].description}
               onClick={() => onSelect(id)}
               className={clsx(
                 "min-w-0 p-2.5 rounded-lg border text-left flex flex-col gap-2 transition-colors",
