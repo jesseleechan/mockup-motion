@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { ProjectDoc } from "../../src/doc/types";
 import { BLANK_PAGE } from "../helpers/blank-page";
+import { ciTimeout } from "../helpers/ci";
 
 // F09: the export dialog's layout, its summary of what will really be written, and cancel.
 
@@ -63,7 +64,12 @@ async function useOneSecondDoc(page: Page) {
 async function openExportDialog(page: Page) {
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible();
+  // The click renders the preloaded dialog at once, but right after the demo content applies,
+  // the preview's start-up GPU work (WebGL context, texture row reads, thumbnails) can still hold
+  // the main thread before the check runs: up to 2.4 s locally on SwiftShader, about 5x on CI.
+  await expect(dialog.getByRole("heading", { name: "Export video" })).toBeVisible({
+    timeout: ciTimeout(5_000),
+  });
   return dialog;
 }
 
