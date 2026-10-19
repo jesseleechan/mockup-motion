@@ -1,7 +1,8 @@
 import React from "react";
 import type { AssetRef, EasingId, Shot } from "../../../doc/types";
 import { Button, Field, Icon, Section, Select, Slider, Switch } from "../../../ui";
-import { minDurationFor } from "../../../motion/scroll";
+import { minDurationFor, scrollableFramesFor } from "../../../motion/scroll";
+import { screenAspectFor } from "../../../motion/layouts/types";
 import { AlertCircle, X } from "lucide-react";
 import { EASING_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
@@ -22,12 +23,10 @@ export const ScrollSection: React.FC<ScrollSectionProps> = ({ shot, assets }) =>
   let minDur = 0;
   if (scroll?.enabled) {
     const asset = layout.assetId ? assets.find((a) => a.id === layout.assetId) : undefined;
-    let scrollableFrames = 1;
-    if (asset?.width && asset?.height) {
-      const screenAspect = layout.device === "phone" ? 0.4615 : 1.6;
-      const imgAspect = asset.width / asset.height;
-      scrollableFrames = Math.max(0, screenAspect / imgAspect - 1);
-    }
+    const scrollableFrames =
+      asset?.width && asset?.height
+        ? scrollableFramesFor(layout.device, screenAspectFor(layout.device, asset), asset)
+        : 1;
     minDur = minDurationFor(scroll, scrollableFrames);
   }
 

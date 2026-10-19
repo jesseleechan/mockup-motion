@@ -1,4 +1,5 @@
 import type { DeviceKind } from "../../doc/types";
+import { PHONE_SCREEN_ASPECT } from "../phone-spec";
 
 export interface LayoutNode {
   id: string; // stable across frames, e.g. "row1:col3" or "single:0"
@@ -32,7 +33,7 @@ export function screenAspectFor(
   asset?: { width?: number; height?: number } | null,
 ): number {
   if (device === "phone") {
-    return 0.4615;
+    return PHONE_SCREEN_ASPECT;
   }
   if (device === "tablet") {
     return 0.75;
