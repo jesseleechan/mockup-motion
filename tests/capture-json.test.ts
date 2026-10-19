@@ -12,6 +12,8 @@ import { createDoc } from "../src/doc/defaults";
 import { sanitizeDoc } from "../src/doc/validate";
 import type { AssetRef } from "../src/doc/types";
 import { demoAssetId, demoAssetRef } from "../src/lab/demo-assets";
+import { applyCaptures, splitCaptureFiles } from "../src/editor/library/capture-import";
+import aureliaDesktop from "../public/demo/aurelia/sections.json" with { type: "json" };
 import aureliaMobile from "../public/demo/aurelia/sections-mobile.json" with { type: "json" };
 
 const MOBILE: CaptureJson = aureliaMobile;
@@ -163,5 +165,36 @@ describe("capture JSON (Responsive Scroll R02)", () => {
     expect(mobile.meta?.sections?.find((s) => s.id === "works")?.top).toBe(3204);
     expect(desktop.meta?.page).toBe(mobile.meta?.page);
     expect(demoAssetRef(demoAssetId("aurelia", "mobile", "hero")).meta?.sections).toBeUndefined();
+  });
+
+  it("imports screenshots dropped with their capture files in any order", async () => {
+    const json = (name: string, capture: CaptureJson) =>
+      new File([JSON.stringify(capture)], name, { type: "application/json" });
+    const webp = (name: string) => new File([new Uint8Array(8)], name, { type: "image/webp" });
+    const { images, captures, errors } = await splitCaptureFiles([
+      webp("aurelia-desktop-1440-full.webp"),
+      json("aurelia-mobile-390@2x.json", MOBILE),
+      webp("aurelia-mobile-390@2x-full.webp"),
+      json("aurelia-desktop-1440.json", aureliaDesktop),
+    ]);
+    expect(errors).toEqual([]);
+    expect(images.map((f) => f.name)).toEqual([
+      "aurelia-desktop-1440-full.webp",
+      "aurelia-mobile-390@2x-full.webp",
+    ]);
+    // The demo full pages' real sizes (public/demo/manifest.json).
+    const { refs } = applyCaptures(
+      [
+        image("d", "aurelia-desktop-1440-full.webp", 1440, 4183),
+        image("m", "aurelia-mobile-390@2x-full.webp", 780, 11436),
+      ],
+      captures,
+    );
+    const top = (ref: AssetRef, id: string) => ref.meta?.sections?.find((s) => s.id === id)?.top;
+    // Desktop is captured at 1x, mobile at 2x: works is at 1664 and 1602 CSS px.
+    expect(top(refs[0], "works")).toBe(1664);
+    expect(top(refs[1], "works")).toBe(3204);
+    expect(refs[0].meta?.sections).toHaveLength(7);
+    expect(refs[0].meta?.page).toBe(refs[1].meta?.page);
   });
 });
