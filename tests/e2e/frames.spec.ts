@@ -112,7 +112,7 @@ for (const c of CASES) {
     await openEditorWithDemo(page);
     await setFramesShot(page, c, 4, 15);
 
-    await page.locator(".group", { hasText: "Shot 1" }).click();
+    await page.getByTestId("shot-card").click();
     const pace = page.getByRole("radiogroup", { name: "Pace" });
     await expect(pace).toBeVisible();
     await expect(page.getByRole("slider", { name: "Speed" })).toHaveCount(0);
@@ -149,7 +149,7 @@ for (const c of CASES) {
     // Eleven at 4:5: only ten fit 30 s at 0.20 frame heights per second (quality bar §2.2).
     await setFramesShot(page, c, 11, 30);
 
-    await page.locator(".group", { hasText: "Shot 1" }).click();
+    await page.getByTestId("shot-card").click();
     await expect(
       page.getByText("Shows the first 10 screenshots, so the loop fits in 30 s."),
     ).toBeVisible();
@@ -273,7 +273,7 @@ test("the pace sets a Frames shot's length in one undo step and explains an unav
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].duration,
     );
 
-  await page.locator(".group", { hasText: "Shot 1" }).click();
+  await page.getByTestId("shot-card").click();
   const pace = page.getByRole("radiogroup", { name: "Pace" });
   const option = (label: string) => pace.getByRole("radio", { name: label, exact: true });
   await expect(option("Default")).toHaveAttribute("aria-checked", "true");
