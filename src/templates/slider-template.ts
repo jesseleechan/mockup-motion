@@ -78,7 +78,6 @@ export function sliderTemplate(spec: SliderTemplateSpec): Template {
       // After N steps the cards are back where they started, so the loop is native.
       shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
       shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
-      shot.texts = [];
 
       return { style, shots: [shot], loop: true };
     },

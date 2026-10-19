@@ -1,4 +1,4 @@
-import { backgroundAssetId, collectAssetIds, resolveShotStyle } from "../../doc/assets";
+import { collectAssetIds } from "../../doc/assets";
 import type { ExportQuality, ProjectDoc } from "../../doc/types";
 import { aspectRatioValue, cameraPose, resolveLayout } from "../../motion";
 
@@ -12,9 +12,6 @@ export interface TextureSizingOptions {
 
 const WIDTH_STEP = 256;
 const CAMERA_SAMPLES = 5;
-// Logos are not drawn by the engine yet; a quarter of the frame width covers a
-// logo mark above a 5-7% title (quality-bar §7) with room to spare.
-const LOGO_FRAME_FRACTION = 0.25;
 
 /** Quality-bar §3.1: about 1.5× the largest on-screen width, 2× for master. */
 function oversampleFor(quality: ExportQuality | undefined): number {
@@ -57,12 +54,7 @@ export function textureWidths(doc: ProjectDoc, opts: TextureSizingOptions): Map<
       const onScreenPx = ((node.width * node.transform.scale) / stageWidthUnits) * framePx;
       want(node.assetId, (onScreenPx / distance) * oversample);
     }
-    want(backgroundAssetId(resolveShotStyle(doc, shotIndex).background), framePx * oversample);
-    for (const layer of shot.texts ?? []) {
-      want(layer.logoAssetId, framePx * LOGO_FRAME_FRACTION * oversample);
-    }
   });
-  want(backgroundAssetId(doc.style.background), framePx * oversample);
   // A layout can list more assets than it places at t = 0; size those for a full frame.
   for (const assetId of collectAssetIds(doc)) {
     if (!needed.has(assetId)) want(assetId, framePx * oversample);

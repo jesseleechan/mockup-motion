@@ -12,7 +12,6 @@ export const TimelineContainer: React.FC = () => {
   const doc = useEditorStore((s) => s.doc);
   const apply = useEditorStore((s) => s.apply);
   const setShotDuration = useEditorStore((s) => s.setShotDuration);
-  const setTextLayerDelay = useEditorStore((s) => s.setTextLayerDelay);
 
   const selection = useUIStore((s) => s.selection);
   const playhead = useUIStore((s) => s.playhead);
@@ -63,9 +62,7 @@ export const TimelineContainer: React.FC = () => {
   // Shift-snap points: the start and the loop point
   const shotBoundaries = useMemo(() => [0, total], [total]);
 
-  const isSelected =
-    (selection.kind === "shot" && selection.id === shot.id) ||
-    (selection.kind === "text" && selection.shotId === shot.id);
+  const isSelected = selection.kind === "shot" && selection.id === shot.id;
 
   // Time format helper (00:00.0)
   const formatTime = (seconds: number) => {
@@ -226,8 +223,6 @@ export const TimelineContainer: React.FC = () => {
                 { label: "Change layout" },
               );
             }}
-            onSelectText={(textId) => setSelection({ kind: "text", shotId: shot.id, id: textId })}
-            onTextDelayChange={(textId, delay) => setTextLayerDelay(0, textId, delay)}
           />
         </div>
       </div>

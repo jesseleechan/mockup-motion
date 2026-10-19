@@ -8,14 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 const TEMPLATES = ["scroll-story", "mobile-scroll-story"];
 
 const DEVICES = ["browser", "phone", "card"];
-const BACKGROUNDS = ["solid", "gradient", "mesh", "ambient", "image"];
-const TEXT_ANIMS: Record<string, number> = {
-  fadeUp: 0.375,
-  maskReveal: 0.375,
-  blurIn: 0.375,
-  wordStagger: 0.375,
-  typewriter: 0.15,
-};
+const BACKGROUNDS = ["solid", "gradient"];
 
 interface Still {
   name: string;
@@ -126,9 +119,6 @@ STILLS.push({
   aspect: "16:9",
   t: 2.05,
 });
-for (const [anim, t] of Object.entries(TEXT_ANIMS)) {
-  STILLS.push({ name: `text-${anim}`, fixture: `text-${anim}`, aspect: "16:9", t });
-}
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
   STILLS.push({ name: `orient-${device}`, fixture: `orient-${device}`, aspect: "16:9", t: 1 });

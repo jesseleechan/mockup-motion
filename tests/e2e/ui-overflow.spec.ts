@@ -1,12 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { CameraPresetId, Layout, ProjectDoc } from "../../src/doc/types";
 import type { Engine } from "../../src/engine/Engine";
-import {
-  CAMERA_LABELS,
-  EASING_LABELS,
-  TEXT_ANIMATION_LABELS,
-  TEXT_ROLE_LABELS,
-} from "../../src/editor/labels";
+import { CAMERA_LABELS, EASING_LABELS } from "../../src/editor/labels";
+import { BLANK_PAGE } from "../helpers/blank-page";
 import { ciTimeout } from "../helpers/ci";
 
 interface StoreHandle {
@@ -19,12 +15,7 @@ interface EditorStoreHandle {
 
 interface UIStoreHandle {
   getState: () => {
-    setSelection: (
-      selection:
-        | { kind: "video" }
-        | { kind: "shot"; id: string }
-        | { kind: "text"; shotId: string; id: string },
-    ) => void;
+    setSelection: (selection: { kind: "video" } | { kind: "shot"; id: string }) => void;
   };
 }
 
@@ -58,7 +49,7 @@ const FRAMES_LAYOUTS: WithoutAssets<FramesLayout>[] = [
 ];
 
 async function resetAndOpen(page: Page, theme: Theme) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async (theme) => {
     localStorage.clear();
     sessionStorage.clear();
@@ -95,9 +86,9 @@ async function applyTemplateWithDemo(page: Page, templateId: string) {
     .toBeGreaterThan(0);
 }
 
-/** The shot looks the inspector shows: a single browser, a phone and a title card. */
-type ShotLook = "browser" | "phone" | "title";
-const SHOT_LOOKS: ShotLook[] = ["browser", "phone", "title"];
+/** The shot looks the inspector shows: a single browser and a phone. */
+type ShotLook = "browser" | "phone";
+const SHOT_LOOKS: ShotLook[] = ["browser", "phone"];
 
 /** Scroll Story with its demo screenshot: one single-browser shot. */
 async function openStory(page: Page) {
@@ -105,8 +96,8 @@ async function openStory(page: Page) {
 }
 
 /**
- * Gives the video's one shot `look`, keeping its screenshot. A title card gets a label and a
- * title. Set through the store, as no template builds a phone or a title card.
+ * Gives the video's one shot `look`, keeping its screenshot. Set through the store, as no
+ * template builds a phone.
  */
 async function setShotLook(page: Page, look: ShotLook, camera?: CameraPresetId) {
   await page.evaluate(
@@ -116,28 +107,7 @@ async function setShotLook(page: Page, look: ShotLook, camera?: CameraPresetId) 
       store.getState().apply((draft) => {
         const shot = draft.shots[0];
         const assetId = draft.assets.find((a) => a.kind === "image")?.id ?? "";
-        const text = (id: string, role: "title" | "label", value: string) => ({
-          id,
-          role,
-          text: value,
-          color: "",
-          font: "display" as const,
-          size: role === "title" ? 6 : 2.2,
-          anchor: "center" as const,
-          align: "center" as const,
-          animation: "fadeUp" as const,
-          delay: 0.2,
-        });
-        if (look === "title") {
-          shot.layout = { kind: "title" };
-          shot.texts = [
-            text("txt-intro", "label", "INTRODUCING"),
-            text("txt-title", "title", "Studio"),
-          ];
-        } else {
-          shot.layout = { kind: "single", device: look, assetId };
-          shot.texts = [];
-        }
+        shot.layout = { kind: "single", device: look, assetId };
         if (camera) shot.camera.preset = camera;
       });
     },
@@ -152,11 +122,7 @@ async function currentDoc(page: Page): Promise<ProjectDoc> {
   });
 }
 
-async function select(
-  page: Page,
-  selection:
-    { kind: "video" } | { kind: "shot"; id: string } | { kind: "text"; shotId: string; id: string },
-) {
+async function select(page: Page, selection: { kind: "video" } | { kind: "shot"; id: string }) {
   await page.evaluate((selection) => {
     const ui = (window as unknown as { __uiStore?: UIStoreHandle }).__uiStore;
     if (!ui) throw new Error("__uiStore is unavailable");
@@ -256,15 +222,14 @@ test.describe("F08 overflow guard", () => {
         await expect(inspector.getByText("Composition", { exact: true })).toBeVisible();
         await expectNoOverflow(page, "Video inspector");
 
-        // Every section of a single-device shot: turn on scroll and the cursor.
+        // Every section of a single-device shot: turn on scroll.
         const shotId = (await currentDoc(page)).shots[0].id;
         await select(page, { kind: "shot", id: shotId });
         await inspector.getByRole("switch", { name: "Scroll through page" }).click();
-        await inspector.getByRole("switch", { name: "Show cursor" }).click();
-        await expect(inspector.getByText("Keyframes", { exact: true })).toBeVisible();
-        await expectNoOverflow(page, "Shot inspector, scroll and cursor");
+        await expect(inspector.getByText("Hold", { exact: true })).toBeVisible();
+        await expectNoOverflow(page, "Shot inspector, scroll");
 
-        // Each look in turn: single devices and title cards show different sections.
+        // Each look in turn: a browser and a phone show different sections.
         for (const look of SHOT_LOOKS) {
           await setShotLook(page, look);
           await select(page, { kind: "shot", id: shotId });
@@ -272,16 +237,9 @@ test.describe("F08 overflow guard", () => {
           await expectNoOverflow(page, `${look} shot inspector`);
         }
 
-        // The title card's text layer.
-        await select(page, { kind: "text", shotId, id: "txt-intro" });
-        await expect(inspector.getByText("Text layer", { exact: true })).toBeVisible();
-        await expectNoOverflow(page, "Text inspector");
-
-        // The other library tabs.
-        for (const tab of ["Media", "Brand"]) {
-          await page.getByRole("tab", { name: tab }).click();
-          await expectNoOverflow(page, `${tab} tab`);
-        }
+        // The other library tab.
+        await page.getByRole("tab", { name: "Media" }).click();
+        await expectNoOverflow(page, "Media tab");
 
         // Both Frames presets, whose speed row holds the loop length chips: the shot takes a
         // Desktop Frames, then a Mobile Frames layout with six screenshots. The inspector only.
@@ -314,7 +272,7 @@ test.describe("F08 overflow guard", () => {
 });
 
 // Enum ids that are camelCase can only reach the UI by mistake (e.g. "pushIn").
-const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS, TEXT_ANIMATION_LABELS, TEXT_ROLE_LABELS]
+const RAW_ENUM_IDS = [CAMERA_LABELS, EASING_LABELS]
   .flatMap((labels) => Object.keys(labels))
   .filter((id) => /[a-z][A-Z]/.test(id));
 // Layout node ids, e.g. "row1:item3", "col0:item2", "single:0".
@@ -344,14 +302,12 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   for (const [look, camera] of [
     ["browser", "heroTilt"],
     ["phone", "isoDrift"],
-    ["title", "pushIn"],
+    ["browser", "pushIn"],
   ] as const) {
     await setShotLook(page, look, camera);
     await select(page, { kind: "shot", id: shotId });
     await expectNoRawIds(page, `${look} shot inspector`);
   }
-  await select(page, { kind: "text", shotId, id: "txt-intro" });
-  await expectNoRawIds(page, "Text inspector");
 
   // The human labels are the ones the task names.
   await setShotLook(page, "browser", "heroTilt");

@@ -8,25 +8,25 @@ This file is the source of truth for shared types and module APIs. WP-00 copies 
 src/
   doc/         types.ts · defaults.ts · validate.ts · migrate.ts (v1 → v2) · palettes.ts
   state/       store.ts (zustand + immer) · history.ts · selectors.ts · ui-store.ts (non-undoable)
-  storage/     db.ts (idb) · projects.ts · blobs.ts · brand-kits.ts · user-templates.ts
-  assets/      decode.ts · provider.ts (AssetProvider) · roles.ts · palette.ts · sections.ts · fonts.ts
+  storage/     db.ts (idb) · projects.ts · blobs.ts · user-templates.ts
+  assets/      decode.ts · roles.ts
   motion/      PURE, no DOM/three/React
                easing.ts · rng.ts · camera.ts (presets → poses) · layouts/ (layout → nodes)
                framing.ts · timeline.ts (scheduling, loop wrap) · scroll.ts
-               text-anim.ts · cursor.ts · evaluate.ts (doc, t) → FrameState
+               evaluate.ts (doc, t) → FrameState
   engine/      three.js, no React (except react/)
                Engine.ts · stage.ts (camera fit) · devices/ · backgrounds/ · shadows/ · materials/
-               textures/ (tiling, downscale cache) · text/ (screen-space text pass)
+               textures/ (tiling, downscale cache) · text/ (browser URL pill rasters)
                compositor.ts (shots → RT → transition) · post/ (composite, final pass)
                react/EngineCanvas.tsx (thin preview wrapper)
-  text/        rasterize.ts (main thread only: text layer → ImageBitmap + word boxes)
+  text/        rasterize.ts (main thread only: one line of Inter → ImageBitmap, for the URL pill)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
                verify.ts · bundle.ts
   ui/          design-system primitives (Radix wrappers), tokens, icons
-  editor/      Shell · TopBar · Library/ (Templates, Media, Brand) · Stage/ · Timeline/
-               Inspector/ (VideoPanel, ShotPanel, TextPanel) · dialogs/
-  lab/         dev-only render lab (/lab, /lab/ui): fixtures, stills for visual tests
+  editor/      Shell · TopBar · Library/ (Templates, Media) · Stage/ · Timeline/
+               Inspector/ (VideoPanel, ShotPanel) · dialogs/
+  lab/         dev-only render lab (/lab): fixtures, stills for visual tests
 scripts/       capture.ts · contact-sheet.ts · template-previews.ts
 demo-sites/    static HTML/CSS sources for demo screenshots (WP-04)
 ```
@@ -50,7 +50,6 @@ export interface AssetRef {
   width?: number; // image px
   height?: number; // image px
   role?: AssetRole; // auto-detected (assets/roles.ts), user-editable
-  palette?: string[]; // image: 5 dominant colours, hex, most-to-least prominent
   meta?: {
     tall?: boolean;
     hasStatusBar?: boolean;
@@ -61,18 +60,9 @@ export interface AssetRef {
   family?: string; // font: CSS family name registered via FontFace
 }
 
-export interface FontRef {
-  source: "builtin" | "asset";
-  family: string; // builtin family name or AssetRef.family
-  weight: number; // 100..900
-}
-
 export type Background =
   | { kind: "solid"; color: string }
-  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" } // 2-3 stops, OKLCH-interpolated
-  | { kind: "mesh"; colors: string[]; drift: number; seed: number } // 3-5 colours, drift 0..1
-  | { kind: "ambient"; assetId: string; blur: number; dim: number } // blurred screenshot, 0..1
-  | { kind: "image"; assetId: string; dim: number };
+  | { kind: "gradient"; stops: string[]; angle: number; angleConvention?: "css" }; // 2-3 stops, OKLCH-interpolated
 
 export type ShadowPreset = "none" | "soft" | "medium" | "dramatic";
 export type DeviceFinish = "graphite" | "silver" | "black" | "sand";
@@ -87,9 +77,6 @@ export interface Style {
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
-  fonts: { display: FontRef; body: FontRef };
-  textColor: string; // default text colour; "" = auto contrast vs background
-  accent: string; // cursor, highlights
 }
 
 export type DeviceKind = "browser" | "phone" | "card";
@@ -125,8 +112,7 @@ export type Layout =
       arrangement?: "carousel" | "deck";
     }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string }
-  | { kind: "title" };
+  | { kind: "responsive"; desktopId: string; mobileId: string };
 // rows and columns are Frames (Desktop Frames, Mobile Frames, §5): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
 // whole group (the presets use 0). travel is always "period" (see "Removed layouts" below).
@@ -188,49 +174,11 @@ export interface ScrollSpec {
   easing: EasingId;
 }
 
-export type TextAnimId = "none" | "fadeUp" | "maskReveal" | "blurIn" | "wordStagger" | "typewriter";
-export type Anchor =
-  | "top-left"
-  | "top"
-  | "top-right"
-  | "left"
-  | "center"
-  | "right"
-  | "bottom-left"
-  | "bottom"
-  | "bottom-right";
-
-export interface TextLayer {
-  id: string;
-  text: string;
-  role: "title" | "subtitle" | "caption" | "label";
-  font: "display" | "body";
-  size: number; // % of frame height (e.g. 6 = 6%)
-  anchor: Anchor;
-  align: "left" | "center" | "right";
-  color: string; // "" = Style.textColor
-  animation: TextAnimId;
-  delay: number; // seconds from shot start
-  logoAssetId?: string; // render a logo above the text
-}
-
 // The loop wrap: a cut, or a fade from the shot's end into its start (§5).
 export interface Transition {
   kind: "cut" | "fade";
   duration: number; // seconds the wrap fade overlaps the end of the shot
   easing: EasingId;
-}
-
-export interface CursorKey {
-  t: number;
-  x: number;
-  y: number;
-  click?: boolean;
-} // x,y 0..1 of device screen
-export interface CursorSpec {
-  enabled: boolean;
-  style: "arrow" | "pointer" | "dot";
-  keys: CursorKey[];
 }
 
 export interface Shot {
@@ -239,8 +187,6 @@ export interface Shot {
   layout: Layout;
   camera: CameraMove;
   scroll?: ScrollSpec; // honoured for single-device and responsive layouts
-  cursor?: CursorSpec; // honoured only for single-device layouts
-  texts: TextLayer[];
   transitionIn: Transition; // the loop wrap transition when doc.loop
   styleOverrides?: Partial<Style>;
 }
@@ -286,12 +232,13 @@ export interface ProjectDoc {
 
 Gradient angles use CSS direction in normalized frame coordinates: 0° runs bottom to top, 90° left to right, 180° top to bottom. New gradients carry `angleConvention: "css"`; unmarked persisted v2 gradients retain their legacy direction through a one-time angle migration at load.
 
+Mesh, ambient and image backgrounds were removed on 19 October 2026. `sanitizeDoc` loads a saved mesh as a gradient from its first to its last colour (315°, CSS), and a saved ambient or image background as the Ash solid `#DFE1E3`. The v1 migration turns a v1 image background into Ash too.
+
 ## 3. Stage, units and camera
 
 - **Stage units.** The output frame at the default camera covers a plane at z = 0 that is `aspectRatio × 1` stage units (height 1). Layouts position nodes in stage units. Because nothing is defined in pixels, every value scales identically at every resolution and aspect ratio. This fixes the v1 bug where 1:1 and 4:5 rendered at different relative sizes.
 - **Fit distance.** `d_fit = 0.5 / tan(fov/2)`. A camera with `distance = 1`, `yaw = pitch = roll = 0`, `pan = 0` sees exactly the stage. Because `distance` is a multiple of `d_fit`, changing `fov` at the same `distance` keeps the framing constant and only changes the amount of perspective.
 - **Orbit.** The camera orbits the target point `(panX, panY, 0)` by yaw and pitch at radius `distance × d_fit`, looking at the target, then rolls.
-- **Text and overlays** render in screen space (§6), not in the 3D scene, so camera moves never distort typography.
 
 ## 4. Layout resolution (`src/motion/layouts.ts`)
 
@@ -331,7 +278,6 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), desktop browser 
 - **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light; only the carousel's faded neighbours mix in sRGB.
 - **Orbits** (`orbit`, the Desktop Orbit and Mobile Orbit presets, `docs/orbit-plan/README.md`) loop natively on the slider's step timing. Card i sits at ring angle θ = 2π(i − φ)/N, where the phase φ = (k mod N) + p comes from `sliderStep`, so after N steps the ring is back where it started and frame(N × step) is exactly frame(0). An orbit is a stepped layout (`isSteppedLayout` in `duration.ts`) and shares the slider's rules: `sliderDuration` (N × step, N counting at most the first 6 screenshots, `ORBIT_MAX_SCREENSHOTS`), the step clamp, `fixedShotCamera` (still) and no Camera section. One node per shown screenshot (`orbit:<i>`), so no screenshot appears twice. Its nodes' `opacity` is a strength that the engine mixes with the shot's background, not with the cards behind (`fadeBlendFor(layout) === "background"` in `src/engine/devices/DeviceFade.ts`): the cards overlap, so each card is drawn on its own, back to front, and covers what is behind it.
 - **Responsive Scroll** (`responsive`) loops by the 0.8 s wrap crossfade: a scroll never reverses. Both screens stop together. With section data on both assets (`AssetRef.meta.sections`) and `ScrollSpec.sections` naming sections both pages have, stop k puts that section's top at the top of both screens (a page that can't scroll that far stops at its bottom); the first stop is the top of both pages. Otherwise both screens use the same `stops` fractions of their own scrollable range. Each move takes the time the screen that travels further needs at 0.9 screen heights per second on average, eased `smooth`; each stop holds `ScrollSpec.hold`. The layout sets the shot length (`fixedShotDuration`: holds plus moves plus the 0.8 s the wrap crossfade overlaps, at most 30 s; later stops are left out) and keeps the camera still (`fixedShotCamera`). A loop therefore lasts holds plus moves, and the wrap crossfade falls inside the last hold.
-- Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts
 export interface ScheduledShot {
@@ -350,19 +296,11 @@ export interface ShotFrame {
   localT: number;
   camera: CameraPose;
   nodes: LayoutNode[];
-  texts: TextFrame[];
-  cursor?: { x: number; y: number; pressed: number; nodeId: string }; // pressed 0..1 ripple
   style: Style; // resolved (doc.style + overrides)
-}
-export interface TextFrame {
-  layerId: string;
-  words: { index: number; opacity: number; dy: number; blur: number; clip: number }[]; // dy in % frame height
-  opacity: number;
 }
 export interface FrameState {
   t: number;
   total: number;
-  backgroundPhase: number; // 0..1, loop-safe
   layers: { frame: ShotFrame; weight: number }[]; // 1 entry, or 2 during the wrap crossfade
   transition?: { kind: Transition["kind"]; progress: number };
 }
@@ -383,20 +321,27 @@ export interface EngineOptions {
   preserveDrawingBuffer?: boolean; // true for export so Mediabunny can read the canvas
   maxTextureSize?: number; // override for tests
   cameraDistanceOverride?: number; // isolated fixture override, not serialized
+  hideDevices?: boolean; // lab/test fixture: draw the background only; not serialized
 }
 
 export interface AssetProvider {
   /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
   getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
-  /** Pre-rasterised text layer at the given output height (main thread rasterises; see src/text). */
-  getText(layer: TextLayer, style: Style, frameHeightPx: number): Promise<TextRaster>;
+  /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
+  getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
+}
+/** One line of Inter: the browser URL pill's domain. */
+export interface TextLine {
+  id: string; // raster key, used to hand rasters to the export worker
+  text: string;
+  size: number; // % of frame height
+  color: string; // #RRGGBB
 }
 export interface TextRaster {
   bitmap: ImageBitmap;
-  words: { x: number; y: number; w: number; h: number }[];
   width: number;
   height: number;
-  color?: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
+  color: string; // canonical opaque sRGB glyph colour; bitmap alpha supplies coverage
 }
 
 export class Engine {
@@ -423,15 +368,15 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens, ambient and image backgrounds in the style and shot overrides, and text-layer logos) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and text rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, finish, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and the wrap crossfade into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
 Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision.
 
-`TextRaster.color?: string` is canonical opaque sRGB hex for monochrome glyphs; bitmap alpha supplies coverage including original fill alpha. The engine samples coverage and premultiplies the exact linear glyph colour. A raster without this metadata is converted per texel to linear premultiplied half-float RGBA before filtering. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
-`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract.
+`EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract. `EngineOptions.hideDevices` is the same kind of override: the development-only `devices=0` URL parameter draws the background alone, for tests of backgrounds, transitions and grain.
 
 ## 8. Templates (`src/templates/`)
 
@@ -447,7 +392,7 @@ export interface TemplateBuildContext {
   aspect: Aspect;
   slots: Record<string, AssetRef | undefined>;
   projectName: string;
-  style?: Partial<Style>; // keep user's brand style when re-applying
+  style?: Partial<Style>; // keep the user's browser chrome when re-applying
 }
 export interface Template {
   id: string;
@@ -497,4 +442,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises all text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
