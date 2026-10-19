@@ -124,6 +124,7 @@ export type Layout =
       axis: "x" | "y";
       shape: "mobile" | "desktop";
       step: number;
+      arrangement?: "carousel" | "deck";
     }
   | { kind: "title" };
 // tilt: degrees of 3D tilt for the whole group; speed: 0..1 normalised (resolved to loop-safe px/s)
@@ -139,6 +140,9 @@ export type Layout =
 // slider.axis x: cards move left, the next comes in from the right. axis y: cards move up.
 // slider.shape: mobile = portrait cards at the phone screen aspect; desktop = landscape cards.
 // slider.step: seconds per screenshot, 1.6..4.0. Shot duration = assetIds.length × step.
+// slider.arrangement: "carousel" (default when unset: Desktop Slider, Mobile Slider) or "deck"
+// (Desktop Stack, Mobile Stack): the front card leaves along the axis and the deck moves forward
+// one slot per step. Same step timing, duration, 30 s cap and still camera (§5).
 
 export type CameraPresetId =
   | "static"
@@ -327,6 +331,7 @@ Screen aspect rules (quality-bar §3): `phone 0.4615` (9:19.5), `tablet 0.75`, d
 - Marquee layouts (`rows`, `columns`, `wall`) also loop by wrap crossfade, except Frames (`rows` or `columns` with `travel: "period"`, below). At the 0.12 frame widths per second limit (`quality-bar.md` §2.5) a shot cannot travel a whole asset period (N cards), so a native loop would need repeated screenshots in view. Instead `motion/layouts/marquee.ts` sets the speed from `Layout.speed` alone, independent of N, and snaps the travel per loop to a whole number of card steps `m ≥ 1` when one step fits under the limit (otherwise it keeps the target speed). For a single looping shot the loop length is `totalDuration`. During the wrap, the incoming marquee runs on its unclamped time `t − total` (`ActiveShot.wrapT`) while camera, text and entrances keep the clamped time, so the outgoing and incoming cards sit in the same places and only the screens dissolve.
 - **Frames** (`rows` or `columns` with `travel: "period"`: the Desktop Frames and Mobile Frames presets) loops natively. Both layouts resolve the period mode through one shared lane function (`motion/layouts/lanes.ts`); a row is a lane moving sideways, a column a lane moving vertically. Every lane travels exactly one asset period (N × pitch, pitch = card length along the lane + gap) per shot, at one shared speed `N × pitch / duration`, alternating direction (rows: the first moves left; columns: the first, leftmost, moves up). Lane r starts `r / lanes` of a period along, so lanes that move together (the outer rows of three, or every other column) never line up the same screenshot. Odd lanes run the screenshots in reverse order (2, 1, N, N − 1, …), so adjacent lanes, which pass each other, match one card at a time instead of whole lanes. A single looping shot with a `cut` wrap therefore has frame(total) ≡ frame(0) with no crossfade. `Layout.speed` is ignored: the speed follows the shot duration, which must be at least `framesDuration(layout, aspect)`, the shortest duration that keeps the speed at or under 0.20 stage units per second along the lane (`quality-bar.md` §2.5), rounded up to 0.5 s. A Frames shot shows only `framesAssetIds(layout, aspect)`: the first screenshots whose period fits 30 s at that limit (Desktop Frames: 10 with 3 rows, 8 with 2; Mobile Frames: 9 at 16:9, 4:3 and 1:1, 10 at 4:5 and 9:16), so `framesDuration` is at most 30 s. Both helpers take a rows or a columns layout, and `minShotDuration` applies them to both.
 - **Sliders** (`slider`) loop natively. Step `k` moves every card one slot over `[k × step, k × step + 1.85]` on the `slide` curve, then holds; after N steps (N = `assetIds.length`) the arrangement is back where it started. The shot lasts `sliderDuration(layout) = max(1, N) × step`, so a single looping slider shot with a `cut` wrap has frame(total) ≡ frame(0) with no crossfade. A shot fits in 30 s: N counts at most the first 18 screenshots (`SLIDER_MAX_SCREENSHOTS`; later ones are not shown) and the step is at most `sliderStepMax(N)` = min(4.0, 30 / N) in 0.1 s steps. `src/motion/layouts/duration.ts` holds these rules beside `minShotDuration`; `sanitizeDoc` and the editor store apply them after every edit, so a slider's `Shot.duration` always equals `sliderDuration`. A slider's camera is still: `fixedShotCamera` sets `preset: "static"`, `intensity: 0` and `float: 0` in the same places, and the Shot inspector shows no Camera section for a slider. When fewer screenshots than visible slots are lit, the lit window is centred on the active card: N slots, or N − 1 when N is even (N > 2).
+- **Decks** (`slider` with `arrangement: "deck"`: Desktop Stack and Mobile Stack) are sliders: every rule in the bullet above applies, with the deck geometry of `quality-bar.md` §4. Card j sits `s = (j − k) mod N` slots back during step k; slot 0 leaves the frame, slots 1…depth move forward one slot, and the rest are hidden. After N steps every card is back where it started, so frame(total) ≡ frame(0). A deck's entering card blends in linear light like an entrance; only the carousel's faded neighbours mix in sRGB.
 - Mesh background phase is `t / totalDuration` and uses only integer harmonics of 2π, so it loops.
 
 ```ts
