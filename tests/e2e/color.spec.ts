@@ -396,3 +396,49 @@ test("F02 short phone screenshot bottom fill is sRGB exact", async ({ page }) =>
   });
   expectRgbNear(avgRegion(frame, 630, 510, 650, 530), [51, 102, 204], 2);
 });
+
+test("phone status bar keeps the page's top colour while the page scrolls under it", async ({
+  page,
+}) => {
+  await ready(page);
+  const frames = await page.evaluate(async () => {
+    const doc = structuredClone(window.__fixtures?.["device-phone-frontal"]);
+    const engine = window.__labEngine;
+    const setDoc = window.__labSetDoc;
+    const images = window.__labTestImages;
+    if (!doc || !engine || !setDoc || !images) throw new Error("Status bar fixture unavailable");
+    const id = "status-bar-tall-phone";
+    doc.shots[0].layout = { kind: "single", device: "phone", assetId: id };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].duration = 10;
+    doc.shots[0].scroll = { enabled: true, stops: [0, 1], hold: 0.5, easing: "smooth" };
+    doc.style.grain = doc.style.vignette = 0;
+    doc.assets.push({
+      id,
+      kind: "image",
+      name: id,
+      mime: "image/png",
+      bytes: 1,
+      width: 780,
+      height: 4000,
+    });
+    const colors = ["#EEEEEE", "#3366CC", "#CC3366", "#33AA55"];
+    await setDoc(doc, { [id]: await images.bands(780, 4000, colors) });
+    engine.renderAt(0);
+    const top = { width: 1280, height: 720, data: engine.readPixels() };
+    engine.renderAt(10);
+    return { top, end: { width: 1280, height: 720, data: engine.readPixels() } };
+  });
+  // The phone is 0.74 of the 720 px frame tall and centred (quality bar §3.3, §4): its screen
+  // spans x 521-759 and y 103-617. Sample the status bar between the time and the island.
+  const statusBar = (frame: PixelBuffer) => avgRegion(frame, 586, 119, 590, 123);
+  // Scrolled to the end, the top band is far above the screen; the bar still shows its colour.
+  expectRgbNear(statusBar(frames.top), [238, 238, 238], 2);
+  expectRgbNear(statusBar(frames.end), [238, 238, 238], 2);
+  // Below the bar, the page has scrolled to its last bands.
+  const scrolled = avgRegion(frames.end, 636, 500, 644, 508) as [number, number, number];
+  expect(
+    scrolled[0] > 200 || scrolled[1] > 150,
+    `scrolled page at the bottom, got ${scrolled}`,
+  ).toBe(true);
+});

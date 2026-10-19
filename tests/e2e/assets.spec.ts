@@ -357,7 +357,7 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
       doc.style.grain = 0;
       await setDoc(structuredClone(doc));
       const afterBackground = engine.debugInfo().devicesBuilt;
-      // Browser chrome is part of a browser's key, not a card's.
+      // Browser chrome is part of every device's key.
       doc.style.browserChrome = doc.style.browserChrome === "minimal" ? "standard" : "minimal";
       await setDoc(structuredClone(doc));
       const afterChrome = engine.debugInfo().devicesBuilt;
@@ -371,8 +371,6 @@ test("F03: setDocument keeps devices whose node and frame style are unchanged", 
   }
   const browserRebuilt = built.browser.afterChrome - built.browser.afterBackground;
   expect(browserRebuilt, "a chrome change rebuilds the browser").toBe(1);
-  const cardsRebuilt = built.cards.afterChrome - built.cards.afterBackground;
-  expect(cardsRebuilt, "a chrome change keeps the Frames cards").toBe(0);
 });
 
 test("F03: text textures are released when their layers go away", async ({ page }) => {
