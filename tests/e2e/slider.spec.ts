@@ -376,17 +376,12 @@ test.describe("slider editing", () => {
     expect(before.step).toBe(2);
     expect(before.duration).toBe(n * 2);
 
-    // The duration control is read-only for a slider and says why.
-    const hint = page.getByText("Set by step length × screenshots");
-    await expect(hint).toBeVisible();
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "aria-describedby",
-      (await hint.getAttribute("id")) ?? "",
-    );
-    await expect(page.getByRole("slider", { name: "Duration" })).toHaveAttribute(
-      "data-disabled",
-      "",
-    );
+    // A slider sets its own length, so the inspector shows it as a read-out, not a control.
+    await expect(page.getByRole("slider", { name: "Duration" })).toHaveCount(0);
+    const loopLength = page
+      .locator('[data-panel="inspector"] [data-field]')
+      .filter({ hasText: "Loop length" });
+    await expect(loopLength).toContainText(`${(n * 2).toFixed(1)} s`);
 
     // Page Up moves the slider ten 0.1 s steps at once, 2.0 → 3.0 s, as one edit. (Ten arrow
     // presses are ten edits, which coalesce into one undo step only within 800 ms.)
@@ -395,7 +390,7 @@ test.describe("slider editing", () => {
     await step.press("PageUp");
     await expect.poll(async () => (await sliderShot(page)).step).toBe(3);
     expect((await sliderShot(page)).duration).toBe(n * 3);
-    await expect(page.getByText(`${(n * 3).toFixed(1)} s`).first()).toBeVisible();
+    await expect(loopLength).toContainText(`${(n * 3).toFixed(1)} s`);
 
     await page.getByRole("button", { name: "Undo" }).click();
     expect(await sliderShot(page)).toEqual(before);

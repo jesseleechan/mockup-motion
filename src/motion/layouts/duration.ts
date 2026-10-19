@@ -113,7 +113,8 @@ export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove 
   return { preset: "static", intensity: 0, easing: camera.easing, float: 0 };
 }
 
-function isStillCamera(camera: CameraMove): boolean {
+/** A camera with no move, no intensity and no float. */
+export function isStillCamera(camera: CameraMove): boolean {
   return camera.preset === "static" && camera.intensity === 0 && camera.float === 0;
 }
 
