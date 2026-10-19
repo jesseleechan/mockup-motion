@@ -26,7 +26,6 @@ export interface AssetRef {
   width?: number;          // image px
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
-  palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
   meta?: AssetMeta;
   family?: string;         // font: CSS family name registered via FontFace
 }
