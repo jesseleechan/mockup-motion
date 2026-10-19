@@ -492,7 +492,8 @@ test("F03: a pair's WebM export contains both screen assets", async ({ page }) =
     const sink = new media.CanvasSink(track);
     const wrapped = await sink.getCanvas(0.5);
     if (!wrapped) throw new Error("Could not decode the exported WebM at 0.5 seconds");
-    const context = wrapped.canvas.getContext("2d");
+    const context = wrapped.canvas.getContext("2d") as
+      CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
     if (!context) throw new Error("Decoded WebM canvas has no 2D context");
     const pixels = context.getImageData(0, 0, wrapped.canvas.width, wrapped.canvas.height).data;
     let red = 0;

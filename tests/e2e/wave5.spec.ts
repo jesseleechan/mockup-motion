@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { BUILTIN_TEMPLATES } from "../../src/templates";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // Each gallery tab lists the templates of its size, in registry order.
 const idsOf = (category: "desktop" | "mobile") =>
@@ -8,7 +9,7 @@ const idsOf = (category: "desktop" | "mobile") =>
 
 test.describe("Wave 5: Templates & Gallery, Scroll & Cursor, Export v2", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/lab/ui");
+    await page.goto(BLANK_PAGE);
     await page.evaluate(async () => {
       localStorage.clear();
       sessionStorage.clear();

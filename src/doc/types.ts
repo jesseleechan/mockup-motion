@@ -12,7 +12,6 @@ export interface AssetRef {
   width?: number;          // image px
   height?: number;         // image px
   role?: AssetRole;        // auto-detected (assets/roles.ts), user-editable
-  palette?: string[];      // image: 5 dominant colours, hex, most-to-least prominent
   meta?: { tall?: boolean; hasStatusBar?: boolean; bottomColor?: string }; // image analysis (WP-13, WP-06)
   family?: string;         // font: CSS family name registered via FontFace
   durationSec?: number;    // audio

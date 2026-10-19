@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type { ExportSettings, ProjectDoc } from "../../src/doc/types";
 import { quadrantCentroids, type PixelBuffer } from "../helpers/pixels";
 import { keepResourceTimings } from "../helpers/resource-timing";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 // The specs below find the app's Mediabunny module in the resource-timing entries.
 test.beforeEach(async ({ page }) => {
@@ -280,9 +281,9 @@ test.describe("F09 export correctness", () => {
   });
 });
 
-/** Clears the project database from /lab/ui, then opens the editor with demo content. */
+/** Clears the project database from a blank page, then opens the editor with demo content. */
 async function openEditorWithDemo(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();

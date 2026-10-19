@@ -155,8 +155,6 @@ export function sanitizeDoc(raw: unknown): { doc: ProjectDoc; warnings: string[]
         if (typeof a.width === "number") ref.width = a.width;
         if (typeof a.height === "number") ref.height = a.height;
         if (typeof a.role === "string") ref.role = a.role as AssetRole;
-        if (Array.isArray(a.palette))
-          ref.palette = a.palette.filter((p: unknown): p is string => typeof p === "string");
         if (a.meta && typeof a.meta === "object") ref.meta = a.meta;
         if (typeof a.family === "string") ref.family = a.family;
         if (typeof a.durationSec === "number") ref.durationSec = a.durationSec;

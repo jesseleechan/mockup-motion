@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Engine } from "../../src/engine/Engine";
 import { ciTimeout } from "../helpers/ci";
+import { BLANK_PAGE } from "../helpers/blank-page";
 
 declare global {
   interface Window {
@@ -25,7 +26,7 @@ interface StageMeasure {
 }
 
 async function resetAndOpen(page: Page) {
-  await page.goto("/lab/ui");
+  await page.goto(BLANK_PAGE);
   await page.evaluate(async () => {
     localStorage.clear();
     sessionStorage.clear();
