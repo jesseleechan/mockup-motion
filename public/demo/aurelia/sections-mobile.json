@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:3591/aurelia/",
+  "viewportWidth": 390,
+  "scale": 2,
+  "pageHeight": 5718,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 0,
+      "height": 71
+    },
+    {
+      "tag": "section",
+      "id": "hero",
+      "className": "hero-section",
+      "top": 71,
+      "height": 760
+    },
+    {
+      "tag": "section",
+      "id": "statement",
+      "className": "statement-section",
+      "top": 832,
+      "height": 770
+    },
+    {
+      "tag": "section",
+      "id": "works",
+      "className": "works-section",
+      "top": 1602,
+      "height": 1431
+    },
+    {
+      "tag": "section",
+      "id": "materials",
+      "className": "materials-section",
+      "top": 3033,
+      "height": 1056
+    },
+    {
+      "tag": "section",
+      "id": "monograph",
+      "className": "monograph-section",
+      "top": 4089,
+      "height": 955
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 5044,
+      "height": 674
+    }
+  ]
+}

@@ -270,10 +270,26 @@ test.describe("F07: template previews in the gallery and Library", () => {
     );
     for (const poster of posters) expect(poster).toMatch(/^\/templates\/[a-z-]+\.webp$/);
 
+    // A rejected play() logs "[TemplatePreview] … failed to play"; report it instead of a timeout.
+    const previewErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error" && msg.text().includes("[TemplatePreview]")) {
+        previewErrors.push(msg.text());
+      }
+    });
+
     const frames = page.locator('[data-testid="template-card"][data-template-id="frames"]');
     await frames.hover();
+    // Starting playback fetches and decodes the WebM, which competes with SwiftShader for the CI
+    // runner's CPU like the poll below (tests/helpers/ci.ts).
     await expect
-      .poll(() => videoState(frames), { timeout: 10_000 })
+      .poll(
+        () => {
+          if (previewErrors.length > 0) throw new Error(previewErrors.join("\n"));
+          return videoState(frames);
+        },
+        { timeout: ciTimeout(10_000) },
+      )
       .toEqual({ paused: false, time: expect.any(Number) });
     // Decoding competes with SwiftShader for the CI runner's CPU (tests/helpers/ci.ts).
     await expect
@@ -295,6 +311,7 @@ test.describe("F07: template previews in the gallery and Library", () => {
     await expect.poll(async () => (await videoState(story)).paused).toBe(false);
     await story.blur();
     await expect.poll(() => videoState(story)).toEqual({ paused: true, time: 0 });
+    expect(previewErrors).toEqual([]);
   });
 
   test("reduced motion shows posters only", async ({ page }) => {

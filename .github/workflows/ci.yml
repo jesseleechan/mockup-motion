@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # ready_for_review: a draft skips e2e, so marking it ready has to run it.
+    types: [opened, synchronize, reopened, ready_for_review]
   # The full e2e suite every night, so flaky or environment-dependent failures show up even on
   # days when nothing merges.
   schedule:
@@ -17,10 +19,11 @@ concurrency:
 
 # Branch protection on main requires the `unit`, `e2e` and `visual` checks.
 # `unit` and `visual` run on every pull request. `e2e` always reports, but on a pull request it
-# runs Playwright only when the PR touches a path in `scripts/e2e-paths.ts` (src/, public/,
-# tests/e2e/, tests/helpers/, Vite, Playwright and npm config, this workflow). Pushes to main, the
-# nightly schedule and manual runs always run the full suite, split across four shards (file
-# groups in `scripts/e2e-shards.ts`).
+# runs Playwright only when the PR is ready for review (not a draft), targets main, and touches a
+# path in `scripts/e2e-paths.ts` (src/, public/, tests/e2e/, tests/helpers/, Vite, Playwright and
+# npm config, this workflow). Drafts and PRs stacked on another branch iterate without it; the
+# suite runs once a PR is ready to merge. Pushes to main, the nightly schedule and manual runs
+# always run the full suite, split across four shards (file groups in `scripts/e2e-shards.ts`).
 # The `perf` project is not gated: it measures GPU throughput, which the runner's SwiftShader
 # cannot reach. Run `npm run test:perf` by hand on a machine with a real GPU.
 
@@ -62,16 +65,20 @@ jobs:
       pull-requests: read
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      reason: ${{ steps.decide.outputs.reason }}
+    env:
+      # Only a pull request that is ready to merge into main can need the suite.
+      CANDIDATE: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.base.ref == 'main' }}
     steps:
       - name: Checkout the path filter
-        if: github.event_name == 'pull_request'
+        if: env.CANDIDATE == 'true'
         uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/e2e-paths.ts
           sparse-checkout-cone-mode: false
 
       - name: Set up Node.js
-        if: github.event_name == 'pull_request'
+        if: env.CANDIDATE == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -82,12 +89,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           PR: ${{ github.event.pull_request.number }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          BASE: ${{ github.event.pull_request.base.ref }}
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
           set -euo pipefail
           if [ "$EVENT" != "pull_request" ]; then
             echo "$EVENT always runs the full e2e suite."
             echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$DRAFT" = "true" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "reason=Draft pull request: the suite runs when it is marked ready for review." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$BASE" != "main" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "reason=Stacked on $BASE: the suite runs once the pull request targets main and gets a new commit." >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # Old and new names, so a rename out of a trigger path still counts.
@@ -103,6 +122,9 @@ jobs:
           result=$(tr '\t' '\n' < files.tsv \
             | node --experimental-strip-types --no-warnings scripts/e2e-paths.ts)
           echo "$result" | tee -a "$GITHUB_OUTPUT"
+          if [ "$result" != "run=true" ]; then
+            echo "reason=No e2e trigger path changed (scripts/e2e-paths.ts); the suite was not run." >> "$GITHUB_OUTPUT"
+          fi
 
   e2e-shard:
     name: e2e shard ${{ matrix.shard }}/4
@@ -168,6 +190,7 @@ jobs:
     env:
       PATHS_RESULT: ${{ needs.e2e-paths.result }}
       RUN_E2E: ${{ needs.e2e-paths.outputs.run }}
+      SKIP_REASON: ${{ needs.e2e-paths.outputs.reason }}
       SHARDS_RESULT: ${{ needs.e2e-shard.result }}
     steps:
       - name: Check the path filter
@@ -177,8 +200,7 @@ jobs:
             exit 1
           fi
           if [ "$RUN_E2E" != "true" ]; then
-            echo "No e2e trigger path changed (scripts/e2e-paths.ts); the suite was not run." \
-              | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "$SKIP_REASON" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Checkout repository
