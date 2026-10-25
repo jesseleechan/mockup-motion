@@ -18,7 +18,7 @@ The owner asked on 25 October 2026 for MockupMotion's editor to look more like [
 | --- | -------------------------- | --------- | -------------------------------------------------------------------------- |
 | R1  | Tokens, fonts and theme    | Nothing   | In review ([#107](https://github.com/jesseleechan/mockup-motion/pull/107)) |
 | R2  | The shell: floating panels | R1        | In review ([#108](https://github.com/jesseleechan/mockup-motion/pull/108)) |
-| R3  | Controls (`src/ui`)        | R1        | Not started                                                                |
+| R3  | Controls (`src/ui`)        | R1        | In review ([#109](https://github.com/jesseleechan/mockup-motion/pull/109)) |
 | R4  | Panels and dialogs         | R2 and R3 | Not started                                                                |
 
 R2 and R3 touch different files (`src/editor/shell`, `EditorShell.tsx` and the stage frame; `src/ui`), so they can run in parallel once R1 merges.
@@ -109,6 +109,16 @@ Today, `src/ui/theme.css` has dark under `:root` and light under `[data-theme="l
   - Popover, DropdownMenu and ContextMenu: paper, radius 10, 30 px items, Layout Stage's menu shadow.
   - Tooltip, Toast and ProgressBar: the same surfaces.
   - Dialog: a panel at radius 18 over `--scrim`.
+
+**For R4 (added in R3).** Every existing prop still works; these are new:
+
+- `SliderRow`: the pill row with its label and value inside. It replaces a `Field` around a `Slider` in one line: `<SliderRow label="Grain" output="25%" value={v} onChange={set} />`. Keep `aria-label` only where the name differs from the label ("Hold" reads as "Hold at each stop"). `output` defaults to the value at the step's precision (`formatStepValue`).
+- `ColorField` with `label`: the 36 px colour row, replacing `<Field label="Color"><ColorField/></Field>`.
+- `Section` with `note`: a short note on the right of the heading.
+- `Chip` with `pressed` (`aria-pressed`): Layout Stage's 28 px chip, e.g. for the scroll stops.
+- `Input` with `numeric`: a 32 px paper field (the URL field, search, numbers).
+- `Button` size `xs` (24 px) and `IconButton` sizes `lg` (36 px, the clusters) and `xs`.
+- `Tabs` now look like the segmented control, for the inspector's Video and Shot tab.
 
 ## R4. Panels and dialogs
 

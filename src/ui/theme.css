@@ -27,10 +27,15 @@
   --color-warning: var(--color-warning);
   --color-success: var(--color-success);
   --color-scrim: var(--color-scrim);
-  --color-stage: var(--color-stage);
 
   --shadow-lift: var(--lift);
   --shadow-lift-sm: var(--lift-sm);
+  /* Layout Stage's .btn:hover: a paper control on hover gets a stronger ring. */
+  --shadow-lift-sm-hover: 0 0 0 1px var(--color-line-strong), 0 1px 2px rgb(20 20 22 / 0.06);
+  /* Layout Stage's .menu (components/panels.css), in both themes: menus, popovers, tooltips and
+     toasts. The sheet shadow lifts a dialog off the scrim. */
+  --shadow-menu: 0 12px 32px -6px rgb(15 17 25 / 0.24), 0 2px 6px rgb(15 17 25 / 0.08);
+  --shadow-sheet: 0 30px 80px rgb(0 0 0 / 0.35);
 
   /* Self-hosted from @fontsource (src/main.tsx). Inter stays for the URL pill drawn into videos
      (src/text/rasterize.ts), never for the UI. */
@@ -56,8 +61,6 @@
   /* MockupMotion's older names, in the same steps: a raised surface on a panel, then its hover. */
   --color-raised: var(--color-field);
   --color-hover: var(--color-field-2);
-  /* The stage is the workspace; R2 drops its frame. */
-  --color-stage: var(--color-bg);
 
   --color-line: rgb(20 20 22 / 0.08);
   --color-line-strong: rgb(20 20 22 / 0.2);

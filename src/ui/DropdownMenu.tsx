@@ -2,6 +2,14 @@ import React from "react";
 import * as DropdownPrimitive from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
 import { Kbd } from "./Kbd";
+import {
+  MENU_CONTENT,
+  MENU_ICON,
+  MENU_ITEM,
+  MENU_ITEM_DANGER,
+  MENU_ITEM_TONE,
+  MENU_SEPARATOR,
+} from "./menu-styles";
 
 export const DropdownMenu = DropdownPrimitive.Root;
 export const DropdownMenuTrigger = DropdownPrimitive.Trigger;
@@ -17,12 +25,7 @@ export const DropdownMenuContent = React.forwardRef<
     <DropdownPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
-      className={clsx(
-        "z-50 min-w-[160px] p-1 rounded-md shadow-xl outline-none select-none",
-        "bg-[var(--color-panel)] border border-[var(--color-line)] text-[var(--color-text)]",
-        "animate-in fade-in-0 zoom-in-95",
-        className,
-      )}
+      className={clsx(MENU_CONTENT, className)}
       {...props}
     >
       {children}
@@ -41,19 +44,11 @@ export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuIte
   ({ className, shortcut, icon, danger, children, ...props }, ref) => (
     <DropdownPrimitive.Item
       ref={ref}
-      className={clsx(
-        "relative flex items-center justify-between px-2.5 py-1.5 text-[12px] font-medium rounded-xs cursor-pointer outline-none select-none transition-colors",
-        "data-[highlighted]:bg-[var(--color-hover)]",
-        danger
-          ? "text-[var(--color-danger)] data-[highlighted]:bg-[var(--color-danger)]/10"
-          : "text-[var(--color-text)]",
-        "data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
-        className,
-      )}
+      className={clsx(MENU_ITEM, danger ? MENU_ITEM_DANGER : MENU_ITEM_TONE, className)}
       {...props}
     >
       <div className="flex items-center gap-2">
-        {icon && <span className="shrink-0 text-[var(--color-text-2)]">{icon}</span>}
+        {icon && <span className={MENU_ICON}>{icon}</span>}
         <span>{children}</span>
       </div>
       {shortcut && <Kbd className="ml-auto">{shortcut}</Kbd>}
@@ -66,10 +61,6 @@ export const DropdownMenuSeparator = React.forwardRef<
   HTMLDivElement,
   DropdownPrimitive.DropdownMenuSeparatorProps
 >(({ className, ...props }, ref) => (
-  <DropdownPrimitive.Separator
-    ref={ref}
-    className={clsx("h-[1px] bg-[var(--color-line)] my-1 -mx-1", className)}
-    {...props}
-  />
+  <DropdownPrimitive.Separator ref={ref} className={clsx(MENU_SEPARATOR, className)} {...props} />
 ));
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator";

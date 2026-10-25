@@ -23,13 +23,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       aria-valuemin={0}
       aria-valuemax={max}
       aria-label={ariaLabel}
-      className={clsx(
-        "relative w-full h-1.5 bg-[var(--color-line)] rounded-full overflow-hidden",
-        className,
-      )}
+      className={clsx("relative w-full h-1.5 bg-field rounded-full overflow-hidden", className)}
     >
       <div
-        className="h-full bg-[var(--color-accent)] rounded-full transition-all duration-120"
+        className="h-full bg-accent rounded-full transition-all duration-120"
         style={{ width: `${percentage}%` }}
       />
     </div>

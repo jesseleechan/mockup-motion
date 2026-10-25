@@ -16,10 +16,12 @@ export interface FieldProps {
   htmlFor?: string;
 }
 
-const labelText = "text-[12px] font-medium text-[var(--color-text-2)] select-none truncate";
-const hintText = "text-[11px] leading-4 text-[var(--color-text-3)]";
+// Layout Stage's labels: 12 px, medium, ink-2. Values and hints carry meaning, so they take
+// text-2 too (4.5:1), not text-3.
+const labelText = "text-[12px] font-medium text-text-2 select-none truncate";
+const hintText = "text-[11px] leading-4 text-text-2";
 const valueText =
-  "shrink-0 whitespace-nowrap text-right font-num text-[11px] tabular-nums text-[var(--color-text-3)]";
+  "shrink-0 whitespace-nowrap text-right font-num text-[11.5px] tabular-nums text-text-2";
 
 /**
  * A labelled control row. Labels never wrap: the inline label column is 104 px and

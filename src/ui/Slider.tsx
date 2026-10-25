@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import clsx from "clsx";
 import { calculateScrubValue } from "./scrub";
+import { formatStepValue } from "./slider-value";
 
 export interface SliderProps {
   value: number;
@@ -16,7 +17,13 @@ export interface SliderProps {
   "aria-describedby"?: string;
 }
 
-export const Slider: React.FC<SliderProps> = ({
+/**
+ * Layout Stage's pill slider (.prow): the whole 32 px pill is the track, filled with paper up to
+ * the value, and the thumb is a thin line. Radix keeps the keyboard steps (arrows, Page Up and
+ * Down, Home, End), min, max and step, and the slider role on the thumb. Clicking or dragging
+ * anywhere on the pill sets the value.
+ */
+const PillSlider: React.FC<SliderProps & { children?: React.ReactNode }> = ({
   value,
   onChange,
   min = 0,
@@ -26,6 +33,7 @@ export const Slider: React.FC<SliderProps> = ({
   className,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy,
+  children,
 }) => {
   return (
     <SliderPrimitive.Root
@@ -37,26 +45,63 @@ export const Slider: React.FC<SliderProps> = ({
       disabled={disabled}
       aria-label={ariaLabel}
       className={clsx(
-        "relative flex items-center select-none touch-none w-full h-5 cursor-pointer",
+        "relative flex items-center w-full min-w-0 h-8 rounded-[10px] bg-field overflow-hidden select-none touch-none cursor-pointer",
+        // The thumb is too thin to carry a focus ring, so the pill does, as in Layout Stage.
+        "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent",
         disabled && "opacity-40 pointer-events-none",
         className,
       )}
     >
-      <SliderPrimitive.Track className="relative grow h-1 rounded-full bg-[var(--color-line)] overflow-hidden">
-        <SliderPrimitive.Range className="absolute h-full bg-[var(--color-accent)] rounded-full" />
+      <SliderPrimitive.Track className="absolute inset-0">
+        <SliderPrimitive.Range className="absolute inset-y-0 bg-paper" />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         aria-label={ariaLabel ?? "Slider"}
         aria-describedby={ariaDescribedBy}
-        className={clsx(
-          "block w-3.5 h-3.5 bg-[var(--color-text)] rounded-full shadow-md border border-[var(--color-line-strong)]",
-          "transition-transform hover:scale-110 active:scale-95",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
-        )}
+        // 2 × 14 px. Layout Stage draws it in ink-3; text-2 keeps 3:1 on paper and field.
+        className="block w-0.5 h-3.5 rounded-[1px] bg-text-2 focus-visible:outline-none"
       />
+      {children}
     </SliderPrimitive.Root>
   );
 };
+
+/** The pill alone, for a Field that shows the label and value beside it. */
+export const Slider: React.FC<SliderProps> = (props) => <PillSlider {...props} />;
+
+export interface SliderRowProps extends SliderProps {
+  /** Shown inside the pill on the left, and the slider's name unless `aria-label` is set. */
+  label: string;
+  /** The value as shown on the right, e.g. "25%". Defaults to the value at the step's precision. */
+  output?: string;
+}
+
+/**
+ * The pill slider as one row that carries its own label and value, as in Layout Stage's panels.
+ * It replaces a Field around a Slider in one line:
+ *
+ *   <Field label="Grain" value="25%"><Slider aria-label="Grain" {...rest} /></Field>
+ *   <SliderRow label="Grain" output="25%" {...rest} />
+ *
+ * Keep `aria-label` only where the slider's name differs from the visible label, e.g. label
+ * "Hold" with aria-label "Hold at each stop".
+ */
+export const SliderRow: React.FC<SliderRowProps> = ({
+  label,
+  output,
+  "aria-label": ariaLabel,
+  ...slider
+}) => (
+  <PillSlider {...slider} aria-label={ariaLabel ?? label}>
+    {/* Over the track, but clicks pass through to it. */}
+    <span className="pointer-events-none absolute inset-0 flex items-center justify-between gap-3 px-[11px]">
+      <span className="whitespace-nowrap text-[12px] font-medium text-text-2">{label}</span>
+      <span className="whitespace-nowrap font-num text-[11.5px] tabular-nums text-text-2">
+        {output ?? formatStepValue(slider.value, slider.step)}
+      </span>
+    </span>
+  </PillSlider>
+);
 
 export interface ScrubLabelProps {
   label: string;
@@ -170,7 +215,7 @@ export const ScrubLabel: React.FC<ScrubLabelProps> = ({
         onPointerCancel={handlePointerUp}
         onDoubleClick={handleDoubleClick}
         title="Drag horizontally to scrub value. Double-click to reset."
-        className="cursor-ew-resize font-medium text-[var(--color-text-2)] hover:text-[var(--color-text)] transition-colors"
+        className="cursor-ew-resize font-medium text-text-2 hover:text-text transition-colors"
       >
         {label}
       </span>
@@ -189,7 +234,7 @@ export const ScrubLabel: React.FC<ScrubLabelProps> = ({
           step={step}
           min={min}
           max={max}
-          className="w-16 h-5 px-1 text-right text-[11px] font-mono bg-[var(--color-panel)] text-[var(--color-text)] border border-[var(--color-accent)] rounded-xs outline-none"
+          className="w-16 h-6 px-1.5 text-right text-[11.5px] font-num tabular-nums bg-paper text-text shadow-[0_0_0_1.5px_var(--color-accent)] rounded-[6px] outline-none"
         />
       ) : (
         <span
@@ -199,10 +244,10 @@ export const ScrubLabel: React.FC<ScrubLabelProps> = ({
             setIsEditing(true);
           }}
           title="Click to type value"
-          className="ui-tabular text-[12px] font-mono text-[var(--color-text)] hover:text-[var(--color-accent)] cursor-text px-1 py-0.5 rounded-xs hover:bg-[var(--color-raised)] transition-colors"
+          className="ui-tabular text-[11.5px] text-text cursor-text px-1 py-0.5 rounded-[5px] hover:bg-field transition-colors"
         >
           {formatDisplay(value)}
-          {unit && <span className="text-[var(--color-text-3)] ml-0.5">{unit}</span>}
+          {unit && <span className="text-text-2 ml-0.5">{unit}</span>}
         </span>
       )}
     </div>

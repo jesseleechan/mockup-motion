@@ -48,7 +48,8 @@ export function SegmentedControl<T extends string>({
       disabled={disabled}
       aria-label={ariaLabel}
       className={clsx(
-        "inline-flex items-center max-w-full min-w-0 p-0.5 bg-[var(--color-raised)] border border-[var(--color-line)] rounded-sm select-none",
+        // Layout Stage's .seg: a paper pill over a field track at radius 12, inset 3 px.
+        "inline-flex items-center gap-0.5 max-w-full min-w-0 p-[3px] bg-field rounded-[12px] select-none",
         disabled && "opacity-40 pointer-events-none",
         className,
       )}
@@ -64,19 +65,17 @@ export function SegmentedControl<T extends string>({
             aria-disabled={unavailable || undefined}
             aria-describedby={unavailable ? reasonId(opt) : undefined}
             className={clsx(
-              "inline-flex items-center justify-center min-w-0 whitespace-nowrap font-medium rounded-xs transition-all duration-120",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-              size === "sm" && "h-6 px-2 text-[11px] gap-1",
-              size === "md" && "h-7 px-2.5 text-[12px] gap-1.5",
-              isSelected
-                ? "bg-[var(--color-panel)] text-[var(--color-text)] shadow-xs font-semibold"
-                : "text-[var(--color-text-2)]",
+              "inline-flex items-center justify-center min-w-0 whitespace-nowrap font-semibold rounded-[9px]",
+              "transition-[background-color,box-shadow,color] duration-120",
+              // A ring, not an outline, so it stays inside the track (frames.spec.ts reads it).
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              // sm makes a 32 px control, the height of a select; md 36 px.
+              size === "sm" && "h-[26px] px-2.5 text-[11.5px] gap-1",
+              size === "md" && "h-[30px] px-3 text-[12px] gap-1.5",
+              isSelected ? "bg-paper text-text shadow-lift-sm" : "text-text-2",
               unavailable
                 ? "opacity-40 cursor-not-allowed"
-                : clsx(
-                    "cursor-pointer",
-                    !isSelected && "hover:text-[var(--color-text)] hover:bg-[var(--color-hover)]",
-                  ),
+                : clsx("cursor-pointer", !isSelected && "hover:text-text"),
             )}
           >
             {opt.icon && <span className="shrink-0">{opt.icon}</span>}

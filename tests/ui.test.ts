@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { calculateScrubValue } from "../src/ui";
+import { calculateScrubValue, formatStepValue } from "../src/ui";
 
 const THEME_CSS = readFileSync(new URL("../src/ui/theme.css", import.meta.url), "utf8");
 
@@ -87,6 +87,21 @@ describe("WP-05 Design System & UI Primitives", () => {
     });
   });
 
+  // The value a SliderRow shows on the right when it isn't given one.
+  describe("formatStepValue", () => {
+    it("shows the value at the precision of its step", () => {
+      expect(formatStepValue(25, 1)).toBe("25");
+      expect(formatStepValue(10, 0.5)).toBe("10.0");
+      expect(formatStepValue(0.25, 0.25)).toBe("0.25");
+      expect(formatStepValue(1.2, 0.05)).toBe("1.20");
+    });
+
+    it("rounds float noise away", () => {
+      expect(formatStepValue(0.1 + 0.2, 0.1)).toBe("0.3");
+      expect(formatStepValue(24.999999999, 1)).toBe("25");
+    });
+  });
+
   // The tokens as src/ui/theme.css declares them: light under :root, dark twice (a dark system
   // under System, and a picked Dark).
   describe("Theme Token Contrast Ratios", () => {
@@ -124,6 +139,8 @@ describe("WP-05 Design System & UI Primitives", () => {
         expect(contrast(theme, "--color-accent-ink", "--color-accent")).toBeGreaterThanOrEqual(4.5);
         // The primary button: paper on ink.
         expect(contrast(theme, "--color-paper", "--color-text")).toBeGreaterThanOrEqual(4.5);
+        // The danger button: paper on danger (white was 2.4:1 on the dark theme's danger).
+        expect(contrast(theme, "--color-paper", "--color-danger")).toBeGreaterThanOrEqual(4.5);
       });
     }
   });

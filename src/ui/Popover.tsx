@@ -1,6 +1,7 @@
 import React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import clsx from "clsx";
+import { MENU_SURFACE } from "./menu-styles";
 
 export const Popover = PopoverPrimitive.Root;
 export const PopoverTrigger = PopoverPrimitive.Trigger;
@@ -21,8 +22,8 @@ export const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentPro
           align={align}
           sideOffset={sideOffset}
           className={clsx(
-            "z-50 min-w-[200px] p-3 rounded-md shadow-2xl outline-none select-none",
-            "bg-[var(--color-panel)] border border-[var(--color-line)] text-[var(--color-text)]",
+            "z-50 min-w-[200px] p-3",
+            MENU_SURFACE,
             "animate-in fade-in-0 zoom-in-95",
             className,
           )}
