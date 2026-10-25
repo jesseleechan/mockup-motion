@@ -6,7 +6,7 @@ import React, {
   type KeyboardEvent,
 } from "react";
 import clsx from "clsx";
-import { GripVertical, Plus, Upload, X } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
 import { validateAndDecodeAsset } from "../../../assets/decode";
 import type { AssetRef } from "../../../doc/types";
 import { useEditorStore } from "../../../state/store";
@@ -23,6 +23,7 @@ import {
   useToast,
 } from "../../../ui";
 import { useAssetUrls } from "../../assets/useAssetUrls";
+import { TILE_ASPECT, tileFit } from "../../library/tile-fit";
 import { assetDropProps } from "./useShotUpdate";
 
 const SHOT_ASSET_TYPE = "application/x-mockup-shot-asset";
@@ -41,19 +42,38 @@ interface ScreenshotListProps {
   minimum: number;
 }
 
-/** A 40 × 26 preview, top-aligned so a tall page shows its hero (quality-bar §3: no side crop). */
-const Thumb: React.FC<{ url?: string; dimmed?: boolean }> = ({ url, dimmed }) => (
-  <span
-    className={clsx(
-      "block w-10 h-[26px] shrink-0 overflow-hidden rounded-xs border border-[var(--color-line)] bg-[var(--color-raised)]",
-      dimmed && "opacity-50",
-    )}
-  >
-    {url && (
-      <img src={url} alt="" draggable={false} className="w-full h-full object-cover object-top" />
-    )}
-  </span>
-);
+/**
+ * A 48 × 30 preview (Layout Stage's .slot-thumb at 16:10), drawn from the top so a tall page
+ * shows its hero, and never cropped at the sides (tile-fit.ts, quality bar §3). It leaves out the
+ * role, so a phone screen covers the small box instead of shrinking to a sliver.
+ */
+const Thumb: React.FC<{ url?: string; asset?: AssetRef; dimmed?: boolean }> = ({
+  url,
+  asset,
+  dimmed,
+}) => {
+  const fit = tileFit({ width: asset?.width, height: asset?.height }, TILE_ASPECT);
+  return (
+    <span
+      className={clsx(
+        "block w-12 h-[30px] shrink-0 overflow-hidden rounded-[6px] bg-field",
+        dimmed && "opacity-50",
+      )}
+    >
+      {url && (
+        <img
+          src={url}
+          alt=""
+          draggable={false}
+          className={clsx(
+            "w-full h-full object-top",
+            fit === "cover" ? "object-cover" : "object-contain",
+          )}
+        />
+      )}
+    </span>
+  );
+};
 
 /**
  * The screenshots of a slider, orbit, stack or Frames shot in order: thumbnails, drag (or
@@ -88,7 +108,8 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   const atMinimum = assetIds.length <= minimum;
   const minimumReason = `Needs at least ${minimum} screenshots`;
 
-  const nameOf = (id: string) => images.find((a) => a.id === id)?.name ?? "Missing screenshot";
+  const imageOf = (id: string) => images.find((a) => a.id === id);
+  const nameOf = (id: string) => imageOf(id)?.name ?? "Missing screenshot";
   const available = images.filter((a) => !assetIds.includes(a.id));
   const add = (assetId: string) => {
     if (assetId) addAssetToShot(shotIndex, assetId);
@@ -133,8 +154,9 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
   };
 
   return (
-    <div className="space-y-2" {...assetDropProps(add)}>
-      <ol aria-label={label} className="space-y-0.5" onDragLeave={() => setDropGap(null)}>
+    <div className="flex flex-col gap-2" {...assetDropProps(add)}>
+      {/* Layout Stage's slot rows (.slots): number, thumbnail, name, actions. */}
+      <ol aria-label={label} className="flex flex-col gap-1.5" onDragLeave={() => setDropGap(null)}>
         {assetIds.map((id, i) => (
           <li
             key={id}
@@ -160,30 +182,39 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
             onDrop={(e) => handleDrop(e, gapAt(e, i))}
             onKeyDown={(e) => handleKeyDown(e, id, i)}
             className={clsx(
-              "group flex items-center gap-2 px-1 py-1 rounded-sm text-[12px] cursor-grab active:cursor-grabbing",
-              "hover:bg-[var(--color-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-              // The drop line sits on the edge of the gap the row would land in.
-              dropGap === i && "shadow-[inset_0_2px_0_var(--color-accent)]",
+              "relative grid grid-cols-[14px_48px_minmax(0,1fr)_auto] items-center gap-2 py-[5px] pl-1.5 pr-[5px]",
+              "rounded-[12px] bg-paper shadow-lift-sm hover:shadow-lift-sm-hover transition-shadow duration-120",
+              "text-[12.5px] cursor-grab active:cursor-grabbing",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              // The drop line sits in the middle of the 6 px gap the row would land in.
+              dropGap === i &&
+                "before:absolute before:inset-x-2 before:-top-1 before:h-0.5 before:rounded-full before:bg-accent",
               dropGap === i + 1 &&
                 i === assetIds.length - 1 &&
-                "shadow-[inset_0_-2px_0_var(--color-accent)]",
-              i >= shown ? "text-[var(--color-text-3)]" : "text-[var(--color-text)]",
+                "after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent",
             )}
           >
-            <Icon
-              icon={GripVertical}
-              size={12}
-              className="shrink-0 text-[var(--color-text-3)] group-hover:text-[var(--color-text-2)]"
-            />
-            <Thumb url={urls[id]} dimmed={i >= shown} />
-            <span className="flex-1 min-w-0 truncate" title={nameOf(id)} data-truncate="">
+            {/* The list already gives the position to screen readers. */}
+            <span aria-hidden className="font-num text-[11px] font-medium text-center text-text-2">
+              {i + 1}
+            </span>
+            <Thumb url={urls[id]} asset={imageOf(id)} dimmed={i >= shown} />
+            <span
+              className={clsx(
+                "min-w-0 truncate font-semibold",
+                // A screenshot the layout doesn't show is dimmed; its name still reads at 4.5:1.
+                i >= shown ? "text-text-2" : "text-text",
+              )}
+              title={nameOf(id)}
+              data-truncate=""
+            >
               {nameOf(id)}
             </span>
             {atMinimum ? (
               // aria-disabled, not disabled, so the reason shows on hover and focus.
               <Tooltip content={minimumReason}>
                 <IconButton
-                  size="sm"
+                  size="xs"
                   aria-label={`Remove ${nameOf(id)}`}
                   aria-disabled
                   aria-description={minimumReason}
@@ -193,7 +224,7 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
               </Tooltip>
             ) : (
               <IconButton
-                size="sm"
+                size="xs"
                 aria-label={`Remove ${nameOf(id)}`}
                 icon={<Icon icon={X} size={12} />}
                 onClick={() => removeAssetFromShot(shotIndex, id)}
@@ -221,7 +252,7 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
           {available.map((asset) => (
             <DropdownMenuItem key={asset.id} onSelect={() => add(asset.id)} title={asset.name}>
               <span className="flex items-center gap-2 min-w-0">
-                <Thumb url={urls[asset.id]} />
+                <Thumb url={urls[asset.id]} asset={asset} />
                 <span className="truncate">{asset.name}</span>
               </span>
             </DropdownMenuItem>
@@ -252,9 +283,9 @@ export const ScreenshotList: React.FC<ScreenshotListProps> = ({
       />
 
       {overflowNote && assetIds.length > shown && (
-        <p className="text-[11px] text-[var(--color-text-2)]">{overflowNote}</p>
+        <p className="text-[11px] leading-4 text-text-2">{overflowNote}</p>
       )}
-      <p className="text-[11px] text-[var(--color-text-3)]">
+      <p className="text-[11px] leading-4 text-text-2">
         Drag to reorder. Drop a file from Media here to add it.
       </p>
     </div>

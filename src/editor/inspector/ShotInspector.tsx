@@ -13,20 +13,17 @@ interface ShotInspectorProps {
   shotId: string;
 }
 
+// The sections stack on their own padding, as Layout Stage's .group (Section.tsx).
 export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
   const doc = useEditorStore((s) => s.doc);
 
   const shot = doc.shots.find((s) => s.id === shotId);
   if (!shot) {
-    return (
-      <div className="p-4 text-xs text-[var(--color-text-3)] text-center">
-        Selected shot not found.
-      </div>
-    );
+    return <p className="p-4 text-[12px] text-text-2 text-center">Selected shot not found.</p>;
   }
 
   return (
-    <div className="space-y-4">
+    <>
       <LayoutSection shot={shot} assets={doc.assets} />
       <PaceSection shot={shot} aspect={doc.aspect} />
       <AssetsSection shot={shot} assets={doc.assets} />
@@ -34,6 +31,6 @@ export const ShotInspector: React.FC<ShotInspectorProps> = ({ shotId }) => {
       <DurationSection shot={shot} aspect={doc.aspect} />
       <ScrollSection shot={shot} assets={doc.assets} />
       <ResponsiveScrollSection shot={shot} assets={doc.assets} />
-    </div>
+    </>
   );
 };
