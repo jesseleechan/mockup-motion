@@ -223,7 +223,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
             {hoveredNodeId && (
               <div
                 data-testid="drop-hint"
-                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-black font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5"
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-3 py-1 rounded-full bg-[var(--color-accent)] text-[var(--color-accent-ink)] font-semibold text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100 flex items-center gap-1.5"
               >
                 <span>Drop to use this screenshot</span>
               </div>
@@ -241,7 +241,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
                   {/* 80% central vertical safe area for 9:16 and 4:5 */}
                   {isVertical && (
                     <div className="w-full h-[80%] border border-[var(--color-danger)]/60 bg-[var(--color-danger)]/5 rounded-xs flex items-center justify-center">
-                      <span className="text-[10px] font-mono text-[var(--color-danger)]/80 uppercase font-semibold">
+                      <span className="text-[10px] font-mono text-[var(--color-danger)]/80 uppercase font-medium">
                         80% action area
                       </span>
                     </div>

@@ -2,6 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Applies a saved Light or Dark before first paint, so the page never flashes the other
+      // theme. System sets nothing (src/editor/shell/theme-preference.ts).
+      (function () {
+        try {
+          var saved = localStorage.getItem("mockupmotion_theme");
+          if (saved === "light" || saved === "dark") {
+            document.documentElement.setAttribute("data-theme", saved);
+          }
+        } catch (err) {
+          // Site data is blocked: System applies.
+          if (!(err instanceof DOMException)) throw err;
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MockupMotion - Animated Website Mockup Video Creator</title>

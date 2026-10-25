@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { calculateScrubValue } from "../src/ui";
+
+const THEME_CSS = readFileSync(new URL("../src/ui/theme.css", import.meta.url), "utf8");
 
 // Helper to calculate relative luminance of #RRGGBB
 function hexToLuminance(hex: string): number {
@@ -84,17 +87,60 @@ describe("WP-05 Design System & UI Primitives", () => {
     });
   });
 
+  // The tokens as src/ui/theme.css declares them: light under :root, dark twice (a dark system
+  // under System, and a picked Dark).
   describe("Theme Token Contrast Ratios", () => {
-    it("verifies dark mode contrast: --color-text-2 on --color-panel >= 4.5:1", () => {
-      // Dark theme: panel = #121215, text-2 = #A1A1AB
-      const ratio = contrastRatio("#A1A1AB", "#121215");
-      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    const light = tokens(":root");
+    const dark = { ...light, ...tokens(':root[data-theme="dark"]') };
+    const SURFACES = ["--color-bg", "--color-panel", "--color-paper", "--color-field"];
+
+    it("gives a dark system and a picked Dark the same tokens", () => {
+      expect(tokens(':root:not([data-theme="light"])')).toEqual(tokens(':root[data-theme="dark"]'));
     });
 
-    it("verifies light mode contrast: --color-text-2 on --color-panel >= 4.5:1", () => {
-      // Light theme: panel = #FFFFFF, text-2 = #5C5C66
-      const ratio = contrastRatio("#5C5C66", "#FFFFFF");
-      expect(ratio).toBeGreaterThanOrEqual(4.5);
-    });
+    for (const [name, theme] of [
+      ["light", light],
+      ["dark", dark],
+    ] as const) {
+      it(`${name}: --color-text and --color-text-2 keep 4.5:1 on every surface`, () => {
+        for (const fg of ["--color-text", "--color-text-2"]) {
+          for (const bg of SURFACES) {
+            expect(contrast(theme, fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      });
+
+      // The export dialog's notices sit on raised, which is field.
+      it(`${name}: danger, warning and success text keep 4.5:1 on every surface`, () => {
+        for (const fg of ["--color-danger", "--color-warning", "--color-success"]) {
+          for (const bg of SURFACES) {
+            expect(contrast(theme, fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      });
+
+      it(`${name}: accent text, and text on accent and primary fills, keep 4.5:1`, () => {
+        expect(contrast(theme, "--color-accent", "--color-panel")).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(theme, "--color-accent-ink", "--color-accent")).toBeGreaterThanOrEqual(4.5);
+        // The primary button: paper on ink.
+        expect(contrast(theme, "--color-paper", "--color-text")).toBeGreaterThanOrEqual(4.5);
+      });
+    }
   });
 });
+
+/** The custom properties of the rule in theme.css with exactly this selector. */
+function tokens(selector: string): Record<string, string> {
+  const start = THEME_CSS.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`theme.css has no "${selector}" rule`);
+  const body = THEME_CSS.slice(start, THEME_CSS.indexOf("}", start));
+  const declarations = body.matchAll(/(--[\w-]+):\s*([^;]+);/g);
+  return Object.fromEntries([...declarations].map(([, name, value]) => [name, value.trim()]));
+}
+
+function contrast(theme: Record<string, string>, fg: string, bg: string): number {
+  for (const value of [theme[fg], theme[bg]]) {
+    if (!/^#[0-9a-f]{6}$/i.test(value ?? "")) throw new Error(`${fg} or ${bg} isn't a hex colour`);
+  }
+  return contrastRatio(theme[fg], theme[bg]);
+}

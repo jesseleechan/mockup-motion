@@ -38,17 +38,17 @@ export const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-3">
         <span
-          className={`flex items-center gap-1.5 font-semibold ${result.valid ? "text-emerald-400" : "text-amber-300"}`}
+          className={`flex items-center gap-1.5 font-semibold ${result.valid ? "text-[var(--color-success)]" : "text-[var(--color-warning)]"}`}
         >
           {result.valid ? <Check size={14} /> : <AlertTriangle size={14} />}
           {result.valid ? `Verified ${label}` : `${label} did not verify`}
         </span>
-        <span className="min-w-0 truncate tabular-nums text-[var(--color-text-2)]">
+        <span className="min-w-0 truncate font-num tabular-nums text-[var(--color-text-2)]">
           {facts.join(" · ")}
         </span>
       </div>
       {result.warnings.map((w) => (
-        <div key={w} className="text-amber-300">
+        <div key={w} className="text-[var(--color-warning)]">
           {w}
         </div>
       ))}
@@ -108,7 +108,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
 
       <div
         data-testid="export-verification"
-        className={`${panel} space-y-2 ${result.verification.every((v) => v.result.valid) ? "border-[var(--color-line)]" : "border-amber-500/30"}`}
+        className={`${panel} space-y-2 ${result.verification.every((v) => v.result.valid) ? "border-[var(--color-line)]" : "border-[var(--color-warning)]/30"}`}
       >
         {result.verification.map((item) => (
           <VerificationRow key={item.label} item={item} />
@@ -119,7 +119,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
         <div
           role="status"
           data-testid="export-warnings"
-          className={`${panel} border-amber-500/30 text-amber-300 space-y-1`}
+          className={`${panel} border-[var(--color-warning)]/30 text-[var(--color-warning)] space-y-1`}
         >
           {result.warnings.map((w) => (
             <div key={w} className="flex items-start gap-2">
@@ -141,7 +141,13 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
               size="sm"
               variant="ghost"
               onClick={copySnippet}
-              icon={copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+              icon={
+                copied ? (
+                  <Check size={12} className="text-[var(--color-success)]" />
+                ) : (
+                  <Copy size={12} />
+                )
+              }
             >
               {copied ? "Copied" : "Copy code"}
             </Button>
@@ -162,7 +168,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
         <a
           href={url}
           download={filename}
-          className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity gap-2"
+          className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold bg-[var(--color-text)] text-[var(--color-paper)] hover:opacity-90 transition-opacity gap-2"
         >
           <Download size={14} />
           Download {DOWNLOAD_LABELS[extension]}

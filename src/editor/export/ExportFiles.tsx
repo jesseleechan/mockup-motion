@@ -5,7 +5,7 @@ import { DOWNLOAD_LABELS } from "./download-labels";
 import { panel, VerificationRow, type ExportOutcome } from "./ExportResult";
 
 const downloadLink =
-  "inline-flex shrink-0 items-center justify-center h-7 px-3 rounded-md text-[12px] font-semibold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity gap-1.5";
+  "inline-flex shrink-0 items-center justify-center h-7 px-3 rounded-md text-[12px] font-semibold bg-[var(--color-text)] text-[var(--color-paper)] hover:opacity-90 transition-opacity gap-1.5";
 
 interface FileListProps {
   outcomes: readonly ExportOutcome[];
@@ -17,7 +17,7 @@ export const FileList: React.FC<FileListProps> = ({ outcomes }) => (
     {outcomes.map((outcome) => (
       <li
         key={outcome.aspect}
-        className={`${panel} space-y-2 ${outcome.result.verification.every((v) => v.result.valid) ? "border-[var(--color-line)]" : "border-amber-500/30"}`}
+        className={`${panel} space-y-2 ${outcome.result.verification.every((v) => v.result.valid) ? "border-[var(--color-line)]" : "border-[var(--color-warning)]/30"}`}
       >
         <div className="flex items-center justify-between gap-3">
           <span className="min-w-0 truncate" title={outcome.filename} data-truncate="">
@@ -33,7 +33,7 @@ export const FileList: React.FC<FileListProps> = ({ outcomes }) => (
           <VerificationRow key={item.label} item={item} />
         ))}
         {outcome.result.warnings.map((w) => (
-          <div key={w} className="text-amber-300">
+          <div key={w} className="text-[var(--color-warning)]">
             {w}
           </div>
         ))}

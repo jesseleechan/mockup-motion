@@ -42,7 +42,7 @@ export const TabsList: React.FC<TabsListProps> = ({ items, className }) => {
           {item.icon && <span className="shrink-0">{item.icon}</span>}
           <span>{item.label}</span>
           {item.badge !== undefined && (
-            <span className="min-w-4 px-1 rounded-full bg-[var(--color-raised)] text-[10px] leading-4 text-center tabular-nums text-[var(--color-text-2)]">
+            <span className="min-w-4 px-1 rounded-full bg-[var(--color-raised)] text-[10px] leading-4 text-center font-num tabular-nums text-[var(--color-text-2)]">
               {item.badge}
             </span>
           )}

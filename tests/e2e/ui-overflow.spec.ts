@@ -68,7 +68,7 @@ async function resetAndOpen(page: Page, theme: Theme) {
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error("deleteDatabase blocked"));
     });
-    // EditorShell reads the saved theme on load, as after a user toggles it.
+    // A picked Light or Dark, as after a user toggles it: index.html applies it on load.
     localStorage.setItem("mockupmotion_theme", theme);
   }, theme);
   await page.goto("/");

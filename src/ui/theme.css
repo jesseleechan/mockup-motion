@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+/*
+ * Editor chrome tokens, in Layout Stage's palette (docs/restyle-plan/README.md, R1). Light is the
+ * default. Dark applies when the system prefers it and the user hasn't picked Light, or when the
+ * user picked Dark: `data-theme` on <html> holds a picked Light or Dark, and System sets none
+ * (src/editor/shell/theme-preference.ts, and the script in index.html before first paint).
+ * Nothing here reaches the rendered video: the engine draws its own pixels.
+ */
 @theme {
   --color-bg: var(--color-bg);
   --color-panel: var(--color-panel);
+  --color-paper: var(--color-paper);
+  --color-field: var(--color-field);
+  --color-field-2: var(--color-field-2);
   --color-raised: var(--color-raised);
   --color-hover: var(--color-hover);
   --color-line: var(--color-line);
@@ -11,9 +21,24 @@
   --color-text-2: var(--color-text-2);
   --color-text-3: var(--color-text-3);
   --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
   --color-accent-soft: var(--color-accent-soft);
   --color-danger: var(--color-danger);
+  --color-warning: var(--color-warning);
+  --color-success: var(--color-success);
+  --color-scrim: var(--color-scrim);
   --color-stage: var(--color-stage);
+
+  --shadow-lift: var(--lift);
+  --shadow-lift-sm: var(--lift-sm);
+
+  /* Self-hosted from @fontsource (src/main.tsx). Inter stays for the URL pill drawn into videos
+     (src/text/rasterize.ts), never for the UI. */
+  --font-ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mark: "Bricolage Grotesque", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-num);
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -21,42 +46,96 @@
 }
 
 :root {
-  /* Dark is default */
-  --color-bg: #0b0b0d;
-  --color-panel: #121215;
-  --color-raised: #1a1a1f;
-  --color-hover: #222228;
-  --color-line: #26262c;
-  --color-line-strong: #34343c;
-  --color-text: #ededf0;
-  --color-text-2: #a1a1ab;
-  --color-text-3: #6b6b75;
-  --color-accent: #7c93ff;
-  --color-accent-soft: rgb(124 147 255 / 0.16);
-  --color-danger: #ff6b6b;
-  --color-stage: #08080a;
+  /* Layout Stage's names: bg is the workspace, panel the floating panels, paper the controls on
+     them, field and field-2 the tracks and wells. */
+  --color-bg: #e7e7ea;
+  --color-panel: #f4f4f6;
+  --color-paper: #ffffff;
+  --color-field: #e9e9ed;
+  --color-field-2: #dedee3;
+  /* MockupMotion's older names, in the same steps: a raised surface on a panel, then its hover. */
+  --color-raised: var(--color-field);
+  --color-hover: var(--color-field-2);
+  /* The stage is the workspace; R2 drops its frame. */
+  --color-stage: var(--color-bg);
 
-  --font-ui: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --color-line: rgb(20 20 22 / 0.08);
+  --color-line-strong: rgb(20 20 22 / 0.2);
+  --color-text: #141416;
+  /* Layout Stage's --ink-2 is #6a6a72, 4.34:1 on bg and 4.43:1 on field. This one keeps 4.5:1 on
+     every surface but field-2 (WP-05; docs/restyle-plan/README.md, Contrast). */
+  --color-text-2: #66666e;
+  /* About 2.5:1: non-essential meta only. */
+  --color-text-3: #9b9ba3;
+  --color-accent: #3a48f0;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: rgb(58 72 240 / 0.1);
+  /* Status text keeps 4.5:1 on bg, panel, paper and field. Tint borders and fills with an opacity
+     modifier, such as border-[var(--color-warning)]/30. */
+  --color-danger: #c02d48;
+  --color-warning: #8a5a00;
+  --color-success: #1a7341;
+  --color-scrim: rgb(8 10 16 / 0.5);
+
+  --lift: 0 1px 2px rgb(20 20 22 / 0.05), 0 6px 20px rgb(20 20 22 / 0.05);
+  --lift-sm: 0 0 0 1px rgb(20 20 22 / 0.06), 0 1px 2px rgb(20 20 22 / 0.06);
+
   --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 240ms;
+
+  color-scheme: light;
+  background-color: var(--color-bg);
 }
 
-[data-theme="light"] {
-  --color-bg: #f5f5f7;
-  --color-panel: #ffffff;
-  --color-raised: #f0f0f3;
-  --color-hover: #e9e9ed;
-  --color-line: #e4e4e9;
-  --color-line-strong: #d3d3da;
-  --color-text: #111114;
-  --color-text-2: #5c5c66;
-  --color-text-3: #8e8e98;
-  --color-accent: #3d5af1;
-  --color-accent-soft: rgb(61 90 241 / 0.1);
-  --color-danger: #d93636;
-  --color-stage: #e9e9ec;
+/* Dark, twice: for System on a dark system, and for a picked Dark. Keep the two blocks equal. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0c0c0e;
+    --color-panel: #17171a;
+    --color-paper: #222226;
+    --color-field: #2a2a2f;
+    --color-field-2: #34343a;
+    --color-line: rgb(255 255 255 / 0.07);
+    --color-line-strong: rgb(255 255 255 / 0.18);
+    --color-text: #f2f2f4;
+    --color-text-2: #a2a2aa;
+    --color-text-3: #6e6e76;
+    --color-accent: #7a88ff;
+    --color-accent-ink: #0c0d10;
+    --color-accent-soft: rgb(122 136 255 / 0.16);
+    --color-danger: #ff8297;
+    --color-warning: #f2b84b;
+    --color-success: #4ade80;
+    --color-scrim: rgb(0 0 0 / 0.62);
+    --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
+    --lift-sm: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #0c0c0e;
+  --color-panel: #17171a;
+  --color-paper: #222226;
+  --color-field: #2a2a2f;
+  --color-field-2: #34343a;
+  --color-line: rgb(255 255 255 / 0.07);
+  --color-line-strong: rgb(255 255 255 / 0.18);
+  --color-text: #f2f2f4;
+  --color-text-2: #a2a2aa;
+  --color-text-3: #6e6e76;
+  --color-accent: #7a88ff;
+  --color-accent-ink: #0c0d10;
+  --color-accent-soft: rgb(122 136 255 / 0.16);
+  --color-danger: #ff8297;
+  --color-warning: #f2b84b;
+  --color-success: #4ade80;
+  --color-scrim: rgb(0 0 0 / 0.62);
+  --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
+  --lift-sm: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4);
+  color-scheme: dark;
 }
 
 /* Base typography rules */
@@ -70,6 +149,7 @@
 }
 
 .ui-tabular {
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
 

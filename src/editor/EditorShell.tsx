@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TopBar } from "./shell/TopBar";
 import { PanelResizer } from "./shell/PanelResizer";
 import { CollapsedRail } from "./shell/CollapsedRail";
+import { applyThemePreference } from "./shell/theme-preference";
+import { useResolvedTheme } from "./shell/useResolvedTheme";
 import {
   COLLAPSED_RAIL_WIDTH,
   libraryAfterResize,
@@ -47,7 +49,6 @@ export const EditorShell: React.FC = () => {
   const setPlayhead = useUIStore((s) => s.setPlayhead);
   const setPlaying = useUIStore((s) => s.setPlaying);
   const togglePanel = useUIStore((s) => s.togglePanel);
-  const setTheme = useUIStore((s) => s.setTheme);
   const panelWidths = useUIStore((s) => s.panelWidths);
   const setPanelWidths = useUIStore((s) => s.setPanelWidths);
 
@@ -60,26 +61,20 @@ export const EditorShell: React.FC = () => {
   const lastWindowWidth = useRef<number | null>(null);
   const isMobileScreen = windowWidth < 1024;
 
+  // The theme preference on <html>. The first run finds what index.html set before first paint;
+  // later runs apply the top bar's toggle.
+  const resolvedTheme = useResolvedTheme(theme);
+  useLayoutEffect(() => {
+    applyThemePreference(document.documentElement, theme);
+  }, [theme]);
+
   // Setup autosave & migration on boot
   useEffect(() => {
-    // 1. Theme initialization
-    try {
-      const savedTheme = localStorage.getItem("mockupmotion_theme") as "dark" | "light" | null;
-      if (savedTheme) {
-        setTheme(savedTheme);
-        document.documentElement.setAttribute("data-theme", savedTheme);
-      } else {
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-    } catch {
-      // ignore
-    }
-
-    // 2. Autosave subscription
+    // 1. Autosave subscription
     const cancelAutosave = setupAutosave(useEditorStore);
     const stopFirstRunGallery = watchFirstRunGallery();
 
-    // 3. Open the migrated v1 project, else the most recent saved one, else the gallery
+    // 2. Open the migrated v1 project, else the most recent saved one, else the gallery
     checkAndMigrateV1()
       .catch((err: unknown) => {
         console.warn("[Migration] v1 migration check encountered:", err);
@@ -100,7 +95,7 @@ export const EditorShell: React.FC = () => {
       cancelAutosave();
       stopFirstRunGallery();
     };
-  }, [loadDoc, setTheme]);
+  }, [loadDoc]);
 
   // Side panels on smaller windows: saved widths, and the Library collapses below 1280 px
   // (docs/polish-plan/stage-timeline.md).
@@ -248,7 +243,8 @@ export const EditorShell: React.FC = () => {
           <ProjectThumbnailWriter />
           <div
             id="app-root"
-            data-theme={theme}
+            // The theme shown, light or dark, also under System. The tokens follow <html>.
+            data-theme={resolvedTheme}
             className="flex flex-col h-screen w-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans overflow-hidden select-none"
           >
             {/* Screen size note (< 1024px) */}
