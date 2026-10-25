@@ -24,6 +24,8 @@
   --color-accent-ink: var(--color-accent-ink);
   --color-accent-soft: var(--color-accent-soft);
   --color-danger: var(--color-danger);
+  --color-warning: var(--color-warning);
+  --color-success: var(--color-success);
   --color-scrim: var(--color-scrim);
   --color-stage: var(--color-stage);
 
@@ -68,7 +70,11 @@
   --color-accent: #3a48f0;
   --color-accent-ink: #ffffff;
   --color-accent-soft: rgb(58 72 240 / 0.1);
+  /* Status text keeps 4.5:1 on bg, panel, paper and field. Tint borders and fills with an opacity
+     modifier, such as border-[var(--color-warning)]/30. */
   --color-danger: #c02d48;
+  --color-warning: #8a5a00;
+  --color-success: #1a7341;
   --color-scrim: rgb(8 10 16 / 0.5);
 
   --lift: 0 1px 2px rgb(20 20 22 / 0.05), 0 6px 20px rgb(20 20 22 / 0.05);
@@ -100,6 +106,8 @@
     --color-accent-ink: #0c0d10;
     --color-accent-soft: rgb(122 136 255 / 0.16);
     --color-danger: #ff8297;
+    --color-warning: #f2b84b;
+    --color-success: #4ade80;
     --color-scrim: rgb(0 0 0 / 0.62);
     --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
     --lift-sm: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4);
@@ -122,6 +130,8 @@
   --color-accent-ink: #0c0d10;
   --color-accent-soft: rgb(122 136 255 / 0.16);
   --color-danger: #ff8297;
+  --color-warning: #f2b84b;
+  --color-success: #4ade80;
   --color-scrim: rgb(0 0 0 / 0.62);
   --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.3);
   --lift-sm: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4);

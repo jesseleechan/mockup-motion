@@ -41,7 +41,7 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
       <div
         data-testid="export-summary"
         role="alert"
-        className="p-3 rounded-lg bg-[var(--color-raised)] border border-red-500/40 text-xs text-red-300 flex items-start gap-2"
+        className="p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-danger)]/40 text-xs text-[var(--color-danger)] flex items-start gap-2"
       >
         <AlertTriangle size={14} className="shrink-0 mt-px" />
         <span>{failed.error}</span>

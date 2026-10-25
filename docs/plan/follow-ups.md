@@ -55,7 +55,6 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | The export transfers the cached URL pill rasters to the worker. A second export at the same resolution (a bundle's second file) may get detached bitmaps. Images were fixed in F09 by sending clones; URL rasters need the same. Not reproduced. | F09, F11 |
 | `probe.canExport4K` is computed but unused by the dialog.                                                                                                                                                                                        | F09      |
 | If the Export dialog's chunk fails to load (offline, or a deploy replaced it), the dialog stays closed, and clicking Export again doesn't retry, because `exportOpen` stays true (`useExportModal.ts`). It should close and say so in a toast. Before #104, with no error boundary in `src`, the same failure unmounted the editor. | #104 review |
-| The export dialog's status colours are Tailwind's dark-theme shades: `text-amber-300`, `text-emerald-400`, `text-red-200` to `text-red-400` and `bg-red-950/40` (`ExportModal.tsx`, `ExportResult.tsx`, `ExportFiles.tsx`, `ExportSummary.tsx`, `ExportProgress.tsx`). In light, the "MP4 (H.264) isn't available" notice is about 1.2:1 on its box. Light is the default on a light system since restyle R1, so they need warning and success tokens for each theme, as `--color-danger` has. | Restyle R1 |
 
 ## Demo content and capture
 

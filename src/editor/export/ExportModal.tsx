@@ -245,7 +245,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               {notices.map((text) => (
                 <div
                   key={text}
-                  className={`${notice} border-amber-500/30 text-amber-300`}
+                  className={`${notice} border-[var(--color-warning)]/30 text-[var(--color-warning)]`}
                   role="status"
                 >
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
@@ -258,8 +258,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           )}
 
           {error && !progress && (
-            <div className={`${notice} bg-red-950/40 border-red-500/40 text-red-200`} role="alert">
-              <AlertTriangle size={14} className="shrink-0 mt-px text-red-400" />
+            <div
+              className={`${notice} border-[var(--color-danger)]/40 text-[var(--color-danger)]`}
+              role="alert"
+            >
+              <AlertTriangle size={14} className="shrink-0 mt-px" />
               <span>{error}</span>
             </div>
           )}

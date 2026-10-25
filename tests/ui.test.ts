@@ -110,9 +110,17 @@ describe("WP-05 Design System & UI Primitives", () => {
         }
       });
 
-      it(`${name}: accent and danger text, and text on accent and primary fills, keep 4.5:1`, () => {
+      // The export dialog's notices sit on raised, which is field.
+      it(`${name}: danger, warning and success text keep 4.5:1 on every surface`, () => {
+        for (const fg of ["--color-danger", "--color-warning", "--color-success"]) {
+          for (const bg of SURFACES) {
+            expect(contrast(theme, fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      });
+
+      it(`${name}: accent text, and text on accent and primary fills, keep 4.5:1`, () => {
         expect(contrast(theme, "--color-accent", "--color-panel")).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(theme, "--color-danger", "--color-panel")).toBeGreaterThanOrEqual(4.5);
         expect(contrast(theme, "--color-accent-ink", "--color-accent")).toBeGreaterThanOrEqual(4.5);
         // The primary button: paper on ink.
         expect(contrast(theme, "--color-paper", "--color-text")).toBeGreaterThanOrEqual(4.5);

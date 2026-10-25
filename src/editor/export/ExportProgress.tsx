@@ -39,7 +39,8 @@ export const ExportProgress: React.FC<ExportProgressProps> = ({ progress, label,
         size="sm"
         onClick={onCancel}
         icon={<XCircle size={14} />}
-        className="text-red-400 hover:text-red-300"
+        // Important, so it wins over the ghost variant's own text colours, hover included.
+        className="text-[var(--color-danger)]!"
       >
         Cancel export
       </Button>
