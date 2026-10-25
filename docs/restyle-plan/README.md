@@ -18,7 +18,7 @@ The owner asked on 25 October 2026 for MockupMotion's editor to look more like [
 | --- | -------------------------- | --------- | -------------------------------------------------------------------------- |
 | R1  | Tokens, fonts and theme    | Nothing   | In review ([#107](https://github.com/jesseleechan/mockup-motion/pull/107)) |
 | R2  | The shell: floating panels | R1        | In review ([#108](https://github.com/jesseleechan/mockup-motion/pull/108)) |
-| R3  | Controls (`src/ui`)        | R1        | Not started                                                                |
+| R3  | Controls (`src/ui`)        | R1        | In review ([#109](https://github.com/jesseleechan/mockup-motion/pull/109)) |
 | R4  | Panels and dialogs         | R2 and R3 | Not started                                                                |
 
 R2 and R3 touch different files (`src/editor/shell`, `EditorShell.tsx` and the stage frame; `src/ui`), so they can run in parallel once R1 merges.
