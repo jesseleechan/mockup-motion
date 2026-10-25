@@ -22,7 +22,7 @@ export const InspectorPanel: React.FC = () => {
   return (
     <aside
       data-panel="inspector"
-      className="w-full min-w-0 bg-[var(--color-panel)] border-l border-[var(--color-line)] flex flex-col select-none overflow-hidden"
+      className="w-full min-w-0 bg-[var(--color-panel)] rounded-[18px] shadow-lift flex flex-col select-none overflow-hidden"
     >
       {/* Header */}
       <div className="h-10 px-3 border-b border-[var(--color-line)] flex items-center justify-between shrink-0">

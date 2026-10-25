@@ -6,6 +6,8 @@ import { applyThemePreference } from "./shell/theme-preference";
 import { useResolvedTheme } from "./shell/useResolvedTheme";
 import {
   COLLAPSED_RAIL_WIDTH,
+  WORKSPACE_GAP,
+  WORKSPACE_PADDING_X,
   libraryAfterResize,
   loadPanelWidths,
   maxPanelWidth,
@@ -15,7 +17,6 @@ import { LibraryPanel } from "./library/LibraryPanel";
 import { Stage } from "./stage/Stage";
 import { UseMyScreenshotsBanner } from "./stage/UseMyScreenshotsBanner";
 import { TransportBar } from "./transport/TransportBar";
-import { TimelineContainer } from "./timeline/TimelineContainer";
 import { InspectorPanel } from "./inspector/InspectorPanel";
 import { ShortcutsModal } from "./dialogs/ShortcutsModal";
 import { ProjectsModal } from "./dialogs/ProjectsModal";
@@ -245,25 +246,27 @@ export const EditorShell: React.FC = () => {
             id="app-root"
             // The theme shown, light or dark, also under System. The tokens follow <html>.
             data-theme={resolvedTheme}
-            className="flex flex-col h-screen w-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans overflow-hidden select-none"
+            // The workspace: panels and clusters float on it, with no borders between regions
+            // (docs/restyle-plan/README.md, R2). Its side padding and gaps are panel-layout.ts's.
+            className="flex flex-col gap-2.5 h-screen w-screen pt-2.5 pb-3 bg-[var(--color-bg)] text-[var(--color-text)] font-sans overflow-hidden select-none"
+            style={{ paddingInline: WORKSPACE_PADDING_X }}
           >
             {/* Screen size note (< 1024px) */}
             {isMobileScreen && (
-              <div className="bg-[var(--color-raised)] border-b border-[var(--color-line)] px-3 py-1.5 text-center text-xs text-[var(--color-text-2)] flex items-center justify-center gap-1.5 shrink-0 z-40">
+              <div className="rounded-[14px] bg-[var(--color-panel)] shadow-lift px-3 py-2 text-center text-xs text-[var(--color-text-2)] flex items-center justify-center gap-1.5 shrink-0 z-40">
                 <Monitor size={14} className="text-[var(--color-accent)]" />
                 <span>Best edited on a larger screen (1280px+). Panels are collapsed.</span>
               </div>
             )}
 
-            {/* TopBar */}
             <TopBar
               onOpenProjects={() => setProjectsOpen(true)}
               onOpenShortcuts={() => setShortcutsOpen(true)}
               onOpenExport={() => setExportOpen(true)}
             />
 
-            {/* Workspace Body */}
-            <div className="flex-1 flex min-h-0 overflow-hidden relative">
+            {/* The panels and the stage. Nothing clips here, so the panels' shadows show. */}
+            <div className="flex-1 flex min-h-0 relative" style={{ gap: WORKSPACE_GAP }}>
               {/* Library Panel (Left) */}
               {!isMobileScreen &&
                 (panels.library ? (
@@ -279,8 +282,8 @@ export const EditorShell: React.FC = () => {
                   <CollapsedRail panel="library" />
                 ))}
 
-              {/* Center Stage & Transport */}
-              <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--color-stage)] relative">
+              {/* The stage on the workspace, with the toolbar under it */}
+              <main className="flex-1 flex flex-col min-w-0 min-h-0 relative">
                 <Stage showSafeMargins={showSafeMargins} />
                 <UseMyScreenshotsBanner />
                 <TransportBar
@@ -304,9 +307,6 @@ export const EditorShell: React.FC = () => {
                   <CollapsedRail panel="inspector" />
                 ))}
             </div>
-
-            {/* Timeline Area (Bottom) */}
-            {!isMobileScreen && panels.timeline && <TimelineContainer />}
 
             {/* Dialogs */}
             {exportOpen && ExportModal && (

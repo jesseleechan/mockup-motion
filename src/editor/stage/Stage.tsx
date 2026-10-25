@@ -95,7 +95,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
     <div
       ref={stageRef}
       data-testid="stage"
-      className="relative flex-1 w-full h-full bg-[var(--color-stage)] flex items-center justify-center overflow-hidden select-none"
+      // No fill of its own: the preview sits on the workspace, so letterboxing is workspace colour.
+      className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden select-none"
       style={{ padding: STAGE_PADDING }}
     >
       {/* Hidden file input for file picker button */}
@@ -202,7 +203,8 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
               }
             }}
             // A ring instead of a border: the outline must not shrink the canvas below the fit.
-            className={`relative w-full h-full rounded-sm overflow-hidden shadow-2xl bg-black transition-shadow ${
+            // The soft drop shadow is Layout Stage's board (.stage-wrap in its globals.css).
+            className={`relative w-full h-full overflow-hidden shadow-[0_24px_60px_-18px_rgb(16_18_28/0.38)] bg-black transition-shadow ${
               hoveredNodeId
                 ? "ring-2 ring-[var(--color-accent)]"
                 : "ring-1 ring-[var(--color-line)]"

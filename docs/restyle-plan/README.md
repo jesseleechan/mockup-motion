@@ -17,7 +17,7 @@ The owner asked on 25 October 2026 for MockupMotion's editor to look more like [
 | #   | Item                       | Waits for | Status                                                                     |
 | --- | -------------------------- | --------- | -------------------------------------------------------------------------- |
 | R1  | Tokens, fonts and theme    | Nothing   | In review ([#107](https://github.com/jesseleechan/mockup-motion/pull/107)) |
-| R2  | The shell: floating panels | R1        | Not started                                                                |
+| R2  | The shell: floating panels | R1        | In review ([#108](https://github.com/jesseleechan/mockup-motion/pull/108)) |
 | R3  | Controls (`src/ui`)        | R1        | Not started                                                                |
 | R4  | Panels and dialogs         | R2 and R3 | Not started                                                                |
 

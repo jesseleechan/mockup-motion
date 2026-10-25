@@ -11,12 +11,22 @@ export const PANEL_DEFAULT_WIDTHS: PanelWidths = { library: 280, inspector: 304 
 // the library's cards and tab row read at 240 px; the inspector's selects clip below 304 px.
 export const PANEL_MIN_WIDTHS: PanelWidths = { library: 240, inspector: 304 };
 export const PANEL_MAX_WIDTH = 420;
-/** The stage never gets narrower than this because of a panel. */
+/** The stage, the column between the side panels, never gets narrower than this because of a panel. */
 export const STAGE_MIN_WIDTH = 480;
 /** Below this window width the Library collapses on its own. */
 export const LIBRARY_AUTO_COLLAPSE_BELOW = 1280;
-/** Width of the rail a collapsed side panel leaves. */
-export const COLLAPSED_RAIL_WIDTH = 40;
+/** Width of the floating rail a collapsed side panel leaves: a 36 px button in a 4 px pill. */
+export const COLLAPSED_RAIL_WIDTH = 44;
+
+/**
+ * The workspace the panels float on, as Layout Stage's `.app` grid (docs/restyle-plan/README.md,
+ * R2): the window's padding at its left and right edges, and the gap between each side (a panel
+ * or its rail) and the stage.
+ */
+export const WORKSPACE_PADDING_X = 12;
+export const WORKSPACE_GAP = 12;
+/** What the workspace takes from the window's width besides the sides and the stage. */
+export const WORKSPACE_CHROME_WIDTH = 2 * WORKSPACE_PADDING_X + 2 * WORKSPACE_GAP;
 
 export const PANEL_WIDTHS_KEY = "mockupmotion_panel_widths";
 
@@ -30,6 +40,14 @@ export function clampPanelWidth(panel: SidePanel, width: number): number {
 }
 
 /**
+ * The stage's width in this window: what the workspace's padding and gaps leave once the sides
+ * take `sidesWidth`, both panels' or rails' widths together.
+ */
+export function stageWidth(windowWidth: number, sidesWidth: number): number {
+  return windowWidth - WORKSPACE_CHROME_WIDTH - sidesWidth;
+}
+
+/**
  * The widest a panel may be in this window while the stage keeps STAGE_MIN_WIDTH, given what
  * the other side takes (its width when open, the rail when collapsed). Never below the panel's
  * minimum: in a window too small for both, the stage gives way.
@@ -39,28 +57,42 @@ export function maxPanelWidth(
   windowWidth: number,
   otherSideWidth: number,
 ): number {
-  const room = windowWidth - otherSideWidth - STAGE_MIN_WIDTH;
+  const room = stageWidth(windowWidth, otherSideWidth) - STAGE_MIN_WIDTH;
   return clamp(room, PANEL_MIN_WIDTHS[panel], PANEL_MAX_WIDTH);
+}
+
+function savedTotal(saved: PanelWidths, panels: readonly SidePanel[]): number {
+  return panels.reduce((sum, panel) => sum + saved[panel], 0);
 }
 
 /**
  * The widths the panels render at. The saved widths are kept as they are; a window too narrow
- * for them and STAGE_MIN_WIDTH only narrows what is drawn, each open panel by the same factor,
- * and never below its minimum.
+ * for them and STAGE_MIN_WIDTH only narrows what is drawn, each open panel by the same factor.
+ * A panel whose share would fall below its minimum keeps the minimum and the other narrows
+ * further, so the stage keeps its minimum whenever both minimums leave room for it. Narrowed
+ * widths round down, so it keeps it to the pixel.
  */
 export function renderedPanelWidths(
   saved: PanelWidths,
   open: Record<SidePanel, boolean>,
   windowWidth: number,
 ): PanelWidths {
-  const openPanels = (["library", "inspector"] as const).filter((panel) => open[panel]);
-  const rails = (2 - openPanels.length) * COLLAPSED_RAIL_WIDTH;
-  const available = windowWidth - STAGE_MIN_WIDTH - rails;
-  const openTotal = openPanels.reduce((sum, panel) => sum + saved[panel], 0);
-  if (openTotal <= available) return { ...saved };
+  let narrowing: SidePanel[] = (["library", "inspector"] as const).filter((panel) => open[panel]);
+  const rails = (2 - narrowing.length) * COLLAPSED_RAIL_WIDTH;
+  let available = stageWidth(windowWidth, rails) - STAGE_MIN_WIDTH;
+  if (savedTotal(saved, narrowing) <= available) return { ...saved };
+
   const result = { ...saved };
-  for (const panel of openPanels) {
-    result[panel] = clampPanelWidth(panel, (saved[panel] * available) / openTotal);
+  const belowMinimum = (panel: SidePanel) =>
+    (saved[panel] * available) / savedTotal(saved, narrowing) < PANEL_MIN_WIDTHS[panel];
+  for (let pinned = narrowing.find(belowMinimum); pinned; pinned = narrowing.find(belowMinimum)) {
+    result[pinned] = PANEL_MIN_WIDTHS[pinned];
+    available -= PANEL_MIN_WIDTHS[pinned];
+    narrowing = narrowing.filter((panel) => panel !== pinned);
+  }
+  const total = savedTotal(saved, narrowing);
+  for (const panel of narrowing) {
+    result[panel] = clampPanelWidth(panel, Math.floor((saved[panel] * available) / total));
   }
   return result;
 }
