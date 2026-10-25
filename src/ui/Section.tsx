@@ -5,14 +5,22 @@ import { Icon } from "./Icon";
 
 export interface SectionProps {
   title: string;
+  /** A short note on the right of the heading, e.g. "All layouts". */
+  note?: React.ReactNode;
   defaultOpen?: boolean;
   onReset?: () => void;
   children: React.ReactNode;
   className?: string;
 }
 
+/**
+ * A group of controls under Layout Stage's heading: uppercase 10.5 px at 0.08 em, with an
+ * optional note on the right. Layout Stage sets headings in ink-3 (about 2.5:1 on the light
+ * panel); they use text-2 here for 4.5:1 (docs/restyle-plan/README.md, Contrast).
+ */
 export const Section: React.FC<SectionProps> = ({
   title,
+  note,
   defaultOpen = true,
   onReset,
   children,
@@ -21,37 +29,49 @@ export const Section: React.FC<SectionProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={clsx("border-b border-[var(--color-line)] last:border-b-0", className)}>
-      <div className="flex items-center justify-between px-3 py-2.5 select-none">
+    <div className={clsx("flex flex-col gap-[9px] px-1.5 pt-2.5 pb-3", className)}>
+      <div className="flex items-center justify-between gap-2 min-h-5 select-none">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 font-semibold text-[12px] uppercase tracking-wider text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] rounded-xs"
+          className={clsx(
+            "flex items-center gap-1 -ml-0.5 pl-0.5 pr-1 rounded-[4px] cursor-pointer",
+            "text-[10.5px] leading-[1.2] font-semibold uppercase tracking-[0.08em] text-text-2 hover:text-text transition-colors",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+          )}
         >
           <Icon
             icon={ChevronRight}
-            size={12}
+            size={11}
+            strokeWidth={2}
             className={clsx("transition-transform duration-180", isOpen && "rotate-90")}
           />
           <span>{title}</span>
         </button>
 
-        {onReset && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReset();
-            }}
-            title="Reset section parameters"
-            className="p-1 rounded-xs text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
-          >
-            <Icon icon={RotateCcw} size={11} />
-          </button>
+        {(note !== undefined || onReset) && (
+          <div className="flex items-center gap-1 min-w-0">
+            {note !== undefined && (
+              <span className="text-[11px] text-right text-text-2">{note}</span>
+            )}
+            {onReset && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReset();
+                }}
+                title="Reset section parameters"
+                className="p-1 rounded-[6px] text-text-2 hover:text-text hover:bg-field transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <Icon icon={RotateCcw} size={11} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {isOpen && <div className="px-3 pb-3 flex flex-col gap-2.5">{children}</div>}
+      {isOpen && <div className="flex flex-col gap-2.5">{children}</div>}
     </div>
   );
 };

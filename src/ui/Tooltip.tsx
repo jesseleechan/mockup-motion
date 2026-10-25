@@ -34,9 +34,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
           side={side}
           align={align}
           sideOffset={sideOffset}
+          // The menu's surface (menu-styles.ts), at a tooltip's size.
           className={clsx(
-            "z-50 flex items-center gap-2 px-2.5 py-1 text-[11px] font-medium leading-none rounded-md",
-            "bg-[var(--color-panel)] text-[var(--color-text)] border border-[var(--color-line)] shadow-lg select-none",
+            "z-50 flex items-center gap-2 px-2 py-1.5 text-[11.5px] font-medium leading-none rounded-[8px]",
+            "border border-line bg-paper text-text shadow-menu select-none",
             "animate-in fade-in-0 zoom-in-95",
             className,
           )}

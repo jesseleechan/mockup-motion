@@ -18,11 +18,12 @@ export interface TabsListProps {
   className?: string;
 }
 
+/** The segmented control's look (SegmentedControl.tsx): a paper pill over a field track. */
 export const TabsList: React.FC<TabsListProps> = ({ items, className }) => {
   return (
     <TabsPrimitive.List
       className={clsx(
-        "inline-flex items-center gap-0.5 border-b border-[var(--color-line)] w-full select-none",
+        "flex items-center gap-0.5 w-full p-[3px] bg-field rounded-[12px] select-none",
         className,
       )}
     >
@@ -32,17 +33,18 @@ export const TabsList: React.FC<TabsListProps> = ({ items, className }) => {
           value={item.id}
           disabled={item.disabled}
           className={clsx(
-            "inline-flex items-center gap-1.5 px-2 py-2 whitespace-nowrap text-[12px] font-medium border-b-2 -mb-[1px] transition-colors cursor-pointer",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-            "data-[state=active]:border-[var(--color-accent)] data-[state=active]:text-[var(--color-text)] data-[state=active]:font-semibold",
-            "data-[state=inactive]:border-transparent data-[state=inactive]:text-[var(--color-text-2)] hover:text-[var(--color-text)]",
+            "flex-1 inline-flex items-center justify-center gap-1.5 h-[30px] px-3 rounded-[9px] whitespace-nowrap text-[12px] font-semibold cursor-pointer",
+            "transition-[background-color,box-shadow,color] duration-120",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+            "data-[state=active]:bg-paper data-[state=active]:text-text data-[state=active]:shadow-lift-sm",
+            "data-[state=inactive]:text-text-2 hover:text-text",
             "data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
           )}
         >
           {item.icon && <span className="shrink-0">{item.icon}</span>}
           <span>{item.label}</span>
           {item.badge !== undefined && (
-            <span className="min-w-4 px-1 rounded-full bg-[var(--color-raised)] text-[10px] leading-4 text-center font-num tabular-nums text-[var(--color-text-2)]">
+            <span className="font-num text-[10.5px] font-medium tabular-nums text-text-2">
               {item.badge}
             </span>
           )}
@@ -61,7 +63,7 @@ export const TabsContent: React.FC<TabsContentProps> = ({ className, children, .
   return (
     <TabsPrimitive.Content
       className={clsx(
-        "pt-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
+        "pt-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         className,
       )}
       {...props}

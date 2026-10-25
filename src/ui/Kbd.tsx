@@ -8,9 +8,10 @@ export interface KbdProps extends React.HTMLAttributes<HTMLElement> {
 export const Kbd: React.FC<KbdProps> = ({ children, className, ...props }) => {
   return (
     <kbd
+      // A field chip in Geist Mono.
       className={clsx(
-        "inline-flex items-center justify-center px-1.5 py-0.5 min-w-[20px] text-[10px] font-medium tracking-tight rounded-[4px]",
-        "bg-[var(--color-raised)] text-[var(--color-text-2)] border border-[var(--color-line)] shadow-xs select-none ui-tabular",
+        "inline-flex items-center justify-center min-w-[18px] min-h-[18px] px-1.5 rounded-[5px]",
+        "bg-field text-text-2 font-num text-[10.5px] leading-none font-medium tabular-nums select-none",
         className,
       )}
       {...props}

@@ -19,7 +19,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = "md", className }) => {
       role="status"
       aria-label="Loading"
       className={clsx(
-        "inline-block rounded-full border-current border-t-transparent animate-spin text-[var(--color-accent)]",
+        "inline-block rounded-full border-current border-t-transparent animate-spin text-text-2",
         sizeClasses,
         className,
       )}

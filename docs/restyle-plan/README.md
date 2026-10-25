@@ -110,6 +110,16 @@ Today, `src/ui/theme.css` has dark under `:root` and light under `[data-theme="l
   - Tooltip, Toast and ProgressBar: the same surfaces.
   - Dialog: a panel at radius 18 over `--scrim`.
 
+**For R4 (added in R3).** Every existing prop still works; these are new:
+
+- `SliderRow`: the pill row with its label and value inside. It replaces a `Field` around a `Slider` in one line: `<SliderRow label="Grain" output="25%" value={v} onChange={set} />`. Keep `aria-label` only where the name differs from the label ("Hold" reads as "Hold at each stop"). `output` defaults to the value at the step's precision (`formatStepValue`).
+- `ColorField` with `label`: the 36 px colour row, replacing `<Field label="Color"><ColorField/></Field>`.
+- `Section` with `note`: a short note on the right of the heading.
+- `Chip` with `pressed` (`aria-pressed`): Layout Stage's 28 px chip, e.g. for the scroll stops.
+- `Input` with `numeric`: a 32 px paper field (the URL field, search, numbers).
+- `Button` size `xs` (24 px) and `IconButton` sizes `lg` (36 px, the clusters) and `xs`.
+- `Tabs` now look like the segmented control, for the inspector's Video and Shot tab.
+
 ## R4. Panels and dialogs
 
 - **Library:**

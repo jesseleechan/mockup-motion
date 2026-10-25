@@ -1,7 +1,17 @@
 import React from "react";
 import * as ContextPrimitive from "@radix-ui/react-context-menu";
 import clsx from "clsx";
+import { ChevronRight } from "lucide-react";
+import { Icon } from "./Icon";
 import { Kbd } from "./Kbd";
+import {
+  MENU_CONTENT,
+  MENU_ICON,
+  MENU_ITEM,
+  MENU_ITEM_DANGER,
+  MENU_ITEM_TONE,
+  MENU_SEPARATOR,
+} from "./menu-styles";
 
 export const ContextMenu = ContextPrimitive.Root;
 export const ContextMenuTrigger = ContextPrimitive.Trigger;
@@ -12,16 +22,7 @@ export const ContextMenuContent = React.forwardRef<
   ContextPrimitive.ContextMenuContentProps
 >(({ className, children, ...props }, ref) => (
   <ContextPrimitive.Portal>
-    <ContextPrimitive.Content
-      ref={ref}
-      className={clsx(
-        "z-50 min-w-[160px] p-1 rounded-md shadow-2xl outline-none select-none",
-        "bg-[var(--color-panel)] border border-[var(--color-line)] text-[var(--color-text)]",
-        "animate-in fade-in-0 zoom-in-95",
-        className,
-      )}
-      {...props}
-    >
+    <ContextPrimitive.Content ref={ref} className={clsx(MENU_CONTENT, className)} {...props}>
       {children}
     </ContextPrimitive.Content>
   </ContextPrimitive.Portal>
@@ -38,19 +39,11 @@ export const ContextMenuItem = React.forwardRef<HTMLDivElement, ContextMenuItemP
   ({ className, shortcut, icon, danger, children, ...props }, ref) => (
     <ContextPrimitive.Item
       ref={ref}
-      className={clsx(
-        "relative flex items-center justify-between px-2.5 py-1.5 text-[12px] font-medium rounded-xs cursor-pointer outline-none select-none transition-colors",
-        "data-[highlighted]:bg-[var(--color-hover)]",
-        danger
-          ? "text-[var(--color-danger)] data-[highlighted]:bg-[var(--color-danger)]/10"
-          : "text-[var(--color-text)]",
-        "data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
-        className,
-      )}
+      className={clsx(MENU_ITEM, danger ? MENU_ITEM_DANGER : MENU_ITEM_TONE, className)}
       {...props}
     >
       <div className="flex items-center gap-2">
-        {icon && <span className="shrink-0 text-[var(--color-text-2)]">{icon}</span>}
+        {icon && <span className={MENU_ICON}>{icon}</span>}
         <span>{children}</span>
       </div>
       {shortcut && <Kbd className="ml-auto">{shortcut}</Kbd>}
@@ -63,11 +56,7 @@ export const ContextMenuSeparator = React.forwardRef<
   HTMLDivElement,
   ContextPrimitive.ContextMenuSeparatorProps
 >(({ className, ...props }, ref) => (
-  <ContextPrimitive.Separator
-    ref={ref}
-    className={clsx("h-[1px] bg-[var(--color-line)] my-1 -mx-1", className)}
-    {...props}
-  />
+  <ContextPrimitive.Separator ref={ref} className={clsx(MENU_SEPARATOR, className)} {...props} />
 ));
 ContextMenuSeparator.displayName = "ContextMenuSeparator";
 
@@ -79,19 +68,14 @@ export const ContextMenuSubTrigger = React.forwardRef<
 >(({ className, children, icon, ...props }, ref) => (
   <ContextPrimitive.SubTrigger
     ref={ref}
-    className={clsx(
-      "relative flex items-center justify-between px-2.5 py-1.5 text-[12px] font-medium rounded-xs cursor-pointer outline-none select-none transition-colors",
-      "data-[highlighted]:bg-[var(--color-hover)] text-[var(--color-text)]",
-      "data-[disabled]:opacity-40 data-[disabled]:pointer-events-none",
-      className,
-    )}
+    className={clsx(MENU_ITEM, MENU_ITEM_TONE, "data-[state=open]:bg-field", className)}
     {...props}
   >
     <div className="flex items-center gap-2">
-      {icon && <span className="shrink-0 text-[var(--color-text-2)]">{icon}</span>}
+      {icon && <span className={MENU_ICON}>{icon}</span>}
       <span>{children}</span>
     </div>
-    <span className="ml-auto text-[var(--color-text-3)] text-[10px]">▶</span>
+    <Icon icon={ChevronRight} size={12} className={clsx(MENU_ICON, "ml-auto")} />
   </ContextPrimitive.SubTrigger>
 ));
 ContextMenuSubTrigger.displayName = "ContextMenuSubTrigger";
@@ -101,19 +85,9 @@ export const ContextMenuSubContent = React.forwardRef<
   ContextPrimitive.ContextMenuSubContentProps
 >(({ className, children, ...props }, ref) => (
   <ContextPrimitive.Portal>
-    <ContextPrimitive.SubContent
-      ref={ref}
-      className={clsx(
-        "z-50 min-w-[160px] p-1 rounded-md shadow-2xl outline-none select-none",
-        "bg-[var(--color-panel)] border border-[var(--color-line)] text-[var(--color-text)]",
-        "animate-in fade-in-0 zoom-in-95",
-        className,
-      )}
-      {...props}
-    >
+    <ContextPrimitive.SubContent ref={ref} className={clsx(MENU_CONTENT, className)} {...props}>
       {children}
     </ContextPrimitive.SubContent>
   </ContextPrimitive.Portal>
 ));
 ContextMenuSubContent.displayName = "ContextMenuSubContent";
-
