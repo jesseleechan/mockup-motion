@@ -14,12 +14,12 @@ The owner asked on 25 October 2026 for MockupMotion's editor to look more like [
 
 - **The theme follows the system.** Light or dark comes from the OS setting, with a System → Light → Dark toggle, as in Layout Stage. Today the editor always opens dark.
 
-| #   | Item                       | Waits for | Status                                                                     |
-| --- | -------------------------- | --------- | -------------------------------------------------------------------------- |
-| R1  | Tokens, fonts and theme    | Nothing   | In review ([#107](https://github.com/jesseleechan/mockup-motion/pull/107)) |
-| R2  | The shell: floating panels | R1        | In review ([#108](https://github.com/jesseleechan/mockup-motion/pull/108)) |
-| R3  | Controls (`src/ui`)        | R1        | In review ([#109](https://github.com/jesseleechan/mockup-motion/pull/109)) |
-| R4  | Panels and dialogs         | R2 and R3 | In review (R4a R4A_PR, R4b R4B_PR)                                         |
+| #   | Item                       | Waits for | Status                                                                              |
+| --- | -------------------------- | --------- | ----------------------------------------------------------------------------------- |
+| R1  | Tokens, fonts and theme    | Nothing   | In review ([#107](https://github.com/jesseleechan/mockup-motion/pull/107))          |
+| R2  | The shell: floating panels | R1        | In review ([#108](https://github.com/jesseleechan/mockup-motion/pull/108))          |
+| R3  | Controls (`src/ui`)        | R1        | In review ([#109](https://github.com/jesseleechan/mockup-motion/pull/109))          |
+| R4  | Panels and dialogs         | R2 and R3 | In review (R4a, R4b [#111](https://github.com/jesseleechan/mockup-motion/pull/111)) |
 
 R2 and R3 touch different files (`src/editor/shell`, `EditorShell.tsx` and the stage frame; `src/ui`), so they can run in parallel once R1 merges.
 
