@@ -7,7 +7,7 @@ import {
   responsiveShownStops,
   sharedSectionKeys,
 } from "../../../motion/responsive-scroll";
-import { Button, Field, Section, Switch } from "../../../ui";
+import { Button, Chip, Field, Section } from "../../../ui";
 import { useShotUpdate } from "./useShotUpdate";
 
 interface ResponsiveScrollSectionProps {
@@ -68,57 +68,55 @@ export const ResponsiveScrollSection: React.FC<ResponsiveScrollSectionProps> = (
 
   return (
     <Section title="Scroll stops">
-      <div className="space-y-3">
-        {note && (
-          <p
-            data-testid="responsive-scroll-note"
-            className="text-[11px] text-[var(--color-text-3)]"
-          >
-            {note}
-          </p>
-        )}
+      {note && (
+        <p data-testid="responsive-scroll-note" className="text-[11px] leading-4 text-text-2">
+          {note}
+        </p>
+      )}
 
-        {shared.length > 0 && (
-          <Field
-            label="Stop on"
-            stacked
-            hint={
-              leftOut > 0
-                ? `${leftOut} ${leftOut === 1 ? "stop is" : "stops are"} left out to fit 30 s.`
-                : "Both screens hold with the section at the top."
-            }
-          >
-            <div className="space-y-1.5">
+      {shared.length > 0 && (
+        <Field
+          label="Stop on"
+          stacked
+          hint={
+            leftOut > 0
+              ? `${leftOut} ${leftOut === 1 ? "stop is" : "stops are"} left out to fit 30 s.`
+              : "Both screens hold with the section at the top."
+          }
+        >
+          <div className="flex flex-col items-start gap-2">
+            {/* Layout Stage's chips: a pressed chip is a section both screens stop on. */}
+            <div className="flex flex-wrap gap-[5px]">
               {shared.map((key) => (
-                <label key={key} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="text-[var(--color-text)]">{sectionLabel(key)}</span>
-                  <Switch
-                    aria-label={`Stop on ${sectionLabel(key)}`}
-                    checked={active.has(key)}
-                    onCheckedChange={(on) => toggle(key, on)}
-                  />
-                </label>
-              ))}
-              {scroll.sections !== undefined && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    update(
-                      (target) => {
-                        if (target.scroll) delete target.scroll.sections;
-                      },
-                      { label: "Use default scroll stops" },
-                    )
-                  }
+                <Chip
+                  key={key}
+                  pressed={active.has(key)}
+                  aria-label={`Stop on ${sectionLabel(key)}`}
+                  onClick={() => toggle(key, !active.has(key))}
                 >
-                  Use default stops
-                </Button>
-              )}
+                  {sectionLabel(key)}
+                </Chip>
+              ))}
             </div>
-          </Field>
-        )}
-      </div>
+            {scroll.sections !== undefined && (
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() =>
+                  update(
+                    (target) => {
+                      if (target.scroll) delete target.scroll.sections;
+                    },
+                    { label: "Use default scroll stops" },
+                  )
+                }
+              >
+                Use default stops
+              </Button>
+            )}
+          </div>
+        </Field>
+      )}
     </Section>
   );
 };

@@ -96,55 +96,53 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
 
   return (
     <Section title="Screenshots">
-      <div className="space-y-3">
-        {layout.kind === "single" && (
+      {layout.kind === "single" && (
+        <AssetField
+          label="Screenshot"
+          value={layout.assetId || ""}
+          images={images}
+          droppable
+          onChange={(assetId) =>
+            update(
+              (target) => {
+                if (target.layout.kind === "single") target.layout.assetId = assetId;
+              },
+              { label: "Change shot asset" },
+            )
+          }
+        />
+      )}
+
+      {layout.kind === "responsive" && (
+        <>
           <AssetField
-            label="Screenshot"
-            value={layout.assetId || ""}
+            label="Desktop"
+            value={layout.desktopId || ""}
             images={images}
             droppable
-            onChange={(assetId) =>
-              update(
-                (target) => {
-                  if (target.layout.kind === "single") target.layout.assetId = assetId;
-                },
-                { label: "Change shot asset" },
-              )
+            onChange={(id) =>
+              update((target) => {
+                if (target.layout.kind === "responsive") target.layout.desktopId = id;
+              })
             }
           />
-        )}
+          <AssetField
+            label="Mobile"
+            value={layout.mobileId || ""}
+            images={images}
+            droppable
+            onChange={(id) =>
+              update((target) => {
+                if (target.layout.kind === "responsive") target.layout.mobileId = id;
+              })
+            }
+          />
+        </>
+      )}
 
-        {layout.kind === "responsive" && (
-          <>
-            <AssetField
-              label="Desktop"
-              value={layout.desktopId || ""}
-              images={images}
-              droppable
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "responsive") target.layout.desktopId = id;
-                })
-              }
-            />
-            <AssetField
-              label="Mobile"
-              value={layout.mobileId || ""}
-              images={images}
-              droppable
-              onChange={(id) =>
-                update((target) => {
-                  if (target.layout.kind === "responsive") target.layout.mobileId = id;
-                })
-              }
-            />
-          </>
-        )}
-
-        <p className="text-[11px] text-[var(--color-text-3)]">
-          Drag a file from Media onto a field to use it.
-        </p>
-      </div>
+      <p className="text-[11px] leading-4 text-text-2">
+        Drag a file from Media onto a field to use it.
+      </p>
     </Section>
   );
 };

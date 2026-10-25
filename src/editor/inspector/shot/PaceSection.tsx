@@ -26,27 +26,25 @@ export const PaceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot, as
 
   return (
     <Section title="Pace">
-      <div className="space-y-2">
-        <SegmentedControl<Pace>
-          aria-label="Pace"
-          className="flex w-full [&>button]:flex-1"
-          value={current}
-          onChange={(pace) => {
-            if (index >= 0 && pace !== current) setShotPace(index, pace);
-          }}
-          options={(["calm", "default", "brisk"] as const).map((pace) => ({
-            value: pace,
-            label: PACE_LABELS[pace],
-            // The current pace stays available even when a limit makes it equal Default.
-            reason: pace !== "default" && pace !== current ? limited[pace] : undefined,
-          }))}
-        />
-        {shown !== null && "assetIds" in layout && shown < layout.assetIds.length && (
-          <p className="text-[11px] text-[var(--color-text-2)]">
-            Shows the first {shown} screenshots, so the loop fits in 30 s.
-          </p>
-        )}
-      </div>
+      <SegmentedControl<Pace>
+        aria-label="Pace"
+        className="flex w-full [&>button]:flex-1"
+        value={current}
+        onChange={(pace) => {
+          if (index >= 0 && pace !== current) setShotPace(index, pace);
+        }}
+        options={(["calm", "default", "brisk"] as const).map((pace) => ({
+          value: pace,
+          label: PACE_LABELS[pace],
+          // The current pace stays available even when a limit makes it equal Default.
+          reason: pace !== "default" && pace !== current ? limited[pace] : undefined,
+        }))}
+      />
+      {shown !== null && "assetIds" in layout && shown < layout.assetIds.length && (
+        <p className="text-[11px] leading-4 text-text-2">
+          Shows the first {shown} screenshots, so the loop fits in 30 s.
+        </p>
+      )}
     </Section>
   );
 };

@@ -2,7 +2,7 @@ import React from "react";
 import type { Aspect, Shot } from "../../../doc/types";
 import { fixedShotDuration, isPacedShot, minShotDuration, schedule } from "../../../motion";
 import { useEditorStore } from "../../../state/store";
-import { Field, Section, Slider } from "../../../ui";
+import { Field, Section, SliderRow } from "../../../ui";
 import { useShotUpdate } from "./useShotUpdate";
 
 /**
@@ -26,7 +26,7 @@ export const DurationSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
     return (
       <Section title="Duration">
         <Field label={doc.loop ? "Loop length" : "Length"}>
-          <span className="block text-right font-num text-[12px] tabular-nums text-[var(--color-text)]">
+          <span className="block text-right font-num text-[12px] tabular-nums text-text">
             {`${total.toFixed(1)} s`}
           </span>
         </Field>
@@ -36,23 +36,22 @@ export const DurationSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
 
   return (
     <Section title="Duration">
-      <Field label="Duration" value={seconds}>
-        <Slider
-          aria-label="Duration"
-          min={shortest}
-          max={shortest > 1 ? 30 : 15}
-          step={0.5}
-          value={shot.duration}
-          onChange={(val) =>
-            update(
-              (target) => {
-                target.duration = Math.max(shortest, val);
-              },
-              { coalesceKey: `shot-duration-${shot.id}` },
-            )
-          }
-        />
-      </Field>
+      <SliderRow
+        label="Duration"
+        output={seconds}
+        min={shortest}
+        max={shortest > 1 ? 30 : 15}
+        step={0.5}
+        value={shot.duration}
+        onChange={(val) =>
+          update(
+            (target) => {
+              target.duration = Math.max(shortest, val);
+            },
+            { coalesceKey: `shot-duration-${shot.id}` },
+          )
+        }
+      />
     </Section>
   );
 };

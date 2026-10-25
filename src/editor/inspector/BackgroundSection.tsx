@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useEditorStore } from "../../state/store";
-import { ColorField, Field, Section, SegmentedControl } from "../../ui";
+import { ColorField, Section, SegmentedControl } from "../../ui";
 import {
   backgroundChoice,
   backgroundColor,
@@ -68,43 +68,38 @@ export const BackgroundSection: React.FC = () => {
 
   return (
     <Section title="Background">
-      <div className="space-y-3">
-        <SegmentedControl<BackgroundChoice>
-          aria-label="Background tone"
-          className="flex w-full [&>button]:flex-1"
-          value={choice}
-          onChange={handleChoice}
-          options={[
-            {
-              value: "light",
-              label: "Light",
-              icon: <Dot fill={backgroundColor(paletteBackground(tones.light))} />,
-            },
-            {
-              value: "dark",
-              label: "Dark",
-              icon: <Dot fill={backgroundColor(paletteBackground(tones.dark))} />,
-            },
-            {
-              value: "custom",
-              label: "Custom",
-              icon: <Dot fill={choice === "custom" ? current : ANY_COLOR} />,
-            },
-          ]}
-        />
+      <SegmentedControl<BackgroundChoice>
+        aria-label="Background tone"
+        className="flex w-full [&>button]:flex-1"
+        value={choice}
+        onChange={handleChoice}
+        options={[
+          {
+            value: "light",
+            label: "Light",
+            icon: <Dot fill={backgroundColor(paletteBackground(tones.light))} />,
+          },
+          {
+            value: "dark",
+            label: "Dark",
+            icon: <Dot fill={backgroundColor(paletteBackground(tones.dark))} />,
+          },
+          {
+            value: "custom",
+            label: "Custom",
+            icon: <Dot fill={choice === "custom" ? current : ANY_COLOR} />,
+          },
+        ]}
+      />
 
-        {choice === "custom" && (
-          <Field label="Color">
-            <div className="flex justify-end">
-              <ColorField
-                aria-label="Background color"
-                value={current}
-                onChange={handleCustomColor}
-              />
-            </div>
-          </Field>
-        )}
-      </div>
+      {choice === "custom" && (
+        <ColorField
+          label="Color"
+          aria-label="Background color"
+          value={current}
+          onChange={handleCustomColor}
+        />
+      )}
     </Section>
   );
 };

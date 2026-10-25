@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -14,22 +15,15 @@ import { MediaCard } from "./MediaCard";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { useImportFiles } from "../import/use-import-files";
 import { SCREENSHOT_ACCEPT } from "./capture-import";
-import {
-  Copy,
-  GalleryHorizontal,
-  Minus,
-  Plus,
-  RefreshCw,
-  Tag,
-  Trash2,
-  UploadCloud,
-} from "lucide-react";
+import { Copy, GalleryHorizontal, Minus, Plus, RefreshCw, Tag, Trash2 } from "lucide-react";
 
 interface MediaTabProps {
   onSelectAsset?: (assetId: string) => void;
+  /** Id for the Library heading, so the panel can take its name. */
+  headingId?: string;
 }
 
-export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
+export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) => {
   const fullDoc = useEditorStore((s) => s.doc);
   const doc = useMemo(
     () => ({ ...fullDoc, assets: fullDoc.assets.filter((a) => a.kind === "image") }),
@@ -136,8 +130,10 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
     }
   };
 
+  const count = doc.assets.length;
+
   return (
-    <div className="flex-1 flex flex-col min-h-0 px-3 pt-2">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
@@ -161,138 +157,150 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset }) => {
         onChange={handleReplaceFile}
       />
 
-      {/* Header action bar */}
-      <div className="flex justify-between items-center mb-2.5">
-        <span className="text-xs text-[var(--color-text-2)]">
-          {doc.assets.length} {doc.assets.length === 1 ? "file" : "files"}
-        </span>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 px-2 py-1 rounded bg-[var(--color-raised)] hover:bg-[var(--color-hover)] text-xs text-[var(--color-text)] border border-[var(--color-line)] transition-colors cursor-pointer"
+      {/* Layout Stage's group head (.group-head): the heading, and the file count as its note. */}
+      <div className="shrink-0 flex items-baseline justify-between gap-2 px-3.5 pt-2.5 pb-[5px]">
+        <h2
+          id={headingId}
+          className="text-[10.5px] leading-[1.2] font-semibold uppercase tracking-[0.08em] text-text-2"
         >
-          <Icon icon={Plus} size={13} />
-          <span>Upload</span>
-        </button>
+          Library
+        </h2>
+        <span className="text-[11px] text-text-2">
+          {count} {count === 1 ? "file" : "files"}
+        </span>
       </div>
 
-      {doc.assets.length === 0 ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="flex-1 flex flex-col items-center justify-center p-4 text-center text-xs text-[var(--color-text-3)] border border-dashed border-[var(--color-line)] rounded-lg cursor-pointer hover:border-[var(--color-accent)] transition-colors"
-        >
-          <Icon icon={UploadCloud} size={28} className="mb-2 opacity-50" />
-          <span className="font-semibold text-[var(--color-text-2)]">No media yet</span>
-          <span className="text-[10px] mt-1 text-[var(--color-text-3)]">
-            Drop screenshots here or click to browse
-          </span>
-        </div>
-      ) : (
-        /* 2-column media grid, focusable so keyboard users can scroll a long list (axe
-           scrollable-region-focusable) */
-        <div
-          tabIndex={0}
-          role="region"
-          aria-label="Screenshots"
-          className="flex-1 overflow-y-auto pr-1 pb-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          <div className="grid grid-cols-2 gap-2">
-            {doc.assets.map((asset) => {
-              const thumb = assetThumbnails[asset.id];
-              const usage = getAssetUsage(asset.id);
-              const isUsed = usage.length > 0;
+      {/* The tiles, then the Add tile, as Layout Stage's media grid. Focusable, so keyboard users
+          can scroll a long list (axe scrollable-region-focusable). The padding keeps the tiles'
+          hairline lift inside the scroll box. */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Screenshots"
+        className="flex-1 min-h-0 overflow-y-auto px-3.5 pt-1 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      >
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
+          {doc.assets.map((asset) => {
+            const thumb = assetThumbnails[asset.id];
+            const usage = getAssetUsage(asset.id);
+            const isUsed = usage.length > 0;
 
-              return (
-                <ContextMenu key={asset.id}>
-                  <ContextMenuTrigger asChild>
-                    <MediaCard
-                      asset={asset}
-                      thumb={thumb}
-                      usage={usage}
-                      onDragStart={(e) => handleDragStart(e, asset)}
-                      onDragOver={handleCardDragOver}
-                      onDrop={(e) => handleCardDrop(e, asset.id)}
-                      onClick={() => onSelectAsset?.(asset.id)}
-                      onSetRole={(role) => setAssetRole(asset.id, role)}
-                    />
-                  </ContextMenuTrigger>
+            return (
+              <ContextMenu key={asset.id}>
+                <ContextMenuTrigger asChild>
+                  <MediaCard
+                    asset={asset}
+                    thumb={thumb}
+                    usage={usage}
+                    onDragStart={(e) => handleDragStart(e, asset)}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, asset.id)}
+                    onClick={() => onSelectAsset?.(asset.id)}
+                    onSetRole={(role) => setAssetRole(asset.id, role)}
+                  />
+                </ContextMenuTrigger>
 
-                  <ContextMenuContent>
-                    {selectedSlider &&
-                      (selectedSlider.assetIds.includes(asset.id) ? (
-                        <ContextMenuItem
-                          icon={<Icon icon={Minus} size={13} />}
-                          onClick={() => removeAssetFromShot(selectedShotIndex, asset.id)}
-                        >
-                          Remove from {steppedName}
-                        </ContextMenuItem>
-                      ) : (
-                        <ContextMenuItem
-                          icon={<Icon icon={GalleryHorizontal} size={13} />}
-                          onClick={() => addAssetToShot(selectedShotIndex, asset.id)}
-                        >
-                          Add to {steppedName}
-                        </ContextMenuItem>
-                      ))}
+                <ContextMenuContent>
+                  {selectedSlider &&
+                    (selectedSlider.assetIds.includes(asset.id) ? (
+                      <ContextMenuItem
+                        icon={<Icon icon={Minus} size={13} />}
+                        onClick={() => removeAssetFromShot(selectedShotIndex, asset.id)}
+                      >
+                        Remove from {steppedName}
+                      </ContextMenuItem>
+                    ) : (
+                      <ContextMenuItem
+                        icon={<Icon icon={GalleryHorizontal} size={13} />}
+                        onClick={() => addAssetToShot(selectedShotIndex, asset.id)}
+                      >
+                        Add to {steppedName}
+                      </ContextMenuItem>
+                    ))}
 
-                    <ContextMenuItem
-                      icon={<Icon icon={RefreshCw} size={13} />}
-                      onClick={() => {
-                        setReplacingAssetId(asset.id);
-                        replaceInputRef.current?.click();
-                      }}
-                    >
-                      Replace file…
-                    </ContextMenuItem>
+                  <ContextMenuItem
+                    icon={<Icon icon={RefreshCw} size={13} />}
+                    onClick={() => {
+                      setReplacingAssetId(asset.id);
+                      replaceInputRef.current?.click();
+                    }}
+                  >
+                    Replace file…
+                  </ContextMenuItem>
 
-                    <ContextMenuItem
-                      icon={<Icon icon={Copy} size={13} />}
-                      onClick={() => duplicateAsset(asset.id)}
-                    >
-                      Duplicate
-                    </ContextMenuItem>
+                  <ContextMenuItem
+                    icon={<Icon icon={Copy} size={13} />}
+                    onClick={() => duplicateAsset(asset.id)}
+                  >
+                    Duplicate
+                  </ContextMenuItem>
 
-                    {/* Set role options */}
-                    {(["desktop", "mobile", "tablet", "logo", "other"] as AssetRole[]).map(
-                      (roleOption) => (
-                        <ContextMenuItem
-                          key={roleOption}
-                          icon={<Icon icon={Tag} size={13} />}
-                          onClick={() => setAssetRole(asset.id, roleOption)}
-                        >
-                          Set role: {roleOption}
-                        </ContextMenuItem>
-                      ),
-                    )}
+                  {/* Set role options */}
+                  {(["desktop", "mobile", "tablet", "logo", "other"] as AssetRole[]).map(
+                    (roleOption) => (
+                      <ContextMenuItem
+                        key={roleOption}
+                        icon={<Icon icon={Tag} size={13} />}
+                        onClick={() => setAssetRole(asset.id, roleOption)}
+                      >
+                        Set role: {roleOption}
+                      </ContextMenuItem>
+                    ),
+                  )}
 
-                    <ContextMenuItem
-                      danger
-                      icon={<Icon icon={Trash2} size={13} />}
-                      onClick={() => {
-                        if (isUsed) {
-                          if (
-                            confirm(
-                              `This media is used in shot ${usage.join(
-                                ", ",
-                              )}. Removing it will clear its references. Continue?`,
-                            )
-                          ) {
-                            removeAsset(asset.id);
-                          }
-                        } else {
+                  <ContextMenuItem
+                    danger
+                    icon={<Icon icon={Trash2} size={13} />}
+                    onClick={() => {
+                      if (isUsed) {
+                        if (
+                          confirm(
+                            `This media is used in shot ${usage.join(
+                              ", ",
+                            )}. Removing it will clear its references. Continue?`,
+                          )
+                        ) {
                           removeAsset(asset.id);
                         }
-                      }}
-                    >
-                      Remove
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
-              );
-            })}
-          </div>
+                      } else {
+                        removeAsset(asset.id);
+                      }
+                    }}
+                  >
+                    Remove
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
+
+          <AddTile onClick={() => fileInputRef.current?.click()} />
         </div>
-      )}
+
+        {count === 0 && (
+          <p className="mt-2.5 text-[11.5px] leading-[1.45] text-text-2">
+            Drop screenshots here, or click Add to browse.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
+
+/** Upload, as Layout Stage's .media-add: a ringed tile with a plus at the end of the grid. */
+const AddTile: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label="Add screenshots"
+    title="Add screenshots"
+    className={clsx(
+      "aspect-[16/10] min-w-0 flex flex-col items-center justify-center gap-px rounded-[12px] cursor-pointer",
+      "text-text-2 shadow-[inset_0_0_0_1.5px_var(--color-field-2)] hover:bg-field hover:text-text",
+      "transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+    )}
+  >
+    <Icon icon={Plus} size={18} strokeWidth={1.6} />
+    <span className="text-[10.5px] font-medium">Add</span>
+  </button>
+);

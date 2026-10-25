@@ -250,7 +250,8 @@ test.describe("F08 overflow guard", () => {
         for (const look of SHOT_LOOKS) {
           await setShotLook(page, look);
           await select(page, { kind: "shot", id: shotId });
-          await expect(inspector.getByText("Shot 1", { exact: true })).toBeVisible();
+          // The inspector's Shot tab is open (restyle R4: it was the "Shot 1" breadcrumb).
+          await expect(inspector.getByRole("tab", { name: "Shot", selected: true })).toBeVisible();
           await expectNoOverflow(page, `${look} shot inspector`);
         }
 
