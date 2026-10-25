@@ -227,8 +227,8 @@ async function openSmallPreview(page: Page) {
   await gallery.getByRole("button", { name: "Select template Desktop Scroll Story" }).click();
   await gallery.getByRole("button", { name: "Apply template" }).click();
   await expect(gallery).toBeHidden();
-  // Applying selects the first shot; the loop switch lives in the Video inspector.
-  await page.getByRole("button", { name: "Video", exact: true }).click();
+  // Applying selects the first shot; the loop switch lives in the inspector's Video tab.
+  await page.getByRole("tab", { name: "Video", exact: true }).click();
   await waitForSettledDocument(page);
   await page.getByRole("combobox", { name: "Stage zoom" }).selectOption({ label: "50%" });
   await expectFits(page, "16:9", 0.5);

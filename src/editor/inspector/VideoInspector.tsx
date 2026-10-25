@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useEditorStore } from "../../state/store";
 import { schedule } from "../../motion";
-import { Field, Section, Select, Slider, Switch } from "../../ui";
+import { Field, Input, Section, Select, SliderRow, Switch } from "../../ui";
 import type { BrowserChrome, ShadowPreset } from "../../doc/types";
 import { BROWSER_CHROME_LABELS, SHADOW_LABELS, optionsFor } from "../labels";
 import { BackgroundSection } from "./BackgroundSection";
@@ -36,134 +36,127 @@ export const VideoInspector: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <>
       <Section title="Composition">
-        <div className="space-y-3">
-          <Field label="Duration">
-            <span className="block text-right text-xs font-mono text-[var(--color-text)]">
-              {formatTime(total)}
-            </span>
-          </Field>
+        <Field label="Duration">
+          <span className="block text-right font-num text-[12px] tabular-nums text-text">
+            {formatTime(total)}
+          </span>
+        </Field>
 
-          <Field label="Loop">
-            <div className="flex justify-end">
-              <Switch
-                aria-label="Loop playback"
-                checked={doc.loop}
-                onCheckedChange={(val) =>
-                  apply(
-                    (draft) => {
-                      draft.loop = val;
-                    },
-                    { label: "Toggle loop" },
-                  )
-                }
-              />
-            </div>
-          </Field>
-        </div>
+        <Field label="Loop">
+          <div className="flex justify-end">
+            <Switch
+              aria-label="Loop playback"
+              checked={doc.loop}
+              onCheckedChange={(val) =>
+                apply(
+                  (draft) => {
+                    draft.loop = val;
+                  },
+                  { label: "Toggle loop" },
+                )
+              }
+            />
+          </div>
+        </Field>
       </Section>
 
       <BackgroundSection />
 
       <Section title="Frame and effects">
-        <div className="space-y-3">
-          <Field label="Shadow">
+        <Field label="Shadow">
+          <Select
+            aria-label="Shadow"
+            value={doc.style.shadow}
+            onChange={(val) =>
+              apply(
+                (draft) => {
+                  draft.style.shadow = val;
+                },
+                { label: "Change shadow preset" },
+              )
+            }
+            options={optionsFor(SHADOW_LABELS, SHADOW_ORDER)}
+          />
+        </Field>
+
+        {effects.browserChrome && (
+          <Field label="Browser chrome">
             <Select
-              aria-label="Shadow"
-              value={doc.style.shadow}
+              aria-label="Browser chrome"
+              value={doc.style.browserChrome}
               onChange={(val) =>
                 apply(
                   (draft) => {
-                    draft.style.shadow = val;
+                    draft.style.browserChrome = val;
                   },
-                  { label: "Change shadow preset" },
+                  { label: "Change browser chrome" },
                 )
               }
-              options={optionsFor(SHADOW_LABELS, SHADOW_ORDER)}
+              options={optionsFor(BROWSER_CHROME_LABELS, CHROME_ORDER)}
             />
           </Field>
+        )}
 
-          {effects.browserChrome && (
-            <Field label="Browser chrome">
-              <Select
-                aria-label="Browser chrome"
-                value={doc.style.browserChrome}
-                onChange={(val) =>
-                  apply(
-                    (draft) => {
-                      draft.style.browserChrome = val;
-                    },
-                    { label: "Change browser chrome" },
-                  )
-                }
-                options={optionsFor(BROWSER_CHROME_LABELS, CHROME_ORDER)}
-              />
-            </Field>
-          )}
+        {effects.browserUrl && (
+          <Field label="URL">
+            <Input
+              numeric
+              aria-label="Browser URL"
+              placeholder="example.com"
+              value={doc.style.browserUrl || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                apply(
+                  (draft) => {
+                    draft.style.browserUrl = val;
+                  },
+                  { coalesceKey: "browser-url" },
+                );
+              }}
+            />
+          </Field>
+        )}
 
-          {effects.browserUrl && (
-            <Field label="URL">
-              <input
-                type="text"
-                aria-label="Browser URL"
-                placeholder="example.com"
-                value={doc.style.browserUrl || ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  apply(
-                    (draft) => {
-                      draft.style.browserUrl = val;
-                    },
-                    { coalesceKey: "browser-url" },
-                  );
-                }}
-                className="w-full bg-[var(--color-raised)] border border-[var(--color-line)] px-2.5 py-1.5 text-xs text-[var(--color-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] font-mono"
-              />
-            </Field>
-          )}
+        {effects.grain && (
+          <SliderRow
+            label="Grain"
+            output={`${Math.round(doc.style.grain * 100)}%`}
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round(doc.style.grain * 100)}
+            onChange={(val) =>
+              apply(
+                (draft) => {
+                  draft.style.grain = val / 100;
+                },
+                { coalesceKey: "grain" },
+              )
+            }
+          />
+        )}
 
-          {effects.grain && (
-            <Field label="Grain" value={`${Math.round(doc.style.grain * 100)}%`}>
-              <Slider
-                aria-label="Grain"
-                min={0}
-                max={100}
-                step={1}
-                value={Math.round(doc.style.grain * 100)}
-                onChange={(val) =>
-                  apply(
-                    (draft) => {
-                      draft.style.grain = val / 100;
-                    },
-                    { coalesceKey: "grain" },
-                  )
-                }
-              />
-            </Field>
-          )}
-
-          {effects.vignette && (
-            <Field label="Vignette" value={`${Math.round(doc.style.vignette * 100)}%`}>
-              <Slider
-                aria-label="Vignette"
-                min={0}
-                max={100}
-                step={1}
-                value={Math.round(doc.style.vignette * 100)}
-                onChange={(val) =>
-                  apply(
-                    (draft) => {
-                      draft.style.vignette = val / 100;
-                    },
-                    { coalesceKey: "vignette" },
-                  )
-                }
-              />
-            </Field>
-          )}
-        </div>
+        {effects.vignette && (
+          <SliderRow
+            label="Vignette"
+            output={`${Math.round(doc.style.vignette * 100)}%`}
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round(doc.style.vignette * 100)}
+            onChange={(val) =>
+              apply(
+                (draft) => {
+                  draft.style.vignette = val / 100;
+                },
+                { coalesceKey: "vignette" },
+              )
+            }
+          />
+        )}
       </Section>
-    </div>
+    </>
   );
 };
