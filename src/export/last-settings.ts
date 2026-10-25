@@ -8,7 +8,7 @@ export const LAST_EXPORT_KEY = "mockupmotion.lastExport";
  * Local storage, or null where there is none (Node, or a browser that blocks site data, where
  * merely reading `localStorage` throws a SecurityError).
  */
-function browserStorage(): Storage | null {
+export function browserStorage(): Storage | null {
   try {
     return typeof localStorage === "undefined" ? null : localStorage;
   } catch (err) {

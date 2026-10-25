@@ -5,7 +5,7 @@ import { DOWNLOAD_LABELS } from "./download-labels";
 import { panel, VerificationRow, type ExportOutcome } from "./ExportResult";
 
 const downloadLink =
-  "inline-flex shrink-0 items-center justify-center h-7 px-3 rounded-md text-[12px] font-semibold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity gap-1.5";
+  "inline-flex shrink-0 items-center justify-center h-7 px-3 rounded-md text-[12px] font-semibold bg-[var(--color-text)] text-[var(--color-paper)] hover:opacity-90 transition-opacity gap-1.5";
 
 interface FileListProps {
   outcomes: readonly ExportOutcome[];

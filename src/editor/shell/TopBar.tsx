@@ -27,9 +27,18 @@ import {
   Moon,
   Redo2,
   Sun,
+  SunMoon,
   Undo2,
   Video,
+  type LucideIcon,
 } from "lucide-react";
+import { browserStorage } from "../../export/last-settings";
+import {
+  THEME_LABELS,
+  nextThemePreference,
+  saveThemePreference,
+  type ThemePreference,
+} from "./theme-preference";
 
 interface TopBarProps {
   onOpenProjects: () => void;
@@ -38,6 +47,13 @@ interface TopBarProps {
 }
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
+
+/** The menu shows the current preference; choosing it moves to the next. */
+const THEME_ICONS: Record<ThemePreference, LucideIcon> = {
+  system: SunMoon,
+  light: Sun,
+  dark: Moon,
+};
 
 export const TopBar: React.FC<TopBarProps> = ({
   onOpenProjects,
@@ -73,15 +89,11 @@ export const TopBar: React.FC<TopBarProps> = ({
     );
   };
 
-  const handleToggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
+  // System → Light → Dark. EditorShell applies the preference to <html>.
+  const handleCycleTheme = () => {
+    const next = nextThemePreference(theme);
     setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("mockupmotion_theme", next);
-    } catch {
-      // ignore
-    }
+    saveThemePreference(browserStorage(), next);
   };
 
   const handleDuplicate = async () => {
@@ -111,10 +123,10 @@ export const TopBar: React.FC<TopBarProps> = ({
               type="button"
               className="flex items-center gap-1.5 px-2 py-1 -ml-1 rounded-md hover:bg-[var(--color-hover)] text-[var(--color-text)] transition-colors focus-visible:outline-none"
             >
-              <div className="w-5 h-5 rounded bg-[var(--color-accent)] flex items-center justify-center text-white shadow-xs">
+              <div className="w-5 h-5 rounded bg-[var(--color-accent)] flex items-center justify-center text-[var(--color-accent-ink)] shadow-xs">
                 <Icon icon={Video} size={13} />
               </div>
-              <span className="font-semibold text-xs tracking-tight">MockupMotion</span>
+              <span className="font-mark font-bold text-[13px] tracking-tight">MockupMotion</span>
               <Icon icon={ChevronDown} size={12} className="text-[var(--color-text-3)]" />
             </button>
           </DropdownMenuTrigger>
@@ -137,10 +149,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              icon={<Icon icon={theme === "dark" ? Sun : Moon} size={14} />}
-              onClick={handleToggleTheme}
+              icon={<Icon icon={THEME_ICONS[theme]} size={14} />}
+              onClick={handleCycleTheme}
+              title={`Switch to ${THEME_LABELS[nextThemePreference(theme)]}`}
             >
-              Theme: {theme === "dark" ? "Light" : "Dark"}
+              Theme: {THEME_LABELS[theme]}
             </DropdownMenuItem>
             <DropdownMenuItem
               icon={<Icon icon={HelpCircle} size={14} />}

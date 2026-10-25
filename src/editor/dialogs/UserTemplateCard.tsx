@@ -52,7 +52,7 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
       <div className="aspect-video w-full bg-[var(--color-raised)] border-b border-[var(--color-line)] flex items-center justify-center relative">
         <Icon icon={Bookmark} size={28} className="text-[var(--color-text-3)] opacity-60" />
         {active && (
-          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-white flex items-center gap-1 shadow-sm">
+          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-[var(--color-accent-ink)] flex items-center gap-1 shadow-sm">
             <Check size={10} />
             Active
           </span>

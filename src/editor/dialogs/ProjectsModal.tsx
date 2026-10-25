@@ -233,7 +233,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                       />
                     )}
                     {isCurrent && (
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-black font-semibold text-[9px] uppercase tracking-wider">
+                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-[var(--color-accent-ink)] font-semibold text-[9px] uppercase tracking-wider">
                         Current
                       </span>
                     )}

@@ -5,6 +5,8 @@ import {
   type PanelWidths,
   type SidePanel,
 } from "../editor/shell/panel-layout";
+import { loadThemePreference, type ThemePreference } from "../editor/shell/theme-preference";
+import { browserStorage } from "../export/last-settings";
 
 export type UISelection = { kind: "video" } | { kind: "shot"; id: string };
 
@@ -22,7 +24,8 @@ export interface UIState {
   panelWidths: PanelWidths;
   /** The Library is closed because the window got narrow, not by the user. */
   libraryAutoCollapsed: boolean;
-  theme: "dark" | "light";
+  /** System, Light or Dark (`theme-preference.ts`); System follows the operating system. */
+  theme: ThemePreference;
   /** The template gallery is rendered once, in EditorShell; anything may open it (F06). */
   templateGalleryOpen: boolean;
   /** The gallery was opened by the editor on start, not by the user (`first-run-gallery.ts`). */
@@ -44,7 +47,7 @@ export interface UIState {
   setLibraryCollapse: (state: { open: boolean; autoCollapsed: boolean }) => void;
   setPanelWidth: (panel: SidePanel, width: number) => void;
   setPanelWidths: (widths: PanelWidths) => void;
-  setTheme: (theme: "dark" | "light") => void;
+  setTheme: (theme: ThemePreference) => void;
   openTemplateGallery: () => void;
   openFirstRunGallery: () => void;
   closeTemplateGallery: () => void;
@@ -64,7 +67,8 @@ export const useUIStore = create<UIState>((set) => ({
   },
   panelWidths: { ...PANEL_DEFAULT_WIDTHS },
   libraryAutoCollapsed: false,
-  theme: "dark",
+  // The saved choice, read before the first render, as index.html applied it before first paint.
+  theme: loadThemePreference(browserStorage()),
   templateGalleryOpen: false,
   firstRunGallery: false,
   starting: true,

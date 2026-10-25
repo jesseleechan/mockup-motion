@@ -68,7 +68,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           </span>
 
           {active && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-white flex items-center gap-1 shadow-sm">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-[var(--color-accent-ink)] flex items-center gap-1 shadow-sm">
               <Check size={10} />
               Active
             </span>

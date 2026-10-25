@@ -78,7 +78,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           onClick={handleTogglePlay}
           aria-label={playing ? "Pause" : "Play"}
           data-testid="transport-play"
-          className="w-7 h-7 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center hover:opacity-90 transition-opacity focus:outline-none"
+          className="w-7 h-7 rounded-full bg-[var(--color-accent)] text-[var(--color-accent-ink)] flex items-center justify-center hover:opacity-90 transition-opacity focus:outline-none"
         >
           <Icon icon={playing ? Pause : Play} size={13} className={playing ? "" : "ml-0.5"} />
         </button>

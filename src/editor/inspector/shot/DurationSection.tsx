@@ -26,7 +26,7 @@ export const DurationSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot
     return (
       <Section title="Duration">
         <Field label={doc.loop ? "Loop length" : "Length"}>
-          <span className="block text-right text-[12px] tabular-nums text-[var(--color-text)]">
+          <span className="block text-right font-num text-[12px] tabular-nums text-[var(--color-text)]">
             {`${total.toFixed(1)} s`}
           </span>
         </Field>

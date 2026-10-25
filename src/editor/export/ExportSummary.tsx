@@ -61,12 +61,13 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
               <span className="font-semibold text-[var(--color-text)]">{aspect}</span> ·{" "}
               {plan.label} · {detailsOf(plan)}
             </div>
-            <div className="shrink-0 tabular-nums">≈ {formatFileSize(plan.bytes)}</div>
+            <div className="shrink-0 font-num tabular-nums">≈ {formatFileSize(plan.bytes)}</div>
           </div>
         ))}
         <div className="pt-1.5 border-t border-[var(--color-line)] flex justify-between gap-4">
           <span>{files.length} files, one after another</span>
-          <span className="font-semibold tabular-nums text-[var(--color-text)]">
+          {/* Geist Mono comes in 400 and 500 only (src/main.tsx). */}
+          <span className="font-num font-medium tabular-nums text-[var(--color-text)]">
             ≈ {formatFileSize(total)}
           </span>
         </div>
@@ -84,10 +85,10 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
     >
       <div className="min-w-0">
         <div className="font-semibold text-[var(--color-text)]">{label}</div>
-        <div className="mt-0.5 tabular-nums">{detailsOf(files[0].plan)}</div>
+        <div className="mt-0.5 font-num tabular-nums">{detailsOf(files[0].plan)}</div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="font-semibold tabular-nums text-[var(--color-text)]">
+        <div className="font-num font-medium tabular-nums text-[var(--color-text)]">
           ≈ {formatFileSize(bytes)}
         </div>
         <div className="mt-0.5">Estimated size</div>

@@ -19,7 +19,7 @@ export interface FieldProps {
 const labelText = "text-[12px] font-medium text-[var(--color-text-2)] select-none truncate";
 const hintText = "text-[11px] leading-4 text-[var(--color-text-3)]";
 const valueText =
-  "shrink-0 whitespace-nowrap text-right text-[11px] tabular-nums text-[var(--color-text-3)]";
+  "shrink-0 whitespace-nowrap text-right font-num text-[11px] tabular-nums text-[var(--color-text-3)]";
 
 /**
  * A labelled control row. Labels never wrap: the inline label column is 104 px and

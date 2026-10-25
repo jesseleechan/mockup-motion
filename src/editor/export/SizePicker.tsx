@@ -39,7 +39,7 @@ export const SizePicker: React.FC<SizePickerProps> = ({ projectAspect, selected,
               title={aspect === projectAspect ? "The project's aspect" : undefined}
               onClick={() => toggle(aspect)}
               className={clsx(
-                "h-7 px-2.5 rounded-md border text-[12px] font-medium tabular-nums transition-colors",
+                "h-7 px-2.5 rounded-md border font-num text-[12px] font-medium tabular-nums transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
                 isSelected
                   ? "border-[var(--color-accent)] bg-[var(--color-raised)] text-[var(--color-text)]"

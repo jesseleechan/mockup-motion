@@ -43,7 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           size === "md" && "h-8 px-3.5 text-[13px] gap-2 rounded-md",
           // Variants
           variant === "primary" && [
-            "bg-[var(--color-text)] text-[var(--color-bg)] font-semibold shadow-xs",
+            "bg-[var(--color-text)] text-[var(--color-paper)] font-semibold shadow-xs",
             "hover:opacity-90 active:opacity-95",
           ],
           variant === "secondary" && [
@@ -111,7 +111,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           "disabled:opacity-40 disabled:pointer-events-none",
           size === "sm" && "w-7 h-7 rounded-sm text-[12px]",
           size === "md" && "w-8 h-8 rounded-md text-[13px]",
-          variant === "primary" && "bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90",
+          variant === "primary" &&
+            "bg-[var(--color-text)] text-[var(--color-paper)] hover:opacity-90",
           variant === "secondary" &&
             "bg-[var(--color-raised)] text-[var(--color-text)] border border-[var(--color-line)] hover:bg-[var(--color-hover)]",
           variant === "ghost" &&
