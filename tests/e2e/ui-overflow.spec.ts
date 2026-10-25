@@ -4,6 +4,7 @@ import type { Engine } from "../../src/engine/Engine";
 import { CAMERA_LABELS, EASING_LABELS } from "../../src/editor/labels";
 import { BLANK_PAGE } from "../helpers/blank-page";
 import { ciTimeout } from "../helpers/ci";
+import { waitForStageEngine } from "../helpers/stage-engine";
 
 interface StoreHandle {
   getState: () => { doc: ProjectDoc };
@@ -329,6 +330,8 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
   await resetAndOpen(page, "dark");
   await applyTemplateWithDemo(page, "frames");
   const assetId = (await currentDoc(page)).assets[0].id;
+  // Setup: the engine draws its first frame of the demo content seconds after the store has it.
+  await waitForStageEngine(page);
   const canvas = page.locator('[data-testid="stage"] canvas');
   await expect(canvas).toBeVisible();
   const hint = page.getByTestId("drop-hint");
@@ -364,8 +367,8 @@ test("the UI shows human labels, never raw preset or node ids", async ({ page })
         }, assetId);
       },
       {
-        // The engine picks Frames cards once its first frame is drawn, which the CI runner's
-        // SwiftShader reaches about 5x later than a laptop (tests/helpers/ci.ts).
+        // The engine has drawn the Frames document, so this is the card search alone, scaled for
+        // the CI runner's SwiftShader (tests/helpers/ci.ts).
         timeout: ciTimeout(5000),
         message: "the engine finds a Frames row card to drag over",
       },

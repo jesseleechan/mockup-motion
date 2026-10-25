@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ciTimeout } from "../helpers/ci";
+import { waitForStageEngine } from "../helpers/stage-engine";
 
 interface EditorStore {
   getState: () => {
@@ -155,6 +156,8 @@ test.describe("WP-18 polish", () => {
   test("WebGL context loss during playback recovers", async ({ page }) => {
     await resetAndOpen(page);
     await page.getByRole("button", { name: "Try with demo content" }).click();
+    // The stage lazy-loads its engine, which can take longer than the default 5 s to draw.
+    await waitForStageEngine(page);
     await expect(page.locator("canvas").first()).toBeVisible();
     await page.getByRole("button", { name: "Play" }).first().click();
 
