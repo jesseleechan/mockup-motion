@@ -22,14 +22,17 @@ interface UIStoreHandle {
 type Theme = "dark" | "light";
 
 const PANELS = ["library", "inspector", "timeline"] as const;
-// The fewest rendered elements each panel has; fewer means it failed to render. The slim
-// timeline without steps has exactly 10 before its thumbnail <img> loads: the root, the shot
-// button, its thumbnail box and label, the scrubber with its track, progress and playhead, and
-// the loop length with its value. Every one is checked for overflow.
+// The fewest rendered elements each panel has; fewer means it failed to render. The timeline is
+// the toolbar under the stage (restyle R2). Without steps, at 1280 px, it has exactly 21 before
+// its thumbnail <img> loads: the root; the shot button and its thumbnail box (its name hides in
+// a toolbar this narrow); a separator; previous, play and next; the timecode with the current
+// time; the scrubber with its track, progress and playhead; the loop length with its value; a
+// separator, loop and safe margins; a separator, the zoom box and its select. Every one is
+// checked for overflow.
 const MIN_CHECKED: Record<(typeof PANELS)[number], number> = {
   library: 21,
   inspector: 21,
-  timeline: 10,
+  timeline: 21,
 };
 
 // Desktop Frames and Mobile Frames at 16:9 (src/templates/frames-template.ts), without assets.

@@ -3,6 +3,7 @@ import { useUIStore } from "../../state/ui-store";
 import {
   PANEL_DEFAULT_WIDTHS,
   PANEL_MIN_WIDTHS,
+  WORKSPACE_GAP,
   savePanelWidths,
   type SidePanel,
 } from "./panel-layout";
@@ -29,7 +30,8 @@ function persist() {
 
 /**
  * The handle on a side panel's inner edge: drag it, use the arrow keys, or double-click it to
- * reset. It sits over the panel's border, so it takes no layout space.
+ * reset. It fills the gap between the floating panel and the stage, so it takes no layout space:
+ * an invisible hit area that shows a line on hover, while dragging and on keyboard focus.
  */
 export const PanelResizer: React.FC<PanelResizerProps> = ({ panel, width, max }) => {
   const setPanelWidth = useUIStore((s) => s.setPanelWidth);
@@ -91,12 +93,15 @@ export const PanelResizer: React.FC<PanelResizerProps> = ({ panel, width, max })
       onPointerCancel={onPointerUp}
       onKeyDown={onKeyDown}
       onDoubleClick={onDoubleClick}
-      className={`group absolute top-0 bottom-0 z-30 w-2 cursor-col-resize outline-none ${
-        panel === "library" ? "-right-1" : "-left-1"
-      }`}
+      style={
+        panel === "library"
+          ? { left: "100%", width: WORKSPACE_GAP }
+          : { right: "100%", width: WORKSPACE_GAP }
+      }
+      className="group absolute top-0 bottom-0 z-30 cursor-col-resize outline-none"
     >
-      {/* The visible line: the border, highlighted on hover, drag and focus. */}
-      <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors duration-[var(--duration-fast)] group-hover:bg-[var(--color-accent)] group-focus-visible:bg-[var(--color-accent)] group-active:bg-[var(--color-accent)]" />
+      {/* The visible line, in the middle of the gap. */}
+      <div className="absolute inset-y-4 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-transparent transition-colors duration-[var(--duration-fast)] group-hover:bg-[var(--color-line-strong)] group-focus-visible:bg-[var(--color-accent)] group-active:bg-[var(--color-accent)]" />
     </div>
   );
 };

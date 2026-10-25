@@ -39,6 +39,7 @@ import {
   saveThemePreference,
   type ThemePreference,
 } from "./theme-preference";
+import { Cluster, ClusterSeparator } from "./Cluster";
 
 interface TopBarProps {
   onOpenProjects: () => void;
@@ -55,6 +56,47 @@ const THEME_ICONS: Record<ThemePreference, LucideIcon> = {
   dark: Moon,
 };
 
+/**
+ * The project's saved state: a dot, named for screen readers and on hover. A failed save stays
+ * in words, as it needs the user's attention.
+ */
+const SaveStatus: React.FC = () => {
+  const saveStatus = useEditorStore((s) => s.saveStatus);
+  const saveError = useEditorStore((s) => s.saveError);
+
+  if (saveStatus === "error") {
+    return (
+      <span
+        data-testid="save-error"
+        role="status"
+        className="hidden sm:block shrink-0 px-2 text-[11px] font-medium text-[var(--color-danger)] whitespace-nowrap"
+      >
+        {saveError?.toLowerCase().includes("storage") ? "Storage is full" : "Save failed"}
+      </span>
+    );
+  }
+  if (saveStatus === "idle") return null;
+  const label = saveStatus === "saving" ? "Saving" : "Saved";
+  return (
+    <span title={label} className="hidden sm:flex shrink-0 items-center px-2.5 h-8">
+      <span
+        aria-hidden="true"
+        className={
+          saveStatus === "saving"
+            ? "w-2 h-2 rounded-full bg-[var(--color-text-3)] animate-pulse"
+            : "w-2 h-2 rounded-full bg-[var(--color-success)]"
+        }
+      />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+};
+
+/**
+ * The three floating clusters above the panels and the stage, as Layout Stage's top bar: the app
+ * menu and the project on the left, history, aspect and theme in the centre, Export on the right.
+ * The side columns share the room equally, so the centre cluster stays centred in the window.
+ */
 export const TopBar: React.FC<TopBarProps> = ({
   onOpenProjects,
   onOpenShortcuts,
@@ -63,8 +105,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   const doc = useEditorStore((s) => s.doc);
   const past = useEditorStore((s) => s.past);
   const future = useEditorStore((s) => s.future);
-  const saveStatus = useEditorStore((s) => s.saveStatus);
-  const saveError = useEditorStore((s) => s.saveError);
   const apply = useEditorStore((s) => s.apply);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
@@ -95,6 +135,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     setTheme(next);
     saveThemePreference(browserStorage(), next);
   };
+  const nextThemeLabel = `Switch to ${THEME_LABELS[nextThemePreference(theme)]}`;
 
   const handleDuplicate = async () => {
     try {
@@ -114,20 +155,24 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="h-[52px] px-3.5 bg-[var(--color-panel)] border-b border-[var(--color-line)] flex items-center justify-between select-none shrink-0 z-30">
-      {/* Left: Mark & Project Title & Save Status */}
-      <div className="flex items-center gap-2.5 min-w-0">
+    <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 shrink-0 select-none z-30">
+      {/* Left: the app menu, the project's name and its saved state */}
+      <Cluster className="justify-self-start max-w-full">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-1.5 px-2 py-1 -ml-1 rounded-md hover:bg-[var(--color-hover)] text-[var(--color-text)] transition-colors focus-visible:outline-none"
+              className="flex items-center gap-1.5 h-9 pl-2 pr-1.5 shrink-0 rounded-[10px] hover:bg-[var(--color-field)] text-[var(--color-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             >
               <div className="w-5 h-5 rounded bg-[var(--color-accent)] flex items-center justify-center text-[var(--color-accent-ink)] shadow-xs">
                 <Icon icon={Video} size={13} />
               </div>
-              <span className="font-mark font-bold text-[13px] tracking-tight">MockupMotion</span>
-              <Icon icon={ChevronDown} size={12} className="text-[var(--color-text-3)]" />
+              {/* Under 1024 px, where the panels hide, the word steps aside for the project's name;
+                  it stays the menu's accessible name. */}
+              <span className="font-mark font-bold text-[13px] tracking-tight max-lg:sr-only">
+                MockupMotion
+              </span>
+              <Icon icon={ChevronDown} size={12} className="text-[var(--color-text-2)]" />
             </button>
           </DropdownMenuTrigger>
 
@@ -151,7 +196,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <DropdownMenuItem
               icon={<Icon icon={THEME_ICONS[theme]} size={14} />}
               onClick={handleCycleTheme}
-              title={`Switch to ${THEME_LABELS[nextThemePreference(theme)]}`}
+              title={nextThemeLabel}
             >
               Theme: {THEME_LABELS[theme]}
             </DropdownMenuItem>
@@ -165,70 +210,55 @@ export const TopBar: React.FC<TopBarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="h-4 w-px bg-[var(--color-line)]" />
+        <ClusterSeparator />
 
-        {/* Project Name editable */}
-        <div className="relative flex items-center min-w-0 max-w-[200px] sm:max-w-[280px]">
-          <input
-            type="text"
-            aria-label="Project name"
-            value={isEditingName ? nameValue : doc.name}
-            onFocus={() => {
-              setNameValue(doc.name);
-              setIsEditingName(true);
-            }}
-            onBlur={() => setIsEditingName(false)}
-            onChange={handleNameChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === "Escape") {
-                e.currentTarget.blur();
-              }
-            }}
-            className="w-full bg-transparent px-1.5 py-0.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-hover)] focus:bg-[var(--color-raised)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] rounded transition-colors truncate"
-            title="Click to rename project"
+        {/* The name sizes to its text up to a limit, and gives way first when the bar is tight. */}
+        <input
+          type="text"
+          aria-label="Project name"
+          value={isEditingName ? nameValue : doc.name}
+          onFocus={() => {
+            setNameValue(doc.name);
+            setIsEditingName(true);
+          }}
+          onBlur={() => setIsEditingName(false)}
+          onChange={handleNameChange}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") {
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-8 min-w-16 max-w-[240px] field-sizing-content px-2 bg-transparent text-[13px] font-semibold text-[var(--color-text)] hover:bg-[var(--color-field)] focus:bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-[9px] transition-colors truncate"
+          title="Click to rename project"
+        />
+
+        <SaveStatus />
+      </Cluster>
+
+      {/* Centre: history, the aspect and the theme */}
+      <Cluster className="justify-self-center">
+        <Tooltip content="Undo (⌘Z)">
+          <IconButton
+            icon={<Icon icon={Undo2} size={15} />}
+            aria-label="Undo"
+            variant="ghost"
+            disabled={past.length === 0}
+            onClick={undo}
           />
-        </div>
-
-        {/* Save Status indicator */}
-        <div className="hidden sm:flex items-center text-[11px] text-[var(--color-text-3)]">
-          {saveStatus === "saving" && <span>Saving</span>}
-          {saveStatus === "saved" && <span className="text-[var(--color-text-3)]">Saved</span>}
-          {saveStatus === "error" && (
-            <span data-testid="save-error" role="status" className="text-[var(--color-danger)]">
-              {saveError?.toLowerCase().includes("storage") ? "Storage is full" : "Save failed"}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Center: Undo/Redo & Aspect Selector */}
-      <div className="flex items-center gap-3">
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5">
-          <Tooltip content="Undo (⌘Z)">
-            <IconButton
-              icon={<Icon icon={Undo2} size={15} />}
-              aria-label="Undo"
-              variant="ghost"
-              size="sm"
-              disabled={past.length === 0}
-              onClick={undo}
-            />
-          </Tooltip>
-          <Tooltip content="Redo (⇧⌘Z)">
-            <IconButton
-              icon={<Icon icon={Redo2} size={15} />}
-              aria-label="Redo"
-              variant="ghost"
-              size="sm"
-              disabled={future.length === 0}
-              onClick={redo}
-            />
-          </Tooltip>
-        </div>
+        </Tooltip>
+        <Tooltip content="Redo (⇧⌘Z)">
+          <IconButton
+            icon={<Icon icon={Redo2} size={15} />}
+            aria-label="Redo"
+            variant="ghost"
+            disabled={future.length === 0}
+            onClick={redo}
+          />
+        </Tooltip>
 
         {/* The only aspect control in the editor (F08). */}
-        <div className="hidden md:flex">
+        <div className="hidden md:flex items-center gap-1">
+          <ClusterSeparator />
           <SegmentedControl
             aria-label="Aspect ratio"
             size="sm"
@@ -237,19 +267,24 @@ export const TopBar: React.FC<TopBarProps> = ({
             options={ASPECTS.map((aspect) => ({ value: aspect, label: aspect }))}
           />
         </div>
-      </div>
 
-      {/* Right: Export Button */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onOpenExport}
-          icon={<Icon icon={Download} size={14} />}
-        >
+        <ClusterSeparator />
+        <Tooltip content={nextThemeLabel}>
+          <IconButton
+            icon={<Icon icon={THEME_ICONS[theme]} size={15} />}
+            aria-label={`Theme: ${THEME_LABELS[theme]}`}
+            variant="ghost"
+            onClick={handleCycleTheme}
+          />
+        </Tooltip>
+      </Cluster>
+
+      {/* Right: Export */}
+      <Cluster className="justify-self-end">
+        <Button variant="primary" onClick={onOpenExport} icon={<Icon icon={Download} size={14} />}>
           Export
         </Button>
-      </div>
+      </Cluster>
     </header>
   );
 };
