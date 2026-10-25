@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import clsx from "clsx";
 import { AlertTriangle, Check, Code2, Copy, Download, RotateCcw } from "lucide-react";
 import { Button } from "../../ui";
 import type { Aspect } from "../../doc/types";
 import type { ExportResult as Result, ExportVerification } from "../../export/engine-export";
 import type { ExportExtension } from "../../export/plan";
 import { DOWNLOAD_LABELS } from "./download-labels";
+import { downloadLink, notice, verificationWell } from "./surfaces";
 
 export interface ExportOutcome {
   aspect: Aspect;
@@ -20,8 +22,6 @@ interface ExportResultProps {
   outcome: ExportOutcome;
   onExportAnother: () => void;
 }
-
-export const panel = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs";
 
 /** One exported file as verify.ts re-read it: size, duration, codec, or what is wrong. */
 export const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }) => {
@@ -43,7 +43,7 @@ export const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }
           {result.valid ? <Check size={14} /> : <AlertTriangle size={14} />}
           {result.valid ? `Verified ${label}` : `${label} did not verify`}
         </span>
-        <span className="min-w-0 truncate font-num tabular-nums text-[var(--color-text-2)]">
+        <span className="min-w-0 truncate font-num text-[11.5px] tabular-nums text-[var(--color-text-2)]">
           {facts.join(" · ")}
         </span>
       </div>
@@ -56,6 +56,7 @@ export const VerificationRow: React.FC<{ item: ExportVerification }> = ({ item }
   );
 };
 
+/** One finished file: Layout Stage's "Export ready" sheet, with the preview on a field well. */
 export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAnother }) => {
   const { url, filename, extension, result } = outcome;
   const [copied, setCopied] = useState(false);
@@ -77,11 +78,11 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <span className="shrink-0 text-sm font-semibold text-[var(--color-text)]">
+        <span className="shrink-0 text-[14px] font-semibold text-[var(--color-text)]">
           Export complete
         </span>
         <span
-          className="min-w-0 truncate text-xs text-[var(--color-text-3)]"
+          className="min-w-0 truncate font-num text-[12px] text-[var(--color-text-2)]"
           title={filename}
           data-truncate=""
         >
@@ -90,7 +91,7 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
       </div>
 
       {(isVideo || isImage) && (
-        <div className="aspect-video w-full rounded-lg overflow-hidden bg-black/60 border border-[var(--color-line)] flex items-center justify-center">
+        <div className="aspect-video w-full rounded-[12px] overflow-hidden bg-field p-3 flex items-center justify-center">
           {isVideo ? (
             <video
               src={url}
@@ -98,17 +99,24 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
               autoPlay
               loop
               muted
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full rounded-[3px] shadow-[0_4px_18px_rgb(0_0_0/0.18)]"
             />
           ) : (
-            <img src={url} alt="Exported frame" className="max-h-full object-contain" />
+            <img
+              src={url}
+              alt="Exported frame"
+              className="max-w-full max-h-full rounded-[3px] shadow-[0_4px_18px_rgb(0_0_0/0.18)]"
+            />
           )}
         </div>
       )}
 
       <div
         data-testid="export-verification"
-        className={`${panel} space-y-2 ${result.verification.every((v) => v.result.valid) ? "border-[var(--color-line)]" : "border-[var(--color-warning)]/30"}`}
+        className={clsx(
+          verificationWell(result.verification.every((v) => v.result.valid)),
+          "space-y-2",
+        )}
       >
         {result.verification.map((item) => (
           <VerificationRow key={item.label} item={item} />
@@ -116,13 +124,9 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
       </div>
 
       {result.warnings.length > 0 && (
-        <div
-          role="status"
-          data-testid="export-warnings"
-          className={`${panel} border-[var(--color-warning)]/30 text-[var(--color-warning)] space-y-1`}
-        >
+        <div role="status" data-testid="export-warnings" className="space-y-1.5">
           {result.warnings.map((w) => (
-            <div key={w} className="flex items-start gap-2">
+            <div key={w} className={notice("warning")}>
               <AlertTriangle size={14} className="shrink-0 mt-px" />
               <span>{w}</span>
             </div>
@@ -133,8 +137,8 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
       {result.bundleSnippet && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[var(--color-text)] flex items-center gap-1.5">
-              <Code2 size={14} className="text-[var(--color-accent)]" />
+            <span className="text-[12px] font-semibold text-[var(--color-text)] flex items-center gap-1.5">
+              <Code2 size={14} className="text-[var(--color-text-2)]" />
               Embed code
             </span>
             <Button
@@ -154,22 +158,18 @@ export const ExportResult: React.FC<ExportResultProps> = ({ outcome, onExportAno
           </div>
           <pre
             data-scroll-x=""
-            className="max-h-32 p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] text-[11px] font-mono text-[var(--color-text-2)] overflow-auto select-all"
+            className="max-h-32 p-3 rounded-[10px] bg-field text-[11px] font-num text-[var(--color-text-2)] overflow-auto select-all"
           >
             {result.bundleSnippet}
           </pre>
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-2 pt-2">
+      <div className="flex items-center justify-end gap-2 pt-1">
         <Button variant="secondary" onClick={onExportAnother} icon={<RotateCcw size={14} />}>
           Export another
         </Button>
-        <a
-          href={url}
-          download={filename}
-          className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold bg-[var(--color-text)] text-[var(--color-paper)] hover:opacity-90 transition-opacity gap-2"
-        >
+        <a href={url} download={filename} className={downloadLink("md")}>
           <Download size={14} />
           Download {DOWNLOAD_LABELS[extension]}
         </a>

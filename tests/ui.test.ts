@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { calculateScrubValue, formatStepValue } from "../src/ui";
+import { notice } from "../src/editor/export/surfaces";
 
 const THEME_CSS = readFileSync(new URL("../src/ui/theme.css", import.meta.url), "utf8");
 
@@ -125,11 +126,30 @@ describe("WP-05 Design System & UI Primitives", () => {
         }
       });
 
-      // The export dialog's notices sit on raised, which is field.
+      // Verification results sit on field wells in the export dialog.
       it(`${name}: danger, warning and success text keep 4.5:1 on every surface`, () => {
         for (const fg of ["--color-danger", "--color-warning", "--color-success"]) {
           for (const bg of SURFACES) {
             expect(contrast(theme, fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+        }
+      });
+
+      // The export dialog's notices (src/editor/export/surfaces.ts): status text on a tint of its
+      // own colour over the panel. A failed file's verification well takes the warning's tint,
+      // under text-2 facts.
+      it(`${name}: notice text keeps 4.5:1 on its tint over the panel`, () => {
+        for (const tone of ["warning", "danger"] as const) {
+          const tint = Number(/\]\/(\d+)\b/.exec(notice(tone))?.[1]) / 100;
+          expect(tint, `${tone} notice tint`).toBeGreaterThan(0);
+          const fill = mixHex(theme["--color-panel"], theme[`--color-${tone}`], tint);
+          const fgs =
+            tone === "warning" ? [`--color-${tone}`, "--color-text-2"] : [`--color-${tone}`];
+          for (const fg of fgs) {
+            expect(
+              contrastRatio(theme[fg], fill),
+              `${fg} on the ${tone} tint`,
+            ).toBeGreaterThanOrEqual(4.5);
           }
         }
       });
@@ -153,6 +173,15 @@ function tokens(selector: string): Record<string, string> {
   const body = THEME_CSS.slice(start, THEME_CSS.indexOf("}", start));
   const declarations = body.matchAll(/(--[\w-]+):\s*([^;]+);/g);
   return Object.fromEntries([...declarations].map(([, name, value]) => [name, value.trim()]));
+}
+
+/** `top` over `base` at `alpha`, as the browser composites a translucent fill (sRGB). */
+function mixHex(base: string, top: string, alpha: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return `#${[0, 1, 2]
+    .map((i) => Math.round(channel(base, i) * (1 - alpha) + channel(top, i) * alpha))
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`;
 }
 
 function contrast(theme: Record<string, string>, fg: string, bg: string): number {

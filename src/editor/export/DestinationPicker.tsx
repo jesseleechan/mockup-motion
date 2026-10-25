@@ -1,15 +1,16 @@
 import React from "react";
 import clsx from "clsx";
-import { Check, Film, Globe, Monitor, Play, Smartphone, Video } from "lucide-react";
-import { Button } from "../../ui";
+import { Film, Globe, Monitor, Play, Smartphone, Video } from "lucide-react";
+import { Button, Icon } from "../../ui";
 import type { Aspect, DestinationId } from "../../doc/types";
 import { DESTINATION_PRESETS } from "../../export/destinations";
 import { DESTINATION_LABELS } from "../labels";
+import { sectionHead, sectionHeading, well } from "./surfaces";
 
 /** Videos first, the web bundle last (export polish §3). Custom is a state, not a card. */
 const CARDS: {
   id: DestinationId;
-  icon: React.ComponentType<{ size: number; className?: string }>;
+  icon: typeof Video;
   detail: string;
 }[] = [
   { id: "video", icon: Video, detail: "MP4 · LinkedIn, X, your site" },
@@ -20,9 +21,6 @@ const CARDS: {
   { id: "web-embed", icon: Globe, detail: "MP4, WebM, poster, embed" },
 ];
 
-export const sectionHeading =
-  "block mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-3)]";
-
 interface DestinationPickerProps {
   destination: DestinationId;
   aspect: Aspect;
@@ -30,7 +28,11 @@ interface DestinationPickerProps {
   onSwitchAspect: (aspect: Aspect) => void;
 }
 
-/** Destination preset cards, and a quick fix when the project aspect differs from the preset's. */
+/**
+ * The destinations as Layout Stage's tiles: an icon on a paper face, ringed in ink when picked,
+ * with the name and size under it. A quick fix follows when the project's aspect differs from
+ * the preset's.
+ */
 export const DestinationPicker: React.FC<DestinationPickerProps> = ({
   destination,
   aspect,
@@ -40,9 +42,11 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
   const recommended = DESTINATION_PRESETS[destination].aspect;
   return (
     <section>
-      <span className={sectionHeading}>Destination</span>
-      <div className="grid grid-cols-3 gap-2">
-        {CARDS.map(({ id, icon: IconComp, detail }) => {
+      <div className={sectionHead}>
+        <span className={sectionHeading}>Destination</span>
+      </div>
+      <div className="grid grid-cols-3 gap-x-2 gap-y-3">
+        {CARDS.map(({ id, icon, detail }) => {
           const isSelected = destination === id;
           return (
             <button
@@ -52,28 +56,24 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
               aria-label={DESTINATION_LABELS[id]}
               title={DESTINATION_PRESETS[id].description}
               onClick={() => onSelect(id)}
-              className={clsx(
-                "min-w-0 p-2.5 rounded-lg border text-left flex flex-col gap-2 transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-                isSelected
-                  ? "border-[var(--color-accent)] bg-[var(--color-raised)]"
-                  : "border-[var(--color-line)] bg-[var(--color-panel)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-raised)]",
-              )}
+              className="group min-w-0 flex flex-col gap-1.5 text-center cursor-pointer outline-none"
             >
-              <span className="flex items-center justify-between">
-                <IconComp
-                  size={16}
-                  className={
-                    isSelected ? "text-[var(--color-accent)]" : "text-[var(--color-text-2)]"
-                  }
-                />
-                {isSelected && <Check size={12} className="text-[var(--color-accent)]" />}
+              <span
+                className={clsx(
+                  "h-12 grid place-items-center rounded-[12px] bg-paper transition-shadow duration-120",
+                  "group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-accent",
+                  isSelected
+                    ? "shadow-[0_0_0_2px_var(--color-text)] text-[var(--color-text)]"
+                    : "shadow-lift-sm text-[var(--color-text-2)] group-hover:shadow-[0_0_0_1px_var(--color-line-strong)]",
+                )}
+              >
+                <Icon icon={icon} size={18} />
               </span>
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-semibold text-[var(--color-text)]">
+              <span className="min-w-0 px-0.5">
+                <span className="block truncate text-[12px] font-semibold text-[var(--color-text)]">
                   {DESTINATION_LABELS[id]}
                 </span>
-                <span className="block truncate text-[11px] tabular-nums text-[var(--color-text-3)]">
+                <span className="block truncate text-[11px] tabular-nums text-[var(--color-text-2)]">
                   {detail}
                 </span>
               </span>
@@ -83,9 +83,13 @@ export const DestinationPicker: React.FC<DestinationPickerProps> = ({
       </div>
 
       {recommended && recommended !== aspect && (
-        <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] flex items-center justify-between gap-3 text-xs">
-          <span className="min-w-0 text-[var(--color-text-2)]">
-            Preset recommends <strong>{recommended}</strong> (current: {aspect})
+        <div
+          className={clsx(well, "mt-3 pl-3 pr-1.5 py-1.5 flex items-center justify-between gap-3")}
+        >
+          <span className="min-w-0">
+            Preset recommends{" "}
+            <strong className="font-semibold text-[var(--color-text)]">{recommended}</strong>{" "}
+            (current: {aspect})
           </span>
           <Button size="sm" variant="secondary" onClick={() => onSwitchAspect(recommended)}>
             Switch to {recommended}

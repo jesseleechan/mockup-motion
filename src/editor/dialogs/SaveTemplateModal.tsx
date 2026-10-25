@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Button, Dialog, DialogContent, Field } from "../../ui";
+import React, { useId, useState } from "react";
+import { Button, Dialog, DialogContent, Input } from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { convertDocToUserTemplate, saveUserTemplate } from "../../storage/user-templates";
 
@@ -8,6 +8,9 @@ interface SaveTemplateModalProps {
   onOpenChange: (open: boolean) => void;
   onSaved?: () => void;
 }
+
+// Field's label (src/ui/Field.tsx), as a real <label> so it names its text box.
+const labelText = "text-[12px] font-medium text-[var(--color-text-2)] select-none";
 
 export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
   open,
@@ -18,6 +21,8 @@ export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
   const [name, setName] = useState(`${doc.name} Template`);
   const [description, setDescription] = useState("Custom user template");
   const [saving, setSaving] = useState(false);
+  const nameId = useId();
+  const descriptionId = useId();
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,28 +47,30 @@ export const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({
         className="max-w-md"
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <Field label="Name" htmlFor="tmpl-name">
-            <input
-              id="tmpl-name"
-              type="text"
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={nameId} className={labelText}>
+              Name
+            </label>
+            <Input
+              id={nameId}
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-8 px-2.5 rounded border border-[var(--color-line)] bg-[var(--color-raised)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
               placeholder="e.g. My Studio Reel"
             />
-          </Field>
+          </div>
 
-          <Field label="Description" htmlFor="tmpl-desc">
-            <input
-              id="tmpl-desc"
-              type="text"
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={descriptionId} className={labelText}>
+              Description
+            </label>
+            <Input
+              id={descriptionId}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full h-8 px-2.5 rounded border border-[var(--color-line)] bg-[var(--color-raised)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
               placeholder="e.g. 2-shot mobile & desktop walkthrough"
             />
-          </Field>
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>

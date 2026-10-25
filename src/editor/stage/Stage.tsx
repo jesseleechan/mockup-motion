@@ -115,21 +115,22 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
 
       {/* Empty State Card if no assets or shots */}
       {showEmptyState ? (
-        <div className="z-10 max-w-md w-full bg-[var(--color-panel)] border border-[var(--color-line)] p-8 rounded-xl shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-12 h-12 mx-auto rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center shadow-xs">
-            <Icon icon={Film} size={26} />
+        // A floating panel on the workspace, in Layout Stage's quiet style: no border, the lift.
+        <div className="z-10 max-w-[360px] w-full bg-[var(--color-panel)] p-6 rounded-[18px] shadow-lift text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-11 h-11 mx-auto rounded-[12px] bg-paper shadow-lift-sm text-[var(--color-text-2)] grid place-items-center">
+            <Icon icon={Film} size={20} />
           </div>
 
-          <div className="space-y-1.5">
-            <h2 className="text-lg font-semibold text-[var(--color-text)] tracking-tight">
+          <div className="space-y-1">
+            <h2 className="text-[16px] font-semibold text-[var(--color-text)] tracking-tight">
               Create a presentation
             </h2>
-            <p className="text-xs text-[var(--color-text-2)] leading-relaxed">
+            <p className="text-[12.5px] text-[var(--color-text-2)] leading-[1.45]">
               Upload screenshots, pick a template, and export a video.
             </p>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <Button
               variant="primary"
               className="w-full justify-center"
@@ -150,7 +151,7 @@ export const Stage: React.FC<StageProps> = ({ showSafeMargins }) => {
 
             <Button
               variant="ghost"
-              className="w-full justify-center text-[var(--color-accent)]"
+              className="w-full justify-center"
               onClick={fillWithDemoContent}
               icon={<Icon icon={Sparkles} size={15} />}
             >

@@ -18,6 +18,7 @@ import { ExportFiles, FileList } from "./ExportFiles";
 import { SizePicker } from "./SizePicker";
 import { docAtAspect, fileNotices, orderSizes, runExportQueue } from "./queue";
 import { useExportPlan, type ExportTarget } from "./useExportPlan";
+import { notice } from "./surfaces";
 
 interface ExportModalProps {
   open: boolean;
@@ -30,8 +31,6 @@ function presetSettings(id: DestinationId): ExportSettings {
 }
 
 const NO_TARGETS: ExportTarget[] = [];
-
-const notice = "p-3 rounded-lg bg-[var(--color-raised)] border text-xs flex items-start gap-2";
 
 /** The file being rendered, for the progress view of an export with several sizes. */
 interface CurrentFile {
@@ -243,11 +242,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
               <EncodingSettings settings={settings} onChange={updateSettings} />
 
               {notices.map((text) => (
-                <div
-                  key={text}
-                  className={`${notice} border-[var(--color-warning)]/30 text-[var(--color-warning)]`}
-                  role="status"
-                >
+                <div key={text} className={notice("warning")} role="status">
                   <AlertTriangle size={14} className="shrink-0 mt-px" />
                   <span>{text}</span>
                 </div>
@@ -258,10 +253,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
           )}
 
           {error && !progress && (
-            <div
-              className={`${notice} border-[var(--color-danger)]/40 text-[var(--color-danger)]`}
-              role="alert"
-            >
+            <div className={notice("danger")} role="alert">
               <AlertTriangle size={14} className="shrink-0 mt-px" />
               <span>{error}</span>
             </div>
@@ -269,7 +261,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ open, onOpenChange }) 
         </div>
 
         {!progress && !showResult && (
-          <div className="mt-5 pt-4 border-t border-[var(--color-line)] flex items-center justify-between">
+          <div className="mt-6 flex items-center justify-between">
             <Button variant="ghost" onClick={() => handleClose(false)}>
               Close
             </Button>

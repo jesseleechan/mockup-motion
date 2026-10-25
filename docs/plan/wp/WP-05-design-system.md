@@ -18,6 +18,8 @@ Build a quiet, professional component kit in the spirit of Jitter, Linear, and F
 1. **Dependencies:** `@radix-ui/react-{slider,popover,select,tabs,dialog,tooltip,toggle-group,dropdown-menu,context-menu,switch,scroll-area}`, `react-colorful`, `clsx`.
 2. **Tokens (`src/ui/theme.css`, Tailwind v4 `@theme`).** Dark is the default; light via `[data-theme="light"]`.
 
+   > **Superseded (October 2026):** the restyle plan (`docs/restyle-plan/README.md`, R1) replaces this token table and the theme default with Layout Stage's palette and a System, Light and Dark theme. `src/ui/theme.css` holds the values. The contrast check in the acceptance criteria still applies.
+
    | Token | Dark | Light |
    |---|---|---|
    | `--color-bg` (app) | `#0B0B0D` | `#F5F5F7` |
