@@ -4,8 +4,15 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import { collectAssetIds, layoutAssetIds } from "../src/doc/assets";
 import type { ProjectDoc } from "../src/doc/types";
+import manifest from "../public/demo/manifest.json" with { type: "json" };
 import { createLabAssetProvider, resolveLabAssetUrl } from "../src/lab/asset-provider";
-import { DEMO_ASSETS, demoAsset } from "../src/lab/demo-assets";
+import {
+  DEMO_ASSETS,
+  demoAsset,
+  demoAssetId,
+  demoAssetRef,
+  type DemoPage,
+} from "../src/lab/demo-assets";
 import { VISUAL_FIXTURES } from "../src/lab/visual-fixtures";
 import { labTestBandsId, labTestQuadrantsId, parseLabTestId } from "../src/lab/test-images";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
@@ -93,8 +100,8 @@ async function assetProblems(doc: ProjectDoc): Promise<string[]> {
 }
 
 describe("F04 demo asset map", () => {
-  it("covers all 20 manifest captures with the true file sizes", async () => {
-    expect(DEMO_ASSETS.size).toBe(20);
+  it("covers every manifest capture with the true file sizes", async () => {
+    expect(DEMO_ASSETS.size).toBe(manifest.length);
     const wrong: string[] = [];
     for (const asset of DEMO_ASSETS.values()) {
       const real = await realSize(asset.url);
@@ -143,6 +150,61 @@ describe("F04 demo asset map", () => {
       "/demo/aurelia/desktop-full.webp",
     );
     expect(resolveLabAssetUrl("blob:http://localhost/abc")).toBe("blob:http://localhost/abc");
+  });
+});
+
+// Site Tour, Responsive Tour and Before & After ask for Aurelia's pages by name (presets 2, T0).
+describe("demo pages", () => {
+  const AURELIA_PAGES: readonly Exclude<DemoPage, "home">[] = [
+    "works",
+    "studio",
+    "journal",
+    "home-before",
+  ];
+
+  it("a home page keeps its original id, with or without the page", () => {
+    expect(demoAssetId("aurelia", "desktop", "hero")).toBe("demo-aurelia-desktop-hero");
+    expect(demoAssetId("aurelia", "desktop", "hero", "home")).toBe("demo-aurelia-desktop-hero");
+    expect(demoAsset("demo-northwind-mobile-full")).toMatchObject({
+      site: "northwind",
+      page: "home",
+      url: "/demo/northwind/mobile-full.webp",
+    });
+  });
+
+  it.each(AURELIA_PAGES)("aurelia %s resolves in both sizes, as a hero and a full page", (page) => {
+    for (const device of ["desktop", "mobile"] as const) {
+      for (const capture of ["hero", "full"] as const) {
+        const id = demoAssetId("aurelia", device, capture, page);
+        expect(id).toBe(`demo-aurelia-${page}-${device}-${capture}`);
+        expect(demoAsset(id)).toMatchObject({
+          site: "aurelia",
+          page,
+          role: device,
+          capture,
+          tall: capture === "full",
+          url: `/demo/aurelia/${page}/${device}-${capture}.webp`,
+        });
+      }
+      // A full page carries its own page's sections, not the home page's.
+      const ref = demoAssetRef(demoAssetId("aurelia", device, "full", page));
+      expect(ref.name).toBe(`aurelia-${page}-${device}-full.webp`);
+      expect(ref.meta?.page).toBe(`http://localhost:3591/aurelia/${page}.html`);
+      expect(ref.meta?.sections?.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("each page is its own screenshot", () => {
+    const urls = ["home" as const, ...AURELIA_PAGES].map(
+      (page) => demoAsset(demoAssetId("aurelia", "desktop", "hero", page)).url,
+    );
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  it("a page a site does not have is rejected, not replaced by its home page", () => {
+    const id = demoAssetId("northwind", "desktop", "hero", "works");
+    expect(id).toBe("demo-northwind-works-desktop-hero");
+    expect(() => demoAssetRef(id)).toThrow("Unknown demo asset: demo-northwind-works-desktop-hero");
   });
 });
 

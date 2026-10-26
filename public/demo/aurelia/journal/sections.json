@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:3591/aurelia/journal.html",
+  "viewportWidth": 1440,
+  "scale": 1,
+  "pageHeight": 3771,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 0,
+      "height": 87
+    },
+    {
+      "tag": "section",
+      "id": "journal-intro",
+      "className": "page-intro",
+      "top": 87,
+      "height": 338
+    },
+    {
+      "tag": "section",
+      "id": "featured",
+      "className": "notes-section",
+      "top": 426,
+      "height": 814
+    },
+    {
+      "tag": "section",
+      "id": "archive",
+      "className": "archive-section",
+      "top": 1240,
+      "height": 951
+    },
+    {
+      "tag": "section",
+      "id": "library",
+      "className": "library-section",
+      "top": 2191,
+      "height": 748
+    },
+    {
+      "tag": "section",
+      "id": "letter",
+      "className": "letter-section",
+      "top": 2939,
+      "height": 469
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 3407,
+      "height": 364
+    }
+  ]
+}

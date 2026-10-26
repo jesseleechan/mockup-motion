@@ -1,0 +1,708 @@
+/* Works, Studio and Journal. Loaded after styles.css, whose tokens and header they share. */
+
+/* Page intro: the title row every inner page opens with */
+.page-intro {
+  padding: 72px 0 56px;
+}
+
+.intro-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 48px;
+}
+
+.page-title {
+  font-family: var(--serif);
+  font-size: clamp(56px, 6.5vw, 84px);
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.intro-lede {
+  max-width: 420px;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.intro-row .filter-row {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+.filter {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: 7px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.filter.active {
+  color: var(--bg-primary);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.filter sup {
+  font-size: 9px;
+  margin-left: 4px;
+  vertical-align: super;
+  opacity: 0.7;
+}
+
+/* Works: the project grid */
+.projects-section {
+  padding: 0 0 120px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 56px 32px;
+}
+
+.project-media {
+  aspect-ratio: 4 / 3;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+
+.project-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Lake Lucerne is the hero photograph, framed on the lake side of the room. */
+.project-media.photo img {
+  object-position: 78% 50%;
+}
+
+.project-caption {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: baseline;
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.project-num {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+.project-name {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.project-type {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.project-place {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+/* Works: the index table */
+.index-section {
+  padding: 120px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.works-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.works-table th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  padding: 0 16px 14px 0;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.works-table td {
+  padding: 18px 16px 18px 0;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-muted);
+}
+
+.works-table td.name {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.status {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.status.live {
+  color: var(--text-primary);
+}
+
+/* Shared closing band */
+.cta-section {
+  padding: 120px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 80px;
+  align-items: end;
+}
+
+/* Studio: statement, principles and the long section */
+.studio-hero {
+  padding: 72px 0 96px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.studio-hero-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 0.55fr;
+  gap: 96px;
+  align-items: start;
+}
+
+.studio-statement {
+  font-family: var(--serif);
+  font-size: clamp(34px, 3.9vw, 54px);
+  line-height: 1.14;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.principles {
+  list-style: none;
+  border-top: 1px solid var(--border-strong);
+}
+
+.principles li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 4px 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.principles span {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  padding-top: 3px;
+}
+
+.principles strong {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.principles p {
+  grid-column: 2;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.long-section {
+  margin-top: 56px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 24px;
+}
+
+/* The drawing is 4:1; on a phone it is cropped to 2:1 around the baths. */
+.long-section-media img {
+  width: 100%;
+  display: block;
+}
+
+.figure-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.approach-section,
+.people-section,
+.contact-section {
+  padding: 120px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.stage {
+  padding: 32px 28px 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.stage-num {
+  font-family: var(--serif);
+  font-size: 38px;
+  line-height: 1;
+  color: var(--text-dim);
+}
+
+.stage h3 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+  margin: 28px 0 10px;
+}
+
+.stage p {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.people-list {
+  border-top: 1px solid var(--border-strong);
+}
+
+.person {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 0.7fr 0.4fr;
+  gap: 24px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.person-name {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.person-since {
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.people-note {
+  margin-top: 28px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.office-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 64px;
+}
+
+.office {
+  padding-top: 24px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.office h3 {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  margin-bottom: 16px;
+}
+
+.office p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+
+.contact-lines {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  padding: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.contact-lines .section-kicker {
+  margin-bottom: 8px;
+}
+
+.contact-lines a {
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
+/* Journal: featured notes, the archive, the sample library and the letter */
+.notes-section {
+  padding: 0 0 120px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.note-media {
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+
+.note-media img,
+.swatch-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.note-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.note-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.18;
+  margin: 10px 0 10px;
+}
+
+.note-excerpt {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.archive-section,
+.library-section {
+  padding: 120px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.archive-list {
+  list-style: none;
+  border-top: 1px solid var(--border-strong);
+}
+
+.archive-list li {
+  display: grid;
+  grid-template-columns: 56px 140px 1fr 140px 80px;
+  gap: 24px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.archive-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.archive-list .tag {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.archive-list .read {
+  text-align: right;
+}
+
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.swatch-media {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.swatch h3 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+  margin: 18px 0 10px;
+}
+
+.swatch dl {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 6px 12px;
+  font-size: 13px;
+}
+
+.swatch dt {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  padding-top: 2px;
+}
+
+.swatch dd {
+  color: var(--text-muted);
+}
+
+.letter-section {
+  padding: 120px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.letter-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  padding: 64px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+
+.letter-form {
+  display: flex;
+  gap: 12px;
+}
+
+.letter-input {
+  flex: 1;
+  padding: 14px 18px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+
+.letter-input::placeholder {
+  color: var(--text-dim);
+}
+
+.letter-button {
+  font: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 24px;
+  color: var(--bg-primary);
+  background: var(--text-primary);
+  border: 0;
+  border-radius: 999px;
+}
+
+.letter-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 768px) {
+  .page-intro {
+    padding: 40px 0 36px;
+  }
+  .intro-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .intro-row .filter-row {
+    justify-content: flex-start;
+  }
+  .page-title {
+    font-size: 52px;
+  }
+  .intro-lede {
+    font-size: 15px;
+  }
+  .filter-row {
+    margin-top: 24px;
+  }
+  .filter {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+  .projects-section,
+  .notes-section {
+    padding-bottom: 72px;
+  }
+  .project-grid,
+  .notes-grid,
+  .studio-hero-grid,
+  .cta-grid,
+  .stage-grid,
+  .office-grid,
+  .contact-lines,
+  .letter-box {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .swatch-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 16px;
+  }
+  .project-caption {
+    grid-template-columns: 32px 1fr;
+  }
+  .project-place {
+    grid-column: 2;
+  }
+  .project-name {
+    font-size: 24px;
+  }
+  .index-section,
+  .cta-section,
+  .approach-section,
+  .people-section,
+  .contact-section,
+  .archive-section,
+  .library-section,
+  .letter-section {
+    padding: 72px 0;
+  }
+  .works-table thead,
+  .works-table .hide-sm {
+    display: none;
+  }
+  .works-table td {
+    padding: 14px 12px 14px 0;
+    font-size: 13px;
+  }
+  .works-table td.name {
+    font-size: 18px;
+  }
+  .studio-hero {
+    padding: 40px 0 64px;
+  }
+  .studio-statement {
+    font-size: 32px;
+  }
+  .long-section {
+    margin-top: 40px;
+  }
+  .long-section-media {
+    aspect-ratio: 2 / 1;
+    overflow: hidden;
+  }
+  .long-section-media img {
+    height: 100%;
+    object-fit: cover;
+    object-position: 72% 50%;
+  }
+  .figure-caption {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .person {
+    grid-template-columns: 1fr auto;
+    gap: 4px 16px;
+  }
+  .person-role {
+    grid-column: 1;
+  }
+  .person-studio {
+    display: none;
+  }
+  .person-since {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .note-media {
+    aspect-ratio: 4 / 3;
+  }
+  .note-title {
+    font-size: 26px;
+  }
+  .archive-list li {
+    grid-template-columns: 1fr auto;
+    gap: 6px 16px;
+  }
+  .archive-list .num,
+  .archive-list .read {
+    display: none;
+  }
+  .archive-list .date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .archive-list .tag {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+  }
+  .archive-title {
+    grid-column: 1 / -1;
+    font-size: 20px;
+  }
+  .letter-box {
+    padding: 28px;
+  }
+  .letter-form {
+    flex-direction: column;
+  }
+  .letter-button {
+    padding: 14px 24px;
+  }
+}
