@@ -62,6 +62,7 @@ export type Layout =
   | { kind: "tour"; device: "browser" | "phone"; assetIds: string[]; step: number }
   | { kind: "compare"; device: "browser" | "phone"; beforeId: string; afterId: string }
   | { kind: "responsive"; desktopId: string; mobileId: string }
+  | { kind: "pageColumns"; assetIds: string[]; shape: "mobile" | "desktop" }
   | { kind: "responsive-tour"; desktopIds: string[]; mobileIds: string[]; step: number };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
@@ -87,6 +88,12 @@ export type Layout =
 // duration, which Shot.pace sets (Brisk 5.6, Default 6.8, Calm 8.0 s with the 0.8 s wrap).
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
+// pageColumns: full pages side by side as frameless cards, each drifting through its own page at
+// a constant speed, neighbours in opposite directions (Desktop and Mobile Page Columns,
+// quality-bar §4), showing the first ones. Desktop: 3 columns at 16:9, 2 at 4:3 and 1:1, 1 at 4:5
+// and 9:16. Mobile: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16.
+// shape: desktop columns fill the column width; mobile ones are no wider than a phone screen.
+// Its pace sets the shot's duration: the loop plus the 0.8 s wrap crossfade.
 // responsive-tour: pages of one site, each as a desktop and a mobile screenshot, on Responsive
 // Scroll's two cards (Responsive Tour). Page i is desktopIds[i] with mobileIds[i]: both lists
 // have the same length, and "" is a side without a screenshot. Each step both cards slide to the

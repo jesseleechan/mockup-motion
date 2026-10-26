@@ -133,6 +133,21 @@ STILLS.push({
   aspect: "16:9",
   t: 2.05,
 });
+// Page Columns (presets round two, T3), mid-drift at 4.0 s on each aspect's own fixture (the
+// loop follows the aspect): desktop 3 columns at 16:9, 2 at 1:1 and 1 at 9:16; mobile 3 at 16:9
+// and 1:1 and 2 at 4:5. Mobile at 16:9 shows the phone-width cap. Plus each preset's dark option
+// at 16:9.
+const PAGE_COLUMNS_STILLS: [string, string[]][] = [
+  ["desktop-page-columns", ["16:9", "1:1", "9:16"]],
+  ["mobile-page-columns", ["16:9", "1:1", "4:5"]],
+];
+for (const [id, aspects] of PAGE_COLUMNS_STILLS) {
+  for (const aspect of aspects) {
+    const tag = aspect.replace(":", "x");
+    STILLS.push({ name: `${id}-${tag}-t4`, fixture: `${id}-${tag}`, aspect, t: 4 });
+  }
+  STILLS.push({ name: `${id}-dark-16x9-t4`, fixture: `${id}-dark-16x9`, aspect: "16:9", t: 4 });
+}
 // Responsive Tour: mid-step (2.5 s, both cards between two pages) at every aspect, side by side
 // or stacked, plus the 16:9 rest pose (1.9 s, page 2 alone on both cards). Presets round two T4.
 for (const aspect of ["16:9", "4:3", "1:1", "4:5", "9:16"]) {

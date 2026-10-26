@@ -104,9 +104,9 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the
-    // Slider, Frames, Stack, Orbit, Site Tour, Before & After and Scroll Story pairs, then
-    // Responsive Scroll and Responsive Tour. The first entry is the first-run default (presets plan
-    // D1).
+    // Slider, Frames, Stack, Orbit, Site Tour, Before & After, Page Columns and Scroll Story
+    // pairs, then Responsive Scroll and Responsive Tour. The first entry is the first-run default
+    // (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -120,6 +120,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-site-tour",
       "desktop-before-after",
       "mobile-before-after",
+      "desktop-page-columns",
+      "mobile-page-columns",
       "scroll-story",
       "mobile-scroll-story",
       "responsive-scroll",
@@ -149,6 +151,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-site-tour": "mobile",
       "desktop-before-after": "desktop",
       "mobile-before-after": "mobile",
+      "desktop-page-columns": "desktop",
+      "mobile-page-columns": "mobile",
       "scroll-story": "desktop",
       "mobile-scroll-story": "mobile",
       "responsive-scroll": "both",
@@ -330,8 +334,13 @@ describe("Template loop seam", () => {
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
-  // Responsive Scroll can't reverse its scroll, so it loops by the wrap crossfade (contracts §5).
-  const WRAP_SCROLL_TEMPLATES = ["responsive-scroll"];
+  // Responsive Scroll and Page Columns can't reverse their scroll or drift, so they loop by the
+  // wrap crossfade (contracts §5).
+  const WRAP_SCROLL_TEMPLATES = [
+    "responsive-scroll",
+    "desktop-page-columns",
+    "mobile-page-columns",
+  ];
   // Before & After's sweep never reverses either: it crossfades back to the old design.
   const WRAP_SWEEP_TEMPLATES = ["desktop-before-after", "mobile-before-after"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {

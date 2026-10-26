@@ -8,7 +8,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 1. **The work is the hero.** Screenshots are shown at the largest size the composition allows, color-exact and crisp. Effects support them and never compete.
 2. **One idea per shot.** Each shot has a single dominant movement. Secondary motion (grain, background drift) stays under the threshold of attention.
-3. **Motion has intent.** It starts with purpose, settles, and holds. Nothing moves linearly except Frames lanes. Nothing reverses within a shot.
+3. **Motion has intent.** It starts with purpose, settles, and holds. Nothing moves linearly except Frames lanes and Page Columns' drift. Nothing reverses within a shot.
 4. **Restraint over decoration.** If an effect is noticeable as an effect, it is too strong.
 
 ## 2. Motion
@@ -24,7 +24,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 | `backOut`    | cubic-bezier(0.34, 1.32, 0.64, 1)                  | Small UI-like pops only. Overshoot 3% or less                                                |
 | `spring`     | Analytic damped spring, ζ = 0.85, settles in 0.9 s | Camera moves (the Camera section offers it)                                                  |
 | `slide`      | cubic-bezier(0.40, 0, 0.05, 1)                     | Carousel steps (`slider` layout). A short ease-in into a fast middle and a long, soft settle |
-| `linear`     | —                                                  | Frames lanes only                                                                            |
+| `linear`     | —                                                  | Frames lanes and Page Columns' drift only                                                    |
 
 ### 2.2 Durations
 
@@ -34,6 +34,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 - Scroll: each segment between stops takes at least 1.1 s per viewport height travelled (the viewport is the device screen). Hold 0.6–1.2 s at each stop. Never scroll faster than 0.9 viewport heights per second.
 - Responsive Scroll: two screens scroll together, so each segment takes the time the screen that travels further needs at 0.9 screen heights per second, and both hold together (1.0 s by default). Defaults stop at the top and three sections both pages share (not the header or footer), each the farthest from the stops already chosen. The shot lasts holds plus moves plus the 0.8 s wrap crossfade, so the loop is holds plus moves and the fade falls inside the last hold; it fits in 30 s.
 - Before & After: 1.0 s on the old design, a 2.0 s sweep on `smooth` (the new design crosses from left to right), a hold on the new design, then the 0.8 s wrap crossfade back to the old one: a 6.0 s loop, in a 6.8 s shot whose end the crossfade overlaps (2.2 s on the new design before the fade, 3.0 s with it). The sweep never reverses.
+- Page Columns: every column drifts through its page at one constant speed for the whole loop, never faster than 0.5 column heights per second (§2.5), then the 0.8 s wrap crossfade returns every column to its start; the outgoing columns keep drifting under the fade, so nothing stops. The Default loop is the shortest of 12 s or more, in 0.5 s steps, at which the longest shown page keeps to the limit. The shot lasts the loop plus the 0.8 s crossfade and fits in 30 s, so the loop is at most 29.2 s; past that, a column travels only as far as the limit allows (from its start: the top, or the bottom for a column moving down). With the demo pages: Desktop 12 s at every aspect; Mobile 13.5 s at 16:9, 13 s at 4:3 and 12 s at 1:1, 4:5 and 9:16.
 - Pace (`Shot.pace`, `src/motion/pace.ts`): every looping preset offers **Calm**, **Default** and **Brisk**. Default is the timing above; Calm is ×1.2 and Brisk ×0.8 on time, the same pair for every preset. The value is rounded, then clamped by the preset's limits:
 
   | Preset                                           | Knob            | Brisk         | Default                     | Calm          | Limits                                                                      |
@@ -42,8 +43,9 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
   | Frames                                           | `shot.duration` | Default × 0.8 | max(15 s, `framesDuration`) | Default × 1.2 | 0.5 s steps; at least `framesDuration` (the §2.5 speed limit), at most 30 s |
   | Responsive Scroll                                | `scroll.hold`   | 0.8 s         | 1.0 s                       | 1.2 s         | 0.1 s steps; the moves already run at the scroll speed limit, so they stay  |
   | Before & After                                   | `shot.duration` | 5.6 s         | 6.8 s                       | 8.0 s         | the 6.0 s loop × pace in 0.1 s steps, plus the 0.8 s wrap crossfade         |
+  | Page Columns                                     | `shot.duration` | Default × 0.8 | loop (above) + 0.8 s        | Default × 1.2 | the loop in 0.5 s steps; at least the §2.5 speed limit's, at most 29.2 s    |
 
-  Where a limit makes Calm or Brisk equal Default, the inspector shows that option as unavailable with its reason: "Already at the speed limit" for Brisk (Frames from about 5 screenshots, a slider with 18) and "No room in 30 s" for Calm (a slider with 15 or more, ten phones at 4:5). The pace is stored, not derived: the step, duration or hold is recomputed from it after every edit, so a choice survives an aspect change or adding and removing screenshots. A project saved before paces existed takes the pace nearest its saved timing once, on load; ties go to Default. Scroll Story has no pace (`follow-ups.md`).
+  Page Columns scales its loop, not the 0.8 s crossfade, and Brisk may go under the Default's 12 s (12 × 0.8 = 9.5 s) as long as the longest page keeps to the speed limit. Where a limit makes Calm or Brisk equal Default, the inspector shows that option as unavailable with its reason: "Already at the speed limit" for Brisk (Frames from about 5 screenshots, a slider with 18, Page Columns once its longest page sets a loop over 12 s) and "No room in 30 s" for Calm (a slider with 15 or more, ten phones at 4:5, Page Columns once its Default loop is 29.2 s). The pace is stored, not derived: the step, duration or hold is recomputed from it after every edit, so a choice survives an aspect change or adding and removing screenshots. A project saved before paces existed takes the pace nearest its saved timing once, on load; ties go to Default. Scroll Story has no pace (`follow-ups.md`).
 
 ### 2.3 Camera presets at `intensity = 1` (`src/motion/camera.ts`)
 
@@ -67,6 +69,7 @@ Cut on 26 October 2026 ([#113](https://github.com/jesseleechan/mockup-motion/pul
 - Never reverse direction within a shot. The v1 zoom-in-then-out "breathing" is banned.
 - Never use more than one dominant movement at once (for example, orbit plus push plus scroll). Scroll shots use a near-static camera (intensity ≤ 0.3).
 - Never let a Frames lane (a `rows` or `columns` layout: Desktop Frames and Mobile Frames) move faster than **0.20 stage units (frame heights) per second** along its motion axis. Every row or column moves at the same speed, alternating direction. Desktop Frames' rows move sideways and Mobile Frames' columns move vertically under the same limit, so the two presets are one effect. (The tilted marquees' 0.12 frame widths per second went with them on 19 October 2026.)
+- Never let a Page Columns column drift faster than **0.5 column heights per second**, calmer than a scroll's 0.9 because it never stops (presets round two, D10). Each column has its own constant speed, its page's travel over the loop; neighbours move in opposite directions.
 - Never use a linear camera move.
 - Never animate opacity alone for large objects (pair it with 2–4% rise or scale 0.97 → 1). Slider cards pair their fade with the 0.75 neighbour scale. The card entering a deck's last slot (Desktop Stack, Mobile Stack) pairs its fade with its move and scale into that slot.
 
@@ -99,7 +102,7 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 
 ### 3.4 Card
 
-- Card: the screenshot alone with a hairline border. This is the "frameless" look. The corner radius is 1.6% of width for landscape cards and 7.5% of width for portrait (mobile) cards, which show a mobile screenshot at the phone screen aspect 0.4615. Mobile Slider and Mobile Frames use the same portrait card.
+- Card: the screenshot alone with a hairline border. This is the "frameless" look. The corner radius is 1.6% of width for landscape cards and 7.5% of width for portrait (mobile) cards, which show a mobile screenshot at the phone screen aspect 0.4615. Mobile Slider and Mobile Frames use the same portrait card. Page Columns' cards take their radius from their pages' size, not their shape: a desktop page in a tall column keeps 1.6%, a mobile page 7.5%.
 
 ## 4. Composition
 
@@ -142,6 +145,18 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 - **Scroll Story** (`single`, one tall screenshot, scroll stops `[0, 0.33, 0.66, 1]` with 0.8 s holds, `pushIn` at intensity 0.2, Fog, no loop): Desktop Scroll Story uses the browser window, Mobile Scroll Story the phone (§3.3), at the single-device sizes above. The shot lasts 10 s, or longer when the page needs it to stay under the §2.2 scroll limit, rounded up to 0.5 s.
 
 - **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
+
+- **Page Columns** (`pageColumns`, cards, still camera; Desktop Page Columns and Mobile Page Columns, `docs/presets-2-plan/README.md` D9–D11): full pages side by side, one per column, each fit to its column's width (never cropped at the sides) and drifting through its page (§2.2). Mobile has 3 columns at 16:9, 4:3 and 1:1 and 2 at 4:5 and 9:16. Desktop has 3 at 16:9, 2 at 4:3 and 1:1 and 1 at 4:5 and 9:16, which shows the first page: in columns as narrow as mobile ones a desktop page is about as short as its column, so it stays still or barely moves (owner, 26 October 2026). Every column should travel at least a fifth of its window over the loop. With fewer pages, fewer columns share the same span. The columns are centred, with a 0.035 gap. Desktop: each column takes an equal share of 0.86 × W (W = frame width) and is 0.84 tall. Mobile: 0.8 tall and min(that share, 0.8 × 0.4615) wide, so no wider than a phone screen. A page shorter than its column, such as a hero, shows whole on a card as tall as the page, centred, and stays still. Ash or Onyx, no shadow, grain 0, vignette 0. These are the shortlist preview's numbers, kept after the T3 contact sheet except desktop's column counts at 4:3, 1:1, 4:5 and 9:16:
+
+  | Aspect | Desktop columns | Desktop column (w × h) | Mobile columns | Mobile column (w × h) | Mobile group / W |
+  | ------ | --------------- | ---------------------- | -------------- | --------------------- | ---------------- |
+  | 16:9   | 3               | 0.486 × 0.84           | 3              | 0.369 × 0.80          | 66%              |
+  | 4:3    | 2               | 0.556 × 0.84           | 3              | 0.359 × 0.80          | 86%              |
+  | 1:1    | 2               | 0.413 × 0.84           | 3              | 0.263 × 0.80          | 86%              |
+  | 4:5    | 1               | 0.688 × 0.84           | 2              | 0.327 × 0.80          | 86%              |
+  | 9:16   | 1               | 0.484 × 0.84           | 2              | 0.224 × 0.80          | 86%              |
+
+  A desktop column shows 1440 / w × h px of a 1440 px page: about 2,490 px at 16:9, 2,180 at 4:3, 2,930 at 1:1, 1,760 at 4:5 and 2,500 at 9:16, so shorter pages fit whole. The demo desktop pages (3,507–4,183 px) drift at every aspect, each column at least 0.39 column heights over the 12 s loop. Page Columns needs 2 full pages of one size and shows at most 3, each once.
 
 - **Responsive Tour** (`responsive-tour`, cards, still camera; template id `responsive-tour`, `docs/presets-2-plan/README.md` D12–D15): pages of one site, each as a desktop and a mobile screenshot, on Responsive Scroll's two cards with its sizes and arrangement above (side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16), Ash or Onyx, no shadow, grain 0, vignette 0. Each step both cards slide to the next page together, edge to edge, each clipped to its card, on the carousel step timing (§2.2): a 1.85 s move on `slide`, then a hold; the mobile screen moves in step with the desktop one. Page n pairs the n-th desktop with the n-th mobile screenshot; every page is fit to its card's width and shows its top. Responsive Tour needs 3 pages in both sizes, takes up to 5 from a template's slots and shows each once. These are the approved preview's values; the T4 contact sheet review may tune them, and any change is recorded here.
 

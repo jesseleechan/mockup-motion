@@ -20,5 +20,7 @@ export { desktopSiteTourTemplate } from "./desktop-site-tour";
 export { mobileSiteTourTemplate } from "./mobile-site-tour";
 export { desktopBeforeAfterTemplate } from "./desktop-before-after";
 export { mobileBeforeAfterTemplate } from "./mobile-before-after";
+export { desktopPageColumnsTemplate } from "./desktop-page-columns";
+export { mobilePageColumnsTemplate } from "./mobile-page-columns";
 export { responsiveScrollTemplate } from "./responsive-scroll";
 export { responsiveTourTemplate } from "./responsive-tour";

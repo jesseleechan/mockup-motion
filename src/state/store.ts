@@ -156,7 +156,8 @@ const COALESCE_WINDOW_MS = 800;
  * lasts one step per shown screenshot and keeps a still camera (contracts.md §5). Edits that set
  * such a shot's duration or camera directly are undone here. A responsive shot keeps a still
  * camera and, while it scrolls, lasts its holds plus moves. A Before & After shot keeps a still
- * camera and lasts its pace's loop plus the wrap crossfade.
+ * camera and lasts its pace's loop plus the wrap crossfade. A Page Columns shot keeps a still
+ * camera, and its pace sets its length from its pages.
  */
 function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
@@ -168,7 +169,13 @@ function fitFixedShots(draft: ProjectDoc): void {
       if (camera !== shot.camera) shot.camera = camera;
       continue;
     }
-    if (!isSteppedLayout(shot.layout) && shot.layout.kind !== "compare") continue;
+    if (
+      !isSteppedLayout(shot.layout) &&
+      shot.layout.kind !== "compare" &&
+      shot.layout.kind !== "pageColumns"
+    ) {
+      continue;
+    }
     // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
     const camera = fixedShotCamera(shot.layout, shot.camera);
     if (camera !== shot.camera) shot.camera = camera;
@@ -537,8 +544,12 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               const at = match && shown > 0 ? (parseInt(match[1], 10) % shown) + 1 : shown;
               layout.assetIds.splice(at, 0, assetId);
             }
-          } else if (layout.kind === "rows" || layout.kind === "columns") {
-            // Find target index in assetIds
+          } else if (
+            layout.kind === "rows" ||
+            layout.kind === "columns" ||
+            layout.kind === "pageColumns"
+          ) {
+            // Find target index in assetIds: a Page Columns card "pageColumns:1" is page 1.
             let targetIdx = -1;
             const match = slotKeyOrNodeId.match(/(\d+)/);
             if (match) {

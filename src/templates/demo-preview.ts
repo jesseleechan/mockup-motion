@@ -101,6 +101,14 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
   // (presets round two, D8, D14).
   "desktop-before-after": [desktopHero("aurelia", "home-before"), desktopHero("aurelia")],
   "mobile-before-after": [mobileHero("aurelia", "home-before"), mobileHero("aurelia")],
+  // Three full pages, one per column (the shortlist's preview). Fewer columns show the first
+  // ones: desktop 2 at 4:3 and 1:1 and 1 at 4:5 and 9:16, mobile 2 at 4:5 and 9:16.
+  "desktop-page-columns": [
+    desktopFull("aurelia"),
+    desktopFull("northwind"),
+    desktopFull("maison-oak"),
+  ],
+  "mobile-page-columns": [mobileFull("aurelia"), mobileFull("northwind"), mobileFull("maison-oak")],
   "scroll-story": [desktopFull("studio-kova")],
   // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],

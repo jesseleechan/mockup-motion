@@ -9,8 +9,8 @@ const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
 // D5, D8).
 const TOUR_DEVICES = ["browser", "phone"] as const;
 // Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours, Before & After,
-// Responsive Scroll and Responsive Tour come from their templates, so the picker lists them only
-// on a shot that already uses one.
+// Responsive Scroll, Responsive Tour and Page Columns come from their templates, so the picker
+// lists them only on a shot that already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -137,7 +137,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {(layout.kind === "slider" || layout.kind === "orbit") && (
+      {(layout.kind === "slider" || layout.kind === "orbit" || layout.kind === "pageColumns") && (
         <>
           <Field label="Card shape">
             <Select
@@ -146,8 +146,13 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               onChange={(shape) =>
                 update(
                   (target) => {
-                    if (target.layout.kind === "slider" || target.layout.kind === "orbit") {
-                      target.layout.shape = shape;
+                    const next = target.layout;
+                    if (
+                      next.kind === "slider" ||
+                      next.kind === "orbit" ||
+                      next.kind === "pageColumns"
+                    ) {
+                      next.shape = shape;
                     }
                   },
                   { label: "Change card shape" },

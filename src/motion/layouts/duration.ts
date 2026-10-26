@@ -52,12 +52,14 @@ export function sliderAssetIds(layout: SliderLayout | TourLayout): string[] {
 export const ORBIT_MAX_SCREENSHOTS = 6;
 
 /**
- * The fewest screenshots a list layout needs (quality-bar §4): 3 for a slider, stack or Site
- * Tour, 3 pages for a Responsive Tour, 4 for an orbit or Frames. Other layouts have no list, so
- * 0.
+ * The fewest screenshots a list layout needs (quality-bar §4): 2 for Page Columns, 3 for a slider,
+ * stack or Site Tour, 3 pages for a Responsive Tour, 4 for an orbit or Frames. Other layouts have
+ * no list, so 0.
  */
 export function minShotScreenshots(layout: Layout): number {
   switch (layout.kind) {
+    case "pageColumns":
+      return 2;
     case "slider":
     case "tour":
     case "responsive-tour":
@@ -155,12 +157,15 @@ export function fixedShotDuration(
 /**
  * The camera a layout allows. A stepped layout's camera is still (quality bar §4): a camera
  * move would end the shot on another pose, so the native loop would pop. Responsive Scroll's and
- * Before & After's are still too: the scroll or the sweep is the shot's one move (quality bar
- * §2.5). Other layouts keep theirs.
+ * Before & After's and Page Columns' are still too: the scroll, the sweep or the drift is the
+ * shot's one move (quality bar §2.5). Other layouts keep theirs.
  */
 export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove {
   const still =
-    isSteppedLayout(layout) || layout.kind === "responsive" || layout.kind === "compare";
+    isSteppedLayout(layout) ||
+    layout.kind === "responsive" ||
+    layout.kind === "compare" ||
+    layout.kind === "pageColumns";
   if (!still || isStillCamera(camera)) return camera;
   return { preset: "static", intensity: 0, easing: camera.easing };
 }

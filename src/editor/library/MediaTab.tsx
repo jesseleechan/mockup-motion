@@ -78,7 +78,10 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
         used = true;
       }
       if (
-        (lay.kind === "rows" || lay.kind === "columns" || isSteppedLayout(lay)) &&
+        (lay.kind === "rows" ||
+          lay.kind === "columns" ||
+          lay.kind === "pageColumns" ||
+          isSteppedLayout(lay)) &&
         layoutAssetIds(lay).includes(assetId)
       )
         used = true;

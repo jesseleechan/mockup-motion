@@ -5,6 +5,7 @@ import {
   isSteppedLayout,
   minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
+  pageColumnsAssetIds,
   SLIDER_MAX_SCREENSHOTS,
 } from "../../../motion";
 import { ArrowUpDown } from "lucide-react";
@@ -57,8 +58,8 @@ const STEPPED_LIST_LABELS = {
 } as const;
 
 /**
- * The screenshots a single, responsive, slider, orbit, Site Tour, Before & After, Responsive Tour
- * or Frames layout shows.
+ * The screenshots a single, responsive, slider, orbit, Site Tour, Before & After, Responsive Tour,
+ * Frames or Page Columns layout shows.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
@@ -158,6 +159,27 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
         >
           Swap before and after
         </Button>
+      </Section>
+    );
+  }
+  if (layout.kind === "pageColumns") {
+    // One page per column, from 3 down to 1 for desktop at 4:5 and 9:16 (quality bar §4).
+    const shown = pageColumnsAssetIds(layout, aspect).length;
+    return (
+      <Section title="Screenshots">
+        <ScreenshotList
+          shotIndex={shotIndex}
+          assetIds={layout.assetIds}
+          images={images}
+          label="Page columns screenshots"
+          shown={shown}
+          minimum={minShotScreenshots(layout)}
+          overflowNote={
+            shown === 1
+              ? "Shows the first page only, in one column at this aspect."
+              : `Shows the first ${shown} pages, one per column at this aspect.`
+          }
+        />
       </Section>
     );
   }

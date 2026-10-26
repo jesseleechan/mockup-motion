@@ -8,10 +8,16 @@ import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 
 /**
  * Quality bar §3.4: 7.5% of width for a portrait (mobile) card, 1.6% for a landscape one.
- * The hairline border (0.0009 stage units) is the same for both.
+ * The hairline border (0.0009 stage units) is the same for both. `shape` (LayoutNode.cardShape)
+ * picks one whatever the screen aspect: a desktop page in a tall Page Columns column keeps 1.6%.
  */
-export function cardCornerRadius(width: number, screenAspect: number): number {
-  return width * (screenAspect < 1 ? 0.075 : 0.016);
+export function cardCornerRadius(
+  width: number,
+  screenAspect: number,
+  shape?: LayoutNode["cardShape"],
+): number {
+  const portrait = shape ? shape === "mobile" : screenAspect < 1;
+  return width * (portrait ? 0.075 : 0.016);
 }
 
 export function buildCardDevice(
@@ -22,7 +28,7 @@ export function buildCardDevice(
   const meshW = node.width;
   const meshH = node.height;
 
-  const cornerRadius = cardCornerRadius(meshW, node.screenAspect);
+  const cornerRadius = cardCornerRadius(meshW, node.screenAspect, node.cardShape);
   const depth = 0.002;
 
   const viewportWidthPx = Math.round(meshW * ctx.outputHeightPx * ctx.supersample);

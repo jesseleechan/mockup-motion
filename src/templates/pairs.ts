@@ -10,6 +10,7 @@ const SIZE_PAIRS: readonly (readonly [desktop: string, mobile: string])[] = [
   ["desktop-orbit", "mobile-orbit"],
   ["desktop-site-tour", "mobile-site-tour"],
   ["desktop-before-after", "mobile-before-after"],
+  ["desktop-page-columns", "mobile-page-columns"],
   ["scroll-story", "mobile-scroll-story"],
 ];
 

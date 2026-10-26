@@ -6,6 +6,7 @@ import { resolveResponsiveLayout } from "./responsive";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
+import { resolvePageColumnsLayout } from "./page-columns";
 import { resolveSliderLayout } from "./slider";
 import { resolveTourLayout } from "./tour";
 import { resolveResponsiveTourLayout } from "./responsive-tour";
@@ -69,6 +70,24 @@ export {
 export type { CompareGeometry, CompareTiming } from "./compare";
 export { distinctPages, resolveResponsiveTourLayout, responsiveTourPages } from "./responsive-tour";
 export type { ResponsiveTourPage } from "./responsive-tour";
+export {
+  PAGE_COLUMNS_MAX_LOOP,
+  PAGE_COLUMNS_MAX_SCREENSHOTS,
+  PAGE_COLUMNS_MIN_LOOP,
+  PAGE_COLUMNS_SPEED_LIMIT,
+  PAGE_COLUMNS_WRAP_OVERLAP,
+  pageColumnScroll,
+  pageColumns,
+  pageColumnsAssetIds,
+  pageColumnsCount,
+  pageColumnsDefaultLoop,
+  pageColumnsGeometry,
+  pageColumnsLoop,
+  pageColumnsPacedDuration,
+  pageColumnsShortestLoop,
+  resolvePageColumnsLayout,
+} from "./page-columns";
+export type { PageColumn, PageColumnsGeometry, PageColumnsLayout } from "./page-columns";
 
 export function resolveLayout(
   layout: Layout,
@@ -98,6 +117,8 @@ export function resolveLayout(
       return resolveResponsiveLayout(layout, aspect);
     case "responsive-tour":
       return resolveResponsiveTourLayout(layout, aspect, shotT);
+    case "pageColumns":
+      return resolvePageColumnsLayout(layout, aspect, assets, shotT, shotDuration);
     default: {
       const _exhaustive: never = layout;
       return [];

@@ -368,10 +368,11 @@ function sanitizeShot(
   }
 
   // Calm or Brisk; unset is Default. A looping shot saved before paces existed takes the pace
-  // nearest its saved timing, once (ties go to Default).
+  // nearest its saved timing, once (ties go to Default). Page Columns came after paces, so its
+  // unset pace is always Default.
   if (s.pace === "calm" || s.pace === "brisk") {
     shot.pace = s.pace;
-  } else if (!look && isPacedShot(shot)) {
+  } else if (!look && isPacedShot(shot) && shot.layout.kind !== "pageColumns") {
     const pace = nearestPace(savedTiming(s, shot), aspect);
     if (pace !== "default") shot.pace = pace;
   }
@@ -468,6 +469,14 @@ function sanitizeLayout(
         device: l.device === "phone" ? "phone" : "browser",
         beforeId: checkAsset(l.beforeId, "beforeId"),
         afterId: checkAsset(l.afterId, "afterId"),
+      };
+    case "pageColumns":
+      return {
+        kind: "pageColumns",
+        assetIds: Array.isArray(l.assetIds)
+          ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+          : [],
+        shape: l.shape === "mobile" ? "mobile" : "desktop",
       };
     case "rows": {
       const res: Layout = {
