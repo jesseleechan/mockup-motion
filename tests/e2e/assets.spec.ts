@@ -182,7 +182,7 @@ test("F03: every multi-asset layout requests each independent image @smoke", asy
       const doc = structuredClone(base);
       const ids: string[] = [...layout.assetIds];
       doc.shots[0].layout = layout as unknown as (typeof doc.shots)[number]["layout"];
-      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
       doc.style.background = { kind: "solid", color: "#808080" };
       doc.style.grain = 0;
       doc.style.vignette = 0;

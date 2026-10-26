@@ -61,7 +61,6 @@ describe("Mobile Scroll Story", () => {
       preset: "pushIn",
       intensity: 0.2,
       easing: "smooth",
-      float: 0.05,
     });
     expect(shot.scroll).toEqual({
       enabled: true,

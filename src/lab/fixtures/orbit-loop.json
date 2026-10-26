@@ -45,8 +45,7 @@
       "camera": {
         "preset": "pushIn",
         "intensity": 1,
-        "easing": "smooth",
-        "float": 0.3
+        "easing": "smooth"
       },
       "entrance": "none",
       "transitionIn": {

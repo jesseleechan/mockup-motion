@@ -123,12 +123,12 @@ export function fixedShotDuration(
 export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove {
   const still = isSteppedLayout(layout) || layout.kind === "responsive";
   if (!still || isStillCamera(camera)) return camera;
-  return { preset: "static", intensity: 0, easing: camera.easing, float: 0 };
+  return { preset: "static", intensity: 0, easing: camera.easing };
 }
 
-/** A camera with no move, no intensity and no float. */
+/** A camera with no move and no intensity. */
 export function isStillCamera(camera: CameraMove): boolean {
-  return camera.preset === "static" && camera.intensity === 0 && camera.float === 0;
+  return camera.preset === "static" && camera.intensity === 0;
 }
 
 /**

@@ -56,7 +56,7 @@ describe("Responsive Scroll template (R05)", () => {
       hold: 1,
       easing: "smooth",
     });
-    expect(shot.camera).toMatchObject({ preset: "static", intensity: 0, float: 0 });
+    expect(shot.camera).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
     expect(shot.transitionIn).toMatchObject({ kind: "fade", duration: 0.8 });
     expect(shot.duration).toBeCloseTo(9.377 + 0.8, 2);
   });

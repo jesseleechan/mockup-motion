@@ -89,7 +89,7 @@ describe("F03: texture sizing", () => {
       [{ kind: "single", device: "browser", assetId: "hero" }],
       [image("hero", 2880, 1800)],
     );
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     // single browser at 16:9 spans 68% of the frame width (quality-bar §4)
     const expected = Math.ceil((0.68 * 1920 * 1.5) / 256) * 256;
     expect(textureWidths(doc, opts).get("hero")).toBe(expected);
@@ -101,10 +101,10 @@ describe("F03: texture sizing", () => {
       [image("hero", 8000, 5000)],
     );
     const wide = { outputWidthPx: 4000, supersample: 1 };
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     expect(textureWidths(doc, wide).get("hero")).toBe(Math.ceil((0.68 * 4000 * 1.5) / 256) * 256);
     // pushIn ends at distance 0.98 (quality-bar §2.3), so the screen grows by 1/0.98.
-    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth" };
     expect(textureWidths(doc, wide).get("hero")).toBe(
       Math.ceil((0.68 * 4000 * 1.5) / 0.98 / 256) * 256,
     );
@@ -115,7 +115,7 @@ describe("F03: texture sizing", () => {
       [{ kind: "single", device: "browser", assetId: "hero" }],
       [image("hero", 10000, 6000)],
     );
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     const web = textureWidths(doc, { ...opts, quality: "web" }).get("hero")!;
     const master = textureWidths(doc, { ...opts, quality: "master" }).get("hero")!;
     const supersampled = textureWidths(doc, { ...opts, supersample: 2 }).get("hero")!;

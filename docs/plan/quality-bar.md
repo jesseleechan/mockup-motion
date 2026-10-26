@@ -7,7 +7,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 ## 1. Principles
 
 1. **The work is the hero.** Screenshots are shown at the largest size the composition allows, color-exact and crisp. Effects support them and never compete.
-2. **One idea per shot.** Each shot has a single dominant movement. Secondary motion (float, grain, background drift) stays under the threshold of attention.
+2. **One idea per shot.** Each shot has a single dominant movement. Secondary motion (grain, background drift) stays under the threshold of attention.
 3. **Motion has intent.** It starts with purpose, settles, and holds. Nothing moves linearly except Frames lanes. Nothing reverses within a shot.
 4. **Restraint over decoration.** If an effect is noticeable as an effect, it is too strong.
 
@@ -17,7 +17,7 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 | Id           | Curve                                              | Use                                                                                          |
 | ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `gentle`     | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out)       | Long camera drifts, background, float                                                        |
+| `gentle`     | cubic-bezier(0.37, 0, 0.63, 1) (sine in-out)       | Long camera drifts, background                                                               |
 | `smooth`     | cubic-bezier(0.65, 0, 0.35, 1) (cubic in-out)      | Default camera moves, scroll segments                                                        |
 | `expoOut`    | cubic-bezier(0.16, 1, 0.3, 1)                      | Ease-outs (the Camera section offers it)                                                     |
 | `quintInOut` | cubic-bezier(0.83, 0, 0.17, 1)                     | Loop wrap crossfade, decisive pushes                                                         |
@@ -47,10 +47,10 @@ Reference feel: Jitter templates, shots.so mockups, Apple product pages, Linear 
 
 Default lens: **fov 22°**. Long lenses look like product photography; wide lenses distort the screenshots. Allowed range is 15–35°.
 
-| Preset    | From → To                                     |
-| --------- | --------------------------------------------- |
-| `static`  | No change (float only)                        |
-| `pushIn`  | distance 1.10 → 0.98 (about 12% scale change) |
+| Preset   | From → To                                     |
+| -------- | --------------------------------------------- |
+| `static` | No change                                     |
+| `pushIn` | distance 1.10 → 0.98 (about 12% scale change) |
 
 The editor offers these two as Still and Push in. On 19 October 2026 the owner cut the other ten moves (pull back, orbit, tilt, rise, dolly, isometric drift and hero tilt), which no template used: the product is flat, looping presets. A saved project that uses one loads with `static`.
 
@@ -58,7 +58,7 @@ The editor offers these two as Still and Push in. On 19 October 2026 the owner c
 
 ### 2.4 Float
 
-Float is optional ambient sway layered on top of the main move, the only allowed oscillation. Amplitude is at most 1.2° yaw/pitch and at most 0.4% distance. The period equals the shot duration (one cycle), using the `gentle` curve shape. It is applied only when the shot loops or is long (6 s or more).
+Cut on 26 October 2026 ([#113](https://github.com/jesseleechan/mockup-motion/pull/113)): the camera has no ambient sway, so nothing in a shot oscillates, and a saved project's float is dropped.
 
 ### 2.5 Never
 

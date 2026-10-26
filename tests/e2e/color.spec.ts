@@ -69,7 +69,7 @@ test("F02 screenshot band centres preserve RGB in source top-to-bottom order @sm
     if (!doc || !engine || !setDoc || !images) throw new Error("F02 band hooks unavailable");
     const assetId = "f02-source-bands";
     doc.shots[0].layout = { kind: "single", device: "card", assetId };
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     doc.style.grain = doc.style.vignette = 0;
     doc.style.shadow = "none";
     doc.assets.push({
@@ -177,7 +177,7 @@ test("F02 loop wrap fade blends in linear light", async ({ page }) => {
     });
     const shot = doc.shots[0];
     shot.layout = { kind: "single", device: "card", assetId };
-    shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    shot.camera = { preset: "static", intensity: 0, easing: "smooth" };
     // Holds the top for 2 s, scrolls 3 screens in 4 s (under 0.9 per second), holds the
     // bottom for 2 s. The loop is 7 s and the wrap fades over [6, 7).
     shot.duration = 8;
@@ -210,7 +210,7 @@ test("F02 short phone screenshot bottom fill is sRGB exact @smoke", async ({ pag
     if (!doc || !engine || !setDoc || !images) throw new Error("Fill fixture unavailable");
     const id = "f02-short-phone";
     doc.shots[0].layout = { kind: "single", device: "phone", assetId: id };
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     doc.style.grain = doc.style.vignette = 0;
     doc.assets.push({
       id,
@@ -240,7 +240,7 @@ test("phone status bar keeps the page's top colour while the page scrolls under 
     if (!doc || !engine || !setDoc || !images) throw new Error("Status bar fixture unavailable");
     const id = "status-bar-tall-phone";
     doc.shots[0].layout = { kind: "single", device: "phone", assetId: id };
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     doc.shots[0].duration = 10;
     doc.shots[0].scroll = { enabled: true, stops: [0, 1], hold: 0.5, easing: "smooth" };
     doc.style.grain = doc.style.vignette = 0;

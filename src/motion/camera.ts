@@ -30,13 +30,8 @@ export const PRESET_POSES: Record<CameraPresetId, { from: CameraPose; to: Camera
 type NumericPoseKey = "yaw" | "pitch" | "roll" | "distance" | "panX" | "panY";
 const POSE_KEYS: NumericPoseKey[] = ["yaw", "pitch", "roll", "distance", "panX", "panY"];
 
-export function cameraPose(
-  move: CameraMove,
-  aspect: Aspect,
-  p: number,
-  shotT: number,
-  shotDuration: number,
-): CameraPose {
+/** The camera at shot progress `p` (0..1). There is no sway: Float was cut on 26 October 2026. */
+export function cameraPose(move: CameraMove, aspect: Aspect, p: number): CameraPose {
   const base = PRESET_POSES[move.preset] ?? PRESET_POSES.static;
   const easedP = ease(move.easing, Math.max(0, Math.min(1, p)));
   const intensity = Math.max(0, Math.min(1, move.intensity));
@@ -58,16 +53,6 @@ export function cameraPose(
     const delta = toVal - fromVal;
     // intensity scales delta around midpoint pose
     result[key] = mid + delta * intensity * (easedP - 0.5);
-  }
-
-  // Float: ambient sway layered on top (at most 1.2 deg yaw, 0.8 deg pitch, 0.4% distance)
-  const floatVal = Math.max(0, Math.min(1, move.float ?? 0));
-  if (floatVal > 0 && shotDuration > 0) {
-    const phase = (shotT / shotDuration) * 2 * Math.PI;
-    const sway = Math.sin(phase) * floatVal;
-    result.yaw += sway * 1.2;
-    result.pitch += sway * 0.8;
-    result.distance += sway * 0.004;
   }
 
   return result;

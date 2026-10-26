@@ -50,7 +50,7 @@ function load(layout: Record<string, unknown>, aspect: Aspect = "16:9"): Project
   return doc;
 }
 
-const STILL = { preset: "static", intensity: 0, float: 0 };
+const STILL = { preset: "static", intensity: 0, easing: "smooth" };
 
 /** The shot draws one node per screen with a screenshot, and no node is empty. */
 function expectDrawsScreens(doc: ProjectDoc, ids: string[]) {
@@ -91,7 +91,7 @@ describe("Saved projects with removed layouts", () => {
     };
     expect(shot.layout).toEqual(deck);
     expect(shot.duration).toBe(sliderDuration(deck));
-    expect(shot.camera).toMatchObject(STILL);
+    expect(shot.camera).toEqual(STILL);
     expect(shot.transitionIn.kind).toBe("cut");
     expect(schedule(doc).total).toBe(6);
   });
@@ -128,7 +128,7 @@ describe("Saved projects with removed layouts", () => {
         const frames = framesLayout(aspect, DESKTOPS);
         expect(shot.layout, label).toEqual(frames);
         expect(shot.duration, label).toBe(Math.max(15, framesDuration(frames, aspect)));
-        expect(shot.camera, label).toMatchObject(STILL);
+        expect(shot.camera, label).toEqual(STILL);
         expect(shot.transitionIn.kind, label).toBe("cut");
         expect(evaluate(doc, schedule(doc).total), label).toEqual(evaluate(doc, 0));
       }
@@ -144,7 +144,7 @@ describe("Saved projects with removed layouts", () => {
       const frames = mobileFramesLayout("4:5", MOBILES);
       expect(doc.shots[0].layout).toEqual(frames);
       expect(doc.shots[0].duration).toBe(Math.max(15, framesDuration(frames, "4:5")));
-      expect(doc.shots[0].camera).toMatchObject(STILL);
+      expect(doc.shots[0].camera).toEqual(STILL);
     }
   });
 
@@ -217,7 +217,7 @@ describe("Saved user templates with removed layouts", () => {
       "9:16",
     );
     expect(filled.shots[0].layout).toEqual(framesLayout("9:16", DESKTOPS));
-    expect(filled.shots[0].camera).toMatchObject(STILL);
+    expect(filled.shots[0].camera).toEqual(STILL);
   });
 
   it("fills a saved stack's slots and maps it to the Desktop Stack deck", () => {

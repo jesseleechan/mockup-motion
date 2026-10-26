@@ -48,7 +48,7 @@ export function deviceFixtures(): Record<string, ProjectDoc> {
   const out: Record<string, ProjectDoc> = {};
   for (const device of DEVICES) {
     const frontal = stillDoc(`device-${device}-frontal`);
-    singleShot(frontal, device, { preset: "static", intensity: 0, easing: "linear", float: 0 });
+    singleShot(frontal, device, { preset: "static", intensity: 0, easing: "linear" });
     out[`device-${device}-frontal`] = frontal;
   }
   return out;
@@ -68,7 +68,7 @@ export function backgroundFixtures(): Record<string, ProjectDoc> {
       background,
       frameAppearance: name === "solid" ? "dark" : "light",
     };
-    singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear", float: 0 });
+    singleShot(doc, "browser", { preset: "static", intensity: 0, easing: "linear" });
     out[`bg-${name}`] = doc;
   }
   return out;
@@ -108,7 +108,7 @@ export function orientationFixtures(): Record<string, ProjectDoc> {
     const shot = defaultShot({ kind: "single", device, assetId: asset.id });
     shot.id = `orient-${device}-shot`;
     shot.duration = 5;
-    shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
+    shot.camera = { preset: "static", intensity: 0, easing: "linear" };
     shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
     doc.shots = [shot];
     out[`orient-${device}`] = doc;
@@ -133,7 +133,7 @@ export function colorFixtures(): Record<string, ProjectDoc> {
   const shot = defaultShot({ kind: "single", device: "card", assetId: asset.id });
   shot.id = "color-bands-shot";
   shot.duration = 5;
-  shot.camera = { preset: "static", intensity: 0, easing: "linear", float: 0 };
+  shot.camera = { preset: "static", intensity: 0, easing: "linear" };
   shot.transitionIn = { kind: "cut", duration: 0, easing: "linear" };
   doc.shots = [shot];
   return { "color-bands": doc };

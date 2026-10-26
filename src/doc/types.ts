@@ -88,11 +88,12 @@ export type Layout =
 // The other ten moves were removed on 19 October 2026; a saved one loads as "static".
 export type CameraPresetId = "static" | "pushIn";
 
+// Float, an ambient sway on top of the move, was cut on 26 October 2026; a saved `float` is
+// dropped on load.
 export interface CameraMove {
   preset: CameraPresetId;
   intensity: number;       // 0..1, scales the preset's delta (quality-bar §2 limits apply at 1)
   easing: EasingId;
-  float: number;           // 0..1 subtle ambient sway layered on top (quality-bar §2.4)
 }
 
 export interface CameraPose {

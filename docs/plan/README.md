@@ -185,7 +185,7 @@ Mediabunny export in a worker with codec probing, the "doc + time + size → fra
 
 ### Evidence for work packages without a fix
 
-- **WP-02 (motion core):** no fix task changed `src/motion/` easing, camera, timeline or evaluate code. F11 changed `framing.ts` and the wall layout, which belong to WP-09. The WP-02 acceptance tests are in `tests/motion.test.ts`: easing endpoints, monotonicity and overshoot; the no-yo-yo property test; loop seams; schedule; scroll limits; determinism over 1,000 docs; and `evaluate` speed. They pass in the `unit` CI job. On 19 October 2026 the owner cut the camera presets to `static` and `pushIn` (Still and Push in); a saved project with a removed move loads with `static` (`tests/removed-cameras.test.ts`).
+- **WP-02 (motion core):** no fix task changed `src/motion/` easing, camera, timeline or evaluate code. F11 changed `framing.ts` and the wall layout, which belong to WP-09. The WP-02 acceptance tests are in `tests/motion.test.ts`: easing endpoints, monotonicity and overshoot; the no-yo-yo property test; loop seams; schedule; scroll limits; determinism over 1,000 docs; and `evaluate` speed. They pass in the `unit` CI job. On 19 October 2026 the owner cut the camera presets to `static` and `pushIn` (Still and Push in); a saved project with a removed move loads with `static` (`tests/removed-cameras.test.ts`). On 26 October 2026 the camera's Float, its ambient sway, was cut too ([#113](https://github.com/jesseleechan/mockup-motion/pull/113)): a saved `float` is dropped, and the camera renders as its move alone (same test file).
 
 ### Open follow-ups by WP
 

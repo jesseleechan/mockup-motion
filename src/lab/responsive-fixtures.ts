@@ -19,7 +19,7 @@ function fallbackFixture(): ProjectDoc {
   shot.scroll = { enabled: true, stops: [0, 1 / 3, 2 / 3, 1], hold: 1, easing: "smooth" };
   // A scroll can't reverse, so the loop crossfades back to the top (contracts.md §5).
   shot.transitionIn = loopWrapCrossfade();
-  shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+  shot.camera = { preset: "static", intensity: 0, easing: "smooth" };
   const doc: ProjectDoc = {
     ...createDoc(),
     name: "Responsive Scroll (no sections)",

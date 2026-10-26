@@ -45,8 +45,7 @@
       "camera": {
         "preset": "static",
         "intensity": 0,
-        "easing": "smooth",
-        "float": 0
+        "easing": "smooth"
       },
       "scroll": {
         "enabled": true,

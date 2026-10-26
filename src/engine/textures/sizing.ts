@@ -23,7 +23,7 @@ function smallestCameraDistance(doc: ProjectDoc, shotIndex: number): number {
   let smallest = Infinity;
   for (let i = 0; i < CAMERA_SAMPLES; i++) {
     const p = i / (CAMERA_SAMPLES - 1);
-    const pose = cameraPose(shot.camera, doc.aspect, p, p * shot.duration, shot.duration);
+    const pose = cameraPose(shot.camera, doc.aspect, p);
     smallest = Math.min(smallest, pose.distance);
   }
   // Guard against a degenerate preset: never size for a camera closer than 0.25×.

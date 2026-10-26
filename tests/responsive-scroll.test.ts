@@ -284,12 +284,11 @@ describe("Responsive Scroll in a document", () => {
       preset: "pushIn" as const,
       intensity: 0.5,
       easing: "smooth" as const,
-      float: 0.1,
     };
-    expect(fixedShotCamera(LAYOUT, moving)).toMatchObject({
+    expect(fixedShotCamera(LAYOUT, moving)).toEqual({
       preset: "static",
       intensity: 0,
-      float: 0,
+      easing: "smooth",
     });
     // Without scroll the user sets the length, as on any other layout.
     expect(fixedShotDuration(LAYOUT, { ...SPEC, enabled: false }, [DESKTOP, MOBILE])).toBeNull();

@@ -45,8 +45,7 @@
       "camera": {
         "preset": "static",
         "intensity": 1,
-        "easing": "smooth",
-        "float": 0
+        "easing": "smooth"
       },
       "entrance": "none",
       "transitionIn": {

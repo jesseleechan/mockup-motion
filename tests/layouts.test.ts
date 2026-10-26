@@ -131,13 +131,7 @@ describe("WP-09 Layouts and Camera Framing", () => {
             const localT = tf * duration;
             const nodes = resolveLayout(layout, aspect, mockAssets, localT, duration);
             const p = tf;
-            const basePose = cameraPose(
-              { preset, intensity: 1.0, easing: "smooth", float: 0 },
-              aspect,
-              p,
-              localT,
-              duration,
-            );
+            const basePose = cameraPose({ preset, intensity: 1.0, easing: "smooth" }, aspect, p);
 
             const mult = frameDistance(nodes, aspect, basePose);
             const framedPose = {

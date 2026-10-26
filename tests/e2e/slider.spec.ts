@@ -360,11 +360,10 @@ test.describe("slider editing", () => {
   test("a slider shot has no camera controls: its camera stays still", async ({ page }) => {
     await openMobileSlider(page);
     await expect(page.getByRole("radiogroup", { name: "Camera move" })).toHaveCount(0);
-    await expect(page.getByRole("slider", { name: "Float" })).toHaveCount(0);
     const camera = await page.evaluate(
       () => (window as unknown as EditorWindow).__editorStore?.getState().doc.shots[0].camera,
     );
-    expect(camera).toMatchObject({ preset: "static", intensity: 0, float: 0 });
+    expect(camera).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
   });
 
   test("changing the pace sets the step and the shot length, and undo restores both", async ({

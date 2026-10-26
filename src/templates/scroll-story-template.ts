@@ -72,7 +72,6 @@ export function scrollStoryTemplate(options: ScrollStoryOptions): Template {
         preset: "pushIn",
         intensity: 0.2,
         easing: "smooth",
-        float: 0.05,
       };
       // Scroll is explicitly enabled only for the Scroll Story presets
       shot.scroll = { ...SCROLL_STORY_SCROLL, stops: [...SCROLL_STORY_SCROLL.stops] };

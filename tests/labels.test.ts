@@ -15,7 +15,7 @@ function shot(layout: Shot["layout"], preset: Shot["camera"]["preset"]): Shot {
     id: "s1",
     duration: 4,
     layout,
-    camera: { preset, intensity: 1, easing: "smooth", float: 0 },
+    camera: { preset, intensity: 1, easing: "smooth" },
     transitionIn: { kind: "cut", duration: 0, easing: "smooth" },
   };
 }

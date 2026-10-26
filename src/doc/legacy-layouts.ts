@@ -73,7 +73,7 @@ export function mapLegacyLayout(
  */
 export function applyLegacyLook(shot: Shot, look: LegacyLook, aspect: Aspect): void {
   if (look === "single") return;
-  const still: CameraMove = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+  const still: CameraMove = { preset: "static", intensity: 0, easing: "smooth" };
   shot.camera = still;
   shot.transitionIn = { kind: "cut", duration: 0, easing: "quintInOut" };
   if (look === "frames" && (shot.layout.kind === "rows" || shot.layout.kind === "columns")) {
