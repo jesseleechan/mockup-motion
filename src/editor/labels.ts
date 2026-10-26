@@ -21,6 +21,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   columns: "Mobile frames",
   slider: "Slider",
   orbit: "Orbit",
+  tour: "Site tour",
   responsive: "Responsive scroll",
 };
 
@@ -106,6 +107,9 @@ function shotSubject(layout: Layout): string {
   if (layout.kind === "single") return DEVICE_LABELS[layout.device];
   if (layout.kind === "slider" && layout.arrangement === "deck") {
     return layout.shape === "mobile" ? "Mobile stack" : "Desktop stack";
+  }
+  if (layout.kind === "tour") {
+    return layout.device === "phone" ? "Mobile site tour" : "Desktop site tour";
   }
   return LAYOUT_LABELS[layout.kind];
 }

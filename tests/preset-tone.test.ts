@@ -32,6 +32,8 @@ const TONE_TEMPLATES = [
   "mobile-stack",
   "desktop-orbit",
   "mobile-orbit",
+  "desktop-site-tour",
+  "mobile-site-tour",
   "responsive-scroll",
 ];
 

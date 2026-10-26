@@ -82,6 +82,21 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("studio-kova"),
   ],
+  // Four pages, an 8 s loop. Until Aurelia's extra pages land (presets round two, T0), the
+  // heroes of four sites stand in for the pages of one. The poster (35%, 2.8 s) shows the second
+  // step: Aurelia's photographic hero sliding in.
+  "desktop-site-tour": [
+    desktopHero("northwind"),
+    desktopHero("maison-oak"),
+    desktopHero("aurelia"),
+    desktopHero("field-notes"),
+  ],
+  "mobile-site-tour": [
+    mobileHero("northwind"),
+    mobileHero("maison-oak"),
+    mobileHero("aurelia"),
+    mobileHero("field-notes"),
+  ],
   "scroll-story": [desktopFull("studio-kova")],
   // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],

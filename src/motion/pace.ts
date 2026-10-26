@@ -51,7 +51,10 @@ export function paceOf(shot: Pick<Shot, "pace">): Pace {
   return shot.pace ?? "default";
 }
 
-/** A slider, stack, orbit, Frames or scrolling Responsive Scroll shot: one that has a pace. */
+/**
+ * A slider, stack, orbit, Site Tour, Frames or scrolling Responsive Scroll shot: one that has a
+ * pace.
+ */
 export function isPacedShot(shot: PacedFields): boolean {
   return (
     isSteppedLayout(shot.layout) ||

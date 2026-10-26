@@ -48,7 +48,13 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
   );
 };
 
-/** The screenshots a single, responsive, slider, orbit or Frames layout shows. */
+const STEPPED_LIST_LABELS = {
+  slider: "Slider screenshots",
+  orbit: "Orbit screenshots",
+  tour: "Tour pages",
+} as const;
+
+/** The screenshots a single, responsive, slider, orbit, Site Tour or Frames layout shows. */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
   const shotIndex = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
@@ -57,21 +63,21 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
   const images = assets.filter((a) => a.kind === "image");
 
   if (isSteppedLayout(layout)) {
-    const slider = layout.kind === "slider";
-    const max = slider ? SLIDER_MAX_SCREENSHOTS : ORBIT_MAX_SCREENSHOTS;
+    const orbit = layout.kind === "orbit";
+    const max = orbit ? ORBIT_MAX_SCREENSHOTS : SLIDER_MAX_SCREENSHOTS;
     return (
       <Section title="Screenshots">
         <ScreenshotList
           shotIndex={shotIndex}
           assetIds={layout.assetIds}
           images={images}
-          label={slider ? "Slider screenshots" : "Orbit screenshots"}
+          label={STEPPED_LIST_LABELS[layout.kind]}
           shown={max}
           minimum={minShotScreenshots(layout)}
           overflowNote={
-            slider
-              ? `Shows the first ${max} screenshots, so the loop fits in 30 s.`
-              : `Shows the first ${max} screenshots, so the ring stays clear.`
+            orbit
+              ? `Shows the first ${max} screenshots, so the ring stays clear.`
+              : `Shows the first ${max} screenshots, so the loop fits in 30 s.`
           }
         />
       </Section>
