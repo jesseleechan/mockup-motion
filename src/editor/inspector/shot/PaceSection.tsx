@@ -7,17 +7,19 @@ import { Section, SegmentedControl } from "../../../ui";
 const PACE_LABELS: Record<Pace, string> = { calm: "Calm", default: "Default", brisk: "Brisk" };
 
 /**
- * Calm, Default or Brisk for a slider, stack, orbit, Frames or Responsive Scroll shot
- * (src/motion/pace.ts). A pace a limit makes equal to Default is unavailable, with the reason on
- * hover and focus. One click is one undo step.
+ * Calm, Default or Brisk for a slider, stack, orbit, Frames, Page Columns or Responsive Scroll
+ * shot (src/motion/pace.ts). A pace a limit makes equal to Default is unavailable, with the
+ * reason on hover and focus. One click is one undo step.
  */
 export const PaceSection: React.FC<{ shot: Shot; aspect: Aspect }> = ({ shot, aspect }) => {
   const index = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
   const setShotPace = useEditorStore((s) => s.setShotPace);
+  // Page Columns' limits follow its pages' heights.
+  const assets = useEditorStore((s) => s.doc.assets);
   if (!isPacedShot(shot)) return null;
 
   const current = paceOf(shot);
-  const limited = paceLimited(shot, aspect);
+  const limited = paceLimited(shot, aspect, assets);
   const { layout } = shot;
   const shown =
     layout.kind === "rows" || layout.kind === "columns"

@@ -66,7 +66,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
         (lay.kind === "rows" ||
           lay.kind === "columns" ||
           lay.kind === "slider" ||
-          lay.kind === "orbit") &&
+          lay.kind === "orbit" ||
+          lay.kind === "pageColumns") &&
         lay.assetIds.includes(assetId)
       )
         used = true;

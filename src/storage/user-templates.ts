@@ -89,6 +89,7 @@ export function convertDocToUserTemplate(
       case "columns":
       case "slider":
       case "orbit":
+      case "pageColumns":
         layout.assetIds = layout.assetIds.map(remapId);
         break;
     }
@@ -205,9 +206,10 @@ export function fillUserTemplateSlots(
           layout.assetIds = layout.assetIds.map(resolveSlot);
           break;
         case "slider":
-        case "orbit": {
-          // Fewer assets than slots reuse one; a slider or orbit never shows a screenshot twice
-          // (quality bar §4), and its length follows its screenshots so the loop stays native.
+        case "orbit":
+        case "pageColumns": {
+          // Fewer assets than slots reuse one; a slider, orbit or Page Columns shot never shows a
+          // screenshot twice (quality bar §4), and its length follows its screenshots.
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
           break;
         }

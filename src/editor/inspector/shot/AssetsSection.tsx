@@ -5,6 +5,7 @@ import {
   isSteppedLayout,
   minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
+  pageColumnsAssetIds,
   SLIDER_MAX_SCREENSHOTS,
 } from "../../../motion";
 import { Field, Section, Select } from "../../../ui";
@@ -48,7 +49,7 @@ const AssetField: React.FC<AssetFieldProps> = ({ label, value, images, onChange,
   );
 };
 
-/** The screenshots a single, responsive, slider, orbit or Frames layout shows. */
+/** The screenshots a single, responsive, slider, orbit, Frames or Page Columns layout shows. */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
   const shotIndex = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
@@ -88,6 +89,23 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           label="Frames screenshots"
           shown={framesAssetIds(layout, aspect).length}
           minimum={minShotScreenshots(layout)}
+        />
+      </Section>
+    );
+  }
+  if (layout.kind === "pageColumns") {
+    // One page per column: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16 (quality bar §4).
+    const shown = pageColumnsAssetIds(layout, aspect).length;
+    return (
+      <Section title="Screenshots">
+        <ScreenshotList
+          shotIndex={shotIndex}
+          assetIds={layout.assetIds}
+          images={images}
+          label="Page columns screenshots"
+          shown={shown}
+          minimum={minShotScreenshots(layout)}
+          overflowNote={`Shows the first ${shown} pages, one per column at this aspect.`}
         />
       </Section>
     );

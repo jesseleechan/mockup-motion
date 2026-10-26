@@ -82,6 +82,14 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("studio-kova"),
   ],
+  // Three full pages, one per column (the shortlist's preview). At 4:5 and 9:16 the first two
+  // show.
+  "desktop-page-columns": [
+    desktopFull("aurelia"),
+    desktopFull("northwind"),
+    desktopFull("maison-oak"),
+  ],
+  "mobile-page-columns": [mobileFull("aurelia"), mobileFull("northwind"), mobileFull("maison-oak")],
   "scroll-story": [desktopFull("studio-kova")],
   // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],

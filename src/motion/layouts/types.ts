@@ -20,6 +20,12 @@ export interface LayoutNode {
   opacity: number; // 0..1 (slider neighbours, a deck's entering card)
   scroll: number; // 0..1 of scrollable range (0 when scroll disabled)
   depthOrder: number; // tie-breaker for transparent sorting
+  /**
+   * A card's corner radius: the landscape (desktop) or portrait (mobile) card's, whatever its
+   * screen aspect (quality-bar §3.4). Page Columns sets it: a desktop page in a tall column keeps
+   * the desktop radius. Unset follows the screen aspect.
+   */
+  cardShape?: "desktop" | "mobile";
 }
 
 /**

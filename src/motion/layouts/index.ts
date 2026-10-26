@@ -5,6 +5,7 @@ import { resolveResponsiveLayout } from "./responsive";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
+import { resolvePageColumnsLayout } from "./page-columns";
 import { resolveSliderLayout } from "./slider";
 import type { LayoutNode } from "./types";
 
@@ -46,6 +47,24 @@ export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider"
 export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
 export type { OrbitGeometry } from "./orbit";
+export {
+  PAGE_COLUMNS_MAX_LOOP,
+  PAGE_COLUMNS_MAX_SCREENSHOTS,
+  PAGE_COLUMNS_MIN_LOOP,
+  PAGE_COLUMNS_SPEED_LIMIT,
+  PAGE_COLUMNS_WRAP_OVERLAP,
+  pageColumnScroll,
+  pageColumns,
+  pageColumnsAssetIds,
+  pageColumnsCount,
+  pageColumnsDefaultLoop,
+  pageColumnsGeometry,
+  pageColumnsLoop,
+  pageColumnsPacedDuration,
+  pageColumnsShortestLoop,
+  resolvePageColumnsLayout,
+} from "./page-columns";
+export type { PageColumn, PageColumnsGeometry, PageColumnsLayout } from "./page-columns";
 
 export function resolveLayout(
   layout: Layout,
@@ -69,6 +88,8 @@ export function resolveLayout(
       return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "responsive":
       return resolveResponsiveLayout(layout, aspect);
+    case "pageColumns":
+      return resolvePageColumnsLayout(layout, aspect, assets, shotT, shotDuration);
     default: {
       const _exhaustive: never = layout;
       return [];

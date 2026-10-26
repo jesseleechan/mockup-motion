@@ -113,6 +113,21 @@ STILLS.push({
   aspect: "16:9",
   t: 2.05,
 });
+// Page Columns (presets round two, T3), mid-drift at 4.0 s on each aspect's own fixture (the
+// loop follows the aspect): 3 columns at 16:9 and 1:1, 2 at 4:5 and 9:16. Desktop at 1:1 shows
+// the demo pages whole on shorter cards; mobile at 16:9 shows the phone-width cap. Plus each
+// preset's dark option at 16:9.
+const PAGE_COLUMNS_STILLS: [string, string[]][] = [
+  ["desktop-page-columns", ["16:9", "1:1", "9:16"]],
+  ["mobile-page-columns", ["16:9", "1:1", "4:5"]],
+];
+for (const [id, aspects] of PAGE_COLUMNS_STILLS) {
+  for (const aspect of aspects) {
+    const tag = aspect.replace(":", "x");
+    STILLS.push({ name: `${id}-${tag}-t4`, fixture: `${id}-${tag}`, aspect, t: 4 });
+  }
+  STILLS.push({ name: `${id}-dark-16x9-t4`, fixture: `${id}-dark-16x9`, aspect: "16:9", t: 4 });
+}
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {
   STILLS.push({ name: `orient-${device}`, fixture: `orient-${device}`, aspect: "16:9", t: 1 });

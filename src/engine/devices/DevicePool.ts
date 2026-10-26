@@ -15,6 +15,8 @@ export function deviceKey(node: LayoutNode, style: Style): string {
     node.device,
     node.width.toFixed(5),
     node.height.toFixed(5),
+    // The corner radius is built into the card's geometry.
+    node.cardShape ?? "",
     style.frameAppearance,
     style.browserChrome,
     style.browserUrl,

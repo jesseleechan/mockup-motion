@@ -7,6 +7,7 @@ import {
   sliderDuration,
 } from "./layouts/duration";
 import { framesDuration } from "./layouts/rows";
+import { pageColumnsPacedDuration } from "./layouts/page-columns";
 
 /**
  * One pace control for every looping preset (quality-bar §2.2, "Pace"). Default is today's
@@ -51,11 +52,15 @@ export function paceOf(shot: Pick<Shot, "pace">): Pace {
   return shot.pace ?? "default";
 }
 
-/** A slider, stack, orbit, Frames or scrolling Responsive Scroll shot: one that has a pace. */
+/**
+ * A slider, stack, orbit, Frames, Page Columns or scrolling Responsive Scroll shot: one that has
+ * a pace.
+ */
 export function isPacedShot(shot: PacedFields): boolean {
   return (
     isSteppedLayout(shot.layout) ||
     isFramesLayout(shot.layout) ||
+    shot.layout.kind === "pageColumns" ||
     (shot.layout.kind === "responsive" && shot.scroll?.enabled === true)
   );
 }
@@ -72,10 +77,16 @@ const tidy = (value: number) => Math.round(value * 1000) / 1000;
 /**
  * The value of the shot's pace knob at each pace, clamped by its limits, or null for a shot
  * without a pace: a slider's or orbit's `layout.step` (0.1 s steps, 1.6 s up to 30 s / shown
- * screenshots), a Frames shot's `duration` (0.5 s steps, its speed limit up to 30 s) or
- * Responsive Scroll's `scroll.hold`.
+ * screenshots), a Frames shot's `duration` (0.5 s steps, its speed limit up to 30 s), a Page
+ * Columns shot's `duration` (its loop in 0.5 s steps, its speed limit up to 29.2 s, plus the
+ * 0.8 s wrap crossfade; the pages' heights set it, so it needs `assets`) or Responsive Scroll's
+ * `scroll.hold`.
  */
-export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, number> | null {
+export function paceTargets(
+  shot: PacedFields,
+  aspect: Aspect,
+  assets: AssetRef[] = [],
+): Record<Pace, number> | null {
   if (!isPacedShot(shot)) return null;
   const { layout } = shot;
   const targets = {} as Record<Pace, number>;
@@ -83,6 +94,8 @@ export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, num
     const scale = PACE_TIME_SCALE[pace];
     if (isSteppedLayout(layout)) {
       targets[pace] = tidy(clampSteppedStep(roundTo(DEFAULT_STEP * scale, 0.1), layout));
+    } else if (layout.kind === "pageColumns") {
+      targets[pace] = pageColumnsPacedDuration(layout, aspect, assets, scale);
     } else if (isFramesLayout(layout)) {
       const shortest = framesDuration(layout, aspect);
       const scaled = roundTo(framesDefaultLoop(layout, aspect) * scale, 0.5);
@@ -99,7 +112,7 @@ export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, num
 export function paceKnob(shot: Pick<Shot, "layout" | "scroll" | "duration">): number | null {
   if (!isPacedShot(shot)) return null;
   if (isSteppedLayout(shot.layout)) return shot.layout.step;
-  if (isFramesLayout(shot.layout)) return shot.duration;
+  if (isFramesLayout(shot.layout) || shot.layout.kind === "pageColumns") return shot.duration;
   return shot.scroll?.hold ?? DEFAULT_RESPONSIVE_HOLD;
 }
 
@@ -111,8 +124,9 @@ export function paceKnob(shot: Pick<Shot, "layout" | "scroll" | "duration">): nu
 export function nearestPace(
   shot: Pick<Shot, "layout" | "scroll" | "duration">,
   aspect: Aspect,
+  assets: AssetRef[] = [],
 ): Pace {
-  const targets = paceTargets(shot, aspect);
+  const targets = paceTargets(shot, aspect, assets);
   const knob = paceKnob(shot);
   if (!targets || knob === null) return "default";
   let best: Pace = "default";
@@ -135,8 +149,9 @@ export function nearestPace(
 export function paceLimited(
   shot: PacedFields,
   aspect: Aspect,
+  assets: AssetRef[] = [],
 ): Partial<Record<Exclude<Pace, "default">, string>> {
-  const targets = paceTargets(shot, aspect);
+  const targets = paceTargets(shot, aspect, assets);
   if (!targets) return {};
   const limited: Partial<Record<Exclude<Pace, "default">, string>> = {};
   for (const pace of ["calm", "brisk"] as const) {
@@ -151,7 +166,7 @@ export function paceLimited(
  * written when they change, so a no-op edit stays a no-op.
  */
 export function fitPace(shot: Shot, aspect: Aspect, assets: AssetRef[]): void {
-  const targets = paceTargets(shot, aspect);
+  const targets = paceTargets(shot, aspect, assets);
   if (!targets) return;
   const value = targets[paceOf(shot)];
   const { layout } = shot;
@@ -159,7 +174,7 @@ export function fitPace(shot: Shot, aspect: Aspect, assets: AssetRef[]): void {
   if (isSteppedLayout(layout)) {
     if (layout.step !== value) layout.step = value;
     duration = sliderDuration(layout);
-  } else if (isFramesLayout(layout)) {
+  } else if (isFramesLayout(layout) || layout.kind === "pageColumns") {
     duration = value;
   } else {
     if (shot.scroll && shot.scroll.hold !== value) shot.scroll.hold = value;

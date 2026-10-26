@@ -59,7 +59,8 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string };
+  | { kind: "responsive"; desktopId: string; mobileId: string }
+  | { kind: "pageColumns"; assetIds: string[]; shape: "mobile" | "desktop" };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
 // whole group (the presets use 0).
@@ -76,6 +77,11 @@ export type Layout =
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
+// pageColumns: full pages side by side as frameless cards, each drifting through its own page at
+// a constant speed, neighbours in opposite directions (Desktop and Mobile Page Columns,
+// quality-bar §4): 3 columns at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16, showing the first ones.
+// shape: desktop columns fill the column width; mobile ones are no wider than a phone screen.
+// Its pace sets the shot's duration: the loop plus the 0.8 s wrap crossfade.
 // rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
 // cards and rows (default: 0.14 × width across, 0.06 down).
 // columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"

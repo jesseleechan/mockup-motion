@@ -10,6 +10,7 @@ import {
   isPacedShot,
   isSteppedLayout,
   nearestPace,
+  pageColumns,
   paceLimited,
   paceTargets,
   resolveLayout,
@@ -63,19 +64,33 @@ const knobOf = (shot: Shot): number =>
 const isFrames = (layout: Layout): layout is FramesLayout =>
   layout.kind === "rows" || layout.kind === "columns";
 
+/**
+ * Page Columns' loop at its speed limit (plan D10): the longest shown page's travel at 0.5 column
+ * heights per second, in 0.5 s steps.
+ */
+function pageColumnsShortest(shot: Shot, aspect: Aspect, assets: AssetRef[]): number {
+  if (shot.layout.kind !== "pageColumns") return NaN;
+  const longest = Math.max(...pageColumns(shot.layout, aspect, assets).map((c) => c.range));
+  return Math.ceil((longest / 0.5) * 2 - 1e-9) / 2;
+}
+
 /** What the paced presets built before P5 (quality bar §2.2): today's Default timing. */
-function todaysKnob(shot: Shot, aspect: Aspect): number {
+function todaysKnob(shot: Shot, aspect: Aspect, assets: AssetRef[]): number {
   if (isSteppedLayout(shot.layout)) {
     return Math.min(2, sliderStepMax(steppedAssetIds(shot.layout).length));
   }
   if (isFrames(shot.layout)) return Math.max(15, framesDuration(shot.layout, aspect));
+  // Page Columns: a 12 s loop or longer, at most 29.2 s, plus the 0.8 s wrap crossfade.
+  if (shot.layout.kind === "pageColumns") {
+    return Math.min(29.2, Math.max(12, pageColumnsShortest(shot, aspect, assets))) + 0.8;
+  }
   return 1;
 }
 
 /** Calm and Brisk per the approved table: ×1.2 and ×0.8 on Default, rounded, then clamped. */
-function expectedKnob(shot: Shot, aspect: Aspect, pace: Pace): number {
+function expectedKnob(shot: Shot, aspect: Aspect, pace: Pace, assets: AssetRef[]): number {
   const scale = { calm: 1.2, default: 1, brisk: 0.8 }[pace];
-  const base = todaysKnob(shot, aspect);
+  const base = todaysKnob(shot, aspect, assets);
   if (isSteppedLayout(shot.layout)) {
     const max = sliderStepMax(steppedAssetIds(shot.layout).length);
     return Math.min(max, Math.max(1.6, Math.round(2 * scale * 10) / 10));
@@ -83,6 +98,11 @@ function expectedKnob(shot: Shot, aspect: Aspect, pace: Pace): number {
   if (isFrames(shot.layout)) {
     const shortest = framesDuration(shot.layout, aspect);
     return Math.min(30, Math.max(shortest, Math.round(base * scale * 2) / 2));
+  }
+  if (shot.layout.kind === "pageColumns") {
+    const loop = Math.round((base - 0.8) * scale * 2) / 2;
+    const shortest = pageColumnsShortest(shot, aspect, assets);
+    return Math.min(29.2, Math.max(shortest, loop)) + 0.8;
   }
   return Math.round(scale * 10) / 10;
 }
@@ -98,7 +118,7 @@ describe("Pace on every built-in template", () => {
     isPacedShot(buildTemplatePreviewDoc(t, "16:9").shots[0]),
   );
 
-  it("covers the sliders, stacks, orbits, Frames and Responsive Scroll, not Scroll Story", () => {
+  it("covers the sliders, stacks, orbits, Frames, Page Columns and Responsive Scroll, not Scroll Story", () => {
     for (const template of BUILTIN_TEMPLATES) {
       const shot = buildTemplatePreviewDoc(template, "16:9").shots[0];
       const expected = template.id.includes("scroll-story") ? false : true;
@@ -114,8 +134,11 @@ describe("Pace on every built-in template", () => {
         const [shot] = doc.shots;
         expect(shot.pace, label).toBeUndefined();
         if (isPacedShot(shot)) {
-          expect(knobOf(shot), label).toBeCloseTo(todaysKnob(shot, aspect), 9);
-          expect(paceTargets(shot, aspect)?.default, label).toBeCloseTo(knobOf(shot), 9);
+          expect(knobOf(shot), label).toBeCloseTo(todaysKnob(shot, aspect, doc.assets), 9);
+          expect(paceTargets(shot, aspect, doc.assets)?.default, label).toBeCloseTo(
+            knobOf(shot),
+            9,
+          );
         }
         // sanitizeDoc and the store keep the template's timing exactly.
         expect(sanitizeDoc(doc).doc.shots, label).toEqual(doc.shots);
@@ -131,7 +154,7 @@ describe("Pace on every built-in template", () => {
         for (const pace of PACES) {
           const label = `${template.id} ${aspect} ${pace}`;
           const shot = applyPace(doc.shots[0], pace, aspect, doc.assets);
-          expect(knobOf(shot), label).toBeCloseTo(expectedKnob(shot, aspect, pace), 9);
+          expect(knobOf(shot), label).toBeCloseTo(expectedKnob(shot, aspect, pace, doc.assets), 9);
           expect(shot.duration, label).toBeLessThanOrEqual(30);
           if (isSteppedLayout(shot.layout)) {
             expect(shot.duration, label).toBeCloseTo(

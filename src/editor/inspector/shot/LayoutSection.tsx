@@ -6,8 +6,8 @@ import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
-// Picking a layout here makes a single device. Frames, sliders, orbits and Responsive Scroll come
-// from their templates, so the picker lists them only on a shot that already uses one.
+// Picking a layout here makes a single device. Frames, sliders, orbits, Responsive Scroll and Page
+// Columns come from their templates, so the picker lists them only on a shot that already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -114,7 +114,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {isSteppedLayout(layout) && (
+      {(isSteppedLayout(layout) || layout.kind === "pageColumns") && (
         <>
           <Field label="Card shape">
             <Select
@@ -123,7 +123,8 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               onChange={(shape) =>
                 update(
                   (target) => {
-                    if (isSteppedLayout(target.layout)) target.layout.shape = shape;
+                    const next = target.layout;
+                    if (isSteppedLayout(next) || next.kind === "pageColumns") next.shape = shape;
                   },
                   { label: "Change card shape" },
                 )

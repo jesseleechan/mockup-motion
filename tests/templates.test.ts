@@ -103,9 +103,9 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     const ids = new Set(BUILTIN_TEMPLATES.map((t) => t.id));
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
-    // Gallery order (Frames plan D12, stack plan D5, orbit plan): the Slider, Frames, Stack,
-    // Orbit and Scroll Story pairs, then Responsive Scroll. The first entry is the first-run
-    // default (presets plan D1).
+    // Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the
+    // Slider, Frames, Stack, Orbit, Page Columns and Scroll Story pairs, then Responsive Scroll.
+    // The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -115,6 +115,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-stack",
       "desktop-orbit",
       "mobile-orbit",
+      "desktop-page-columns",
+      "mobile-page-columns",
       "scroll-story",
       "mobile-scroll-story",
       "responsive-scroll",
@@ -139,6 +141,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-stack": "mobile",
       "desktop-orbit": "desktop",
       "mobile-orbit": "mobile",
+      "desktop-page-columns": "desktop",
+      "mobile-page-columns": "mobile",
       "scroll-story": "desktop",
       "mobile-scroll-story": "mobile",
       "responsive-scroll": "both",
@@ -316,8 +320,13 @@ describe("Template loop seam", () => {
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
-  // Responsive Scroll can't reverse its scroll, so it loops by the wrap crossfade (contracts §5).
-  const WRAP_SCROLL_TEMPLATES = ["responsive-scroll"];
+  // Responsive Scroll and Page Columns can't reverse their scroll or drift, so they loop by the
+  // wrap crossfade (contracts §5).
+  const WRAP_SCROLL_TEMPLATES = [
+    "responsive-scroll",
+    "desktop-page-columns",
+    "mobile-page-columns",
+  ];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
