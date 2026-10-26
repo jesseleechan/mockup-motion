@@ -97,6 +97,10 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("aurelia", "works"),
     mobileHero("aurelia", "journal"),
   ],
+  // Aurelia's home page, its earlier design first: the first in Library order is the old one
+  // (presets round two, D8, D14).
+  "desktop-before-after": [desktopHero("aurelia", "home-before"), desktopHero("aurelia")],
+  "mobile-before-after": [mobileHero("aurelia", "home-before"), mobileHero("aurelia")],
   "scroll-story": [desktopFull("studio-kova")],
   // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],

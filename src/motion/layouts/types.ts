@@ -3,9 +3,10 @@ import { PHONE_SCREEN_ASPECT } from "../phone-spec";
 
 /**
  * One screenshot on a screen that draws more than one (contracts.md §4): Site Tour's leaving
- * and arriving pages. Horizontal positions are in screen widths, from the screen's left edge.
- * The screenshot is fit to the screen's width as on any screen (quality bar §3.1), shifted by
- * `offset`, and drawn only where it overlaps `clip` and the screen.
+ * and arriving pages, Before & After's old and new designs. Horizontal positions are in screen
+ * widths, from the screen's left edge. The screenshot is fit to the screen's width as on any
+ * screen (quality bar §3.1), shifted by `offset`, and drawn only where it overlaps `clip` and the
+ * screen.
  */
 export interface ScreenPane {
   assetId: string | null; // null draws the empty-state fill
@@ -14,6 +15,33 @@ export interface ScreenPane {
   /** The band of the screen the pane may draw on, [left, right]; [0, 1] is the whole screen. */
   clip: readonly [number, number];
   scroll: number; // 0..1 of the screenshot's scrollable range
+  /** A label in a top corner of the screen, drawn over the pane and clipped with it. */
+  label?: ScreenLabel;
+}
+
+/**
+ * A small dark pill with white text in a corner of a screen (Before & After's "Before" and
+ * "After", quality bar §4). It belongs to its pane: it is drawn only where the pane is.
+ */
+export interface ScreenLabel {
+  text: string;
+  /**
+   * The corner of the screen it sits in. On a phone a top label sits below the status bar and a
+   * bottom one above the home indicator's area.
+   */
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  /** The text's font size in stage units; the pill and its inset follow from it. */
+  size: number;
+}
+
+/** A white line with a soft shadow across the whole screen (Before & After's divider). */
+export interface ScreenDivider {
+  /** The line's centre, in screen widths from the screen's left edge. */
+  x: number;
+  /** 0 hides it. */
+  opacity: number;
+  /** The line's width in stage units. */
+  width: number;
 }
 
 export interface LayoutNode {
@@ -43,6 +71,11 @@ export interface LayoutNode {
    * them once; a pane outside the screen or its clip draws nothing.
    */
   panes?: ScreenPane[];
+  /**
+   * A line drawn over the screen, above every pane (Before & After). A screen that ever shows
+   * one has it in every frame, hidden by `opacity: 0`, so the engine prepares it once.
+   */
+  divider?: ScreenDivider;
 }
 
 /**

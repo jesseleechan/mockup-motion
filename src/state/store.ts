@@ -119,6 +119,8 @@ export interface EditorStoreState {
    * Tour moves the page that shows it.
    */
   moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
+  /** Swaps a Before & After shot's old and new designs, in one undo step. */
+  swapBeforeAfter: (shotIndex: number) => void;
 
   // Timeline actions
   setShotDuration: (index: number, duration: number) => void;
@@ -153,7 +155,8 @@ const COALESCE_WINDOW_MS = 800;
  * duration, which keeps it under its speed limit, and Responsive Scroll's hold. A slider or orbit
  * lasts one step per shown screenshot and keeps a still camera (contracts.md §5). Edits that set
  * such a shot's duration or camera directly are undone here. A responsive shot keeps a still
- * camera and, while it scrolls, lasts its holds plus moves.
+ * camera and, while it scrolls, lasts its holds plus moves. A Before & After shot keeps a still
+ * camera and lasts its pace's loop plus the wrap crossfade.
  */
 function fitFixedShots(draft: ProjectDoc): void {
   for (const shot of draft.shots) {
@@ -165,7 +168,7 @@ function fitFixedShots(draft: ProjectDoc): void {
       if (camera !== shot.camera) shot.camera = camera;
       continue;
     }
-    if (!isSteppedLayout(shot.layout)) continue;
+    if (!isSteppedLayout(shot.layout) && shot.layout.kind !== "compare") continue;
     // Reassigned only when it changes, so an edit that leaves it still stays a no-op.
     const camera = fixedShotCamera(shot.layout, shot.camera);
     if (camera !== shot.camera) shot.camera = camera;
@@ -515,6 +518,9 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
             } else {
               layout.desktopId = assetId;
             }
+          } else if (layout.kind === "compare") {
+            // One screen shows both designs; a screenshot dropped on it becomes the new design.
+            layout.afterId = assetId;
           } else if (layout.kind === "responsive-tour") {
             // A screenshot dropped on a card joins that card's side of the tour.
             addPageScreenshot(
@@ -617,6 +623,21 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
           target.layout.assetIds.splice(to, 0, assetId);
         },
         { label: "Reorder screenshots" },
+      );
+    },
+
+    swapBeforeAfter: (shotIndex: number) => {
+      // Only a Before & After shot has an old and a new design; anything else leaves no undo step.
+      if (get().doc.shots[shotIndex]?.layout.kind !== "compare") return;
+      get().apply(
+        (draft) => {
+          const layout = draft.shots[shotIndex]?.layout;
+          if (layout?.kind !== "compare") return;
+          const { beforeId, afterId } = layout;
+          layout.beforeId = afterId;
+          layout.afterId = beforeId;
+        },
+        { label: "Swap before and after" },
       );
     },
 

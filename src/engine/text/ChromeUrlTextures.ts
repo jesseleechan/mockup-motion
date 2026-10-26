@@ -8,7 +8,10 @@ export interface ChromeUrlText {
   fontPx: number;
 }
 
-/** GPU textures for the browser URL pill rasters, keyed by `chromeUrlKey`. */
+/**
+ * GPU textures for text rasters: the browser URL pill's, keyed by `chromeUrlKey`, and Before &
+ * After's screen labels, keyed by their text (one store each).
+ */
 export class ChromeUrlTextures {
   private entries = new Map<string, ChromeUrlText>();
 

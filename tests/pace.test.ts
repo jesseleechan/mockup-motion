@@ -69,6 +69,8 @@ function todaysKnob(shot: Shot, aspect: Aspect): number {
     return Math.min(2, sliderStepMax(steppedCount(shot.layout)));
   }
   if (isFrames(shot.layout)) return Math.max(15, framesDuration(shot.layout, aspect));
+  // Before & After (presets round two, D8): a 6.0 s loop plus the 0.8 s wrap crossfade.
+  if (shot.layout.kind === "compare") return 6.8;
   return 1;
 }
 
@@ -84,6 +86,8 @@ function expectedKnob(shot: Shot, aspect: Aspect, pace: Pace): number {
     const shortest = framesDuration(shot.layout, aspect);
     return Math.min(30, Math.max(shortest, Math.round(base * scale * 2) / 2));
   }
+  // Before & After scales its loop (D13); the wrap crossfade stays 0.8 s.
+  if (shot.layout.kind === "compare") return Math.round(6 * scale * 10) / 10 + 0.8;
   return Math.round(scale * 10) / 10;
 }
 
@@ -98,7 +102,7 @@ describe("Pace on every built-in template", () => {
     isPacedShot(buildTemplatePreviewDoc(t, "16:9").shots[0]),
   );
 
-  it("covers the sliders, stacks, orbits, Frames and Responsive Scroll, not Scroll Story", () => {
+  it("covers every preset but Scroll Story", () => {
     for (const template of BUILTIN_TEMPLATES) {
       const shot = buildTemplatePreviewDoc(template, "16:9").shots[0];
       const expected = template.id.includes("scroll-story") ? false : true;

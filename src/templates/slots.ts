@@ -8,6 +8,8 @@ interface RoleNeed {
   count: number;
   /** A required slot prefers a full-page screenshot (Scroll Story, Responsive Scroll). */
   tall: boolean;
+  /** The template takes more of the role than it needs: it has optional slots for them. */
+  more: boolean;
 }
 
 /** The screenshots a template's required slots ask for, by role, in slot order. */
@@ -15,17 +17,22 @@ function roleNeeds(template: Template): RoleNeed[] {
   const needs = new Map<AssetRole, RoleNeed>();
   for (const slot of template.slots) {
     if (!slot.required) continue;
-    const need = needs.get(slot.role) ?? { role: slot.role, count: 0, tall: false };
+    const need = needs.get(slot.role) ?? { role: slot.role, count: 0, tall: false, more: false };
     need.count += 1;
     need.tall ||= slot.prefer === "tall";
     needs.set(slot.role, need);
   }
+  for (const slot of template.slots) {
+    const need = needs.get(slot.role);
+    if (need && !slot.required) need.more = true;
+  }
   return [...needs.values()];
 }
 
-function describeNeed({ role, count, tall }: RoleNeed): string {
+function describeNeed({ role, count, tall, more }: RoleNeed): string {
   const kind = tall ? `full-page ${role}` : role;
-  return count > 1 ? `${count}+ ${kind} screenshots` : `a ${kind} screenshot`;
+  // "3+" when more are welcome; Before & After takes exactly 2.
+  return count > 1 ? `${count}${more ? "+" : ""} ${kind} screenshots` : `a ${kind} screenshot`;
 }
 
 /**
@@ -51,7 +58,7 @@ export function templateNeeds(template: Template): string {
     !first.tall &&
     !second.tall
   ) {
-    return `Needs ${first.count}+ pages in desktop and mobile`;
+    return `Needs ${first.count}${first.more ? "+" : ""} pages in desktop and mobile`;
   }
   return `Needs ${needs.map(describeNeed).join(" and ")}`;
 }
@@ -148,8 +155,9 @@ export function fillSlots(
       continue;
     }
 
-    // 3. Fallback: reuse an already-used asset of the same role (never cross-role)
-    if (roleCandidates.length > 0) {
+    // 3. Fallback: reuse an already-used asset of the same role (never cross-role), unless the
+    // template compares its screenshots
+    if (roleCandidates.length > 0 && !t.distinct) {
       result[slot.key] = roleCandidates[0];
       continue;
     }

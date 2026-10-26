@@ -50,6 +50,7 @@ import { CompositePass } from "./post/composite";
 import { FinalPass } from "./post/final";
 import { loadChromeUrlRasters, type LoadedChromeUrl } from "./text/chrome-url";
 import { ChromeUrlTextures } from "./text/ChromeUrlTextures";
+import { loadScreenLabelRasters } from "./text/screen-labels";
 
 export class Engine {
   private renderer: THREE.WebGLRenderer;
@@ -61,6 +62,8 @@ export class Engine {
   private textureManager: TextureManager;
   private backgroundRenderer: BackgroundRenderer;
   private chromeUrls = new ChromeUrlTextures();
+  // Before & After's "Before" and "After", keyed by their text.
+  private screenLabels = new ChromeUrlTextures();
 
   private targetA: THREE.WebGLRenderTarget;
   private targetB: THREE.WebGLRenderTarget;
@@ -268,6 +271,12 @@ export class Engine {
         chromeUrls = loaded;
       }),
     );
+    let screenLabels = new Map<string, LoadedChromeUrl>();
+    loads.push(
+      loadScreenLabelRasters(doc, assets, frameHeightPx).then((loaded) => {
+        screenLabels = loaded;
+      }),
+    );
     await Promise.all(loads);
     if (generation !== this.generation) return;
 
@@ -275,6 +284,7 @@ export class Engine {
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
     this.chromeUrls.replaceAll(chromeUrls);
+    this.screenLabels.replaceAll(screenLabels);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
     // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference. A Site
@@ -327,15 +337,21 @@ export class Engine {
 
       const isPhone = node.device === "phone";
       if (node.panes) {
-        // A screen that draws more than one screenshot (Site Tour, contracts.md §4).
+        // A screen that draws more than one screenshot (Site Tour, Before & After, contracts.md
+        // §4), with Before & After's labels and divider over it.
         const panes = node.panes.map((pane) => ({
           managed: pane.assetId ? this.textureManager.getLoadedTexture(pane.assetId) : null,
           scroll: pane.scroll,
           offset: pane.offset,
           clip: pane.clip,
           hasStatusBar: this.hasStatusBar(pane.assetId),
+          label: pane.label && {
+            text: this.screenLabels.get(pane.label.text),
+            corner: pane.label.corner,
+            size: pane.label.size,
+          },
         }));
-        dev.compositor.composePanes(this.renderer, panes, { isPhone });
+        dev.compositor.composePanes(this.renderer, panes, { isPhone, divider: node.divider });
       } else {
         const managed = node.assetId ? this.textureManager.getLoadedTexture(node.assetId) : null;
         dev.compositor.compose(this.renderer, managed, node.scroll, {
@@ -496,6 +512,7 @@ export class Engine {
     this.textureManager.dispose();
     this.backgroundRenderer.dispose();
     this.chromeUrls.dispose();
+    this.screenLabels.dispose();
 
     this.targetA.dispose();
     this.targetB.dispose();

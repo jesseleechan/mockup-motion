@@ -92,6 +92,10 @@ export function convertDocToUserTemplate(
       case "tour":
         layout.assetIds = layout.assetIds.map(remapId);
         break;
+      case "compare":
+        layout.beforeId = remapId(layout.beforeId);
+        layout.afterId = remapId(layout.afterId);
+        break;
       case "responsive-tour":
         layout.desktopIds = layout.desktopIds.map(remapId);
         layout.mobileIds = layout.mobileIds.map(remapId);
@@ -217,6 +221,10 @@ export function fillUserTemplateSlots(
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
           break;
         }
+        case "compare":
+          layout.beforeId = resolveSlot(layout.beforeId);
+          layout.afterId = resolveSlot(layout.afterId);
+          break;
         case "responsive-tour": {
           // The same for pages: a page that repeats an earlier page's screenshot is left out.
           const pages = distinctPages(

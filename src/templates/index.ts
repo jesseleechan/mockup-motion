@@ -18,5 +18,7 @@ export { desktopOrbitTemplate } from "./desktop-orbit";
 export { mobileOrbitTemplate } from "./mobile-orbit";
 export { desktopSiteTourTemplate } from "./desktop-site-tour";
 export { mobileSiteTourTemplate } from "./mobile-site-tour";
+export { desktopBeforeAfterTemplate } from "./desktop-before-after";
+export { mobileBeforeAfterTemplate } from "./mobile-before-after";
 export { responsiveScrollTemplate } from "./responsive-scroll";
 export { responsiveTourTemplate } from "./responsive-tour";

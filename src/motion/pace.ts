@@ -6,6 +6,7 @@ import {
   MAX_SHOT_DURATION,
   sliderDuration,
 } from "./layouts/duration";
+import { COMPARE_LOOP, compareDuration } from "./layouts/compare";
 import { framesDuration } from "./layouts/rows";
 
 /**
@@ -52,13 +53,14 @@ export function paceOf(shot: Pick<Shot, "pace">): Pace {
 }
 
 /**
- * A slider, stack, orbit, Site Tour, Frames or scrolling Responsive Scroll shot: one that has a
- * pace.
+ * A slider, stack, orbit, Site Tour, Before & After, Frames or scrolling Responsive Scroll shot:
+ * one that has a pace.
  */
 export function isPacedShot(shot: PacedFields): boolean {
   return (
     isSteppedLayout(shot.layout) ||
     isFramesLayout(shot.layout) ||
+    shot.layout.kind === "compare" ||
     (shot.layout.kind === "responsive" && shot.scroll?.enabled === true)
   );
 }
@@ -75,7 +77,8 @@ const tidy = (value: number) => Math.round(value * 1000) / 1000;
 /**
  * The value of the shot's pace knob at each pace, clamped by its limits, or null for a shot
  * without a pace: a slider's or orbit's `layout.step` (0.1 s steps, 1.6 s up to 30 s / shown
- * screenshots), a Frames shot's `duration` (0.5 s steps, its speed limit up to 30 s) or
+ * screenshots), a Frames shot's `duration` (0.5 s steps, its speed limit up to 30 s), Before &
+ * After's `duration` (its 6.0 s loop scaled in 0.1 s steps, plus the 0.8 s wrap crossfade) or
  * Responsive Scroll's `scroll.hold`.
  */
 export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, number> | null {
@@ -86,6 +89,9 @@ export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, num
     const scale = PACE_TIME_SCALE[pace];
     if (isSteppedLayout(layout)) {
       targets[pace] = tidy(clampSteppedStep(roundTo(DEFAULT_STEP * scale, 0.1), layout));
+    } else if (layout.kind === "compare") {
+      // The whole timeline scales: the old design's hold, the sweep and the new design's hold.
+      targets[pace] = tidy(compareDuration(roundTo(COMPARE_LOOP * scale, 0.1)));
     } else if (isFramesLayout(layout)) {
       const shortest = framesDuration(layout, aspect);
       const scaled = roundTo(framesDefaultLoop(layout, aspect) * scale, 0.5);
@@ -102,7 +108,7 @@ export function paceTargets(shot: PacedFields, aspect: Aspect): Record<Pace, num
 export function paceKnob(shot: Pick<Shot, "layout" | "scroll" | "duration">): number | null {
   if (!isPacedShot(shot)) return null;
   if (isSteppedLayout(shot.layout)) return shot.layout.step;
-  if (isFramesLayout(shot.layout)) return shot.duration;
+  if (isFramesLayout(shot.layout) || shot.layout.kind === "compare") return shot.duration;
   return shot.scroll?.hold ?? DEFAULT_RESPONSIVE_HOLD;
 }
 
@@ -162,7 +168,7 @@ export function fitPace(shot: Shot, aspect: Aspect, assets: AssetRef[]): void {
   if (isSteppedLayout(layout)) {
     if (layout.step !== value) layout.step = value;
     duration = sliderDuration(layout);
-  } else if (isFramesLayout(layout)) {
+  } else if (isFramesLayout(layout) || layout.kind === "compare") {
     duration = value;
   } else {
     if (shot.scroll && shot.scroll.hold !== value) shot.scroll.hold = value;
