@@ -135,9 +135,10 @@ export type Layout =
 // at 4:5 and 9:16.
 // pageColumns: full pages side by side as frameless cards, each drifting through its own page at
 // a constant speed, neighbours in opposite directions (Desktop and Mobile Page Columns,
-// quality-bar §4, §5). 3 columns at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16, showing the first
-// pages of the list. shape: desktop columns fill their share of the width; mobile ones are no
-// wider than a phone screen. Its pace sets Shot.duration: the loop plus the 0.8 s wrap crossfade.
+// quality-bar §4, §5), showing the first pages of the list: desktop 3 columns at 16:9 and 4:3,
+// 2 at 1:1 and 1 at 4:5 and 9:16; mobile 3 at 16:9, 4:3 and 1:1 and 2 at 4:5 and 9:16
+// (`pageColumnsCount(shape, aspect)`). shape: desktop columns fill their share of the width;
+// mobile ones are no wider than a phone screen. Its pace sets Shot.duration: the loop plus the 0.8 s wrap crossfade.
 
 // Since 19 October 2026. A saved project with a removed move (pullBack, orbitLeft, orbitRight,
 // tiltUp, tiltDown, riseUp, dollyLeft, dollyRight, isoDrift, heroTilt) loads with "static".

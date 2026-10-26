@@ -129,17 +129,17 @@ The owner decided on 18 October 2026 that the phone looks like a current iPhone 
 
 - **Responsive Scroll** (`responsive`, cards, still camera; template id `responsive-scroll`): a desktop card at the 1.6 screen aspect and a mobile card at 0.4615 (7.5% radius) of the same page. Side by side at 16:9, 4:3 and 1:1: desktop left, a 0.05 gap, card height min(0.66, (0.86 × W − 0.05) / 2.0615), where W is the frame width. Stacked at 4:5 and 9:16: desktop on top, 0.86 × W wide, a 0.04 gap, mobile height min(0.86 − desktop height − 0.04, 0.6). The pair is centred. Ash or Onyx, no shadow, grain 0, vignette 0 (owner, 18 October 2026).
 
-- **Page Columns** (`pageColumns`, cards, still camera; Desktop Page Columns and Mobile Page Columns, `docs/presets-2-plan/README.md` D9–D11): full pages side by side, one per column, each fit to its column's width (never cropped at the sides) and drifting through its page (§2.2). 3 columns at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16; with fewer pages, fewer columns share the same span. The columns are centred, with a 0.035 gap. Desktop: each column takes an equal share of 0.86 × W (W = frame width) and is 0.84 tall. Mobile: 0.8 tall and min(that share, 0.8 × 0.4615) wide, so no wider than a phone screen. A page shorter than its column (a hero, or the demo desktop pages at 1:1 and 9:16) shows whole on a card as tall as the page, centred, and stays still. Ash or Onyx, no shadow, grain 0, vignette 0. These are the shortlist preview's numbers, kept after the T3 contact sheet:
+- **Page Columns** (`pageColumns`, cards, still camera; Desktop Page Columns and Mobile Page Columns, `docs/presets-2-plan/README.md` D9–D11): full pages side by side, one per column, each fit to its column's width (never cropped at the sides) and drifting through its page (§2.2). Mobile has 3 columns at 16:9, 4:3 and 1:1 and 2 at 4:5 and 9:16. Desktop has 3 at 16:9 and 4:3, 2 at 1:1 and 1 at 4:5 and 9:16, which shows the first page: in columns as narrow as mobile ones a desktop page is shorter than its column, so it never drifts (owner, 26 October 2026). With fewer pages, fewer columns share the same span. The columns are centred, with a 0.035 gap. Desktop: each column takes an equal share of 0.86 × W (W = frame width) and is 0.84 tall. Mobile: 0.8 tall and min(that share, 0.8 × 0.4615) wide, so no wider than a phone screen. A page shorter than its column, such as a hero, shows whole on a card as tall as the page, centred, and stays still. Ash or Onyx, no shadow, grain 0, vignette 0. These are the shortlist preview's numbers, kept after the T3 contact sheet except desktop's column counts at 1:1, 4:5 and 9:16:
 
-  | Aspect | Columns | Desktop column (w × h) | Mobile column (w × h) | Mobile group / W |
-  | ------ | ------- | ---------------------- | --------------------- | ---------------- |
-  | 16:9   | 3       | 0.486 × 0.84           | 0.369 × 0.80          | 66%              |
-  | 4:3    | 3       | 0.359 × 0.84           | 0.359 × 0.80          | 86%              |
-  | 1:1    | 3       | 0.263 × 0.84           | 0.263 × 0.80          | 86%              |
-  | 4:5    | 2       | 0.327 × 0.84           | 0.327 × 0.80          | 86%              |
-  | 9:16   | 2       | 0.224 × 0.84           | 0.224 × 0.80          | 86%              |
+  | Aspect | Desktop columns | Desktop column (w × h) | Mobile columns | Mobile column (w × h) | Mobile group / W |
+  | ------ | --------------- | ---------------------- | -------------- | --------------------- | ---------------- |
+  | 16:9   | 3               | 0.486 × 0.84           | 3              | 0.369 × 0.80          | 66%              |
+  | 4:3    | 3               | 0.359 × 0.84           | 3              | 0.359 × 0.80          | 86%              |
+  | 1:1    | 2               | 0.413 × 0.84           | 3              | 0.263 × 0.80          | 86%              |
+  | 4:5    | 1               | 0.688 × 0.84           | 2              | 0.327 × 0.80          | 86%              |
+  | 9:16   | 1               | 0.484 × 0.84           | 2              | 0.224 × 0.80          | 86%              |
 
-  A desktop column shows 1440 / w × h px of a 1440 px page: about 2,490 px at 16:9, 3,370 at 4:3, 4,590 at 1:1, 3,700 at 4:5 and 5,390 at 9:16, so shorter pages fit whole. Page Columns needs 2 full pages of one size and shows at most 3, each once.
+  A desktop column shows 1440 / w × h px of a 1440 px page: about 2,490 px at 16:9, 3,370 at 4:3, 2,930 at 1:1, 1,760 at 4:5 and 2,500 at 9:16, so shorter pages fit whole. The demo desktop pages (3,507–4,183 px) drift at every aspect. Page Columns needs 2 full pages of one size and shows at most 3, each once.
 
 - **Vertical formats:** keep primary content inside the central 80% of the height (social UI overlays).
 

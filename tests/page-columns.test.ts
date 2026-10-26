@@ -38,14 +38,17 @@ const ASPECTS: Aspect[] = ["16:9", "4:3", "1:1", "4:5", "9:16"];
 const SPEED_LIMIT = 0.5; // column heights per second (D10)
 const WRAP = 0.8;
 
-/** Column count, column width and window height per aspect (quality bar §4). */
+/**
+ * Column count, column width and window height per aspect (quality bar §4). Desktop has fewer,
+ * wider columns than mobile at 1:1, 4:5 and 9:16, so its pages drift (owner, 26 October 2026).
+ */
 const GEOMETRY: Record<Shape, Record<Aspect, [number, number, number]>> = {
   desktop: {
     "16:9": [3, 0.4863, 0.84],
     "4:3": [3, 0.3589, 0.84],
-    "1:1": [3, 0.2633, 0.84],
-    "4:5": [2, 0.3265, 0.84],
-    "9:16": [2, 0.2244, 0.84],
+    "1:1": [2, 0.4125, 0.84],
+    "4:5": [1, 0.688, 0.84],
+    "9:16": [1, 0.48375, 0.84],
   },
   // Never wider than a phone screen: 0.8 × 0.4615 = 0.3692 binds at 16:9.
   mobile: {
@@ -99,7 +102,7 @@ function expectedRange(asset: AssetRef, role: Shape, aspect: Aspect): number {
 }
 
 describe("Page Columns geometry (quality bar §4)", () => {
-  it("lays out 3 columns at 16:9, 4:3 and 1:1 and 2 at 4:5 and 9:16, centred in 0.86 of the width", () => {
+  it("lays out desktop 3, 3, 2, 1, 1 and mobile 3, 3, 3, 2, 2 columns at 16:9, 4:3, 1:1, 4:5, 9:16, centred in 0.86 of the width", () => {
     for (const role of ["desktop", "mobile"] as const) {
       for (const aspect of ASPECTS) {
         const label = `${role} ${aspect}`;
@@ -156,11 +159,6 @@ describe("Page Columns geometry (quality bar §4)", () => {
       expect(middle.height).toBeLessThan(0.84);
       expect(middle.scroll).toBe(0);
     }
-    // At 1:1 every demo desktop page fits its column whole: a still board of whole pages.
-    for (const node of nodesAt(columnsDoc("desktop", "1:1"), 3)) {
-      expect(node.height).toBeLessThan(0.84);
-      expect(node.scroll).toBe(0);
-    }
   });
 
   it("keeps the desktop card radius on a tall desktop column", () => {
@@ -200,6 +198,23 @@ describe("Page Columns motion (D9)", () => {
           );
         }
       }
+    }
+  });
+
+  it("drifts every desktop column at every aspect with the demo pages", () => {
+    // In columns as narrow as mobile ones the demo desktop pages fit whole, so 1:1 and 9:16 were
+    // a still board (owner, 26 October 2026).
+    for (const aspect of ASPECTS) {
+      const doc = buildTemplatePreviewDoc(desktopPageColumnsTemplate, aspect);
+      const start = nodesAt(doc, 0);
+      const end = nodesAt(doc, schedule(doc).total);
+      start.forEach((node, c) => {
+        const asset = doc.assets.find((a) => a.id === node.assetId)!;
+        // How far the page, fit to the column's width, reaches past its window, in column heights.
+        const range = (node.width * asset.height!) / asset.width! / node.height - 1;
+        const travel = Math.abs(end[c].scroll - node.scroll) * range;
+        expect(travel, `${aspect} column ${c}`).toBeGreaterThan(0);
+      });
     }
   });
 
@@ -382,7 +397,9 @@ describe("Page Columns templates and slots (D11, D15)", () => {
     expect(missingRequiredSlots(template, two)).toEqual([]);
   });
 
-  it("shows each page once, at most 3", () => {
+  it("shows each page once, at most 3, and only the first in a single column", () => {
+    const single = nodesAt(columnsDoc("desktop", "9:16"), 0);
+    expect(single.map((node) => node.assetId)).toEqual([full("aurelia", "desktop").id]);
     const two = columnsDoc("desktop", "16:9", demoPages("desktop").slice(0, 2));
     const layout = two.shots[0].layout as PageColumnsLayout;
     expect(layout.assetIds).toHaveLength(2);

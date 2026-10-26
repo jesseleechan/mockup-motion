@@ -114,9 +114,9 @@ STILLS.push({
   t: 2.05,
 });
 // Page Columns (presets round two, T3), mid-drift at 4.0 s on each aspect's own fixture (the
-// loop follows the aspect): 3 columns at 16:9 and 1:1, 2 at 4:5 and 9:16. Desktop at 1:1 shows
-// the demo pages whole on shorter cards; mobile at 16:9 shows the phone-width cap. Plus each
-// preset's dark option at 16:9.
+// loop follows the aspect): desktop 3 columns at 16:9, 2 at 1:1 and 1 at 9:16; mobile 3 at 16:9
+// and 1:1 and 2 at 4:5. Mobile at 16:9 shows the phone-width cap. Plus each preset's dark option
+// at 16:9.
 const PAGE_COLUMNS_STILLS: [string, string[]][] = [
   ["desktop-page-columns", ["16:9", "1:1", "9:16"]],
   ["mobile-page-columns", ["16:9", "1:1", "4:5"]],

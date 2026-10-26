@@ -94,7 +94,7 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
     );
   }
   if (layout.kind === "pageColumns") {
-    // One page per column: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16 (quality bar §4).
+    // One page per column, from 3 down to 1 for desktop at 4:5 and 9:16 (quality bar §4).
     const shown = pageColumnsAssetIds(layout, aspect).length;
     return (
       <Section title="Screenshots">
@@ -105,7 +105,11 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           label="Page columns screenshots"
           shown={shown}
           minimum={minShotScreenshots(layout)}
-          overflowNote={`Shows the first ${shown} pages, one per column at this aspect.`}
+          overflowNote={
+            shown === 1
+              ? "Shows the first page only, in one column at this aspect."
+              : `Shows the first ${shown} pages, one per column at this aspect.`
+          }
         />
       </Section>
     );

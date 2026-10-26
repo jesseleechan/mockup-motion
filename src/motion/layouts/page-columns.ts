@@ -21,8 +21,20 @@ const COLUMN_GAP = 0.035;
 const DESKTOP_COLUMN_HEIGHT = 0.84;
 const MOBILE_COLUMN_HEIGHT = 0.8;
 
-/** The most pages a shot shows: 3 columns at 16:9, 4:3 and 1:1 (plan D11). */
+/** The most pages a shot shows: 3 columns, the most at any aspect (plan D11). */
 export const PAGE_COLUMNS_MAX_SCREENSHOTS = 3;
+
+/**
+ * Columns per shape and aspect (plan D11, quality bar §4). Desktop has fewer, wider columns than
+ * mobile at 1:1, 4:5 and 9:16 (owner, 26 October 2026): a desktop page in a column as narrow as a
+ * mobile one is shorter than its column, so it stayed still. One desktop column shows the first
+ * page only.
+ */
+const COLUMN_COUNTS: Record<PageColumnsLayout["shape"], Record<Aspect, number>> = {
+  desktop: { "16:9": 3, "4:3": 3, "1:1": 2, "4:5": 1, "9:16": 1 },
+  mobile: { "16:9": 3, "4:3": 3, "1:1": 3, "4:5": 2, "9:16": 2 },
+};
+
 /** Plan D10: a column drifts at most half its height per second. */
 export const PAGE_COLUMNS_SPEED_LIMIT = 0.5;
 /** Plan D10: the Default loop is at least 12 s, even when every page is short. */
@@ -32,14 +44,17 @@ export const PAGE_COLUMNS_WRAP_OVERLAP = RESPONSIVE_WRAP_OVERLAP;
 /** The longest loop: the shot, 0.8 s longer, fits in 30 s. */
 export const PAGE_COLUMNS_MAX_LOOP = MAX_SHOT_DURATION - PAGE_COLUMNS_WRAP_OVERLAP;
 
-/** Columns at an aspect (plan D11): 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16. */
-export function pageColumnsCount(aspect: Aspect): number {
-  return aspect === "4:5" || aspect === "9:16" ? 2 : PAGE_COLUMNS_MAX_SCREENSHOTS;
+/**
+ * Columns at an aspect (plan D11). Desktop: 3 at 16:9 and 4:3, 2 at 1:1, 1 at 4:5 and 9:16.
+ * Mobile: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16.
+ */
+export function pageColumnsCount(shape: PageColumnsLayout["shape"], aspect: Aspect): number {
+  return COLUMN_COUNTS[shape][aspect];
 }
 
 /** The pages a shot shows at an aspect: the first ones, one per column. */
 export function pageColumnsAssetIds(layout: PageColumnsLayout, aspect: Aspect): string[] {
-  return layout.assetIds.slice(0, pageColumnsCount(aspect));
+  return layout.assetIds.slice(0, pageColumnsCount(layout.shape, aspect));
 }
 
 export interface PageColumnsGeometry {

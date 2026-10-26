@@ -82,8 +82,8 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("studio-kova"),
   ],
-  // Three full pages, one per column (the shortlist's preview). At 4:5 and 9:16 the first two
-  // show.
+  // Three full pages, one per column (the shortlist's preview). Fewer columns show the first
+  // ones: desktop 2 at 1:1 and 1 at 4:5 and 9:16, mobile 2 at 4:5 and 9:16.
   "desktop-page-columns": [
     desktopFull("aurelia"),
     desktopFull("northwind"),
