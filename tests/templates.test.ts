@@ -104,8 +104,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the
-    // Slider, Frames, Stack, Orbit, Page Columns and Scroll Story pairs, then Responsive Scroll.
-    // The first entry is the first-run default (presets plan D1).
+    // Slider, Frames, Stack, Orbit, Site Tour, Page Columns and Scroll Story pairs, then Responsive
+    // Scroll. The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -115,6 +115,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-stack",
       "desktop-orbit",
       "mobile-orbit",
+      "desktop-site-tour",
+      "mobile-site-tour",
       "desktop-page-columns",
       "mobile-page-columns",
       "scroll-story",
@@ -141,6 +143,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-stack": "mobile",
       "desktop-orbit": "desktop",
       "mobile-orbit": "mobile",
+      "desktop-site-tour": "desktop",
+      "mobile-site-tour": "mobile",
       "desktop-page-columns": "desktop",
       "mobile-page-columns": "mobile",
       "scroll-story": "desktop",
@@ -317,6 +321,8 @@ describe("Template loop seam", () => {
   const SLIDER_TEMPLATES = ["mobile-slider", "desktop-slider", "desktop-stack", "mobile-stack"];
   // An orbit loops natively with a cut: after N steps the ring is back where it started.
   const ORBIT_TEMPLATES = ["desktop-orbit", "mobile-orbit"];
+  // A Site Tour loops natively with a cut: after N steps its first page is back on the screen.
+  const TOUR_TEMPLATES = ["desktop-site-tour", "mobile-site-tour"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
@@ -345,6 +351,7 @@ describe("Template loop seam", () => {
         ...NATIVE_MARQUEE_TEMPLATES,
         ...SLIDER_TEMPLATES,
         ...ORBIT_TEMPLATES,
+        ...TOUR_TEMPLATES,
         ...WRAP_SCROLL_TEMPLATES,
       ].sort(),
     );
@@ -401,6 +408,15 @@ describe("Template loop seam", () => {
       for (const key of ["x", "y", "z", "rx", "ry", "rz", "scale"] as const) {
         expect(other.transform[key], `${where} ${key}`).toBeCloseTo(node.transform[key], 4);
       }
+      // A screen of several panes (Site Tour) shows the same screenshots in the same places.
+      expect(other.panes?.length, `${where} panes`).toBe(node.panes?.length);
+      node.panes?.forEach((pane, j) => {
+        const twin = other.panes?.[j];
+        expect(twin?.assetId, `${where} pane ${j} asset`).toBe(pane.assetId);
+        expect(twin?.offset, `${where} pane ${j} offset`).toBeCloseTo(pane.offset, 4);
+        expect(twin?.clip, `${where} pane ${j} clip`).toEqual(pane.clip);
+        expect(twin?.scroll, `${where} pane ${j} scroll`).toBeCloseTo(pane.scroll, 4);
+      });
     });
   }
 

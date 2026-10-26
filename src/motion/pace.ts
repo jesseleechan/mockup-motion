@@ -53,8 +53,8 @@ export function paceOf(shot: Pick<Shot, "pace">): Pace {
 }
 
 /**
- * A slider, stack, orbit, Frames, Page Columns or scrolling Responsive Scroll shot: one that has
- * a pace.
+ * A slider, stack, orbit, Site Tour, Frames, Page Columns or scrolling Responsive Scroll shot: one
+ * that has a pace.
  */
 export function isPacedShot(shot: PacedFields): boolean {
   return (

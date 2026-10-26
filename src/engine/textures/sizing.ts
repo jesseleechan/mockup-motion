@@ -53,6 +53,9 @@ export function textureWidths(doc: ProjectDoc, opts: TextureSizingOptions): Map<
     for (const node of nodes) {
       const onScreenPx = ((node.width * node.transform.scale) / stageWidthUnits) * framePx;
       want(node.assetId, (onScreenPx / distance) * oversample);
+      // A screen of several panes lists every screenshot it shows (contracts.md §4), each at the
+      // screen's width.
+      for (const pane of node.panes ?? []) want(pane.assetId, (onScreenPx / distance) * oversample);
     }
   });
   // A layout can list more assets than it places at t = 0; size those for a full frame.

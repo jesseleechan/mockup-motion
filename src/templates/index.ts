@@ -16,6 +16,8 @@ export { desktopStackTemplate } from "./desktop-stack";
 export { mobileStackTemplate } from "./mobile-stack";
 export { desktopOrbitTemplate } from "./desktop-orbit";
 export { mobileOrbitTemplate } from "./mobile-orbit";
+export { desktopSiteTourTemplate } from "./desktop-site-tour";
+export { mobileSiteTourTemplate } from "./mobile-site-tour";
 export { desktopPageColumnsTemplate } from "./desktop-page-columns";
 export { mobilePageColumnsTemplate } from "./mobile-page-columns";
 export { responsiveScrollTemplate } from "./responsive-scroll";

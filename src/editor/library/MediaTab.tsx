@@ -40,14 +40,19 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
   const reorderAssets = useEditorStore((s) => s.reorderAssets);
   const addAssetToShot = useEditorStore((s) => s.addAssetToShot);
   const removeAssetFromShot = useEditorStore((s) => s.removeAssetFromShot);
-  // A slider or orbit shot takes screenshots from here (presets P03); other layouts use their
-  // fields.
+  // A slider, orbit or Site Tour shot takes screenshots from here (presets P03); other layouts
+  // use their fields.
   const selection = useUIStore((s) => s.selection);
   const selectedShotIndex =
     selection.kind === "shot" ? fullDoc.shots.findIndex((shot) => shot.id === selection.id) : -1;
   const selectedLayout = fullDoc.shots[selectedShotIndex]?.layout;
   const selectedSlider = selectedLayout && isSteppedLayout(selectedLayout) ? selectedLayout : null;
-  const steppedName = selectedLayout?.kind === "orbit" ? "orbit" : "slider";
+  const steppedName =
+    selectedLayout?.kind === "orbit"
+      ? "orbit"
+      : selectedLayout?.kind === "tour"
+        ? "tour"
+        : "slider";
 
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,9 +70,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
       if (
         (lay.kind === "rows" ||
           lay.kind === "columns" ||
-          lay.kind === "slider" ||
-          lay.kind === "orbit" ||
-          lay.kind === "pageColumns") &&
+          lay.kind === "pageColumns" ||
+          isSteppedLayout(lay)) &&
         lay.assetIds.includes(assetId)
       )
         used = true;

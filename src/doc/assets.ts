@@ -11,6 +11,7 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "columns":
     case "slider":
     case "orbit":
+    case "tour":
     case "pageColumns":
       return [...layout.assetIds];
   }
@@ -31,6 +32,7 @@ export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string
     case "columns":
     case "slider":
     case "orbit":
+    case "tour":
     case "pageColumns":
       layout.assetIds = layout.assetIds.map(swap);
       return;

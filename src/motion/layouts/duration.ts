@@ -7,11 +7,15 @@ export { MAX_SHOT_DURATION };
 
 type SliderLayout = Extract<Layout, { kind: "slider" }>;
 type OrbitLayout = Extract<Layout, { kind: "orbit" }>;
-/** Layouts that step one screenshot per `step` seconds and loop natively: slider and orbit. */
-export type SteppedLayout = SliderLayout | OrbitLayout;
+type TourLayout = Extract<Layout, { kind: "tour" }>;
+/**
+ * Layouts that step one screenshot per `step` seconds and loop natively: slider, orbit and
+ * tour (Site Tour).
+ */
+export type SteppedLayout = SliderLayout | OrbitLayout | TourLayout;
 
 export function isSteppedLayout(layout: Layout): layout is SteppedLayout {
-  return layout.kind === "slider" || layout.kind === "orbit";
+  return layout.kind === "slider" || layout.kind === "orbit" || layout.kind === "tour";
 }
 
 // Quality bar §2.2 (carousel steps): 1.6–4.0 s per screenshot.
@@ -24,8 +28,11 @@ export const SLIDER_MAX_STEP = 4.0;
  */
 export const SLIDER_MAX_SCREENSHOTS = Math.floor(MAX_SHOT_DURATION / SLIDER_MIN_STEP);
 
-/** The screenshots a slider shot shows: the first SLIDER_MAX_SCREENSHOTS of its list. */
-export function sliderAssetIds(layout: SliderLayout): string[] {
+/**
+ * The screenshots a slider or Site Tour shot shows: the first SLIDER_MAX_SCREENSHOTS of its
+ * list.
+ */
+export function sliderAssetIds(layout: SliderLayout | TourLayout): string[] {
   return layout.assetIds.slice(0, SLIDER_MAX_SCREENSHOTS);
 }
 
@@ -36,14 +43,15 @@ export function sliderAssetIds(layout: SliderLayout): string[] {
 export const ORBIT_MAX_SCREENSHOTS = 6;
 
 /**
- * The fewest screenshots a list layout needs (quality-bar §4): 2 for Page Columns, 3 for a slider
- * or stack, 4 for an orbit or Frames. Other layouts have no list, so 0.
+ * The fewest screenshots a list layout needs (quality-bar §4): 2 for Page Columns, 3 for a slider,
+ * stack or Site Tour, 4 for an orbit or Frames. Other layouts have no list, so 0.
  */
 export function minShotScreenshots(layout: Layout): number {
   switch (layout.kind) {
     case "pageColumns":
       return 2;
     case "slider":
+    case "tour":
       return 3;
     case "orbit":
     case "rows":
@@ -59,9 +67,9 @@ export function orbitAssetIds(layout: OrbitLayout): string[] {
   return layout.assetIds.slice(0, ORBIT_MAX_SCREENSHOTS);
 }
 
-/** The screenshots a slider or orbit shot shows. */
+/** The screenshots a slider, orbit or Site Tour shot shows. */
 export function steppedAssetIds(layout: SteppedLayout): string[] {
-  return layout.kind === "slider" ? sliderAssetIds(layout) : orbitAssetIds(layout);
+  return layout.kind === "orbit" ? orbitAssetIds(layout) : sliderAssetIds(layout);
 }
 
 /**
@@ -93,14 +101,15 @@ export function clampSteppedStep(step: number, layout: SteppedLayout): number {
 }
 
 /**
- * Shot length that keeps a slider or orbit loop seamless: one step per shown screenshot.
+ * Shot length that keeps a stepped loop (slider, orbit, Site Tour) seamless: one step per shown
+ * screenshot.
  */
 export function sliderDuration(layout: SteppedLayout): number {
   return Math.max(1, steppedAssetIds(layout).length) * layout.step;
 }
 
 /**
- * The shot length a layout sets itself, or null when the user sets it. A slider or orbit lasts
+ * The shot length a layout sets itself, or null when the user sets it. A stepped layout lasts
  * N × step so it loops natively; a scrolling responsive layout lasts its holds plus moves
  * (contracts.md §5). Without both screenshots it lasts its holds alone.
  */
@@ -118,7 +127,7 @@ export function fixedShotDuration(
 }
 
 /**
- * The camera a layout allows. A slider's or orbit's camera is still (quality bar §4): a camera
+ * The camera a layout allows. A stepped layout's camera is still (quality bar §4): a camera
  * move would end the shot on another pose, so the native loop would pop. Responsive Scroll's and
  * Page Columns' are still too: the scroll or the drift is the shot's one move (quality bar §2.5).
  * Other layouts keep theirs.

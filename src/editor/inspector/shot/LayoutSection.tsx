@@ -6,8 +6,11 @@ import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
-// Picking a layout here makes a single device. Frames, sliders, orbits, Responsive Scroll and Page
-// Columns come from their templates, so the picker lists them only on a shot that already uses one.
+// A Site Tour shows its pages in a browser or a phone (presets round two, D5).
+const TOUR_DEVICES = ["browser", "phone"] as const;
+// Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours, Responsive
+// Scroll and Page Columns come from their templates, so the picker lists them only on a shot that
+// already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -114,7 +117,25 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {(isSteppedLayout(layout) || layout.kind === "pageColumns") && (
+      {layout.kind === "tour" && (
+        <Field label="Device">
+          <Select
+            aria-label="Device"
+            value={layout.device}
+            onChange={(device) =>
+              update(
+                (target) => {
+                  if (target.layout.kind === "tour") target.layout.device = device;
+                },
+                { label: `Change device to ${DEVICE_LABELS[device].toLowerCase()}` },
+              )
+            }
+            options={optionsFor(DEVICE_LABELS, TOUR_DEVICES)}
+          />
+        </Field>
+      )}
+
+      {((isSteppedLayout(layout) && layout.kind !== "tour") || layout.kind === "pageColumns") && (
         <>
           <Field label="Card shape">
             <Select
@@ -124,7 +145,12 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                 update(
                   (target) => {
                     const next = target.layout;
-                    if (isSteppedLayout(next) || next.kind === "pageColumns") next.shape = shape;
+                    if (
+                      (isSteppedLayout(next) && next.kind !== "tour") ||
+                      next.kind === "pageColumns"
+                    ) {
+                      next.shape = shape;
+                    }
                   },
                   { label: "Change card shape" },
                 )

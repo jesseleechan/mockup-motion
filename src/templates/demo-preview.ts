@@ -1,13 +1,13 @@
 import type { Aspect, AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
 import { demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
-import type { DemoSite } from "../lab/demo-assets";
+import type { DemoPage, DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots, missingRequiredSlots } from "./slots";
 
-const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
+const desktopHero = (site: DemoSite, page?: DemoPage) => demoAssetId(site, "desktop", "hero", page);
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
-const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
+const mobileHero = (site: DemoSite, page?: DemoPage) => demoAssetId(site, "mobile", "hero", page);
 const mobileFull = (site: DemoSite) => demoAssetId(site, "mobile", "full");
 
 /**
@@ -81,6 +81,21 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("maison-oak"),
     mobileHero("field-notes"),
     mobileHero("studio-kova"),
+  ],
+  // Four pages of one site in its nav order, an 8 s loop, so the URL pill reads aurelia.studio.
+  // Heroes, not full pages: a tour shows each page's top, which is the hero (the desktop one at
+  // twice the full page's resolution), and a full page would decode thousands of unseen rows.
+  "desktop-site-tour": [
+    desktopHero("aurelia"),
+    desktopHero("aurelia", "studio"),
+    desktopHero("aurelia", "works"),
+    desktopHero("aurelia", "journal"),
+  ],
+  "mobile-site-tour": [
+    mobileHero("aurelia"),
+    mobileHero("aurelia", "studio"),
+    mobileHero("aurelia", "works"),
+    mobileHero("aurelia", "journal"),
   ],
   // Three full pages, one per column (the shortlist's preview). Fewer columns show the first
   // ones: desktop 2 at 1:1 and 1 at 4:5 and 9:16, mobile 2 at 4:5 and 9:16.
