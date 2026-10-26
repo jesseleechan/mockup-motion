@@ -1,55 +1,81 @@
-import fs from 'node:fs';
-import http from 'node:http';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { chromium } from '@playwright/test';
-import sharp from 'sharp';
-import { getBrowserLaunchOptions, preparePage, recordSectionBoundaries } from './capture';
+import fs from "node:fs";
+import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import type { Browser } from "@playwright/test";
+import sharp from "sharp";
+import { launchBrowser, preparePage, recordSectionBoundaries } from "./capture";
 
-const SITES = [
-  { id: 'aurelia', name: 'Aurelia' },
-  { id: 'northwind', name: 'Northwind' },
-  { id: 'maison-oak', name: 'Maison Oak' },
-  { id: 'field-notes', name: 'Field Notes' },
-  { id: 'studio-kova', name: 'Studio Kova' },
+/** A page of a demo site. `home` is the site's index page; its files keep their original names. */
+interface DemoPageSpec {
+  id: string;
+  /** Path under the site's folder in `demo-sites/`; empty for the index page. */
+  path: string;
+}
+
+interface DemoSiteSpec {
+  id: string;
+  name: string;
+  pages: DemoPageSpec[];
+}
+
+const HOME: DemoPageSpec = { id: "home", path: "" };
+
+const SITES: DemoSiteSpec[] = [
+  {
+    id: "aurelia",
+    name: "Aurelia",
+    // Site Tour and Responsive Tour show these pages of one site; Before & After shows the
+    // earlier home page next to today's (docs/presets-2-plan, D14).
+    pages: [
+      HOME,
+      { id: "works", path: "works.html" },
+      { id: "studio", path: "studio.html" },
+      { id: "journal", path: "journal.html" },
+      { id: "home-before", path: "home-before.html" },
+    ],
+  },
+  { id: "northwind", name: "Northwind", pages: [HOME] },
+  { id: "maison-oak", name: "Maison Oak", pages: [HOME] },
+  { id: "field-notes", name: "Field Notes", pages: [HOME] },
+  { id: "studio-kova", name: "Studio Kova", pages: [HOME] },
 ];
 
 const MIME_MAP: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.woff2': 'font/woff2',
-  '.svg': 'image/svg+xml',
-  '.json': 'application/json',
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+  ".svg": "image/svg+xml",
+  ".json": "application/json",
 };
 
 function startServer(root: string, port = 3456): Promise<http.Server> {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
-      let reqPath = decodeURI(req.url || '/').split('?')[0];
-      if (reqPath === '/' || !reqPath) reqPath = '/index.html';
+      let reqPath = decodeURI(req.url || "/").split("?")[0];
+      if (reqPath === "/" || !reqPath) reqPath = "/index.html";
 
-      // Map root fonts to demo-sites/fonts
       let filePath = path.join(root, reqPath);
       if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
-        filePath = path.join(filePath, 'index.html');
+        filePath = path.join(filePath, "index.html");
       }
 
       if (!fs.existsSync(filePath)) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.writeHead(404, { "Content-Type": "text/plain" });
         res.end(`Not found: ${reqPath}`);
         return;
       }
 
       const ext = path.extname(filePath).toLowerCase();
-      const contentType = MIME_MAP[ext] || 'application/octet-stream';
+      const contentType = MIME_MAP[ext] || "application/octet-stream";
       res.writeHead(200, {
-        'Content-Type': contentType,
-        'Cache-Control': 'no-cache',
+        "Content-Type": contentType,
+        "Cache-Control": "no-cache",
       });
       fs.createReadStream(filePath).pipe(res);
     });
@@ -62,213 +88,223 @@ function startServer(root: string, port = 3456): Promise<http.Server> {
 
 export interface DemoManifestEntry {
   site: string;
+  /** Absent for a site's home page, so the original entries keep their shape. */
+  page?: string;
   file: string;
-  role: 'hero' | 'full';
+  role: "hero" | "full";
   tall: boolean;
   width: number;
   height: number;
-  category: 'desktop' | 'mobile';
+  category: "desktop" | "mobile";
   sizeBytes: number;
 }
 
-export async function runDemoCapture() {
-  const rootDir = path.resolve('demo-sites');
-  const publicDemoDir = path.resolve('public/demo');
+interface CaptureSpec {
+  category: "desktop" | "mobile";
+  role: "hero" | "full";
+  viewport: { width: number; height: number };
+  deviceScaleFactor: number;
+  /** The sections file written next to a full-page capture. */
+  sectionsFile?: string;
+}
+
+// Desktop hero 1440 × 900 @2x, desktop full page 1440 wide @1x, mobile 390 × 844 @2x.
+const CAPTURES: CaptureSpec[] = [
+  {
+    category: "desktop",
+    role: "hero",
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+  },
+  {
+    category: "desktop",
+    role: "full",
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 1,
+    sectionsFile: "sections.json",
+  },
+  {
+    category: "mobile",
+    role: "hero",
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+  },
+  {
+    category: "mobile",
+    role: "full",
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    // Responsive Scroll stops both screens on the same section.
+    sectionsFile: "sections-mobile.json",
+  },
+];
+
+const entryKey = (e: Pick<DemoManifestEntry, "site" | "page" | "category" | "role">) =>
+  `${e.site}/${e.page ?? HOME.id}/${e.category}/${e.role}`;
+
+/**
+ * Replaces the entries that were captured again in place and inserts new ones after the last
+ * entry of their site, so recapturing some pages leaves every other entry as it was.
+ */
+export function mergeManifest(
+  existing: DemoManifestEntry[],
+  captured: DemoManifestEntry[],
+): DemoManifestEntry[] {
+  const merged = [...existing];
+  for (const entry of captured) {
+    const at = merged.findIndex((e) => entryKey(e) === entryKey(entry));
+    if (at >= 0) {
+      merged[at] = entry;
+      continue;
+    }
+    const lastOfSite = merged.map((e) => e.site).lastIndexOf(entry.site);
+    merged.splice(lastOfSite >= 0 ? lastOfSite + 1 : merged.length, 0, entry);
+  }
+  return merged;
+}
+
+/** `--site <id>` and `--page <id>`, each repeatable, limit the capture. Neither means all. */
+function parseFilters(argv: string[]): { sites: string[]; pages: string[] } {
+  const sites: string[] = [];
+  const pages: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const flag = argv[i];
+    const value = argv[i + 1];
+    if (flag !== "--site" && flag !== "--page") throw new Error(`Unknown argument: ${flag}`);
+    if (!value || value.startsWith("--")) throw new Error(`${flag} needs a value`);
+    (flag === "--site" ? sites : pages).push(value);
+    i++;
+  }
+  for (const site of sites) {
+    if (!SITES.some((s) => s.id === site)) throw new Error(`Unknown demo site: ${site}`);
+  }
+  for (const page of pages) {
+    const known = SITES.some(
+      (s) => (sites.length === 0 || sites.includes(s.id)) && s.pages.some((p) => p.id === page),
+    );
+    if (!known) throw new Error(`No selected demo site has a page "${page}"`);
+  }
+  return { sites, pages };
+}
+
+async function capturePage(
+  browser: Browser,
+  url: string,
+  outDir: string,
+  spec: CaptureSpec,
+): Promise<{ file: string; width: number; height: number; sizeBytes: number }> {
+  const mobile = spec.category === "mobile";
+  const ctx = await browser.newContext({
+    viewport: spec.viewport,
+    deviceScaleFactor: spec.deviceScaleFactor,
+    reducedMotion: "reduce",
+    ...(mobile ? { isMobile: true, hasTouch: true } : {}),
+  });
+  try {
+    const page = await ctx.newPage();
+    await page.goto(url, { waitUntil: "networkidle" });
+    await preparePage(page, { unstick: spec.role === "full" });
+
+    if (spec.sectionsFile) {
+      const sections = await recordSectionBoundaries(
+        page,
+        spec.viewport.width,
+        spec.deviceScaleFactor,
+      );
+      fs.writeFileSync(
+        path.join(outDir, spec.sectionsFile),
+        JSON.stringify(sections, null, 2),
+        "utf-8",
+      );
+      console.log(`  -> Recorded ${sections.sections.length} sections in ${spec.sectionsFile}`);
+    }
+
+    const rawPng = await page.screenshot({ fullPage: spec.role === "full" });
+    const file = `${spec.category}-${spec.role}.webp`;
+    const webpPath = path.join(outDir, file);
+    await sharp(rawPng).webp({ quality: 92 }).toFile(webpPath);
+
+    const meta = await sharp(webpPath).metadata();
+    if (!meta.width || !meta.height) throw new Error(`${webpPath}: sharp reported no size`);
+    const sizeBytes = fs.statSync(webpPath).size;
+    console.log(
+      `  -> Saved ${file}: ${meta.width}x${meta.height}, ${(sizeBytes / 1024).toFixed(1)} KB`,
+    );
+    return { file, width: meta.width, height: meta.height, sizeBytes };
+  } finally {
+    await ctx.close();
+  }
+}
+
+export async function runDemoCapture(argv: string[] = []) {
+  const filters = parseFilters(argv);
+  const rootDir = path.resolve("demo-sites");
+  const publicDemoDir = path.resolve("public/demo");
+  const manifestPath = path.join(publicDemoDir, "manifest.json");
   fs.mkdirSync(publicDemoDir, { recursive: true });
 
   const port = 3591;
   const server = await startServer(rootDir, port);
   console.log(`[Demo Capture] Local server listening on http://localhost:${port}`);
 
-  const browser = await chromium.launch(getBrowserLaunchOptions());
-  const manifest: DemoManifestEntry[] = [];
-  let totalBytes = 0;
+  const browser = await launchBrowser();
+  const captured: DemoManifestEntry[] = [];
 
   try {
     for (const site of SITES) {
-      console.log(`\n=============================================`);
-      console.log(`[Demo Capture] Processing: ${site.name} (${site.id})`);
-      console.log(`=============================================`);
+      if (filters.sites.length > 0 && !filters.sites.includes(site.id)) continue;
+      for (const demoPage of site.pages) {
+        if (filters.pages.length > 0 && !filters.pages.includes(demoPage.id)) continue;
+        const isHome = demoPage.id === HOME.id;
+        console.log(`\n[Demo Capture] ${site.name} (${site.id}), page ${demoPage.id}`);
 
-      const siteDir = path.join(publicDemoDir, site.id);
-      fs.mkdirSync(siteDir, { recursive: true });
+        // A home page's files sit in the site's folder; any other page's in a folder of its own.
+        const folder = isHome ? site.id : `${site.id}/${demoPage.id}`;
+        const outDir = path.join(publicDemoDir, folder);
+        fs.mkdirSync(outDir, { recursive: true });
+        const url = `http://localhost:${port}/${site.id}/${demoPage.path}`;
 
-      const siteUrl = `http://localhost:${port}/${site.id}/`;
-
-      // 1. Desktop captures
-      // A. Desktop Hero (1440 × 900 @2x)
-      {
-        const ctx = await browser.newContext({
-          viewport: { width: 1440, height: 900 },
-          deviceScaleFactor: 2,
-          reducedMotion: 'reduce',
-        });
-        const page = await ctx.newPage();
-        await page.goto(siteUrl, { waitUntil: 'networkidle' });
-        await preparePage(page, { unstick: false });
-
-        const rawPng = await page.screenshot({ fullPage: false });
-        const heroWebpPath = path.join(siteDir, 'desktop-hero.webp');
-        await sharp(rawPng).webp({ quality: 92 }).toFile(heroWebpPath);
-
-        const meta = await sharp(heroWebpPath).metadata();
-        const stat = fs.statSync(heroWebpPath);
-        totalBytes += stat.size;
-
-        manifest.push({
-          site: site.id,
-          file: `${site.id}/desktop-hero.webp`,
-          role: 'hero',
-          tall: false,
-          width: meta.width || 2880,
-          height: meta.height || 1800,
-          category: 'desktop',
-          sizeBytes: stat.size,
-        });
-        console.log(`  -> Saved desktop-hero.webp: ${meta.width}x${meta.height}, ${(stat.size / 1024).toFixed(1)} KB`);
-        await ctx.close();
-      }
-
-      // B. Desktop Full (1440 wide @1x)
-      {
-        const ctx = await browser.newContext({
-          viewport: { width: 1440, height: 900 },
-          deviceScaleFactor: 1,
-          reducedMotion: 'reduce',
-        });
-        const page = await ctx.newPage();
-        await page.goto(siteUrl, { waitUntil: 'networkidle' });
-        await preparePage(page, { unstick: true });
-
-        // Record sections
-        const sectionsData = await recordSectionBoundaries(page, 1440, 1);
-        fs.writeFileSync(
-          path.join(siteDir, 'sections.json'),
-          JSON.stringify(sectionsData, null, 2),
-          'utf-8',
-        );
-        console.log(`  -> Recorded ${sectionsData.sections.length} sections in sections.json`);
-
-        const rawPng = await page.screenshot({ fullPage: true });
-        const fullWebpPath = path.join(siteDir, 'desktop-full.webp');
-        await sharp(rawPng).webp({ quality: 92 }).toFile(fullWebpPath);
-
-        const meta = await sharp(fullWebpPath).metadata();
-        const stat = fs.statSync(fullWebpPath);
-        totalBytes += stat.size;
-
-        manifest.push({
-          site: site.id,
-          file: `${site.id}/desktop-full.webp`,
-          role: 'full',
-          tall: true,
-          width: meta.width || 1440,
-          height: meta.height || 3000,
-          category: 'desktop',
-          sizeBytes: stat.size,
-        });
-        console.log(`  -> Saved desktop-full.webp: ${meta.width}x${meta.height}, ${(stat.size / 1024).toFixed(1)} KB`);
-        await ctx.close();
-      }
-
-      // 2. Mobile captures
-      // A. Mobile Hero (390 × 844 @2x)
-      {
-        const ctx = await browser.newContext({
-          viewport: { width: 390, height: 844 },
-          deviceScaleFactor: 2,
-          reducedMotion: 'reduce',
-          isMobile: true,
-          hasTouch: true,
-        });
-        const page = await ctx.newPage();
-        await page.goto(siteUrl, { waitUntil: 'networkidle' });
-        await preparePage(page, { unstick: false });
-
-        const rawPng = await page.screenshot({ fullPage: false });
-        const heroWebpPath = path.join(siteDir, 'mobile-hero.webp');
-        await sharp(rawPng).webp({ quality: 92 }).toFile(heroWebpPath);
-
-        const meta = await sharp(heroWebpPath).metadata();
-        const stat = fs.statSync(heroWebpPath);
-        totalBytes += stat.size;
-
-        manifest.push({
-          site: site.id,
-          file: `${site.id}/mobile-hero.webp`,
-          role: 'hero',
-          tall: false,
-          width: meta.width || 780,
-          height: meta.height || 1688,
-          category: 'mobile',
-          sizeBytes: stat.size,
-        });
-        console.log(`  -> Saved mobile-hero.webp: ${meta.width}x${meta.height}, ${(stat.size / 1024).toFixed(1)} KB`);
-        await ctx.close();
-      }
-
-      // B. Mobile Full (390 wide @2x)
-      {
-        const ctx = await browser.newContext({
-          viewport: { width: 390, height: 844 },
-          deviceScaleFactor: 2,
-          reducedMotion: 'reduce',
-          isMobile: true,
-          hasTouch: true,
-        });
-        const page = await ctx.newPage();
-        await page.goto(siteUrl, { waitUntil: 'networkidle' });
-        await preparePage(page, { unstick: true });
-
-        // Record sections: Responsive Scroll stops both screens on the same section
-        const mobileSections = await recordSectionBoundaries(page, 390, 2);
-        fs.writeFileSync(
-          path.join(siteDir, 'sections-mobile.json'),
-          JSON.stringify(mobileSections, null, 2),
-          'utf-8',
-        );
-        console.log(`  -> Recorded ${mobileSections.sections.length} sections in sections-mobile.json`);
-
-        const rawPng = await page.screenshot({ fullPage: true });
-        const fullWebpPath = path.join(siteDir, 'mobile-full.webp');
-        await sharp(rawPng).webp({ quality: 92 }).toFile(fullWebpPath);
-
-        const meta = await sharp(fullWebpPath).metadata();
-        const stat = fs.statSync(fullWebpPath);
-        totalBytes += stat.size;
-
-        manifest.push({
-          site: site.id,
-          file: `${site.id}/mobile-full.webp`,
-          role: 'full',
-          tall: true,
-          width: meta.width || 780,
-          height: meta.height || 5000,
-          category: 'mobile',
-          sizeBytes: stat.size,
-        });
-        console.log(`  -> Saved mobile-full.webp: ${meta.width}x${meta.height}, ${(stat.size / 1024).toFixed(1)} KB`);
-        await ctx.close();
+        for (const spec of CAPTURES) {
+          const shot = await capturePage(browser, url, outDir, spec);
+          captured.push({
+            site: site.id,
+            ...(isHome ? {} : { page: demoPage.id }),
+            file: `${folder}/${shot.file}`,
+            role: spec.role,
+            tall: spec.role === "full",
+            width: shot.width,
+            height: shot.height,
+            category: spec.category,
+            sizeBytes: shot.sizeBytes,
+          });
+        }
       }
     }
+    if (captured.length === 0) throw new Error("Nothing matched --site and --page");
 
-    // Write manifest.json
-    const manifestPath = path.join(publicDemoDir, 'manifest.json');
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
-    console.log(`\n=============================================`);
-    console.log(`[Demo Capture] Manifest written to: ${manifestPath}`);
-    console.log(`[Demo Capture] Total assets captured: ${manifest.length}`);
-    console.log(`[Demo Capture] Total size: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB (Budget: <= 14 MB)`);
-    console.log(`=============================================\n`);
+    const existing: DemoManifestEntry[] = fs.existsSync(manifestPath)
+      ? JSON.parse(fs.readFileSync(manifestPath, "utf-8"))
+      : [];
+    const manifest = mergeManifest(existing, captured);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
+    const totalBytes = manifest.reduce((sum, e) => sum + e.sizeBytes, 0);
+    console.log(`\n[Demo Capture] Manifest written to: ${manifestPath}`);
+    console.log(`[Demo Capture] Captured ${captured.length}; manifest holds ${manifest.length}`);
+    console.log(
+      `[Demo Capture] Total size: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB (Budget: <= 14 MB)`,
+    );
   } finally {
     await browser.close();
     server.close();
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
-  runDemoCapture().catch((err) => {
-    console.error('[Demo Capture Error]', err);
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+) {
+  runDemoCapture(process.argv.slice(2)).catch((err) => {
+    console.error("[Demo Capture Error]", err);
     process.exit(1);
   });
 }

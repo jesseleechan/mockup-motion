@@ -1,0 +1,78 @@
+{
+  "url": "http://localhost:3591/aurelia/home-before.html",
+  "viewportWidth": 1440,
+  "scale": 1,
+  "pageHeight": 4402,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "header",
+      "top": 0,
+      "height": 132
+    },
+    {
+      "tag": "section",
+      "id": "slider",
+      "className": "slider",
+      "top": 132,
+      "height": 640
+    },
+    {
+      "tag": "section",
+      "id": "about",
+      "className": "block",
+      "top": 772,
+      "height": 465
+    },
+    {
+      "tag": "section",
+      "id": "counters",
+      "className": "counters",
+      "top": 1237,
+      "height": 281
+    },
+    {
+      "tag": "section",
+      "id": "projects",
+      "className": "block",
+      "top": 1518,
+      "height": 775
+    },
+    {
+      "tag": "section",
+      "id": "services",
+      "className": "block grey",
+      "top": 2293,
+      "height": 542
+    },
+    {
+      "tag": "section",
+      "id": "testimonial",
+      "className": "block",
+      "top": 2835,
+      "height": 539
+    },
+    {
+      "tag": "section",
+      "id": "news",
+      "className": "block grey",
+      "top": 3374,
+      "height": 468
+    },
+    {
+      "tag": "section",
+      "id": "newsletter",
+      "className": "newsletter",
+      "top": 3841,
+      "height": 153
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "footer",
+      "top": 3995,
+      "height": 407
+    }
+  ]
+}
