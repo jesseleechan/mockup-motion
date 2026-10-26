@@ -6,10 +6,12 @@ import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
-// A Site Tour shows its pages in a browser or a phone (presets round two, D5).
+// A Site Tour or Before & After shows its screenshots in a browser or a phone (presets round two,
+// D5, D8).
 const TOUR_DEVICES = ["browser", "phone"] as const;
-// Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours and Responsive
-// Scroll come from their templates, so the picker lists them only on a shot that already uses one.
+// Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours, Before & After
+// and Responsive Scroll come from their templates, so the picker lists them only on a shot that
+// already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -116,7 +118,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {layout.kind === "tour" && (
+      {(layout.kind === "tour" || layout.kind === "compare") && (
         <Field label="Device">
           <Select
             aria-label="Device"
@@ -124,7 +126,9 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
             onChange={(device) =>
               update(
                 (target) => {
-                  if (target.layout.kind === "tour") target.layout.device = device;
+                  if (target.layout.kind === "tour" || target.layout.kind === "compare") {
+                    target.layout.device = device;
+                  }
                 },
                 { label: `Change device to ${DEVICE_LABELS[device].toLowerCase()}` },
               )

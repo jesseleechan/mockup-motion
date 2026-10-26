@@ -48,11 +48,14 @@ describe("Template cards say what a template needs (polish item 4)", () => {
     expect(templateNeeds(template("responsive-scroll"))).toBe(
       "Needs a desktop and a mobile full-page screenshot",
     );
+    // Before & After takes exactly two, so no "+".
+    expect(templateNeeds(template("desktop-before-after"))).toBe("Needs 2 desktop screenshots");
+    expect(templateNeeds(template("mobile-before-after"))).toBe("Needs 2 mobile screenshots");
   });
 
   it("gives every built-in template a needs line, never a slot count", () => {
     for (const t of BUILTIN_TEMPLATES) {
-      expect(templateNeeds(t), t.id).toMatch(/^Needs (a |\d\+ )/);
+      expect(templateNeeds(t), t.id).toMatch(/^Needs (a |\d\+? )/);
       expect(templateNeeds(t), t.id).not.toMatch(/slot/);
     }
   });
