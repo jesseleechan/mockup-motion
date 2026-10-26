@@ -114,6 +114,18 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
   "mobile-scroll-story": [mobileFull("aurelia")],
   // One page at both sizes: Aurelia's full pages, with their capture sections.
   "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
+  // Site Tour's four pages at both sizes, an 8 s loop. fillSlots takes each size in this order,
+  // so page n pairs the n-th desktop with the n-th mobile capture.
+  "responsive-tour": [
+    desktopHero("aurelia"),
+    desktopHero("aurelia", "studio"),
+    desktopHero("aurelia", "works"),
+    desktopHero("aurelia", "journal"),
+    mobileHero("aurelia"),
+    mobileHero("aurelia", "studio"),
+    mobileHero("aurelia", "works"),
+    mobileHero("aurelia", "journal"),
+  ],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];

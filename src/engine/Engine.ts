@@ -288,9 +288,12 @@ export class Engine {
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
     // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference. A Site
-    // Tour fades nothing.
+    // Tour and a Responsive Tour fade nothing.
     const hasStepped = doc.shots.some(
-      (shot) => isSteppedLayout(shot.layout) && shot.layout.kind !== "tour",
+      (shot) =>
+        isSteppedLayout(shot.layout) &&
+        shot.layout.kind !== "tour" &&
+        shot.layout.kind !== "responsive-tour",
     );
     this.deviceFade.prepare(this.renderer, this.targetA, {
       fade: hasStepped,

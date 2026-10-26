@@ -6,6 +6,7 @@ import {
   fixedShotCamera,
   fixedShotDuration,
   MAX_SHOT_DURATION,
+  responsiveTourPageCount,
 } from "../motion/layouts/duration";
 import { fitPace, isPacedShot, nearestPace } from "../motion/pace";
 import type {
@@ -406,6 +407,12 @@ function savedTiming(
       (id): id is string => typeof id === "string" && id !== "",
     );
   }
+  // A Responsive Tour's page count is its longer list as saved.
+  if (layout.kind === "responsive-tour") {
+    const saved = (ids: unknown) => (Array.isArray(ids) ? ids.map((id) => String(id)) : []);
+    layout.desktopIds = saved(raw.desktopIds);
+    layout.mobileIds = saved(raw.mobileIds);
+  }
   if ("step" in layout && typeof raw.step === "number" && Number.isFinite(raw.step)) {
     layout.step = raw.step;
   }
@@ -547,6 +554,31 @@ function sanitizeLayout(
           orbitIds.length,
         ),
       };
+    }
+    case "responsive-tour": {
+      const side = (ids: unknown, field: string) =>
+        Array.isArray(ids) ? ids.map((id) => checkAsset(id, field)) : [];
+      const desktopIds = side(l.desktopIds, "desktopIds");
+      const mobileIds = side(l.mobileIds, "mobileIds");
+      // Page i pairs desktopIds[i] with mobileIds[i] (presets round two D12), so a missing
+      // screenshot leaves its side of the page empty rather than shifting the later pages. A
+      // page with neither screenshot is dropped.
+      const pages = Array.from(
+        { length: Math.max(desktopIds.length, mobileIds.length) },
+        (_, i) => [desktopIds[i] ?? "", mobileIds[i] ?? ""] as const,
+      ).filter(([desktop, mobile]) => desktop || mobile);
+      const tour: Extract<Layout, { kind: "responsive-tour" }> = {
+        kind: "responsive-tour",
+        desktopIds: pages.map(([desktop]) => desktop),
+        mobileIds: pages.map(([, mobile]) => mobile),
+        step: 2,
+      };
+      // The slider's step range (quality bar §2.2), for the pages it shows.
+      tour.step = clampSliderStep(
+        typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
+        responsiveTourPageCount(tour),
+      );
+      return tour;
     }
     case "tour": {
       const tourIds = Array.isArray(l.assetIds)

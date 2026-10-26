@@ -35,6 +35,7 @@ const TONE_TEMPLATES = [
   "desktop-site-tour",
   "mobile-site-tour",
   "responsive-scroll",
+  "responsive-tour",
 ];
 
 function presetDoc(id: string): ProjectDoc {

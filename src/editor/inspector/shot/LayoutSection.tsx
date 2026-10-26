@@ -1,6 +1,5 @@
 import React from "react";
 import type { AssetRef, DeviceKind, Layout, Shot } from "../../../doc/types";
-import { isSteppedLayout } from "../../../motion";
 import { Field, Section, Select } from "../../../ui";
 import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
@@ -10,8 +9,8 @@ const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
 // D5, D8).
 const TOUR_DEVICES = ["browser", "phone"] as const;
 // Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours, Before & After,
-// Responsive Scroll and Page Columns come from their templates, so the picker lists them only on a
-// shot that already uses one.
+// Responsive Scroll, Responsive Tour and Page Columns come from their templates, so the picker
+// lists them only on a shot that already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -138,7 +137,7 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {((isSteppedLayout(layout) && layout.kind !== "tour") || layout.kind === "pageColumns") && (
+      {(layout.kind === "slider" || layout.kind === "orbit" || layout.kind === "pageColumns") && (
         <>
           <Field label="Card shape">
             <Select
@@ -149,7 +148,8 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
                   (target) => {
                     const next = target.layout;
                     if (
-                      (isSteppedLayout(next) && next.kind !== "tour") ||
+                      next.kind === "slider" ||
+                      next.kind === "orbit" ||
                       next.kind === "pageColumns"
                     ) {
                       next.shape = shape;

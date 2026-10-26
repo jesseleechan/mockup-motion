@@ -23,3 +23,4 @@ export { mobileBeforeAfterTemplate } from "./mobile-before-after";
 export { desktopPageColumnsTemplate } from "./desktop-page-columns";
 export { mobilePageColumnsTemplate } from "./mobile-page-columns";
 export { responsiveScrollTemplate } from "./responsive-scroll";
+export { responsiveTourTemplate } from "./responsive-tour";

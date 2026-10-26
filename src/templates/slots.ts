@@ -37,7 +37,8 @@ function describeNeed({ role, count, tall, more }: RoleNeed): string {
 
 /**
  * What a template needs, said the same way on every card: "Needs 3+ desktop screenshots",
- * "Needs a full-page mobile screenshot", "Needs a desktop and a mobile full-page screenshot".
+ * "Needs a full-page mobile screenshot", "Needs a desktop and a mobile full-page screenshot",
+ * "Needs 3+ pages in desktop and mobile".
  */
 export function templateNeeds(template: Template): string {
   const needs = roleNeeds(template);
@@ -45,6 +46,19 @@ export function templateNeeds(template: Template): string {
   // One full-page screenshot of each size reads better as one phrase.
   if (needs.length > 1 && needs.every((n) => n.count === 1 && n.tall)) {
     return `Needs a ${needs.map((n) => n.role).join(" and a ")} full-page screenshot`;
+  }
+  // Several pages in both sizes (Responsive Tour): each page is a desktop and a mobile screenshot.
+  const [first, second] = needs;
+  if (
+    needs.length === 2 &&
+    first.role === "desktop" &&
+    second.role === "mobile" &&
+    first.count > 1 &&
+    first.count === second.count &&
+    !first.tall &&
+    !second.tall
+  ) {
+    return `Needs ${first.count}${first.more ? "+" : ""} pages in desktop and mobile`;
   }
   return `Needs ${needs.map(describeNeed).join(" and ")}`;
 }

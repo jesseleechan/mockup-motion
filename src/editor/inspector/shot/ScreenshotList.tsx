@@ -45,20 +45,26 @@ interface ScreenshotListProps {
 /**
  * A 48 × 30 preview (Layout Stage's .slot-thumb at 16:10), drawn from the top so a tall page
  * shows its hero, and never cropped at the sides (tile-fit.ts, quality bar §3). It leaves out the
- * role, so a phone screen covers the small box instead of shrinking to a sliver.
+ * role, so a phone screen covers the small box instead of shrinking to a sliver. `boxAspect` and
+ * `className` give it another box, such as a Responsive Tour page's portrait mobile thumbnail.
  */
-const Thumb: React.FC<{ url?: string; asset?: AssetRef; dimmed?: boolean }> = ({
+export const Thumb: React.FC<{
+  url?: string;
+  asset?: AssetRef;
+  dimmed?: boolean;
+  boxAspect?: number;
+  className?: string;
+}> = ({
   url,
   asset,
   dimmed,
+  boxAspect = TILE_ASPECT,
+  className = "w-12 h-[30px] rounded-[6px]",
 }) => {
-  const fit = tileFit({ width: asset?.width, height: asset?.height }, TILE_ASPECT);
+  const fit = tileFit({ width: asset?.width, height: asset?.height }, boxAspect);
   return (
     <span
-      className={clsx(
-        "block w-12 h-[30px] shrink-0 overflow-hidden rounded-[6px] bg-field",
-        dimmed && "opacity-50",
-      )}
+      className={clsx("block shrink-0 overflow-hidden bg-field", className, dimmed && "opacity-50")}
     >
       {url && (
         <img

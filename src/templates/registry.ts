@@ -18,12 +18,13 @@ import { desktopPageColumnsTemplate } from "./desktop-page-columns";
 import { mobilePageColumnsTemplate } from "./mobile-page-columns";
 import { mobileScrollStoryTemplate } from "./mobile-scroll-story";
 import { responsiveScrollTemplate } from "./responsive-scroll";
+import { responsiveTourTemplate } from "./responsive-tour";
 
 /**
  * Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the Slider,
  * Frames, Stack, Orbit, Site Tour, Before & After and Page Columns pairs, then the Scroll Story
- * pair, each desktop first, then Responsive Scroll. The first entry is also the first-run default
- * and the gallery's initial selection.
+ * pair, each desktop first, then Responsive Scroll and Responsive Tour. The first entry is also the
+ * first-run default and the gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
@@ -43,6 +44,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
   scrollStoryTemplate,
   mobileScrollStoryTemplate,
   responsiveScrollTemplate,
+  responsiveTourTemplate,
 ];
 
 export function getTemplateById(id: string): Template | undefined {

@@ -9,6 +9,7 @@ import {
   useToast,
 } from "../../ui";
 import { isSteppedLayout } from "../../motion";
+import { layoutAssetIds } from "../../doc/assets";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { useAssetUrls } from "../assets/useAssetUrls";
@@ -40,19 +41,25 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
   const reorderAssets = useEditorStore((s) => s.reorderAssets);
   const addAssetToShot = useEditorStore((s) => s.addAssetToShot);
   const removeAssetFromShot = useEditorStore((s) => s.removeAssetFromShot);
-  // A slider, orbit or Site Tour shot takes screenshots from here (presets P03); other layouts
-  // use their fields.
+  // A slider, orbit, Site Tour or Responsive Tour shot takes screenshots from here (presets P03);
+  // other layouts use their fields.
   const selection = useUIStore((s) => s.selection);
   const selectedShotIndex =
     selection.kind === "shot" ? fullDoc.shots.findIndex((shot) => shot.id === selection.id) : -1;
   const selectedLayout = fullDoc.shots[selectedShotIndex]?.layout;
   const selectedSlider = selectedLayout && isSteppedLayout(selectedLayout) ? selectedLayout : null;
+  const selectedSliderIds = selectedSlider ? layoutAssetIds(selectedSlider) : [];
   const steppedName =
     selectedLayout?.kind === "orbit"
       ? "orbit"
-      : selectedLayout?.kind === "tour"
+      : selectedLayout?.kind === "tour" || selectedLayout?.kind === "responsive-tour"
         ? "tour"
         : "slider";
+  // A Responsive Tour removes the page, both its screenshots (src/doc/tour-pages.ts).
+  const removeLabel =
+    selectedLayout?.kind === "responsive-tour"
+      ? "Remove page from tour"
+      : `Remove from ${steppedName}`;
 
   const [replacingAssetId, setReplacingAssetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +82,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
           lay.kind === "columns" ||
           lay.kind === "pageColumns" ||
           isSteppedLayout(lay)) &&
-        lay.assetIds.includes(assetId)
+        layoutAssetIds(lay).includes(assetId)
       )
         used = true;
 
@@ -203,12 +210,12 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
 
                 <ContextMenuContent>
                   {selectedSlider &&
-                    (selectedSlider.assetIds.includes(asset.id) ? (
+                    (selectedSliderIds.includes(asset.id) ? (
                       <ContextMenuItem
                         icon={<Icon icon={Minus} size={13} />}
                         onClick={() => removeAssetFromShot(selectedShotIndex, asset.id)}
                       >
-                        Remove from {steppedName}
+                        {removeLabel}
                       </ContextMenuItem>
                     ) : (
                       <ContextMenuItem
