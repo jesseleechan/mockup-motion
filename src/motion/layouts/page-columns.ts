@@ -26,12 +26,12 @@ export const PAGE_COLUMNS_MAX_SCREENSHOTS = 3;
 
 /**
  * Columns per shape and aspect (plan D11, quality bar §4). Desktop has fewer, wider columns than
- * mobile at 1:1, 4:5 and 9:16 (owner, 26 October 2026): a desktop page in a column as narrow as a
- * mobile one is shorter than its column, so it stayed still. One desktop column shows the first
- * page only.
+ * mobile at 4:3, 1:1, 4:5 and 9:16 (owner, 26 October 2026): a desktop page in a column as narrow
+ * as a mobile one is about as short as its column, so it stayed still or barely moved. One
+ * desktop column shows the first page only.
  */
 const COLUMN_COUNTS: Record<PageColumnsLayout["shape"], Record<Aspect, number>> = {
-  desktop: { "16:9": 3, "4:3": 3, "1:1": 2, "4:5": 1, "9:16": 1 },
+  desktop: { "16:9": 3, "4:3": 2, "1:1": 2, "4:5": 1, "9:16": 1 },
   mobile: { "16:9": 3, "4:3": 3, "1:1": 3, "4:5": 2, "9:16": 2 },
 };
 
@@ -45,7 +45,7 @@ export const PAGE_COLUMNS_WRAP_OVERLAP = RESPONSIVE_WRAP_OVERLAP;
 export const PAGE_COLUMNS_MAX_LOOP = MAX_SHOT_DURATION - PAGE_COLUMNS_WRAP_OVERLAP;
 
 /**
- * Columns at an aspect (plan D11). Desktop: 3 at 16:9 and 4:3, 2 at 1:1, 1 at 4:5 and 9:16.
+ * Columns at an aspect (plan D11). Desktop: 3 at 16:9, 2 at 4:3 and 1:1, 1 at 4:5 and 9:16.
  * Mobile: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16.
  */
 export function pageColumnsCount(shape: PageColumnsLayout["shape"], aspect: Aspect): number {

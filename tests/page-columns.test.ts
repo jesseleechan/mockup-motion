@@ -40,12 +40,12 @@ const WRAP = 0.8;
 
 /**
  * Column count, column width and window height per aspect (quality bar §4). Desktop has fewer,
- * wider columns than mobile at 1:1, 4:5 and 9:16, so its pages drift (owner, 26 October 2026).
+ * wider columns than mobile at 4:3, 1:1, 4:5 and 9:16, so its pages drift (owner, 26 October 2026).
  */
 const GEOMETRY: Record<Shape, Record<Aspect, [number, number, number]>> = {
   desktop: {
     "16:9": [3, 0.4863, 0.84],
-    "4:3": [3, 0.3589, 0.84],
+    "4:3": [2, 0.5558, 0.84],
     "1:1": [2, 0.4125, 0.84],
     "4:5": [1, 0.688, 0.84],
     "9:16": [1, 0.48375, 0.84],
@@ -102,7 +102,7 @@ function expectedRange(asset: AssetRef, role: Shape, aspect: Aspect): number {
 }
 
 describe("Page Columns geometry (quality bar §4)", () => {
-  it("lays out desktop 3, 3, 2, 1, 1 and mobile 3, 3, 3, 2, 2 columns at 16:9, 4:3, 1:1, 4:5, 9:16, centred in 0.86 of the width", () => {
+  it("lays out desktop 3, 2, 2, 1, 1 and mobile 3, 3, 3, 2, 2 columns at 16:9, 4:3, 1:1, 4:5, 9:16, centred in 0.86 of the width", () => {
     for (const role of ["desktop", "mobile"] as const) {
       for (const aspect of ASPECTS) {
         const label = `${role} ${aspect}`;
@@ -201,9 +201,14 @@ describe("Page Columns motion (D9)", () => {
     }
   });
 
-  it("drifts every desktop column at every aspect with the demo pages", () => {
-    // In columns as narrow as mobile ones the demo desktop pages fit whole, so 1:1 and 9:16 were
-    // a still board (owner, 26 October 2026).
+  it("drifts every desktop column visibly at every aspect with the demo pages", () => {
+    // In columns as narrow as mobile ones the demo desktop pages fit whole or nearly, so 1:1 and
+    // 9:16 were a still board and 4:3's Maison Oak column moved 0.04 column heights in its 12 s
+    // loop, about 37 px of a 1080 px frame, which reads as still (owner, 26 October 2026). A
+    // column must travel at least a fifth of its window over the loop: 0.2 × 0.84 of the frame
+    // height, about 180 px at 1080p. The slowest column with the demo pages, Northwind at 1:1,
+    // travels 0.39.
+    const minTravel = 0.2;
     for (const aspect of ASPECTS) {
       const doc = buildTemplatePreviewDoc(desktopPageColumnsTemplate, aspect);
       const start = nodesAt(doc, 0);
@@ -213,7 +218,7 @@ describe("Page Columns motion (D9)", () => {
         // How far the page, fit to the column's width, reaches past its window, in column heights.
         const range = (node.width * asset.height!) / asset.width! / node.height - 1;
         const travel = Math.abs(end[c].scroll - node.scroll) * range;
-        expect(travel, `${aspect} column ${c}`).toBeGreaterThan(0);
+        expect(travel, `${aspect} column ${c}`).toBeGreaterThanOrEqual(minTravel);
       });
     }
   });

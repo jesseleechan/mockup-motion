@@ -90,7 +90,7 @@ export type Layout =
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // pageColumns: full pages side by side as frameless cards, each drifting through its own page at
 // a constant speed, neighbours in opposite directions (Desktop and Mobile Page Columns,
-// quality-bar §4), showing the first ones. Desktop: 3 columns at 16:9 and 4:3, 2 at 1:1, 1 at 4:5
+// quality-bar §4), showing the first ones. Desktop: 3 columns at 16:9, 2 at 4:3 and 1:1, 1 at 4:5
 // and 9:16. Mobile: 3 at 16:9, 4:3 and 1:1, 2 at 4:5 and 9:16.
 // shape: desktop columns fill the column width; mobile ones are no wider than a phone screen.
 // Its pace sets the shot's duration: the loop plus the 0.8 s wrap crossfade.

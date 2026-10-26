@@ -6,7 +6,7 @@ import { loopWrapCrossfade, presetToneStyle } from "./looks";
 
 type PageColumnsLayout = Extract<Layout, { kind: "pageColumns" }>;
 
-// Plan D11: two full pages of one size, and a third column at 16:9 and 4:3 (and mobile 1:1).
+// Plan D11: two full pages of one size, and a third column at 16:9 (and mobile 4:3 and 1:1).
 const REQUIRED_SLOTS = 2;
 
 interface PageColumnsTemplateSpec {
