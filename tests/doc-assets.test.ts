@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateAndDecodeAsset } from "../src/assets/decode";
 import { collectAssetIds } from "../src/doc/assets";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
+import { replacementRef } from "../src/editor/library/replace-file";
 import { textureWidths } from "../src/engine/textures/sizing";
 import { resolveLayout } from "../src/motion";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
@@ -187,5 +188,45 @@ describe("screenshot validation", () => {
     await expect(
       validateAndDecodeAsset(new Blob(["this is not a png"], { type: "image/png" }), "broken.png"),
     ).rejects.toThrow("broken.png: this image couldn't be read.");
+  });
+});
+
+describe("Replace file…", () => {
+  const existing: AssetRef = {
+    ...image("hero", 2880, 1800),
+    name: "hero.webp",
+    mime: "image/webp",
+    bytes: 138_828,
+    role: "desktop",
+    meta: { tall: false },
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects a file that can't be decoded with the import's message", async () => {
+    vi.stubGlobal("createImageBitmap", () =>
+      Promise.reject(
+        new DOMException("The source image could not be decoded.", "InvalidStateError"),
+      ),
+    );
+    const file = new File(["this is not a png"], "broken.png", { type: "image/png" });
+    await expect(replacementRef(existing, file)).rejects.toThrow(
+      "broken.png: this image couldn't be read.",
+    );
+  });
+
+  it("takes a readable file's name, type, size and pixel size, and keeps the asset's id", async () => {
+    vi.stubGlobal("createImageBitmap", async () => ({ width: 1170, height: 2532, close: vi.fn() }));
+    const file = new File([new Uint8Array(64)], "phone.png", { type: "image/png" });
+    expect(await replacementRef(existing, file)).toEqual({
+      ...existing,
+      name: "phone.png",
+      mime: "image/png",
+      bytes: 64,
+      width: 1170,
+      height: 2532,
+    });
   });
 });

@@ -37,8 +37,8 @@
   --shadow-menu: 0 12px 32px -6px rgb(15 17 25 / 0.24), 0 2px 6px rgb(15 17 25 / 0.08);
   --shadow-sheet: 0 30px 80px rgb(0 0 0 / 0.35);
 
-  /* Self-hosted from @fontsource (src/main.tsx). Inter stays for the URL pill drawn into videos
-     (src/text/rasterize.ts), never for the UI. */
+  /* Self-hosted from @fontsource (src/main.tsx). The UI doesn't use Inter: the URL pill drawn
+     into videos loads Inter's file itself (src/text/rasterize.ts). */
   --font-ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-num: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-mark: "Bricolage Grotesque", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;

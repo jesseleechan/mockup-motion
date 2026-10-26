@@ -29,7 +29,7 @@ const MIN_SIZE_PERCENT = 1.6;
 
 let interLoaded: Promise<void> | null = null;
 
-/** Registers Inter under the family name "Inter" on first use (the UI's CSS uses its own name). */
+/** Registers Inter under the family name "Inter" on first use; no stylesheet loads it. */
 function loadInter(): Promise<void> {
   if (typeof document === "undefined" || !("fonts" in document)) return Promise.resolve();
   interLoaded ??= (async () => {

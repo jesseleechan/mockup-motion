@@ -258,10 +258,9 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await expect(page.getByRole("heading", { name: "Create a presentation" })).toBeVisible();
     await page.screenshot({ path: path.join(screenshotDir, "shell-empty-dark.png") });
 
-    // 2. Empty state light. The menu item names the current theme and cycles System → Light → Dark.
-    const menuBtn = page.getByRole("button", { name: /MockupMotion/i });
-    await menuBtn.click();
-    await page.getByRole("menuitem", { name: /Theme: System/i }).click();
+    // 2. Empty state light. The centre cluster's toggle names the current theme and cycles
+    // System → Light → Dark.
+    await page.getByRole("button", { name: /Theme: System/i }).click();
     await page.screenshot({ path: path.join(screenshotDir, "shell-empty-light.png") });
 
     // 3. Editing state light
@@ -270,8 +269,7 @@ test.describe("WP-12 Editor Shell and Contextual Inspector", () => {
     await page.screenshot({ path: path.join(screenshotDir, "shell-editing-light.png") });
 
     // 4. Editing state dark
-    await menuBtn.click();
-    await page.getByRole("menuitem", { name: /Theme: Light/i }).click();
+    await page.getByRole("button", { name: /Theme: Light/i }).click();
     await page.screenshot({ path: path.join(screenshotDir, "shell-editing-dark.png") });
 
     // 5. Export dialog dark
