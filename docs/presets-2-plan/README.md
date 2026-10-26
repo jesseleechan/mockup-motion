@@ -51,8 +51,8 @@ Each task chooses its own types, within these lines:
 
 | Task | Title                                                                    | Size | Depends on          | Status           |
 | ---- | ------------------------------------------------------------------------ | ---- | ------------------- | ---------------- |
-| T0   | Demo pages: Aurelia's extra pages in both sizes and an earlier home page | S–M  | —                   | In review (#118) |
-| T1   | Desktop and Mobile Site Tour, with the two-screenshot screen             | M–L  | T0 for demo content | In review        |
+| T0   | Demo pages: Aurelia's extra pages in both sizes and an earlier home page | S–M  | —                   | Done (#118)      |
+| T1   | Desktop and Mobile Site Tour, with the two-screenshot screen             | M–L  | T0 for demo content | In review (#119) |
 | T2   | Desktop and Mobile Before & After                                        | M    | T1 (screen), T0     | Not started      |
 | T3   | Desktop and Mobile Page Columns                                          | M    | —                   | Not started      |
 | T4   | Responsive Tour                                                          | M    | T1 (screen), T0     | Not started      |
