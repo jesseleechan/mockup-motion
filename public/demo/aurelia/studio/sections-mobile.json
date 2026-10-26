@@ -1,0 +1,50 @@
+{
+  "url": "http://localhost:3591/aurelia/studio.html",
+  "viewportWidth": 390,
+  "scale": 2,
+  "pageHeight": 5459,
+  "sections": [
+    {
+      "tag": "header",
+      "id": "header",
+      "className": "site-header",
+      "top": 0,
+      "height": 71
+    },
+    {
+      "tag": "section",
+      "id": "studio-intro",
+      "className": "studio-hero",
+      "top": 71,
+      "height": 1116
+    },
+    {
+      "tag": "section",
+      "id": "approach",
+      "className": "approach-section",
+      "top": 1187,
+      "height": 1359
+    },
+    {
+      "tag": "section",
+      "id": "people",
+      "className": "people-section",
+      "top": 2547,
+      "height": 953
+    },
+    {
+      "tag": "section",
+      "id": "contact",
+      "className": "contact-section",
+      "top": 3500,
+      "height": 1285
+    },
+    {
+      "tag": "footer",
+      "id": "footer",
+      "className": "site-footer",
+      "top": 4785,
+      "height": 674
+    }
+  ]
+}
