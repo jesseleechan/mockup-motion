@@ -204,8 +204,10 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
             No saved projects found.
           </div>
         ) : (
-          // The padding leaves room for the open project's ring inside the scroll area.
-          <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-h-[60vh] overflow-y-auto -m-1 p-1">
+          // The padding leaves room inside the scroll area for the open project's ring and a
+          // focused face's outline (offset 4 px plus 2 px, tile.ts); the margin keeps the cards
+          // where they were.
+          <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-h-[60vh] overflow-y-auto -m-2 p-2">
             {projects.map((p) => {
               const isCurrent = p.id === currentDoc.id;
               const name = p.name || "Untitled project";
