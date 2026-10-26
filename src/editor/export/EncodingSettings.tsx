@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import clsx from "clsx";
 import { ChevronRight } from "lucide-react";
-import { Field, Select } from "../../ui";
+import { Field, Icon, SegmentedControl, Select } from "../../ui";
 import type { ExportFormat, ExportQuality, ExportSettings } from "../../doc/types";
-import { sectionHeading } from "./DestinationPicker";
+import { sectionHead, sectionHeading, sectionNote } from "./surfaces";
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
   { value: "mp4", label: "MP4 (H.264)" },
@@ -39,10 +39,10 @@ const SUPERSAMPLE_NAMES: { value: string; name: string }[] = [
   { value: "2", name: "Sharpest" },
 ];
 
-const SUPERSAMPLE_OPTIONS = SUPERSAMPLE_NAMES.map(({ value, name }) => ({
-  value,
-  label: `${name} (${value}×)`,
-}));
+const SUPERSAMPLE_OPTIONS = SUPERSAMPLE_NAMES.map(({ value, name }) => ({ value, label: name }));
+
+/** The segments share the field's width evenly, so both rows of Advanced line up. */
+const fullWidthSegments = "w-full [&>*]:flex-1";
 
 interface EncodingSettingsProps {
   settings: ExportSettings;
@@ -59,8 +59,8 @@ function advancedSummary(settings: ExportSettings, isStill: boolean): string {
 
 /**
  * Format, resolution and quality, with frame rate and anti-aliasing under a collapsed
- * Advanced row. Controls that a format ignores are disabled: a still frame has no frame rate,
- * bitrate or supersampling.
+ * Advanced row, as segmented controls. Controls that a format ignores are disabled: a still
+ * frame has no frame rate, bitrate or supersampling.
  */
 export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, onChange }) => {
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -77,14 +77,10 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
 
   return (
     <section>
-      <span className={sectionHeading}>
-        Encoding
-        {settings.destination === "custom" && (
-          <span className="ml-1.5 font-medium normal-case tracking-normal text-[var(--color-text-2)]">
-            · Custom
-          </span>
-        )}
-      </span>
+      <div className={sectionHead}>
+        <span className={sectionHeading}>Encoding</span>
+        {settings.destination === "custom" && <span className={sectionNote}>Custom</span>}
+      </div>
       <div className="grid grid-cols-3 gap-x-4 gap-y-3">
         <Field label="Format" stacked>
           <Select
@@ -113,48 +109,52 @@ export const EncodingSettings: React.FC<EncodingSettingsProps> = ({ settings, on
         </Field>
       </div>
 
+      {/* Layout Stage's disclosure row (.cap-auth summary): field on hover, the chevron turns. */}
       <button
         type="button"
         aria-expanded={advancedOpen}
         aria-controls="export-advanced"
         onClick={() => setAdvancedOpen((open) => !open)}
         className={clsx(
-          "mt-3 w-full flex items-center gap-1.5 py-1 rounded-xs text-left text-[12px]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-          "text-[var(--color-text-2)] hover:text-[var(--color-text)] transition-colors",
+          "mt-3 -mx-2 w-[calc(100%+16px)] h-8 px-2 flex items-center gap-1.5 rounded-[9px] text-left text-[12px] cursor-pointer",
+          "focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent",
+          "text-[var(--color-text-2)] hover:bg-field hover:text-[var(--color-text)] transition-colors",
         )}
       >
-        <ChevronRight
-          size={12}
-          className={clsx(
-            "shrink-0 transition-transform duration-180",
-            advancedOpen && "rotate-90",
-          )}
+        <Icon
+          icon={ChevronRight}
+          size={13}
+          strokeWidth={2}
+          className={clsx("transition-transform duration-180", advancedOpen && "rotate-90")}
         />
         <span className="font-medium">Advanced</span>
-        <span className="ml-auto min-w-0 truncate tabular-nums text-[var(--color-text-3)]">
+        <span className="ml-auto min-w-0 truncate tabular-nums">
           {advancedSummary(settings, isStill)}
         </span>
       </button>
 
       {advancedOpen && (
-        <div id="export-advanced" className="mt-2 grid grid-cols-3 gap-x-4 gap-y-3">
+        <div id="export-advanced" className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3">
           <Field label="Frame rate" stacked>
-            <Select
+            <SegmentedControl
               aria-label="Frame rate"
+              size="sm"
               value={String(settings.fps)}
               onChange={(v) => onChange({ fps: Number(v) })}
               options={FPS_OPTIONS}
               disabled={isStill}
+              className={fullWidthSegments}
             />
           </Field>
           <Field label="Anti-aliasing" stacked>
-            <Select
+            <SegmentedControl
               aria-label="Anti-aliasing"
+              size="sm"
               value={String(settings.supersample)}
               onChange={(v) => onChange({ supersample: Number(v) })}
               options={SUPERSAMPLE_OPTIONS}
               disabled={!isVideo}
+              className={fullWidthSegments}
             />
           </Field>
         </div>

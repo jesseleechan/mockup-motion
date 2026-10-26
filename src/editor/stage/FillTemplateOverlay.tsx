@@ -22,10 +22,11 @@ export const FillTemplateOverlay: React.FC<FillTemplateOverlayProps> = ({
     <section
       data-testid="fill-template-overlay"
       aria-label="Fill this template"
-      className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200"
+      // The floating pill of the "Use my screenshots" banner (R2), which can follow it.
+      className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 rounded-[14px] bg-[var(--color-panel)] shadow-lift pl-4 pr-1.5 py-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200"
     >
-      <p className="text-xs font-medium text-[var(--color-text)]">{needs}</p>
-      <div className="flex items-center gap-2">
+      <p className="text-[12.5px] font-medium text-[var(--color-text)]">{needs}</p>
+      <div className="flex items-center gap-1">
         <Button
           variant="primary"
           size="sm"

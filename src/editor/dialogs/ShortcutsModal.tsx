@@ -20,6 +20,7 @@ const SHORTCUTS = [
   { keys: ["?"], desc: "Show keyboard shortcuts" },
 ];
 
+/** The shortcuts as Layout Stage's hints: what each does, and its keys as field chips. */
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ open, onOpenChange }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -28,21 +29,18 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ open, onOpenChan
         description="Work faster with keyboard navigation and transport shortcuts."
         className="max-w-md"
       >
-        <div className="space-y-2 mt-2 max-h-[60vh] overflow-y-auto pr-1">
-          {SHORTCUTS.map((s, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-[var(--color-raised)] transition-colors text-xs"
-            >
-              <span className="text-[var(--color-text)]">{s.desc}</span>
-              <div className="flex items-center gap-1">
-                {s.keys.map((k, kIdx) => (
-                  <Kbd key={kIdx}>{k}</Kbd>
+        <dl className="-mx-2 max-h-[60vh] overflow-y-auto divide-y divide-[var(--color-line)]">
+          {SHORTCUTS.map((s) => (
+            <div key={s.desc} className="flex items-center justify-between gap-4 h-9 px-2">
+              <dt className="min-w-0 text-[12.5px] text-[var(--color-text)]">{s.desc}</dt>
+              <dd className="m-0 flex shrink-0 items-center gap-1">
+                {s.keys.map((k) => (
+                  <Kbd key={k}>{k}</Kbd>
                 ))}
-              </div>
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
       </DialogContent>
     </Dialog>
   );

@@ -1,8 +1,10 @@
 import React from "react";
+import clsx from "clsx";
 import { AlertTriangle } from "lucide-react";
 import { formatFileSize } from "../../export/destinations";
 import type { ExportPlan } from "../../export/plan";
 import type { PlannedFile } from "./useExportPlan";
+import { notice, well } from "./surfaces";
 
 interface ExportSummaryProps {
   probing: boolean;
@@ -19,13 +21,16 @@ function detailsOf({ width, height, fps, duration }: ExportPlan): string {
     .join(" · ");
 }
 
+/** Sizes and estimates are numbers: Geist Mono, in its 500 weight at most (src/main.tsx). */
+const number = "font-num tabular-nums";
+
 /**
  * What the export will write, after the encoder probe: container and codec, size, frame
- * rate, duration and the size estimate from the bitrate actually used.
+ * rate, duration and the size estimate from the bitrate actually used. A field well, as
+ * Layout Stage's progress box.
  */
 export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) => {
-  const box =
-    "p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-line)] text-xs text-[var(--color-text-2)]";
+  const box = clsx(well, "px-3.5 py-3");
 
   if (probing || !plans) {
     return (
@@ -38,11 +43,7 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
   const failed = plans.find((f) => !f.plan.ok)?.plan;
   if (failed && !failed.ok) {
     return (
-      <div
-        data-testid="export-summary"
-        role="alert"
-        className="p-3 rounded-lg bg-[var(--color-raised)] border border-[var(--color-danger)]/40 text-xs text-[var(--color-danger)] flex items-start gap-2"
-      >
+      <div data-testid="export-summary" role="alert" className={notice("danger")}>
         <AlertTriangle size={14} className="shrink-0 mt-px" />
         <span>{failed.error}</span>
       </div>
@@ -54,20 +55,19 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
   if (files.length > 1) {
     const total = files.reduce((sum, f) => sum + f.plan.bytes, 0);
     return (
-      <div data-testid="export-summary" className={`${box} space-y-1.5`} aria-live="polite">
+      <div data-testid="export-summary" className={clsx(box, "space-y-1.5")} aria-live="polite">
         {files.map(({ aspect, plan }) => (
           <div key={aspect} className="flex items-center justify-between gap-4">
             <div className="min-w-0 truncate tabular-nums">
               <span className="font-semibold text-[var(--color-text)]">{aspect}</span> ·{" "}
               {plan.label} · {detailsOf(plan)}
             </div>
-            <div className="shrink-0 font-num tabular-nums">≈ {formatFileSize(plan.bytes)}</div>
+            <div className={clsx("shrink-0", number)}>≈ {formatFileSize(plan.bytes)}</div>
           </div>
         ))}
         <div className="pt-1.5 border-t border-[var(--color-line)] flex justify-between gap-4">
           <span>{files.length} files, one after another</span>
-          {/* Geist Mono comes in 400 and 500 only (src/main.tsx). */}
-          <span className="font-num font-medium tabular-nums text-[var(--color-text)]">
+          <span className={clsx(number, "font-medium text-[var(--color-text)]")}>
             ≈ {formatFileSize(total)}
           </span>
         </div>
@@ -80,15 +80,15 @@ export const ExportSummary: React.FC<ExportSummaryProps> = ({ probing, plans }) 
   return (
     <div
       data-testid="export-summary"
-      className={`${box} flex items-center justify-between gap-4`}
+      className={clsx(box, "flex items-center justify-between gap-4")}
       aria-live="polite"
     >
       <div className="min-w-0">
-        <div className="font-semibold text-[var(--color-text)]">{label}</div>
-        <div className="mt-0.5 font-num tabular-nums">{detailsOf(files[0].plan)}</div>
+        <div className="text-[12.5px] font-semibold text-[var(--color-text)]">{label}</div>
+        <div className={clsx("mt-0.5", number)}>{detailsOf(files[0].plan)}</div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="font-num font-medium tabular-nums text-[var(--color-text)]">
+        <div className={clsx(number, "text-[12.5px] font-medium text-[var(--color-text)]")}>
           ≈ {formatFileSize(bytes)}
         </div>
         <div className="mt-0.5">Estimated size</div>

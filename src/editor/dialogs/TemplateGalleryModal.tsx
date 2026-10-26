@@ -1,5 +1,16 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, Button, Icon } from "../../ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  Icon,
+  IconButton,
+  Input,
+  Tabs,
+  TabsContent,
+  TabsList,
+} from "../../ui";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import {
@@ -17,19 +28,9 @@ import { currentTemplate, useTemplateActions } from "../template-actions";
 import { TemplateCard } from "./TemplateCard";
 import { fillUserTemplateSlots, type UserTemplate } from "../../storage/user-templates";
 import { UserTemplateCard } from "./UserTemplateCard";
+import { GalleryFooter } from "./GalleryFooter";
 import { useUserTemplates } from "./useUserTemplates";
-import {
-  Bookmark,
-  Film,
-  Monitor,
-  Search,
-  Smartphone,
-  Sparkles,
-  UploadCloud,
-  Wand2,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Search, X } from "lucide-react";
 
 /** The gallery's tabs: the built-in categories, and the user's saved templates. */
 type GalleryCategory = TemplateCategory | "all" | "yours";
@@ -76,14 +77,12 @@ export const TemplateGalleryModal: React.FC = () => {
     }
   }
 
-  const categories: { id: GalleryCategory; label: string; icon: LucideIcon }[] = [
-    { id: "all", label: "All", icon: Sparkles },
-    { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop, icon: Monitor },
-    { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile, icon: Smartphone },
+  const categories: { id: GalleryCategory; label: string }[] = [
+    { id: "all", label: "All" },
+    { id: "desktop", label: TEMPLATE_CATEGORY_LABELS.desktop },
+    { id: "mobile", label: TEMPLATE_CATEGORY_LABELS.mobile },
     // Saved templates get their own tab, shown once there is one.
-    ...(userTemplates.templates.length > 0
-      ? [{ id: "yours" as const, label: "Yours", icon: Bookmark }]
-      : []),
+    ...(userTemplates.templates.length > 0 ? [{ id: "yours" as const, label: "Yours" }] : []),
   ];
   // Deleting the last saved template removes the "Yours" tab.
   const category =
@@ -155,190 +154,123 @@ export const TemplateGalleryModal: React.FC = () => {
           e.preventDefault();
           card.focus({ preventScroll: true });
         }}
-        className="max-w-5xl! h-[85vh] flex flex-col p-0 overflow-hidden bg-[var(--color-bg)] border border-[var(--color-line)] shadow-2xl rounded-xl"
+        // Important, so they win over DialogContent's own width and padding: Tailwind orders
+        // utilities for the same property by name, not by their order in the class list.
+        className="max-w-5xl! p-0! h-[85vh] flex flex-col overflow-hidden"
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[var(--color-line)] flex items-center justify-between bg-[var(--color-panel)] shrink-0">
-          <div>
-            <DialogTitle className="text-base font-semibold text-[var(--color-text)] flex items-center gap-2">
-              <Icon icon={Sparkles} size={18} className="text-[var(--color-accent)]" />
-              Template gallery
-            </DialogTitle>
-            <DialogDescription className="text-xs text-[var(--color-text-2)] mt-0.5">
-              Curated motion layouts for presenting websites.
-            </DialogDescription>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Search Input */}
-            <div className="relative w-56">
-              <Search
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-3)]"
-              />
-              <input
-                type="text"
-                placeholder="Search templates"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-3 text-xs bg-[var(--color-raised)] border border-[var(--color-line)] rounded-lg text-[var(--color-text)] placeholder-[var(--color-text-3)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-3)] hover:text-[var(--color-text)]"
-                >
-                  <X size={12} />
-                </button>
-              )}
+        <Tabs
+          value={category}
+          onValueChange={(value) => setActiveCategory(value as GalleryCategory)}
+          className="flex-1 min-h-0 flex flex-col"
+        >
+          {/* Header; the close button floats in its top-right corner. */}
+          <div className="shrink-0 px-6 pt-5 pb-4 flex flex-col gap-4">
+            <div className="pr-8">
+              <DialogTitle className="text-[16px] font-semibold tracking-tight text-[var(--color-text)]">
+                Template gallery
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-[13px] text-[var(--color-text-2)]">
+                Curated motion layouts for presenting websites.
+              </DialogDescription>
             </div>
-          </div>
-        </div>
 
-        {/* Categories Bar */}
-        <div className="px-6 py-2.5 border-b border-[var(--color-line)] flex items-center gap-1.5 bg-[var(--color-panel)] shrink-0 overflow-x-auto">
-          {categories.map((cat) => {
-            const IconComponent = cat.icon;
-            const isSelected = category === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                aria-pressed={isSelected}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
-                  isSelected
-                    ? "bg-[var(--color-raised)] text-[var(--color-text)] border border-[var(--color-line-strong)] shadow-sm"
-                    : "text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)]"
-                }`}
-              >
-                <Icon icon={IconComponent} size={13} />
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Templates Grid */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[var(--color-bg)]">
-          {filteredTemplates.length === 0 && filteredUserTemplates.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center">
-              <Film size={32} className="text-[var(--color-text-3)] mb-2 opacity-50" />
-              <p className="text-sm font-medium text-[var(--color-text-2)]">No templates found</p>
-              <p className="text-xs text-[var(--color-text-3)] mt-1">
-                Try another category or search
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredUserTemplates.map((template) => (
-                <UserTemplateCard
-                  key={template.id}
-                  template={template}
-                  selected={selectedTemplateId === template.id}
-                  active={doc.templateId === template.id}
-                  onSelect={() => setSelectedTemplateId(template.id)}
-                  onRename={(name) => userTemplates.rename(template.id, name)}
-                  onDelete={() => handleDeleteUserTemplate(template)}
+            <div className="flex items-center justify-between gap-4">
+              {/* Fitted to its tabs, each at least 88 px, rather than the full width. */}
+              <TabsList items={categories} className="w-auto! min-w-0 [&>button]:min-w-[88px]" />
+              <div className="relative w-60 shrink-0">
+                <Icon
+                  icon={Search}
+                  size={14}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-2)]"
                 />
-              ))}
-              {filteredTemplates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  assets={doc.assets}
-                  selected={selectedTemplateId === template.id}
-                  active={doc.templateId === template.id}
-                  // The selected card always plays, so something moves as soon as the gallery opens.
-                  previewing={
-                    selectedTemplateId === template.id ||
-                    hoveredTemplateId === template.id ||
-                    focusedTemplateId === template.id
-                  }
-                  onSelect={() => setSelectedTemplateId(template.id)}
-                  onPreviewChange={(reason, on) => {
-                    const set = reason === "hover" ? setHoveredTemplateId : setFocusedTemplateId;
-                    set((current) => (on ? template.id : current === template.id ? null : current));
-                  }}
+                <Input
+                  placeholder="Search templates"
+                  aria-label="Search templates"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8! pr-8!"
                 />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer with Apply Action */}
-        <div className="px-6 py-3.5 border-t border-[var(--color-line)] bg-[var(--color-panel)] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            {selectedUserTemplate && (
-              <span className="text-xs font-medium text-[var(--color-text)]">
-                Selected: {selectedUserTemplate.name}
-              </span>
-            )}
-            {selectedTemplate && (
-              <>
-                <span className="text-xs font-medium text-[var(--color-text)]">
-                  Selected: {selectedTemplate.name}
-                </span>
-                {fittingTemplate ? (
-                  <span
-                    data-testid="template-size-hint"
-                    className="text-xs text-[var(--color-text-2)] flex items-center gap-1.5"
-                  >
-                    {fittingTemplate.name} fits your screenshots.
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplateId(fittingTemplate.id)}
-                      aria-label={`Switch to ${fittingTemplate.name}`}
-                      className="font-medium text-[var(--color-accent)] hover:underline focus-visible:outline-none focus-visible:underline"
-                    >
-                      Switch
-                    </button>
-                  </span>
-                ) : (
-                  !selectedValidation.valid && (
-                    <span className="text-xs text-[var(--color-accent)] font-medium">
-                      ({selectedValidation.reason})
-                    </span>
-                  )
+                {searchQuery && (
+                  <IconButton
+                    size="xs"
+                    aria-label="Clear search"
+                    icon={<Icon icon={X} size={13} />}
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-1 top-1/2 -translate-y-1/2"
+                  />
                 )}
-              </>
-            )}
+              </div>
+            </div>
           </div>
 
-          {/* The close button and Escape cancel, so the footer has room for the ways in. */}
-          <div className="flex items-center gap-2">
-            {selectedTemplate && canUseDemo && (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleChooseScreenshots(selectedTemplate)}
-                  icon={<Icon icon={UploadCloud} size={14} />}
-                >
-                  Choose screenshots
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleApplyWithDemo(selectedTemplate)}
-                  icon={<Icon icon={Wand2} size={14} />}
-                >
-                  Try with demo content
-                </Button>
-              </>
+          {/* Templates grid. Its padding leaves room for a selected tile's ring and focus outline. */}
+          <TabsContent
+            value={category}
+            className="flex-1 min-h-0 overflow-y-auto px-6 pt-2! pb-6 focus-visible:ring-inset"
+          >
+            {filteredTemplates.length === 0 && filteredUserTemplates.length === 0 ? (
+              <div className="h-64 flex flex-col items-center justify-center text-center">
+                <p className="text-[13px] font-medium text-[var(--color-text)]">
+                  No templates found
+                </p>
+                <p className="mt-1 text-[12px] text-[var(--color-text-2)]">
+                  Try another category or search
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
+                {filteredUserTemplates.map((template) => (
+                  <UserTemplateCard
+                    key={template.id}
+                    template={template}
+                    selected={selectedTemplateId === template.id}
+                    active={doc.templateId === template.id}
+                    onSelect={() => setSelectedTemplateId(template.id)}
+                    onRename={(name) => userTemplates.rename(template.id, name)}
+                    onDelete={() => handleDeleteUserTemplate(template)}
+                  />
+                ))}
+                {filteredTemplates.map((template) => (
+                  <TemplateCard
+                    key={template.id}
+                    template={template}
+                    assets={doc.assets}
+                    selected={selectedTemplateId === template.id}
+                    active={doc.templateId === template.id}
+                    // The selected card always plays, so something moves as soon as the gallery opens.
+                    previewing={
+                      selectedTemplateId === template.id ||
+                      hoveredTemplateId === template.id ||
+                      focusedTemplateId === template.id
+                    }
+                    onSelect={() => setSelectedTemplateId(template.id)}
+                    onPreviewChange={(reason, on) => {
+                      const set = reason === "hover" ? setHoveredTemplateId : setFocusedTemplateId;
+                      set((current) =>
+                        on ? template.id : current === template.id ? null : current,
+                      );
+                    }}
+                  />
+                ))}
+              </div>
             )}
-            <Button
-              variant="primary"
-              disabled={!selectedTemplate && !selectedUserTemplate}
-              onClick={() => {
-                if (selectedUserTemplate) handleApplyUserTemplate(selectedUserTemplate);
-                else if (selectedTemplate) handleApply(selectedTemplate);
-              }}
-              icon={<Icon icon={Sparkles} size={14} />}
-            >
-              Apply template
-            </Button>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
+
+        <GalleryFooter
+          template={selectedTemplate}
+          userTemplate={selectedUserTemplate}
+          reason={selectedValidation.valid ? undefined : selectedValidation.reason}
+          fitting={fittingTemplate}
+          canUseDemo={canUseDemo}
+          onSwitch={(template) => setSelectedTemplateId(template.id)}
+          onTryDemo={handleApplyWithDemo}
+          onChooseScreenshots={handleChooseScreenshots}
+          onApply={() => {
+            if (selectedUserTemplate) handleApplyUserTemplate(selectedUserTemplate);
+            else if (selectedTemplate) handleApply(selectedTemplate);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

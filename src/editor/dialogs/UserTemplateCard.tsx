@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Icon } from "../../ui";
+import { Icon, IconButton, Input } from "../../ui";
 import type { UserTemplate } from "../../storage/user-templates";
-import { Bookmark, Check, Edit2, Trash2 } from "lucide-react";
+import { Bookmark, Edit2, Trash2 } from "lucide-react";
+import { ActiveBadge } from "./ActiveBadge";
+import { tileFace, tileRoot } from "./tile";
 
 interface UserTemplateCardProps {
   template: UserTemplate;
@@ -13,7 +15,10 @@ interface UserTemplateCardProps {
   onDelete: () => Promise<void>;
 }
 
-/** A saved template in the gallery's "Yours" tab. It has no preview video, only its name. */
+/**
+ * A saved template in the gallery's "Yours" tab, as a tile like the built-in ones. It has no
+ * preview video: its face shows a bookmark.
+ */
 export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
   template,
   selected,
@@ -41,29 +46,24 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
       tabIndex={0}
       role="button"
       aria-label={`Select template ${template.name}`}
+      aria-pressed={selected}
       data-testid="user-template-card"
       data-template-id={template.id}
-      className={`flex flex-col rounded-xl border transition-all text-left overflow-hidden group cursor-pointer ${
-        selected
-          ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/20 bg-[var(--color-raised)]"
-          : "border-[var(--color-line)] bg-[var(--color-panel)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-raised)]"
-      }`}
+      className={tileRoot}
     >
-      <div className="aspect-video w-full bg-[var(--color-raised)] border-b border-[var(--color-line)] flex items-center justify-center relative">
-        <Icon icon={Bookmark} size={28} className="text-[var(--color-text-3)] opacity-60" />
+      <div className={tileFace(selected, "grid place-items-center")}>
+        <Icon icon={Bookmark} size={26} className="text-[var(--color-text-2)]" />
         {active && (
-          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-accent)] text-[var(--color-accent-ink)] flex items-center gap-1 shadow-sm">
-            <Check size={10} />
-            Active
+          <span className="absolute top-2 right-2">
+            <ActiveBadge />
           </span>
         )}
       </div>
 
-      <div className="p-3.5 flex-1 flex flex-col justify-between">
-        <div className="flex items-center justify-between gap-2 mb-1">
+      <div className="px-0.5 min-w-0">
+        <div className="flex items-center justify-between gap-2 min-h-7">
           {editing ? (
-            <input
-              type="text"
+            <Input
               autoFocus
               aria-label="Template name"
               data-rename-input
@@ -79,48 +79,45 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
                 }
               }}
               onBlur={() => void saveName()}
-              className="h-6 min-w-0 flex-1 px-1.5 text-xs rounded border border-[var(--color-accent)] bg-[var(--color-panel)] text-[var(--color-text)] outline-none"
+              className="h-7! text-[12.5px]!"
             />
           ) : (
             <h4
               data-truncate
               title={template.name}
-              className="min-w-0 truncate text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors"
+              className="min-w-0 truncate text-[12.5px] font-semibold text-[var(--color-text)]"
             >
               {template.name}
             </h4>
           )}
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
+            <IconButton
+              size="xs"
               aria-label={`Rename ${template.name}`}
               title="Rename"
+              icon={<Icon icon={Edit2} size={13} />}
               onClick={(e) => {
                 e.stopPropagation();
                 setName(template.name);
                 setEditing(true);
               }}
-              className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-hover)] transition-colors"
-            >
-              <Icon icon={Edit2} size={12} />
-            </button>
-            <button
-              type="button"
+            />
+            <IconButton
+              size="xs"
               aria-label={`Delete ${template.name}`}
               title="Delete"
+              icon={<Icon icon={Trash2} size={13} />}
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm(`Delete the template "${template.name}"?`)) void onDelete();
               }}
-              className="p-1 rounded text-[var(--color-text-3)] hover:text-[var(--color-danger)] hover:bg-[var(--color-hover)] transition-colors"
-            >
-              <Icon icon={Trash2} size={12} />
-            </button>
+              className="hover:text-danger!"
+            />
           </div>
         </div>
 
-        <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed line-clamp-2">
+        <p className="mt-0.5 text-[11.5px] leading-[1.45] text-[var(--color-text-2)] line-clamp-2">
           {template.description}
         </p>
       </div>

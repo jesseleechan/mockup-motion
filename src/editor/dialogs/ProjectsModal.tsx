@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dialog, DialogContent, Icon, Spinner } from "../../ui";
+import { Button, Dialog, DialogContent, Icon, IconButton, Input, Spinner } from "../../ui";
 import {
   deleteProject,
   duplicateProject,
@@ -12,7 +12,9 @@ import { useEditorStore } from "../../state/store";
 import { useThumbnailRenderer } from "../thumbnails/context";
 import { writeProjectThumbnail } from "../thumbnails/project-thumbnail";
 import { ThumbnailCancelledError } from "../thumbnails/ThumbnailRenderer";
-import { Copy, Plus, Trash2, FolderOpen, Check, Edit2 } from "lucide-react";
+import { Copy, Plus, Trash2, FolderOpen, Edit2 } from "lucide-react";
+import { ActiveBadge } from "./ActiveBadge";
+import { tileFace, tileRoot } from "./tile";
 
 interface ProjectsModalProps {
   open: boolean;
@@ -171,15 +173,17 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
       <DialogContent
         title="Your projects"
         description="Switch between projects, rename, duplicate, or delete."
-        className="max-w-2xl"
+        // Important, so it wins over DialogContent's own max-w-lg: Tailwind orders utilities for
+        // the same property by name, not by their order in the class list.
+        className="max-w-2xl!"
       >
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs text-[var(--color-text-2)]">
+        <div className="flex justify-between items-center mb-4">
+          <span className="text-[12px] text-[var(--color-text-2)]">
             {projects.length} {projects.length === 1 ? "project" : "projects"}
           </span>
           <Button
             size="sm"
-            variant="secondary"
+            variant="primary"
             onClick={handleCreateNew}
             icon={<Icon icon={Plus} size={14} />}
           >
@@ -192,11 +196,12 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
             <Spinner />
           </div>
         ) : projects.length === 0 ? (
-          <div className="py-12 text-center text-xs text-[var(--color-text-3)]">
+          <div className="py-12 rounded-[12px] border border-dashed border-[var(--color-line-strong)] text-center text-[12px] text-[var(--color-text-2)]">
             No saved projects found.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+          // The padding leaves room for the open project's ring inside the scroll area.
+          <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-h-[60vh] overflow-y-auto -m-1 p-1">
             {projects.map((p) => {
               const isCurrent = p.id === currentDoc.id;
               const thumbUrl = thumbnails[p.id];
@@ -213,39 +218,27 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                   onClick={() => handleSelect(p.id)}
                   data-testid="project-card"
                   data-project-id={p.id}
-                  className={`flex flex-col rounded-lg border overflow-hidden cursor-pointer transition-all group ${
-                    isCurrent
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
-                      : "border-[var(--color-line)] hover:border-[var(--color-line-strong)] bg-[var(--color-raised)] hover:bg-[var(--color-hover)]"
-                  }`}
+                  className={tileRoot}
                 >
-                  {/* Thumbnail / Poster */}
-                  <div className="w-full aspect-video bg-black/60 relative flex items-center justify-center overflow-hidden border-b border-[var(--color-line)]">
+                  <div className={tileFace(isCurrent, "grid place-items-center")}>
                     {thumbUrl ? (
                       <img src={thumbUrl} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Icon
-                        icon={isCurrent ? Check : FolderOpen}
-                        size={28}
-                        className={
-                          isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-3)]"
-                        }
-                      />
+                      <Icon icon={FolderOpen} size={24} className="text-[var(--color-text-2)]" />
                     )}
                     {isCurrent && (
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-[var(--color-accent-ink)] font-semibold text-[9px] uppercase tracking-wider">
-                        Current
+                      <span className="absolute top-2 left-2">
+                        <ActiveBadge label="Current" />
                       </span>
                     )}
                   </div>
 
-                  {/* Info and Actions */}
-                  <div className="p-2.5 flex items-center justify-between">
+                  <div className="px-0.5 flex items-start justify-between gap-2 min-w-0">
                     <div className="min-w-0 flex-1">
                       {editingId === p.id ? (
-                        <input
-                          type="text"
+                        <Input
                           autoFocus
+                          aria-label="Project name"
                           value={editName}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setEditName(e.target.value)}
@@ -254,44 +247,41 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                             if (e.key === "Escape") setEditingId(null);
                           }}
                           onBlur={() => handleSaveRename(p.id)}
-                          className="w-full h-6 px-1.5 text-xs rounded border border-[var(--color-accent)] bg-[var(--color-panel)] text-[var(--color-text)] outline-none"
+                          className="h-7! text-[12.5px]!"
                         />
                       ) : (
-                        <div className="text-xs font-semibold text-[var(--color-text)] truncate">
+                        <div className="h-7 leading-7 text-[12.5px] font-semibold text-[var(--color-text)] truncate">
                           {p.name || "Untitled project"}
                         </div>
                       )}
-                      <div className="text-[10px] text-[var(--color-text-3)] mt-0.5">{dateStr}</div>
+                      <div className="text-[11px] text-[var(--color-text-2)] truncate">
+                        {dateStr}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0 ml-2">
-                      <button
-                        type="button"
+                    <div className="flex items-center gap-0.5 shrink-0 pt-0.5">
+                      <IconButton
+                        size="xs"
                         aria-label="Rename project"
                         title="Rename"
+                        icon={<Icon icon={Edit2} size={13} />}
                         onClick={(e) => handleStartRename(e, p.id, p.name)}
-                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-panel)] rounded transition-colors"
-                      >
-                        <Icon icon={Edit2} size={13} />
-                      </button>
-                      <button
-                        type="button"
+                      />
+                      <IconButton
+                        size="xs"
                         aria-label="Duplicate project"
                         title="Duplicate"
+                        icon={<Icon icon={Copy} size={13} />}
                         onClick={(e) => handleDuplicate(e, p.id)}
-                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-text)] hover:bg-[var(--color-panel)] rounded transition-colors"
-                      >
-                        <Icon icon={Copy} size={13} />
-                      </button>
-                      <button
-                        type="button"
+                      />
+                      <IconButton
+                        size="xs"
                         aria-label="Delete project"
                         title="Delete"
+                        icon={<Icon icon={Trash2} size={13} />}
                         onClick={(e) => handleDelete(e, p.id)}
-                        className="p-1 text-[var(--color-text-3)] hover:text-[var(--color-danger)] hover:bg-[var(--color-panel)] rounded transition-colors"
-                      >
-                        <Icon icon={Trash2} size={13} />
-                      </button>
+                        className="hover:text-danger!"
+                      />
                     </div>
                   </div>
                 </div>

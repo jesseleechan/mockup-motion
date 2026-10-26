@@ -39,7 +39,7 @@ export const UseMyScreenshotsBanner: React.FC = () => {
         aria-label="Use my screenshots"
         className="flex flex-wrap items-center justify-center gap-3 rounded-[14px] bg-[var(--color-panel)] shadow-lift pl-4 pr-1.5 py-1.5 animate-in fade-in duration-200"
       >
-        <p className="text-xs font-medium text-[var(--color-text)]">
+        <p className="text-[12.5px] font-medium text-[var(--color-text)]">
           Your screenshots are in the library.
         </p>
         <div className="flex items-center gap-1">

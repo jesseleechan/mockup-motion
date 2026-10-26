@@ -181,14 +181,23 @@ test.describe("F09 export dialog", () => {
       await expectCleanLayout(page, `Format ${format.source}`, ENCODING_FIELDS);
     }
     // The longest option of every select fits on one line (a still frame disables the
-    // video-only fields, so it comes last).
+    // video-only fields, so it comes last). Anti-aliasing is a segmented control since R4b:
+    // its longest option is picked in place.
     for (const [field, option] of [
       ["Resolution", /1200p/],
       ["Quality", /Master/],
       ["Anti-aliasing", /Sharpest/],
       ["Format", /Still frame/],
     ] as const) {
-      await choose(page, dialog, field, option);
+      if (field === "Anti-aliasing") {
+        const segment = dialog
+          .getByRole("radiogroup", { name: field })
+          .getByRole("radio", { name: option });
+        await segment.click();
+        await expect(segment).toBeChecked();
+      } else {
+        await choose(page, dialog, field, option);
+      }
       await expectCleanLayout(page, `${field} ${option.source}`, ENCODING_FIELDS);
     }
 

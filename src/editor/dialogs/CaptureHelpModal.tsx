@@ -1,11 +1,32 @@
 import React from "react";
 import { Button, Dialog, DialogContent, Icon, Kbd } from "../../ui";
-import { Camera, Terminal, Smartphone, Monitor } from "lucide-react";
+import { Camera, Terminal, Smartphone, Monitor, type LucideIcon } from "lucide-react";
 
 interface CaptureHelpModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+/** A way to capture: a paper card, as Layout Stage's slots, with its heading and steps. */
+const card = "p-3.5 rounded-[12px] bg-paper shadow-lift-sm space-y-2";
+const cardHeading = "flex items-center gap-2 text-[12.5px] font-semibold text-[var(--color-text)]";
+const body = "text-[12px] text-[var(--color-text-2)] leading-[1.5]";
+
+const SizeTile: React.FC<{ icon: LucideIcon; name: string; size: string; density: string }> = ({
+  icon,
+  name,
+  size,
+  density,
+}) => (
+  <div className="p-2.5 rounded-[10px] bg-field flex items-start gap-2">
+    <Icon icon={icon} size={14} className="text-[var(--color-text-2)] shrink-0 mt-0.5" />
+    <div>
+      <div className="text-[12px] font-semibold text-[var(--color-text)]">{name}</div>
+      <div className="font-num text-[11px] tabular-nums text-[var(--color-text-2)]">{size}</div>
+      <div className="text-[11px] text-[var(--color-text-2)]">{density}</div>
+    </div>
+  </div>
+);
 
 export const CaptureHelpModal: React.FC<CaptureHelpModalProps> = ({ open, onOpenChange }) => {
   return (
@@ -15,33 +36,33 @@ export const CaptureHelpModal: React.FC<CaptureHelpModalProps> = ({ open, onOpen
         description="Two ways to get crisp full-page screenshots of a website."
         className="max-w-lg"
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
+        <div className="space-y-3 max-h-[70vh] overflow-y-auto -m-1 p-1">
           {/* Option 1: the capture command (packages/capture) */}
-          <div className="p-3.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text)]">
-              <Icon icon={Terminal} size={15} className="text-[var(--color-accent)]" />
-              <span>Capture command (recommended)</span>
-            </div>
-            <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed">
+          <section className={card}>
+            <h3 className={cardHeading}>
+              <Icon icon={Terminal} size={15} className="text-[var(--color-text-2)]" />
+              Capture command (recommended)
+            </h3>
+            <p className={body}>
               Run this in the MockupMotion repository. It needs Node.js 20 or later.
             </p>
-            <div className="p-2 rounded bg-black/60 font-mono text-[11px] text-[var(--color-accent)] select-all border border-[var(--color-line)]">
+            <div className="px-2.5 py-2 rounded-[8px] bg-field font-num text-[11.5px] text-[var(--color-text)] select-all">
               npm run capture https://your-website.com
             </div>
-            <p className="text-[11px] text-[var(--color-text-2)] leading-relaxed">
-              It writes a <span className="font-mono">captures</span> folder with desktop and mobile
+            <p className={body}>
+              It writes a <span className="font-num">captures</span> folder with desktop and mobile
               full-page screenshots and their section data. Drop the folder onto the editor to
               import everything at once.
             </p>
-          </div>
+          </section>
 
           {/* Option 2: Chrome DevTools */}
-          <div className="p-3.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text)]">
-              <Icon icon={Camera} size={15} className="text-[var(--color-accent)]" />
-              <span>Chrome DevTools</span>
-            </div>
-            <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-[var(--color-text-2)] leading-relaxed">
+          <section className={card}>
+            <h3 className={cardHeading}>
+              <Icon icon={Camera} size={15} className="text-[var(--color-text-2)]" />
+              Chrome DevTools
+            </h3>
+            <ol className={`list-decimal list-inside space-y-1.5 ${body}`}>
               <li>Open your website in Google Chrome or Arc.</li>
               <li>
                 Press <Kbd>F12</Kbd> or <Kbd>Cmd/Ctrl + Option + I</Kbd> to open DevTools.
@@ -61,48 +82,29 @@ export const CaptureHelpModal: React.FC<CaptureHelpModalProps> = ({ open, onOpen
                 and hit Enter.
               </li>
             </ol>
-          </div>
+          </section>
 
-          {/* Recommended Dimensions Guide */}
-          <div className="p-3.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-raised)] space-y-2">
-            <span className="text-xs font-semibold text-[var(--color-text)]">
-              Recommended sizes
-            </span>
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="p-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)] flex items-start gap-2">
-                <Icon
-                  icon={Monitor}
-                  size={14}
-                  className="text-[var(--color-text-3)] shrink-0 mt-0.5"
-                />
-                <div>
-                  <div className="text-[11px] font-semibold text-[var(--color-text)]">
-                    Desktop browser
-                  </div>
-                  <div className="text-[10px] text-[var(--color-text-2)]">1440 × auto px</div>
-                  <div className="text-[9px] text-[var(--color-text-3)]">@1× or @2× DPR</div>
-                </div>
-              </div>
-
-              <div className="p-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)] flex items-start gap-2">
-                <Icon
-                  icon={Smartphone}
-                  size={14}
-                  className="text-[var(--color-text-3)] shrink-0 mt-0.5"
-                />
-                <div>
-                  <div className="text-[11px] font-semibold text-[var(--color-text)]">
-                    Mobile device
-                  </div>
-                  <div className="text-[10px] text-[var(--color-text-2)]">390 × auto px</div>
-                  <div className="text-[9px] text-[var(--color-text-3)]">@2× or @3× DPR</div>
-                </div>
-              </div>
+          {/* Recommended dimensions */}
+          <section className={card}>
+            <h3 className={cardHeading}>Recommended sizes</h3>
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <SizeTile
+                icon={Monitor}
+                name="Desktop browser"
+                size="1440 × auto px"
+                density="@1× or @2× DPR"
+              />
+              <SizeTile
+                icon={Smartphone}
+                name="Mobile device"
+                size="390 × auto px"
+                density="@2× or @3× DPR"
+              />
             </div>
-          </div>
+          </section>
         </div>
 
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end pt-5">
           <Button variant="primary" onClick={() => onOpenChange(false)}>
             Got it
           </Button>

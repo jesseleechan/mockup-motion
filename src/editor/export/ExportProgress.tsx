@@ -1,6 +1,6 @@
 import React from "react";
 import { Film, XCircle } from "lucide-react";
-import { Button, ProgressBar } from "../../ui";
+import { Button, Icon, ProgressBar } from "../../ui";
 import type { ExportProgress as Progress } from "../../export/engine-export";
 
 interface ExportProgressProps {
@@ -17,33 +17,32 @@ function stageText(progress: Progress): string {
   return progress.part ? `Rendering ${progress.part}, ${frame}` : `Rendering ${frame}`;
 }
 
+/** The render in progress: a paper tile with the film icon, what is rendering, and the bar. */
 export const ExportProgress: React.FC<ExportProgressProps> = ({ progress, label, onCancel }) => (
-  <div className="py-8 space-y-4 text-center">
-    <div className="inline-flex p-3 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-      <Film size={28} />
+  <div className="py-8 flex flex-col items-center gap-4 text-center">
+    <div className="w-11 h-11 grid place-items-center rounded-[12px] bg-paper shadow-lift-sm text-[var(--color-text-2)]">
+      <Icon icon={Film} size={20} />
     </div>
     <div>
-      <h3 className="text-sm font-semibold text-[var(--color-text)]" aria-live="polite">
+      <h3 className="text-[14px] font-semibold text-[var(--color-text)]" aria-live="polite">
         {stageText(progress)}
       </h3>
-      <p className="mt-1 text-xs text-[var(--color-text-3)] tabular-nums">
+      <p className="mt-1 text-[12px] text-[var(--color-text-2)] tabular-nums">
         {label} · {progress.percentage}%
       </p>
     </div>
-    <div className="max-w-xs mx-auto">
+    <div className="w-full max-w-xs">
       <ProgressBar value={progress.percentage} aria-label="Export progress" />
     </div>
-    <div className="pt-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onCancel}
-        icon={<XCircle size={14} />}
-        // Important, so it wins over the ghost variant's own text colours, hover included.
-        className="text-[var(--color-danger)]!"
-      >
-        Cancel export
-      </Button>
-    </div>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onCancel}
+      icon={<XCircle size={14} />}
+      // Important, so it wins over the ghost variant's own text colours, hover included.
+      className="text-[var(--color-danger)]!"
+    >
+      Cancel export
+    </Button>
   </div>
 );

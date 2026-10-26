@@ -110,19 +110,22 @@ test.describe("WP-18 polish", () => {
     await gallery.getByRole("button", { name: "Try with demo content" }).click();
     await expect(gallery).toBeHidden();
     // With no saved template there is no "Yours" tab, and the Library has no template list.
+    // The categories are tabs since R4b (they were toggle buttons).
     await page.getByRole("button", { name: "Templates", exact: true }).click();
-    await expect(gallery.getByRole("button", { name: "Yours" })).toHaveCount(0);
+    await expect(gallery.getByRole("tab", { name: "All" })).toBeVisible();
+    await expect(gallery.getByRole("tab", { name: "Yours" })).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(page.locator('aside[data-panel="library"]').getByRole("tab")).toHaveCount(0);
 
+    // The dialog is named by its title, and its labels name their text boxes.
     await page.getByRole("button", { name: "Save as template" }).click();
-    const save = page.getByRole("dialog").filter({ hasText: "Save as template" });
-    await save.getByPlaceholder("e.g. My Studio Reel").fill("Studio reel");
+    const save = page.getByRole("dialog", { name: "Save as template" });
+    await save.getByRole("textbox", { name: "Name", exact: true }).fill("Studio reel");
     await save.getByRole("button", { name: "Save template" }).click();
     await expect(save).toBeHidden();
 
     await page.getByRole("button", { name: "Templates", exact: true }).click();
-    await gallery.getByRole("button", { name: "Yours" }).click();
+    await gallery.getByRole("tab", { name: "Yours" }).click();
     const card = gallery.getByRole("button", { name: "Select template Studio reel" });
     await expect(gallery.getByTestId("user-template-card")).toHaveCount(1);
     const savedId = await card.getAttribute("data-template-id");
@@ -147,8 +150,8 @@ test.describe("WP-18 polish", () => {
     // Reopened, the gallery stays on Yours with the template the project uses selected.
     await page.getByRole("button", { name: "Templates", exact: true }).click();
     await expect(gallery.getByText("Selected: Studio reel")).toBeVisible();
-    await expect(gallery.getByRole("button", { name: "Yours" })).toHaveAttribute(
-      "aria-pressed",
+    await expect(gallery.getByRole("tab", { name: "Yours" })).toHaveAttribute(
+      "aria-selected",
       "true",
     );
   });
