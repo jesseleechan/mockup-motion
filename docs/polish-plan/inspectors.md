@@ -58,6 +58,7 @@ Tests: unit tests for the store's reorder (order, undo, out-of-range). One e2e t
 
 - **Entrance and duration** on a looping preset shows a disabled Duration slider and an Entrance select, each with a note. Hide both. Show the loop length as a read-out ("Loop 12.0 s") in the Screenshots section header or under the list.
 - **Camera** after the moves cut is Still or Push in, plus intensity. Keep the section only where a shot has a camera (Scroll Story); drop easing and float if the cut leaves them with nothing to choose, and drop the section where the preset has a still camera.
+  - **Float, decided 26 October 2026: cut** ([#FLOATPR](https://github.com/jesseleechan/mockup-motion/pull/FLOATPR)). Float stayed open after the moves cut (#76). The owner left it to the coordinator ("whatever you recommend"), who recommended cutting it: it was the one exception to "no back-and-forth motion" (quality bar §2.4), Push in already gives a still shot its motion, and the two Scroll Stories used it at 0.05, a sway nobody could see. The Camera section is the Still / Push in control, with intensity and easing for Push in. Easing stays: it still has four curves to choose from.
 
 Tests: unit tests for the visibility rules. Update e2e selectors that read the removed notes.
 

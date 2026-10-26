@@ -35,7 +35,6 @@ export function defaultCameraMove(): CameraMove {
     preset: "pushIn",
     intensity: 0.5,
     easing: "smooth",
-    float: 0.3,
   };
 }
 
@@ -106,6 +105,6 @@ export function newProjectStyle(): Style {
 export function newProjectDoc(): ProjectDoc {
   const shot = defaultShot();
   // A still camera, as every preset but Scroll Story uses; nothing to push in on yet.
-  shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+  shot.camera = { preset: "static", intensity: 0, easing: "smooth" };
   return createDoc({ style: newProjectStyle(), shots: [shot] });
 }

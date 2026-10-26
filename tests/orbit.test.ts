@@ -256,11 +256,11 @@ describe("Orbit shots set their own length and keep a still camera", () => {
     expect(sliderDuration(orbit("mobile", 4))).toBe(8);
     expect(sliderDuration(orbit("desktop", 9, 3))).toBe(18);
     expect(fixedShotDuration(orbit("mobile", 5))).toBe(10);
-    const camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 } as const;
-    expect(fixedShotCamera(orbit("mobile", 5), camera)).toMatchObject({
+    const camera = { preset: "pushIn", intensity: 1, easing: "smooth" } as const;
+    expect(fixedShotCamera(orbit("mobile", 5), camera)).toEqual({
       preset: "static",
       intensity: 0,
-      float: 0,
+      easing: "smooth",
     });
   });
 
@@ -269,7 +269,7 @@ describe("Orbit shots set their own length and keep a still camera", () => {
     const layout = doc.shots[0].layout as OrbitLayout;
     layout.step = 9;
     doc.shots[0].duration = 3;
-    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth" };
     const { doc: clean } = sanitizeDoc(doc);
     // A saved 9 s step takes the nearest pace, Calm (src/motion/pace.ts): 2.4 s per step.
     expect(clean.shots[0].layout).toEqual({ ...layout, step: 2.4 });
@@ -314,7 +314,7 @@ describe("Desktop Orbit and Mobile Orbit templates", () => {
           });
           expect(shot.duration, label).toBe(n * 2);
           expect(shot.transitionIn.kind, label).toBe("cut");
-          expect(shot.camera, label).toMatchObject({ preset: "static", intensity: 0, float: 0 });
+          expect(shot.camera, label).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
           expect(doc.loop, label).toBe(true);
           expect(doc.style, label).toMatchObject({
             background: { kind: "solid", color: "#DFE1E3" },

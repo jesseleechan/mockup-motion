@@ -86,7 +86,7 @@ async function prepareQuadrants(
     doc.style.background = { kind: "solid", color: "#808080" };
     doc.style.grain = 0;
     doc.style.vignette = 0;
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     await setDoc(doc, { [assetId]: await images.quadrants(width, height) });
     engine.renderAt(0);
     return { start: { width: 1280, height: 720, data: engine.readPixels() } };
@@ -155,7 +155,7 @@ test("F01 tall screenshot scroll preserves top-down color bands at both endpoint
     doc.shots[0].scroll = { enabled: true, stops: [0, 1], hold: 0.5, easing: "smooth" };
     doc.style.grain = 0;
     doc.style.vignette = 0;
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     const bandColors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
     await setDoc(doc, { [assetId]: await images.bands(1440, 6000, bandColors) });
     engine.renderAt(0);
@@ -217,7 +217,7 @@ test("F01 decoded WebM frame preserves card quadrant orientation @smoke", async 
       height: 1000,
     });
     doc.shots[0].duration = 1;
-    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     doc.style.grain = 0;
     doc.style.vignette = 0;
     const provider = makeProvider();

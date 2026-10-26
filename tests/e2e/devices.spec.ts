@@ -59,7 +59,7 @@ test.describe("WP-06 Device Frames E2E & Visual Verification", () => {
       doc.style.background = { kind: "solid", color: "#808080" };
       doc.style.grain = 0;
       doc.style.vignette = 0;
-      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+      doc.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
       const layout = doc.shots[0].layout;
       if (layout.kind !== "single") throw new Error("Expected a single browser layout");
       const assetId = "f00-edge-columns";
@@ -286,7 +286,7 @@ async function setCardDoc(page: Page, c: CardCase): Promise<void> {
             travel: "period",
             assetIds: [assetId],
           };
-    doc.shots[0].camera = { preset: c.preset, intensity: 1, easing: "smooth", float: 0 };
+    doc.shots[0].camera = { preset: c.preset, intensity: 1, easing: "smooth" };
     if (c.shotFrom) {
       const shot = structuredClone(window.__fixtures?.[c.shotFrom]?.shots[0]);
       if (!shot || !("assetIds" in shot.layout)) {

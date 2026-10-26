@@ -154,7 +154,7 @@ describe("Camera (src/motion/camera.ts)", () => {
     expect(aspectRatioValue("4:3")).toBeCloseTo(4 / 3);
   });
 
-  it("no yo-yo property test: every camera preset is monotonic at intensity 1, float 0", () => {
+  it("no yo-yo property test: every camera preset is monotonic at intensity 1", () => {
     const numericKeys: (keyof CameraPose)[] = ["yaw", "pitch", "distance", "panX", "panY", "roll"];
 
     for (const preset of ALL_PRESETS) {
@@ -164,21 +164,13 @@ describe("Camera (src/motion/camera.ts)", () => {
 
         for (let i = 0; i <= 20; i++) {
           const p = i / 20;
-          const pose = cameraPose(
-            { preset, intensity: 1.0, easing: "smooth", float: 0 },
-            "16:9",
-            p,
-            p * 5,
-            5,
-          );
+          const pose = cameraPose({ preset, intensity: 1.0, easing: "smooth" }, "16:9", p);
 
           if (i > 0) {
             const prevPose = cameraPose(
-              { preset, intensity: 1.0, easing: "smooth", float: 0 },
+              { preset, intensity: 1.0, easing: "smooth" },
               "16:9",
               (i - 1) / 20,
-              ((i - 1) / 20) * 5,
-              5,
             );
             const delta = pose[key] - prevPose[key];
             if (Math.abs(delta) > 1e-9) {
@@ -202,48 +194,29 @@ describe("Camera (src/motion/camera.ts)", () => {
       preset: "pushIn" as const,
       intensity: 1.0,
       easing: "linear" as const,
-      float: 0,
     };
     const moveHalf = {
       preset: "pushIn" as const,
       intensity: 0.5,
       easing: "linear" as const,
-      float: 0,
     };
     const moveZero = {
       preset: "pushIn" as const,
       intensity: 0,
       easing: "linear" as const,
-      float: 0,
     };
 
-    const pose0 = cameraPose(moveFull, "16:9", 0, 0, 5);
-    const pose1 = cameraPose(moveFull, "16:9", 1, 5, 5);
+    const pose0 = cameraPose(moveFull, "16:9", 0);
+    const pose1 = cameraPose(moveFull, "16:9", 1);
     const midDistance = (pose0.distance + pose1.distance) / 2;
 
-    const poseMidZero = cameraPose(moveZero, "16:9", 0, 0, 5);
+    const poseMidZero = cameraPose(moveZero, "16:9", 0);
     expect(poseMidZero.distance).toBeCloseTo(midDistance);
 
-    const poseHalf0 = cameraPose(moveHalf, "16:9", 0, 0, 5);
+    const poseHalf0 = cameraPose(moveHalf, "16:9", 0);
     expect(Math.abs(poseHalf0.distance - midDistance)).toBeCloseTo(
       Math.abs(pose0.distance - midDistance) * 0.5,
     );
-  });
-
-  it("float adds ambient sway and returns to 0 at shot ends", () => {
-    const moveFloat = {
-      preset: "static" as const,
-      intensity: 0,
-      easing: "smooth" as const,
-      float: 1.0,
-    };
-    const poseStart = cameraPose(moveFloat, "16:9", 0, 0, 5);
-    const poseEnd = cameraPose(moveFloat, "16:9", 1, 5, 5);
-    const poseMid = cameraPose(moveFloat, "16:9", 0.25, 1.25, 5);
-
-    expect(poseStart.yaw).toBeCloseTo(0);
-    expect(poseEnd.yaw).toBeCloseTo(0);
-    expect(poseMid.yaw).toBeGreaterThan(0);
   });
 });
 
@@ -414,25 +387,32 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
     // 1. Single static
     const docStatic = createDoc();
     docStatic.loop = true;
-    docStatic.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    docStatic.shots[0].camera = { preset: "static", intensity: 0, easing: "smooth" };
     const schedStatic = schedule(docStatic);
     assertDeepCloseTo(evaluate(docStatic, 0), evaluate(docStatic, schedStatic.total));
 
     // 2. Single pushIn + loop (uses wrap crossfade)
     const docPushIn = createDoc();
     docPushIn.loop = true;
-    docPushIn.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0 };
+    docPushIn.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth" };
     docPushIn.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
     const schedPush = schedule(docPushIn);
     assertDeepCloseTo(evaluate(docPushIn, 0), evaluate(docPushIn, schedPush.total));
 
-    // 3. Single pushIn + loop + float
-    const docOrbit = createDoc();
-    docOrbit.loop = true;
-    docOrbit.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 };
-    docOrbit.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
-    const schedOrbit = schedule(docOrbit);
-    assertDeepCloseTo(evaluate(docOrbit, 0), evaluate(docOrbit, schedOrbit.total));
+    // 3. Scroll Story's camera (Push in at 0.2) with scroll on + loop. It took the place of
+    // pushIn + float when Float was cut (26 October 2026).
+    const docScroll = createDoc();
+    docScroll.loop = true;
+    docScroll.shots[0].camera = { preset: "pushIn", intensity: 0.2, easing: "smooth" };
+    docScroll.shots[0].scroll = {
+      enabled: true,
+      stops: [0, 0.33, 0.66, 1],
+      hold: 0.8,
+      easing: "smooth",
+    };
+    docScroll.shots[0].transitionIn = { kind: "fade", duration: 0.8, easing: "quintInOut" };
+    const schedScroll = schedule(docScroll);
+    assertDeepCloseTo(evaluate(docScroll, 0), evaluate(docScroll, schedScroll.total));
   });
 
   it("determinism: 1,000 random docs (seeded) evaluate identically twice", () => {
@@ -452,7 +432,6 @@ describe("Evaluate & Loop Seams (src/motion/evaluate.ts)", () => {
         preset: presets[Math.floor(rng() * presets.length)],
         intensity: rng(),
         easing: easings[Math.floor(rng() * easings.length)],
-        float: rng() * 0.5,
       };
 
       const t = rng() * duration;
@@ -581,11 +560,11 @@ describe("Slider motion (presets P01)", () => {
       step: 2,
     };
     const shot = { ...defaultShot(layout), duration: sliderDuration(layout) };
-    shot.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0 };
+    shot.camera = { preset: "static", intensity: 0, easing: "smooth" };
     const doc = createDoc({ aspect: "16:9", loop: true, shots: [shot] });
     for (const t of [0, 1, 5.5]) {
       const frame = evaluate(doc, t).layers[0].frame;
-      const pose = cameraPose(shot.camera, doc.aspect, t / shot.duration, t, shot.duration);
+      const pose = cameraPose(shot.camera, doc.aspect, t / shot.duration);
       expect(frame.camera.distance, `t = ${t}`).toBe(pose.distance);
     }
   });

@@ -149,7 +149,7 @@ describe("Mobile Frames template (Frames plan PF03)", () => {
         expect(shot.duration, label).toBeGreaterThanOrEqual(15);
         expect(doc.style.background).toEqual({ kind: "solid", color: "#DFE1E3" });
         expect(doc.style).toMatchObject({ shadow: "none", grain: 0, vignette: 0 });
-        expect(shot.camera).toEqual({ preset: "static", intensity: 0, easing: "smooth", float: 0 });
+        expect(shot.camera).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
 
         // evaluate wraps t = total to 0, so compare the frame just before the loop point too:
         // it already shows the cards of the first frame (cut wrap, no crossfade).

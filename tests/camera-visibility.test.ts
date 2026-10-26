@@ -22,16 +22,14 @@ describe("the Shot inspector offers camera controls only where a camera can move
   it("Frames shows them only while a saved camera still moves, so it can be turned off", () => {
     const frames = presetShot("frames");
     expect(showsCameraControls(frames)).toBe(false);
-    frames.camera = { preset: "pushIn", intensity: 0.2, easing: "smooth", float: 0 };
-    expect(showsCameraControls(frames)).toBe(true);
-    frames.camera = { preset: "static", intensity: 0, easing: "smooth", float: 0.05 };
+    frames.camera = { preset: "pushIn", intensity: 0.2, easing: "smooth" };
     expect(showsCameraControls(frames)).toBe(true);
   });
 
   it("a slider, orbit or Responsive Scroll never shows them", () => {
     for (const id of ["desktop-slider", "desktop-orbit", "responsive-scroll"]) {
       const shot = presetShot(id);
-      shot.camera = { preset: "pushIn", intensity: 0.2, easing: "smooth", float: 0 };
+      shot.camera = { preset: "pushIn", intensity: 0.2, easing: "smooth" };
       expect(showsCameraControls(shot), id).toBe(false);
     }
   });

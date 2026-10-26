@@ -187,7 +187,6 @@ export function migrateV1Project(v1: V1Project): ProjectDoc {
     preset: cameraPreset,
     intensity,
     easing: comp?.motion?.easing === "linear" ? "linear" : "smooth",
-    float: 0.3,
   };
 
   // Background migration

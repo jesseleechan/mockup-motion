@@ -72,23 +72,6 @@ export const CameraSection: React.FC<{ shot: Shot }> = ({ shot }) => {
           </Field>
         </>
       )}
-
-      <SliderRow
-        label="Float"
-        output={`${Math.round(camera.float * 100)}%`}
-        min={0}
-        max={100}
-        step={5}
-        value={Math.round(camera.float * 100)}
-        onChange={(val) =>
-          update(
-            (target) => {
-              target.camera.float = val / 100;
-            },
-            { coalesceKey: `camera-float-${shot.id}` },
-          )
-        }
-      />
     </Section>
   );
 };

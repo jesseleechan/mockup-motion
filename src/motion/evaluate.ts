@@ -103,7 +103,7 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
 
     // Camera pose evaluation
     const p = shot.duration > 0 ? Math.max(0, Math.min(1, localT / shot.duration)) : 0;
-    const baseCamera = cameraPose(shot.camera, doc.aspect, p, localT, shot.duration);
+    const baseCamera = cameraPose(shot.camera, doc.aspect, p);
 
     // Frames lanes travel one asset period per loop (layouts/lanes.ts). A single looping shot
     // loops after `total`, which is shorter than the shot when it has a wrap crossfade; during

@@ -54,17 +54,18 @@ describe("WP-01: Document Defaults and Validation", () => {
       expect(doc.style.vignette).toBe(0);
     });
 
-    it("5. sanitizes camera moves: invalid preset defaults to static, clamps intensity and float", () => {
+    it("5. sanitizes camera moves: invalid preset defaults to static, clamps intensity, drops float", () => {
       const shot = defaultShot();
       const cameraRecord = shot.camera as unknown as Record<string, unknown>;
       cameraRecord.preset = "invalid_3d_spin";
       shot.camera.intensity = 5;
-      shot.camera.float = -1;
+      // Float was cut on 26 October 2026; a saved value, even an invalid one, is dropped.
+      cameraRecord.float = -1;
       const brokenDoc = createDoc({ shots: [shot] });
       const { doc } = sanitizeDoc(brokenDoc);
       expect(doc.shots[0].camera.preset).toBe("static");
       expect(doc.shots[0].camera.intensity).toBe(1);
-      expect(doc.shots[0].camera.float).toBe(0);
+      expect(doc.shots[0].camera).not.toHaveProperty("float");
     });
 
     it("6. drops shot with missing/invalid layout and ensures at least 1 shot", () => {

@@ -545,7 +545,7 @@ function sanitizeCamera(camera: unknown): CameraMove {
     preset: includesValue(VALID_CAMERA_PRESETS, c.preset) ? c.preset : "static",
     intensity: clamp(typeof c.intensity === "number" ? c.intensity : 0.5, 0, 1),
     easing: includesValue(VALID_EASINGS, c.easing) ? c.easing : "smooth",
-    float: clamp(typeof c.float === "number" ? c.float : 0.3, 0, 1),
+    // A saved `float` (the ambient sway cut on 26 October 2026) is not read, so it is dropped.
   };
 }
 

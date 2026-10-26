@@ -150,7 +150,7 @@ describe("Mobile Slider and Desktop Slider templates", () => {
           });
           expect(shot.duration, label).toBe(n * 2);
           expect(shot.transitionIn.kind, label).toBe("cut");
-          expect(shot.camera, label).toMatchObject({ preset: "static", intensity: 0, float: 0 });
+          expect(shot.camera, label).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
           expect(doc.loop, label).toBe(true);
           expect(doc.style, label).toMatchObject({
             background: { kind: "solid", color: "#DFE1E3" },
@@ -199,9 +199,9 @@ describe("Editing a slider keeps its loop seamless", () => {
   it("keeps the camera still: a camera move is undone", () => {
     const { store, shot } = storeWith(sliderDoc(4));
     const still = shot().camera;
-    expect(still).toEqual({ preset: "static", intensity: 0, easing: "smooth", float: 0 });
+    expect(still).toEqual({ preset: "static", intensity: 0, easing: "smooth" });
     store.getState().apply((draft) => {
-      draft.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.5 };
+      draft.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth" };
     });
     expect(shot().camera).toEqual(still);
   });
@@ -222,18 +222,16 @@ describe("Editing a slider keeps its loop seamless", () => {
       preset: "pushIn",
       intensity: 0.8,
       easing: "gentle",
-      float: 0.3,
     };
     const { doc: repaired } = sanitizeDoc(doc);
     expect(repaired.shots[0].camera).toEqual({
       preset: "static",
       intensity: 0,
       easing: "gentle",
-      float: 0,
     });
     // Other layouts keep their camera.
     const single = createDoc();
-    single.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth", float: 0.2 };
+    single.shots[0].camera = { preset: "pushIn", intensity: 1, easing: "smooth" };
     expect(sanitizeDoc(single).doc.shots[0].camera).toEqual(single.shots[0].camera);
   });
 
