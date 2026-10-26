@@ -37,6 +37,10 @@ Drop PNG, JPEG, WebP or AVIF files or a whole folder anywhere on the editor, pas
 
 Responsive Scroll shows the desktop and mobile versions of one page side by side (stacked at 4:5 and 9:16), scrolling together and pausing on the same sections. It needs one desktop and one mobile full-page screenshot. Drop the JSON files `npm run capture` writes next to them, and both screens stop on the page's sections; without them, they stop at the same points down each page. Pick the sections in the shot inspector under Scroll stops.
 
+## Responsive Tour
+
+Responsive Tour shows several pages of one site, each in desktop and mobile, on Responsive Scroll's two cards. Every step (2 seconds at the Default pace) both cards slide to the next page together, and the loop comes back to the first page. It needs 3 to 5 pages in both sizes: page 1 is the first desktop and the first mobile screenshot in the Media tab, page 2 the second of each, and so on. The shot inspector lists the pages as pairs; drag a page to reorder it, or click a screenshot to change it.
+
 ## Scroll Story
 
 Scrolling is off unless you pick Desktop Scroll Story or Mobile Scroll Story, or turn on "Scroll through page" for a shot. Mobile Scroll Story scrolls a tall mobile screenshot on a phone. Both last 10 s, or longer when a page needs it to stay under 0.9 screen heights per second. A tall screenshot never starts moving on its own. When scroll is on, the shot inspector shows its stops, the hold at each stop and the easing.

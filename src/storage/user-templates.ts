@@ -3,7 +3,7 @@ import { normalizeStyleAngles } from "../doc/gradient-angle";
 import { applyLegacyLook, legacyLook, mapLegacyLayout } from "../doc/legacy-layouts";
 import type { Aspect, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot } from "../doc/defaults";
-import { fitPace, isPacedShot, nearestPace } from "../motion";
+import { distinctPages, fitPace, isPacedShot, nearestPace } from "../motion";
 
 export interface UserTemplate {
   id: string;
@@ -95,6 +95,10 @@ export function convertDocToUserTemplate(
       case "compare":
         layout.beforeId = remapId(layout.beforeId);
         layout.afterId = remapId(layout.afterId);
+        break;
+      case "responsive-tour":
+        layout.desktopIds = layout.desktopIds.map(remapId);
+        layout.mobileIds = layout.mobileIds.map(remapId);
         break;
     }
 
@@ -221,6 +225,16 @@ export function fillUserTemplateSlots(
           layout.beforeId = resolveSlot(layout.beforeId);
           layout.afterId = resolveSlot(layout.afterId);
           break;
+        case "responsive-tour": {
+          // The same for pages: a page that repeats an earlier page's screenshot is left out.
+          const pages = distinctPages(
+            layout.desktopIds.map(resolveSlot),
+            layout.mobileIds.map(resolveSlot),
+          );
+          layout.desktopIds = pages.desktopIds;
+          layout.mobileIds = pages.mobileIds;
+          break;
+        }
       }
       // Its pace sets its step or duration for the screenshots it got.
       fitPace(shot, aspect, assets);

@@ -9,6 +9,8 @@ export function layoutAssetIds(layout: Layout): string[] {
       return [layout.desktopId, layout.mobileId];
     case "compare":
       return [layout.beforeId, layout.afterId];
+    case "responsive-tour":
+      return [...layout.desktopIds, ...layout.mobileIds];
     case "rows":
     case "columns":
     case "slider":
@@ -32,6 +34,10 @@ export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string
     case "compare":
       layout.beforeId = swap(layout.beforeId);
       layout.afterId = swap(layout.afterId);
+      return;
+    case "responsive-tour":
+      layout.desktopIds = layout.desktopIds.map(swap);
+      layout.mobileIds = layout.mobileIds.map(swap);
       return;
     case "rows":
     case "columns":

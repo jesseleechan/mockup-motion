@@ -24,6 +24,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   tour: "Site tour",
   compare: "Before & after",
   responsive: "Responsive scroll",
+  "responsive-tour": "Responsive tour",
 };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = {

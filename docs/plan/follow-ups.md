@@ -32,6 +32,7 @@ PR links: [F00 #2](https://github.com/jesseleechan/mockup-motion/pull/2), [F03 #
 | Site Tour shows one URL for the whole tour (`style.browserUrl`, presets round two D4). Each page's own path from its capture (`AssetRef.meta.page`) in the pill, cross-faded during the step, is the follow-up the plan names. | Presets round two T1 |
 | Site Tour decodes every page whole, though it shows only the top of a full-page capture: six 1440 × 4000 desktop pages hold about 140 MB of strips (`TextureManager`). Decoding only the screen's height of a page that never scrolls would cut that to about a twentieth. Sliders and Frames with full pages have the same cost. | Presets round two T1 |
 | A user template saved from Responsive Scroll keeps the saved project's asset ids: `convertDocToUserTemplate` and `fillUserTemplateSlots` (`src/storage/user-templates.ts`) remap every layout's screenshots to slots except a `responsive` layout's `desktopId` and `mobileId`, so applying it to another project shows empty screens. | Presets round two T2 |
+| Responsive Tour pairs pages by Library order (presets round two D12): page n is the n-th desktop and the n-th mobile screenshot. When the two sizes sit in different orders in the Library, the pages pair wrongly until the user fixes them in the page list. Pairing each desktop capture with its mobile one by capture URL or file name, as Responsive Scroll's `samePage` does (`src/templates/slots.ts`), would get them right. | Presets round two T4 |
 
 ## Editor
 

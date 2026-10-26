@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Layout } from "../src/doc/types";
 import { scrubberKeyTime, timeToX, timelineMarks, xToTime } from "../src/editor/timeline/marks";
 import { schedule } from "../src/motion";
-import { isSteppedLayout, steppedAssetIds } from "../src/motion/layouts/duration";
+import { isSteppedLayout, steppedCount } from "../src/motion/layouts/duration";
 import { sliderStep } from "../src/motion/layouts/slider";
 import { BUILTIN_TEMPLATES, buildTemplatePreviewDoc } from "../src/templates";
 
@@ -29,7 +29,7 @@ describe("slim timeline marks on the built-in templates", () => {
       const stepsInLoop = new Set<number>();
       for (let t = 0; t < loop; t += 0.01) stepsInLoop.add(sliderStep(t, layout.step).k);
       expect(steps, id).toHaveLength(stepsInLoop.size);
-      expect(steps, id).toHaveLength(steppedAssetIds(layout).length);
+      expect(steps, id).toHaveLength(steppedCount(layout));
       steps.forEach((time, k) => {
         expect(sliderStep(time, layout.step).k, `${id} step ${k} starts`).toBe(k);
         if (k > 0) expect(sliderStep(time - 0.01, layout.step).k, `${id} step ${k}`).toBe(k - 1);

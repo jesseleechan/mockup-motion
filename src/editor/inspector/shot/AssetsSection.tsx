@@ -10,6 +10,7 @@ import {
 import { ArrowUpDown } from "lucide-react";
 import { Button, Field, Icon, Section, Select } from "../../../ui";
 import { useEditorStore } from "../../../state/store";
+import { PageList } from "./PageList";
 import { ScreenshotList } from "./ScreenshotList";
 import { assetDropProps, useShotUpdate } from "./useShotUpdate";
 
@@ -56,8 +57,8 @@ const STEPPED_LIST_LABELS = {
 } as const;
 
 /**
- * The screenshots a single, responsive, slider, orbit, Site Tour, Before & After or Frames layout
- * shows.
+ * The screenshots a single, responsive, slider, orbit, Site Tour, Before & After, Responsive Tour
+ * or Frames layout shows.
  */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
@@ -67,6 +68,20 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
   const { layout } = shot;
   const images = assets.filter((a) => a.kind === "image");
 
+  if (layout.kind === "responsive-tour") {
+    return (
+      <Section title="Pages">
+        <PageList
+          shotId={shot.id}
+          shotIndex={shotIndex}
+          layout={layout}
+          images={images}
+          shown={SLIDER_MAX_SCREENSHOTS}
+          minimum={minShotScreenshots(layout)}
+        />
+      </Section>
+    );
+  }
   if (isSteppedLayout(layout)) {
     const orbit = layout.kind === "orbit";
     const max = orbit ? ORBIT_MAX_SCREENSHOTS : SLIDER_MAX_SCREENSHOTS;
