@@ -286,10 +286,11 @@ export interface ScreenPane {
   scroll: number; // 0..1 of the screenshot's scrollable range
   label?: ScreenLabel; // drawn over the pane, clipped with it (Before & After)
 }
-// A small dark pill with white text in a top corner of the screen, below a phone's status bar.
+// A small dark pill with white text in a corner of the screen. On a phone a top label sits below
+// the status bar and a bottom one above the home indicator's area.
 export interface ScreenLabel {
   text: string; // "Before", "After"
-  corner: "left" | "right";
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   size: number; // the text's font size in stage units; the pill and its inset follow (quality bar §4)
 }
 // LayoutNode gains `divider?: ScreenDivider`: a white line with a soft shadow over every pane.
@@ -307,7 +308,7 @@ export interface ScreenDivider {
 - On a phone each pane brings its own status bar colour (its top row, quality bar §3.3), which moves with it; the glyphs stay put and take each pane's tone over that pane.
 - The engine side is `ScreenCompositor.composePanes(renderer, panes, { isPhone, divider })` (`src/engine/materials/screen.ts`), which draws one `ScreenPage` (`screen-page.ts`) per pane with a scissor on its band. `compose()` for one screenshot is `composePanes` with one whole-screen pane, unchanged.
 - **Labels and a divider** (Before & After, T2). A pane's `label` is drawn right after the pane, with the pane's scissor, so it shows only where its pane does; a node's `divider` is drawn after every pane, across the whole screen. Both go into the screen's target over the screenshots (`ScreenOverlay`, `src/engine/materials/screen-overlay.ts`), so the screenshots stay unlit and colour-exact; they blend in linear light like any translucent draw. A screen that ever shows a divider lists it in every frame (hidden by `opacity: 0`), and the warm-up render draws every label and the divider once, so no texture or shader is made while playing. The labels' text is rasterized by `src/text/rasterize.ts` (Inter, `TextLine.weight` 500, §7) through `AssetProvider.getText`, one raster per distinct label at twice its largest size (`screenLabelRequests`, `src/engine/text/screen-labels.ts`), and export hands those rasters to the worker with the URL pill's.
-- `steppingPanes(ids, step, t)` (`src/motion/layouts/tour.ts`) is the Site Tour step on any screen: during step k (`sliderStep`), page k mod N has `offset: −p` and the next page `1 − p`, edge to edge; the rest wait at `1`. `comparePanes(beforeId, afterId, e, labelSize)` (`src/motion/layouts/compare.ts`) is Before & After's screen: two panes at `offset: 0` with complementary clips, the old design on `[e, 1]` with "Before" top right, the new one on `[0, e]` with "After" top left, and `compareDivider(e, width)` at the edge.
+- `steppingPanes(ids, step, t)` (`src/motion/layouts/tour.ts`) is the Site Tour step on any screen: during step k (`sliderStep`), page k mod N has `offset: −p` and the next page `1 − p`, edge to edge; the rest wait at `1`. `comparePanes(beforeId, afterId, e, labelSize)` (`src/motion/layouts/compare.ts`) is Before & After's screen: two panes at `offset: 0` with complementary clips, the old design on `[e, 1]` with "Before" bottom right, the new one on `[0, e]` with "After" bottom left, and `compareDivider(e, width)` at the edge.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 

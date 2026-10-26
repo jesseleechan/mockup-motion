@@ -170,14 +170,14 @@ describe("Before & After screen (contracts.md §4)", () => {
             offset: 0,
             clip: [e, 1],
             scroll: 0,
-            label: { text: "Before", corner: "right", size },
+            label: { text: "Before", corner: "bottom-right", size },
           },
           {
             assetId: `${role}-new`,
             offset: 0,
             clip: [0, e],
             scroll: 0,
-            label: { text: "After", corner: "left", size },
+            label: { text: "After", corner: "bottom-left", size },
           },
         ]);
         // The node's screenshot is the design that covers most of the screen.

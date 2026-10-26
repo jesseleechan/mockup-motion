@@ -79,7 +79,7 @@ export function compareEdge(t: number, duration: number): number {
 /**
  * The two panes of a Before & After screen (contracts.md §4): both designs fit the whole screen
  * (offset 0), the old one drawn right of the edge and the new one left of it, so the new design
- * sweeps in from the left. Each carries its label: "Before" top right, "After" top left.
+ * sweeps in from the left. Each carries its label: "Before" bottom right, "After" bottom left.
  */
 export function comparePanes(
   beforeId: string | null,
@@ -93,14 +93,14 @@ export function comparePanes(
       offset: 0,
       clip: [edge, 1],
       scroll: 0,
-      label: { text: BEFORE_LABEL, corner: "right", size: labelSize },
+      label: { text: BEFORE_LABEL, corner: "bottom-right", size: labelSize },
     },
     {
       assetId: afterId,
       offset: 0,
       clip: [0, edge],
       scroll: 0,
-      label: { text: AFTER_LABEL, corner: "left", size: labelSize },
+      label: { text: AFTER_LABEL, corner: "bottom-left", size: labelSize },
     },
   ];
 }

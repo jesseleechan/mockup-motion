@@ -3,13 +3,19 @@ import { createTopLeftQuad } from "../geometry/quads";
 import type { ChromeUrlText } from "../text/ChromeUrlTextures";
 
 /**
- * A label to draw in a top corner of a screen (Before & After's "Before" and "After", quality bar
+ * A label to draw in a corner of a screen (Before & After's "Before" and "After", quality bar
  * §4): its text raster, once loaded, the corner, and the font size in stage units.
  */
 export interface OverlayLabel {
   text: ChromeUrlText | null;
-  corner: "left" | "right";
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   size: number;
+}
+
+/** Bands at the screen's top and bottom a label keeps clear of, in target px (a phone's). */
+export interface LabelClearance {
+  top: number;
+  bottom: number;
 }
 
 /** The divider across the screen: its centre in screen widths, its opacity and width (units). */
@@ -34,6 +40,11 @@ const RASTER_CAP_MIDDLE_EM = 0.62;
 // 45 for 48) and keeps a dark photo's detail faintly visible.
 const PILL_COLOR = 0x111114;
 const PILL_OPACITY = 0.9;
+// A hairline ring inside the pill's edge, so the pill reads on a dark page: 0.05 em wide (1 px
+// at 1080p, scaled with the label) in white at RING_OPACITY, over the pill.
+const RING_WIDTH_EM = 0.05;
+const RING_COLOR = 0xffffff;
+const RING_OPACITY = 0.12;
 const TEXT_COLOR = 0xffffff;
 // The divider's soft shadow: black, 22% at the line's edge, falling off as a Gaussian whose
 // sigma is the line's width, drawn out to 3 sigma (quality bar §4).
@@ -49,7 +60,8 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-// A rounded rectangle uSize px, centred in a quad uQuad px, antialiased over one px. Linear out.
+// A rounded rectangle uSize px, centred in a quad uQuad px, antialiased over one px, with a ring
+// uRing px wide inside its edge drawn over the fill. Premultiplied, linear out.
 const pillFragmentShader = /* glsl */ `
   varying vec2 vUv;
   uniform vec2 uQuad;
@@ -57,6 +69,9 @@ const pillFragmentShader = /* glsl */ `
   uniform float uRadius;
   uniform vec3 uColor;
   uniform float uOpacity;
+  uniform float uRing;
+  uniform vec3 uRingColor;
+  uniform float uRingOpacity;
 
   float sdRoundedBox(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + vec2(r);
@@ -67,7 +82,11 @@ const pillFragmentShader = /* glsl */ `
     vec2 p = (vUv - 0.5) * uQuad;
     float d = sdRoundedBox(p, uSize * 0.5, uRadius);
     float coverage = clamp(0.5 - d, 0.0, 1.0);
-    gl_FragColor = vec4(uColor, coverage * uOpacity);
+    float ring = coverage - clamp(0.5 - (d + uRing), 0.0, 1.0);
+    float fillAlpha = coverage * uOpacity;
+    float ringAlpha = ring * uRingOpacity;
+    vec3 rgb = uRingColor * ringAlpha + uColor * fillAlpha * (1.0 - ringAlpha);
+    gl_FragColor = vec4(rgb, ringAlpha + fillAlpha * (1.0 - ringAlpha));
   }
 `;
 
@@ -128,16 +147,18 @@ export class ScreenOverlay {
   constructor() {
     // The compositor that owns this overlay retains the shared quad.
     const quad = createTopLeftQuad();
-    this.pill = new THREE.Mesh(
-      quad,
-      overlayMaterial(pillFragmentShader, {
-        uQuad: { value: new THREE.Vector2(1, 1) },
-        uSize: { value: new THREE.Vector2(1, 1) },
-        uRadius: { value: 0 },
-        uColor: { value: new THREE.Color(PILL_COLOR) },
-        uOpacity: { value: PILL_OPACITY },
-      }),
-    );
+    const pillMaterial = overlayMaterial(pillFragmentShader, {
+      uQuad: { value: new THREE.Vector2(1, 1) },
+      uSize: { value: new THREE.Vector2(1, 1) },
+      uRadius: { value: 0 },
+      uColor: { value: new THREE.Color(PILL_COLOR) },
+      uOpacity: { value: PILL_OPACITY },
+      uRing: { value: 1 },
+      uRingColor: { value: new THREE.Color(RING_COLOR) },
+      uRingOpacity: { value: RING_OPACITY },
+    });
+    pillMaterial.premultipliedAlpha = true;
+    this.pill = new THREE.Mesh(quad, pillMaterial);
     this.glyphs = new THREE.Mesh(
       quad,
       overlayMaterial(textFragmentShader, {
@@ -164,15 +185,16 @@ export class ScreenOverlay {
 
   /**
    * Lays out `label` in a `widthPx` × `heightPx` target at `pxPerUnit` px per stage unit, inset
-   * from the top-left or top-right corner, `topPx` below the top (a phone's status bar). False
-   * while its text has no raster yet, so nothing is drawn.
+   * 1.2 em from its corner's edges and kept clear of `clearance` (a phone's status bar at the
+   * top, its home indicator's area at the bottom). False while its text has no raster yet, so
+   * nothing is drawn.
    */
   layoutLabel(
     label: OverlayLabel,
     widthPx: number,
     heightPx: number,
     pxPerUnit: number,
-    topPx: number,
+    clearance: LabelClearance,
   ): boolean {
     const text = label.text;
     if (!text || text.fontPx <= 0) return false;
@@ -183,9 +205,14 @@ export class ScreenOverlay {
     const pillWidth = textWidth + 2 * (PILL_PADDING_EM - RASTER_SIDE_PADDING_EM) * em;
     const pillHeight = PILL_HEIGHT_EM * em;
     const inset = LABEL_INSET_EM * em;
-    // Whole px, so the pill's edges and the text stay crisp.
-    const left = Math.round(label.corner === "left" ? inset : widthPx - inset - pillWidth);
-    const top = Math.round(topPx + inset);
+    const atLeft = label.corner === "top-left" || label.corner === "bottom-left";
+    const atTop = label.corner === "top-left" || label.corner === "top-right";
+    // Whole px, so the pill's edges and the text stay crisp. A top label is inset below the
+    // status bar; a bottom one keeps its inset unless the home indicator's area is taller.
+    const left = Math.round(atLeft ? inset : widthPx - inset - pillWidth);
+    const top = Math.round(
+      atTop ? clearance.top + inset : heightPx - Math.max(inset, clearance.bottom) - pillHeight,
+    );
     const centreX = left + pillWidth / 2;
     const centreY = heightPx - top - pillHeight / 2;
 
@@ -196,6 +223,7 @@ export class ScreenOverlay {
     (pill.uQuad.value as THREE.Vector2).set(quadWidth, quadHeight);
     (pill.uSize.value as THREE.Vector2).set(pillWidth, pillHeight);
     pill.uRadius.value = pillHeight / 2;
+    pill.uRing.value = RING_WIDTH_EM * em;
     this.pill.scale.set(quadWidth, quadHeight, 1);
     this.pill.position.set(centreX - quadWidth / 2, centreY - quadHeight / 2, 0);
 

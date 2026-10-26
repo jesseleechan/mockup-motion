@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
 import { releaseTopLeftQuad, retainTopLeftQuad } from "../geometry/quads";
-import { PHONE_STATUS_BAR } from "../../motion/phone-spec";
+import { PHONE_HOME_INDICATOR_AREA, PHONE_STATUS_BAR } from "../../motion/phone-spec";
 import { ScreenOverlay, type OverlayDivider, type OverlayLabel } from "./screen-overlay";
 import { ScreenPage } from "./screen-page";
 
@@ -326,12 +326,19 @@ export class ScreenCompositor {
     return size.x > 0 ? this.widthPx / size.x : 0;
   }
 
-  /** Lays out a pane's label in the overlay; on a phone it sits below the status bar. */
+  /**
+   * Lays out a pane's label in the overlay. On a phone it keeps clear of the status bar the page
+   * leaves free (ScreenPage), so it never covers the time, and of the home indicator's area.
+   */
   private layoutLabel(label: OverlayLabel, isPhone: boolean): boolean {
     if (!this.overlay) return false;
-    // The status bar the page leaves free (ScreenPage), so a label never covers the time.
-    const topPx = isPhone ? Math.round(this.heightPx * PHONE_STATUS_BAR) : 0;
-    return this.overlay.layoutLabel(label, this.widthPx, this.heightPx, this.pxPerUnit, topPx);
+    const clearance = isPhone
+      ? {
+          top: Math.round(this.heightPx * PHONE_STATUS_BAR),
+          bottom: Math.round(this.heightPx * PHONE_HOME_INDICATOR_AREA),
+        }
+      : { top: 0, bottom: 0 };
+    return this.overlay.layoutLabel(label, this.widthPx, this.heightPx, this.pxPerUnit, clearance);
   }
 
   private layoutDivider(divider: OverlayDivider): boolean {

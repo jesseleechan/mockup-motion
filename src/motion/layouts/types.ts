@@ -20,13 +20,16 @@ export interface ScreenPane {
 }
 
 /**
- * A small dark pill with white text in a top corner of a screen (Before & After's "Before" and
+ * A small dark pill with white text in a corner of a screen (Before & After's "Before" and
  * "After", quality bar §4). It belongs to its pane: it is drawn only where the pane is.
  */
 export interface ScreenLabel {
   text: string;
-  /** The top-left or the top-right corner of the screen, below a phone's status bar. */
-  corner: "left" | "right";
+  /**
+   * The corner of the screen it sits in. On a phone a top label sits below the status bar and a
+   * bottom one above the home indicator's area.
+   */
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
   /** The text's font size in stage units; the pill and its inset follow from it. */
   size: number;
 }
