@@ -49,7 +49,7 @@ interface TopBarProps {
 
 const ASPECTS: Aspect[] = ["16:9", "9:16", "1:1", "4:5", "4:3"];
 
-/** The menu shows the current preference; choosing it moves to the next. */
+/** The toggle shows the current preference; pressing it moves to the next. */
 const THEME_ICONS: Record<ThemePreference, LucideIcon> = {
   system: SunMoon,
   light: Sun,
@@ -129,13 +129,15 @@ export const TopBar: React.FC<TopBarProps> = ({
     );
   };
 
-  // System → Light → Dark. EditorShell applies the preference to <html>.
+  // System → Light → Dark. EditorShell applies the preference to <html>. The centre cluster's
+  // toggle is the only theme control (restyle plan R2).
   const handleCycleTheme = () => {
     const next = nextThemePreference(theme);
     setTheme(next);
     saveThemePreference(browserStorage(), next);
   };
-  const nextThemeLabel = `Switch to ${THEME_LABELS[nextThemePreference(theme)]}`;
+  const themeLabel = `Theme: ${THEME_LABELS[theme]}`;
+  const nextThemeLabel = `switch to ${THEME_LABELS[nextThemePreference(theme)]}`;
 
   const handleDuplicate = async () => {
     try {
@@ -193,13 +195,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               Templates
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              icon={<Icon icon={THEME_ICONS[theme]} size={14} />}
-              onClick={handleCycleTheme}
-              title={nextThemeLabel}
-            >
-              Theme: {THEME_LABELS[theme]}
-            </DropdownMenuItem>
             <DropdownMenuItem
               icon={<Icon icon={HelpCircle} size={14} />}
               shortcut="?"
@@ -269,10 +264,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         <ClusterSeparator />
-        <Tooltip content={nextThemeLabel}>
+        <Tooltip content={`${themeLabel} (${nextThemeLabel})`}>
           <IconButton
             icon={<Icon icon={THEME_ICONS[theme]} size={15} />}
-            aria-label={`Theme: ${THEME_LABELS[theme]}`}
+            aria-label={themeLabel}
             variant="ghost"
             onClick={handleCycleTheme}
           />
