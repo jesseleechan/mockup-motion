@@ -6,6 +6,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
   Icon,
+  useToast,
 } from "../../ui";
 import { isSteppedLayout } from "../../motion";
 import { useEditorStore } from "../../state/store";
@@ -15,6 +16,7 @@ import { MediaCard } from "./MediaCard";
 import type { AssetRef, AssetRole } from "../../doc/types";
 import { useImportFiles } from "../import/use-import-files";
 import { SCREENSHOT_ACCEPT } from "./capture-import";
+import { replacementRef } from "./replace-file";
 import { Copy, GalleryHorizontal, Minus, Plus, RefreshCw, Tag, Trash2 } from "lucide-react";
 
 interface MediaTabProps {
@@ -30,6 +32,7 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
     [fullDoc],
   );
   const importFiles = useImportFiles();
+  const { toast } = useToast();
   const replaceAsset = useEditorStore((s) => s.replaceAsset);
   const removeAsset = useEditorStore((s) => s.removeAsset);
   const setAssetRole = useEditorStore((s) => s.setAssetRole);
@@ -79,28 +82,18 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
     const existing = doc.assets.find((a) => a.id === replacingAssetId);
     if (!existing) return;
 
-    let width = existing.width ?? 1920;
-    let height = existing.height ?? 1080;
-    try {
-      const bmp = await createImageBitmap(file);
-      width = bmp.width;
-      height = bmp.height;
-      bmp.close();
-    } catch {
-      // keep
-    }
-
-    const updatedRef: AssetRef = {
-      ...existing,
-      name: file.name,
-      mime: file.type || "image/png",
-      bytes: file.size,
-      width,
-      height,
-    };
-
-    await replaceAsset(replacingAssetId, updatedRef, file);
     setReplacingAssetId(null);
+
+    // A file the import would reject, such as one that can't be decoded, is rejected with the
+    // import's message: nothing is stored and the asset stays as it was.
+    let updatedRef: AssetRef;
+    try {
+      updatedRef = await replacementRef(existing, file);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : `${file.name}: this image couldn't be read.`);
+      return;
+    }
+    await replaceAsset(existing.id, updatedRef, file);
   };
 
   const handleDragStart = (e: React.DragEvent, asset: AssetRef) => {

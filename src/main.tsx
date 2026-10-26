@@ -1,6 +1,3 @@
-// Inter stays for the browser URL pill drawn into videos (src/text/rasterize.ts loads its file
-// from this package); the UI doesn't use it.
-import "@fontsource-variable/inter";
 // The editor's own fonts, self-hosted (docs/restyle-plan/README.md, R1): Instrument Sans for the
 // UI, Geist Mono for numbers, Bricolage Grotesque for the wordmark.
 import "@fontsource/instrument-sans/400.css";
