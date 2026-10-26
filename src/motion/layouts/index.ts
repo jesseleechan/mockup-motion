@@ -6,10 +6,11 @@ import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
 import { resolveSliderLayout } from "./slider";
+import { resolveTourLayout } from "./tour";
 import type { LayoutNode } from "./types";
 
 export * from "./types";
-export { resolveSingleLayout } from "./single";
+export { resolveSingleLayout, singleDeviceSize } from "./single";
 export { framesAssetIds, framesDuration, resolveRowsLayout, rowsGeometry } from "./rows";
 export {
   clampSliderStep,
@@ -46,6 +47,8 @@ export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider"
 export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
 export type { OrbitGeometry } from "./orbit";
+export { mainPane, resolveTourLayout, steppingPanes, tourGeometry } from "./tour";
+export type { TourGeometry } from "./tour";
 
 export function resolveLayout(
   layout: Layout,
@@ -67,6 +70,8 @@ export function resolveLayout(
         : resolveSliderLayout(layout, aspect, assets, shotT);
     case "orbit":
       return resolveOrbitLayout(layout, aspect, assets, shotT);
+    case "tour":
+      return resolveTourLayout(layout, aspect, assets, shotT);
     case "responsive":
       return resolveResponsiveLayout(layout, aspect);
     default: {

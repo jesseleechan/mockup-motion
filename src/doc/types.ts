@@ -59,6 +59,7 @@ export type Layout =
   | { kind: "slider"; assetIds: string[]; axis: "x" | "y"; shape: "mobile" | "desktop"; step: number;
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
+  | { kind: "tour"; device: "browser" | "phone"; assetIds: string[]; step: number }
   | { kind: "responsive"; desktopId: string; mobileId: string };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
@@ -74,6 +75,10 @@ export type Layout =
 // orbit: the screenshots on a ring seen from slightly above, cards always facing the camera. Each
 // step turns the next card (from the right) to the front. shape and step as for slider; at most
 // the first 6 screenshots are shown, so a shot lasts min(N, 6) × step.
+// tour: pages of one site in one browser or phone (Desktop Site Tour, Mobile Site Tour). Each
+// step the next page slides in from the right while the current one leaves to the left, both
+// clipped to the screen; the device and camera stay still. step as for slider, and the slider's
+// 18-screenshot cap applies. The URL pill shows style.browserUrl for every page.
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between

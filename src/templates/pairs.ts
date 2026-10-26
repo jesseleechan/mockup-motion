@@ -8,6 +8,7 @@ const SIZE_PAIRS: readonly (readonly [desktop: string, mobile: string])[] = [
   ["frames", "mobile-frames"],
   ["desktop-stack", "mobile-stack"],
   ["desktop-orbit", "mobile-orbit"],
+  ["desktop-site-tour", "mobile-site-tour"],
   ["scroll-story", "mobile-scroll-story"],
 ];
 

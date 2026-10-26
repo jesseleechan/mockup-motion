@@ -29,7 +29,7 @@ It writes a desktop capture (1440 px wide) and a mobile capture (390 px wide) to
 
 ## Choose a template
 
-Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Scroll Story and Mobile Scroll Story.
+Start with a template, or try the demo content. Each template comes in a desktop and a mobile size: Desktop Slider and Mobile Slider, Desktop Frames and Mobile Frames, Desktop Stack and Mobile Stack, Desktop Orbit and Mobile Orbit, Desktop Site Tour and Mobile Site Tour, Desktop Scroll Story and Mobile Scroll Story.
 
 Drop PNG, JPEG, WebP or AVIF files or a whole folder anywhere on the editor, paste an image with ⌘V / Ctrl+V, or upload them in the Media tab. A dropped `captures` folder brings each screenshot's role (desktop or mobile) and section data. Uploads go to the library. To put a screenshot in a shot, drag it from the Media tab onto a device on the stage, or onto the screenshot field in the inspector. After "Try with demo content", a banner under the stage offers "Use my screenshots": it swaps every demo image in the project for your uploads, desktop for desktop and mobile for mobile, in one undo step.
 

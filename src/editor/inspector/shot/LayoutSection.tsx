@@ -6,8 +6,10 @@ import { DEVICE_LABELS, LAYOUT_LABELS, optionsFor } from "../../labels";
 import { useShotUpdate } from "./useShotUpdate";
 
 const SINGLE_DEVICES: DeviceKind[] = ["browser", "phone", "card"];
-// Picking a layout here makes a single device. Frames, sliders, orbits and Responsive Scroll come
-// from their templates, so the picker lists them only on a shot that already uses one.
+// A Site Tour shows its pages in a browser or a phone (presets round two, D5).
+const TOUR_DEVICES = ["browser", "phone"] as const;
+// Picking a layout here makes a single device. Frames, sliders, orbits, Site Tours and Responsive
+// Scroll come from their templates, so the picker lists them only on a shot that already uses one.
 const PICKER_LAYOUTS: Layout["kind"][] = ["single"];
 
 interface LayoutSectionProps {
@@ -114,7 +116,25 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
         </Field>
       )}
 
-      {isSteppedLayout(layout) && (
+      {layout.kind === "tour" && (
+        <Field label="Device">
+          <Select
+            aria-label="Device"
+            value={layout.device}
+            onChange={(device) =>
+              update(
+                (target) => {
+                  if (target.layout.kind === "tour") target.layout.device = device;
+                },
+                { label: `Change device to ${DEVICE_LABELS[device].toLowerCase()}` },
+              )
+            }
+            options={optionsFor(DEVICE_LABELS, TOUR_DEVICES)}
+          />
+        </Field>
+      )}
+
+      {isSteppedLayout(layout) && layout.kind !== "tour" && (
         <>
           <Field label="Card shape">
             <Select
@@ -123,7 +143,9 @@ export const LayoutSection: React.FC<LayoutSectionProps> = ({ shot, assets }) =>
               onChange={(shape) =>
                 update(
                   (target) => {
-                    if (isSteppedLayout(target.layout)) target.layout.shape = shape;
+                    if (isSteppedLayout(target.layout) && target.layout.kind !== "tour") {
+                      target.layout.shape = shape;
+                    }
                   },
                   { label: "Change card shape" },
                 )

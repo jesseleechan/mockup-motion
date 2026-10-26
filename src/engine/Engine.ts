@@ -277,8 +277,11 @@ export class Engine {
     this.chromeUrls.replaceAll(chromeUrls);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar
-    // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference.
-    const hasStepped = doc.shots.some((shot) => isSteppedLayout(shot.layout));
+    // §3.1); the carousel's and the orbit's fades mix in sRGB like the slider reference. A Site
+    // Tour fades nothing.
+    const hasStepped = doc.shots.some(
+      (shot) => isSteppedLayout(shot.layout) && shot.layout.kind !== "tour",
+    );
     this.deviceFade.prepare(this.renderer, this.targetA, {
       fade: hasStepped,
       srgb: doc.shots.some((shot) => fadeBlendFor(shot.layout) !== "linear"),
@@ -319,21 +322,24 @@ export class Engine {
       dev.object3d.userData.nodeId = node.id;
       draws.push({ object3d: dev.object3d, opacity: node.opacity, depthOrder: node.depthOrder });
 
-      let managed = null;
-      if (node.assetId) {
-        managed = this.textureManager.getLoadedTexture(node.assetId);
-      }
-
-      const asset = node.assetId
-        ? this.currentDoc?.assets.find((a) => a.id === node.assetId)
-        : null;
-      const hasStatusBar = Boolean(asset?.meta?.hasStatusBar);
       const isPhone = node.device === "phone";
-
-      dev.compositor.compose(this.renderer, managed, node.scroll, {
-        hasStatusBar,
-        isPhone,
-      });
+      if (node.panes) {
+        // A screen that draws more than one screenshot (Site Tour, contracts.md §4).
+        const panes = node.panes.map((pane) => ({
+          managed: pane.assetId ? this.textureManager.getLoadedTexture(pane.assetId) : null,
+          scroll: pane.scroll,
+          offset: pane.offset,
+          clip: pane.clip,
+          hasStatusBar: this.hasStatusBar(pane.assetId),
+        }));
+        dev.compositor.composePanes(this.renderer, panes, { isPhone });
+      } else {
+        const managed = node.assetId ? this.textureManager.getLoadedTexture(node.assetId) : null;
+        dev.compositor.compose(this.renderer, managed, node.scroll, {
+          hasStatusBar: this.hasStatusBar(node.assetId),
+          isPhone,
+        });
+      }
       dev.update(node, frame.style, frame.localT);
     }
 
@@ -341,6 +347,13 @@ export class Engine {
     const shot = this.currentDoc?.shots.find((s) => s.id === frame.shotId);
     const blend = fadeBlendFor(shot?.layout);
     this.deviceFade.render(this.renderer, this.scene, this.camera, target, draws, blend);
+  }
+
+  /** Whether a screenshot includes its own phone status bar (quality-bar §3.3). */
+  private hasStatusBar(assetId: string | null): boolean {
+    if (!assetId) return false;
+    const asset = this.currentDoc?.assets.find((a) => a.id === assetId);
+    return Boolean(asset?.meta?.hasStatusBar);
   }
 
   /**
@@ -426,14 +439,18 @@ export class Engine {
   /** Cheap, always-on counters and texture state for tests and the editor (F05). */
   debugInfo(): EngineDebugInfo {
     return {
-      nodes: this.lastRenderedNodes.map((node) => ({
-        id: node.id,
-        device: node.device,
-        assetId: node.assetId,
-        textureLoaded: node.assetId
-          ? this.textureManager.getLoadedTexture(node.assetId) !== null
-          : false,
-      })),
+      nodes: this.lastRenderedNodes.map((node) => {
+        // A screen of several panes is loaded when every screenshot it can show is.
+        const ids = node.panes ? node.panes.map((pane) => pane.assetId) : [node.assetId];
+        return {
+          id: node.id,
+          device: node.device,
+          assetId: node.assetId,
+          textureLoaded: ids.every(
+            (id) => id !== null && this.textureManager.getLoadedTexture(id) !== null,
+          ),
+        };
+      }),
       textures: this.renderer.info.memory.textures,
       geometries: this.renderer.info.memory.geometries,
       setDocumentCalls: this.setDocumentCalls,

@@ -89,6 +89,7 @@ export function convertDocToUserTemplate(
       case "columns":
       case "slider":
       case "orbit":
+      case "tour":
         layout.assetIds = layout.assetIds.map(remapId);
         break;
     }
@@ -205,8 +206,9 @@ export function fillUserTemplateSlots(
           layout.assetIds = layout.assetIds.map(resolveSlot);
           break;
         case "slider":
-        case "orbit": {
-          // Fewer assets than slots reuse one; a slider or orbit never shows a screenshot twice
+        case "orbit":
+        case "tour": {
+          // Fewer assets than slots reuse one; a stepped layout never shows a screenshot twice
           // (quality bar §4), and its length follows its screenshots so the loop stays native.
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
           break;

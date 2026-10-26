@@ -1,17 +1,18 @@
-import type { Aspect, AssetRef, Layout } from "../../doc/types";
+import type { Aspect, AssetRef, DeviceKind, Layout } from "../../doc/types";
 import { aspectRatioValue } from "../camera";
 import { PHONE_BODY_ASPECT } from "../phone-spec";
 import { type LayoutNode, screenAspectFor } from "./types";
 
-export function resolveSingleLayout(
-  layout: Extract<Layout, { kind: "single" }>,
+/**
+ * A single device's outer size in stage units (quality-bar §4, "Primary subject size"): a phone
+ * 0.74 of the frame height tall; a browser or card 0.68 of the frame width wide at 16:9 and 4:3
+ * and 0.86 at the other aspects, at most 0.84 tall. Scroll Story and Site Tour use it.
+ */
+export function singleDeviceSize(
+  device: DeviceKind,
   aspect: Aspect,
-  assets: AssetRef[],
-): LayoutNode[] {
-  const { device, assetId } = layout;
-  const asset = assets.find((a) => a.id === assetId);
-  const screenAspect = screenAspectFor(device, asset);
-
+  screenAspect: number,
+): { width: number; height: number } {
   // Device outer sizing in stage units (H = 1.0)
   const W = aspectRatioValue(aspect);
   let width: number;
@@ -38,6 +39,18 @@ export function resolveSingleLayout(
       height = 0.84;
     }
   }
+  return { width, height };
+}
+
+export function resolveSingleLayout(
+  layout: Extract<Layout, { kind: "single" }>,
+  aspect: Aspect,
+  assets: AssetRef[],
+): LayoutNode[] {
+  const { device, assetId } = layout;
+  const asset = assets.find((a) => a.id === assetId);
+  const screenAspect = screenAspectFor(device, asset);
+  const { width, height } = singleDeviceSize(device, aspect, screenAspect);
 
   const transform = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0, scale: 1.0 };
 

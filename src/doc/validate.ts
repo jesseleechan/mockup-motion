@@ -331,12 +331,12 @@ function sanitizeShot(
 
   const shot: Shot = {
     id: typeof s.id === "string" && s.id ? s.id : crypto.randomUUID(),
-    // A slider or orbit sets its own length (N × step), so its loop stays native (contracts.md §5).
+    // A stepped layout sets its own length (N × step), so its loop stays native (contracts.md §5).
     duration:
       fixedShotDuration(layout) ??
       clamp(typeof s.duration === "number" ? s.duration : 5, 1, MAX_SHOT_DURATION),
     layout,
-    // A slider's or orbit's camera is still, so its loop stays native (quality bar §4).
+    // A stepped layout's camera is still, so its loop stays native (quality bar §4).
     camera: fixedShotCamera(layout, camera),
     transitionIn,
   };
@@ -529,6 +529,21 @@ function sanitizeLayout(
         step: clampSliderStep(
           typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
           orbitIds.length,
+        ),
+      };
+    }
+    case "tour": {
+      const tourIds = Array.isArray(l.assetIds)
+        ? l.assetIds.map((id) => checkAsset(id, "assetIds")).filter(Boolean)
+        : [];
+      return {
+        kind: "tour",
+        device: l.device === "phone" ? "phone" : "browser",
+        assetIds: tourIds,
+        // The slider's step range (quality bar §2.2).
+        step: clampSliderStep(
+          typeof l.step === "number" && Number.isFinite(l.step) ? l.step : 2,
+          tourIds.length,
         ),
       };
     }

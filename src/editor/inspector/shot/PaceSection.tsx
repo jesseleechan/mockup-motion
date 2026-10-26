@@ -7,7 +7,7 @@ import { Section, SegmentedControl } from "../../../ui";
 const PACE_LABELS: Record<Pace, string> = { calm: "Calm", default: "Default", brisk: "Brisk" };
 
 /**
- * Calm, Default or Brisk for a slider, stack, orbit, Frames or Responsive Scroll shot
+ * Calm, Default or Brisk for a slider, stack, orbit, Site Tour, Frames or Responsive Scroll shot
  * (src/motion/pace.ts). A pace a limit makes equal to Default is unavailable, with the reason on
  * hover and focus. One click is one undo step.
  */
