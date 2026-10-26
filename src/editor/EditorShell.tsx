@@ -30,7 +30,7 @@ import { ToastProvider, TooltipProvider } from "../ui";
 import { ThumbnailProvider } from "./thumbnails/ThumbnailProvider";
 import { ProjectThumbnailWriter } from "./thumbnails/ProjectThumbnailWriter";
 import { ImportDropZone } from "./import/ImportDropZone";
-import { isTypingTarget } from "./focus";
+import { leavesKeyToFocus } from "./focus";
 import { useExportModal } from "./export/useExportModal";
 import { Monitor } from "lucide-react";
 
@@ -42,8 +42,6 @@ export const EditorShell: React.FC = () => {
   const loadDoc = useEditorStore((s) => s.loadDoc);
 
   const selection = useUIStore((s) => s.selection);
-  const playhead = useUIStore((s) => s.playhead);
-  const playing = useUIStore((s) => s.playing);
   const panels = useUIStore((s) => s.panels);
   const theme = useUIStore((s) => s.theme);
   const setSelection = useUIStore((s) => s.setSelection);
@@ -130,12 +128,15 @@ export const EditorShell: React.FC = () => {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input/textarea
-      if (isTypingTarget(e.target)) return;
+      // Leave typing, keys a focused control has handled, and Space on a button to that element.
+      if (leavesKeyToFocus(e)) return;
 
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const cmdKey = isMac ? e.metaKey : e.ctrlKey;
       const { total } = schedule(doc);
+      // Read here rather than subscribed: the playhead changes at every frame of playback, and a
+      // subscription would re-render the whole shell each time.
+      const { playhead, playing } = useUIStore.getState();
 
       // Space: Play / Pause
       if (e.code === "Space") {
@@ -219,19 +220,7 @@ export const EditorShell: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    doc,
-    playing,
-    playhead,
-    selection,
-    undo,
-    redo,
-    apply,
-    setPlaying,
-    setPlayhead,
-    setSelection,
-    togglePanel,
-  ]);
+  }, [doc, selection, undo, redo, apply, setPlaying, setPlayhead, setSelection, togglePanel]);
 
   const widths = renderedPanelWidths(panelWidths, panels, windowWidth);
   const sideWidth = (panel: "library" | "inspector") =>

@@ -308,7 +308,7 @@ test("the pace sets a Frames shot's length in one undo step and explains an unav
   await expect(option("Default")).toHaveAttribute("aria-checked", "true");
 
   // From the keyboard: the arrow keys reach the next option with a visible focus ring, Enter
-  // sets it. (Space plays the video everywhere in the editor, docs/plan/follow-ups.md.)
+  // sets it.
   await option("Default").focus();
   await page.keyboard.press("ArrowLeft");
   await expect(option("Calm")).toBeFocused();

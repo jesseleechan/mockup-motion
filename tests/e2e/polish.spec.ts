@@ -4,9 +4,44 @@ import { waitForStageEngine } from "../helpers/stage-engine";
 
 interface EditorStore {
   getState: () => {
-    doc: { id: string; templateId?: string; assets: { role?: string }[] };
+    doc: { id: string; name: string; templateId?: string; assets: { role?: string }[] };
     past: unknown[];
   };
+}
+
+/** The open project, as the editor's store holds it. */
+function openProject(page: import("@playwright/test").Page) {
+  return page.evaluate(() => {
+    const { doc } = (window as unknown as { __editorStore: EditorStore }).__editorStore.getState();
+    return { id: doc.id, name: doc.name };
+  });
+}
+
+/** Waits until autosave has written the project: it waits 600 ms, then writes. */
+async function waitUntilStored(page: import("@playwright/test").Page, projectId: string) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (id) =>
+            new Promise<boolean>((resolve, reject) => {
+              const req = indexedDB.open("mockupmotion-v2");
+              req.onerror = () => reject(req.error);
+              req.onsuccess = () => {
+                const db = req.result;
+                const get = db.transaction("projects", "readonly").objectStore("projects").get(id);
+                get.onerror = () => reject(get.error);
+                get.onsuccess = () => {
+                  db.close();
+                  resolve(get.result !== undefined);
+                };
+              };
+            }),
+          projectId,
+        ),
+      { timeout: ciTimeout(5_000), message: "the project is saved" },
+    )
+    .toBe(true);
 }
 
 async function resetAndOpen(page: import("@playwright/test").Page) {
@@ -58,37 +93,10 @@ test.describe("WP-18 polish", () => {
     await expect(page.locator("canvas").first()).toBeVisible();
 
     // A returning user lands on their last project, not on the gallery.
-    const projectId = await page.evaluate(
-      () => (window as unknown as { __editorStore: EditorStore }).__editorStore.getState().doc.id,
-    );
-    // Reload once the project is in storage: autosave waits 600 ms, then writes. The save label
-    // is a UI detail; the stored project is what the reload reads.
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            (id) =>
-              new Promise<boolean>((resolve, reject) => {
-                const req = indexedDB.open("mockupmotion-v2");
-                req.onerror = () => reject(req.error);
-                req.onsuccess = () => {
-                  const db = req.result;
-                  const get = db
-                    .transaction("projects", "readonly")
-                    .objectStore("projects")
-                    .get(id);
-                  get.onerror = () => reject(get.error);
-                  get.onsuccess = () => {
-                    db.close();
-                    resolve(get.result !== undefined);
-                  };
-                };
-              }),
-            projectId,
-          ),
-        { timeout: ciTimeout(5_000), message: "the project is saved before the reload" },
-      )
-      .toBe(true);
+    const projectId = (await openProject(page)).id;
+    // Reload once the project is in storage. The save label is a UI detail; the stored project
+    // is what the reload reads.
+    await waitUntilStored(page, projectId);
     await page.reload();
     await expect
       .poll(() =>
@@ -126,16 +134,20 @@ test.describe("WP-18 polish", () => {
 
     await page.getByRole("button", { name: "Templates", exact: true }).click();
     await gallery.getByRole("tab", { name: "Yours" }).click();
-    const card = gallery.getByRole("button", { name: "Select template Studio reel" });
-    await expect(gallery.getByTestId("user-template-card")).toHaveCount(1);
-    const savedId = await card.getAttribute("data-template-id");
+    const card = gallery.getByTestId("user-template-card");
+    await expect(card).toHaveCount(1);
+    // The card's select control and its Rename and Delete buttons are siblings, since nested
+    // controls are an Axe violation.
+    const select = gallery.getByRole("button", { name: "Select template Studio reel" });
+    await expect(select.getByRole("button")).toHaveCount(0);
+    const savedId = await select.getAttribute("data-template-id");
     // Escape in the rename field cancels the rename and leaves the gallery open.
     await card.getByRole("button", { name: "Rename Studio reel" }).click();
     await gallery.getByLabel("Template name").fill("Something else");
     await page.keyboard.press("Escape");
     await expect(gallery).toBeVisible();
-    await expect(card).toBeVisible();
-    await card.click();
+    await expect(select).toBeVisible();
+    await select.click();
     await expect(gallery.getByText("Selected: Studio reel")).toBeVisible();
     await gallery.getByRole("button", { name: "Apply template" }).click();
     await expect(gallery).toBeHidden();
@@ -154,6 +166,39 @@ test.describe("WP-18 polish", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  test("the Projects dialog works from the keyboard", async ({ page }) => {
+    await resetAndOpen(page);
+    const gallery = page.getByRole("dialog", { name: /Template gallery/ });
+    await gallery.getByRole("button", { name: "Try with demo content" }).click();
+    await expect(gallery).toBeHidden();
+    const first = await openProject(page);
+    await waitUntilStored(page, first.id);
+
+    await page.getByRole("button", { name: /MockupMotion/i }).click();
+    await page.getByRole("menuitem", { name: /Projects/i }).click();
+    const projects = page.getByRole("dialog", { name: "Your projects" });
+    await expect(projects.getByTestId("project-card")).toHaveCount(1);
+
+    // Escape in the rename field cancels the rename and leaves the dialog open.
+    await projects.getByRole("button", { name: "Rename project" }).click();
+    await projects.getByLabel("Project name").fill("Something else");
+    await page.keyboard.press("Escape");
+    await expect(projects).toBeVisible();
+    await expect(projects.getByLabel("Project name")).toHaveCount(0);
+    await expect(projects.getByRole("button", { name: `Open ${first.name}` })).toBeVisible();
+
+    // Each card's face is a button, so a project opens with the keyboard.
+    await projects.getByRole("button", { name: "Duplicate project" }).click();
+    const copy = projects.getByRole("button", { name: `Open ${first.name} (Copy)` });
+    await copy.focus();
+    await expect(copy).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(projects).toBeHidden();
+    const opened = await openProject(page);
+    expect(opened.id).not.toBe(first.id);
+    expect(opened.name).toBe(`${first.name} (Copy)`);
   });
 
   test("WebGL context loss during playback recovers", async ({ page }) => {

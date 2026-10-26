@@ -44,7 +44,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
       onFocus={() => onPreviewChange("focus", true)}
       onBlur={() => onPreviewChange("focus", false)}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onSelect();
+        if (e.key !== "Enter" && e.key !== " ") return;
+        // As a button does: Space selects the card and doesn't scroll the gallery.
+        e.preventDefault();
+        onSelect();
       }}
       tabIndex={0}
       role="button"

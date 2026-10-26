@@ -38,27 +38,24 @@ export const UserTemplateCard: React.FC<UserTemplateCardProps> = ({
   };
 
   return (
-    <div
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) onSelect();
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`Select template ${template.name}`}
-      aria-pressed={selected}
-      data-testid="user-template-card"
-      data-template-id={template.id}
-      className={tileRoot}
-    >
-      <div className={tileFace(selected, "grid place-items-center")}>
+    // A click anywhere on the card selects it. The face is the select button, so Rename and
+    // Delete sit beside it rather than inside it; they stop their clicks.
+    <div onClick={onSelect} data-testid="user-template-card" className={tileRoot}>
+      <button
+        type="button"
+        aria-label={`Select template ${template.name}`}
+        aria-pressed={selected}
+        // The gallery focuses the selected template's control when it opens.
+        data-template-id={template.id}
+        className={tileFace(selected, "grid place-items-center cursor-pointer")}
+      >
         <Icon icon={Bookmark} size={26} className="text-[var(--color-text-2)]" />
         {active && (
           <span className="absolute top-2 right-2">
             <ActiveBadge />
           </span>
         )}
-      </div>
+      </button>
 
       <div className="px-0.5 min-w-0">
         <div className="flex items-center justify-between gap-2 min-h-7">
