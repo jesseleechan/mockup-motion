@@ -53,11 +53,13 @@ Each task chooses its own types, within these lines:
 | ---- | ------------------------------------------------------------------------ | ---- | ------------------- | ---------------- |
 | T0   | Demo pages: Aurelia's extra pages in both sizes and an earlier home page | S–M  | —                   | Done (#118)      |
 | T1   | Desktop and Mobile Site Tour, with the two-screenshot screen             | M–L  | T0 for demo content | In review (#119) |
-| T2   | Desktop and Mobile Before & After                                        | M    | T1 (screen), T0     | Not started      |
+| T2   | Desktop and Mobile Before & After                                        | M    | T1 (screen), T0     | In review        |
 | T3   | Desktop and Mobile Page Columns                                          | M    | —                   | Not started      |
 | T4   | Responsive Tour                                                          | M    | T1 (screen), T0     | Not started      |
 
 T1 is in review in [#119](https://github.com/jesseleechan/mockup-motion/pull/119), with its stills and contact sheet in [`evidence/T1`](evidence/T1); its baselines wait for the owner.
+
+T2 is in review, stacked on T1, with its stills and contact sheet in [`evidence/T2`](evidence/T2); its baselines wait for the owner.
 
 T0, T1 and T3 start together. T1 merges after T0, so its demo content uses T0's pages. T2 and T4 start once T1 has merged.
 
