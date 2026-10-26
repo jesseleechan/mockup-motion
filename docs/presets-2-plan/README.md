@@ -57,9 +57,9 @@ Each task chooses its own types, within these lines:
 | T3   | Desktop and Mobile Page Columns                                          | M    | —                   | Not started      |
 | T4   | Responsive Tour                                                          | M    | T1 (screen), T0     | In review (#120) |
 
-T1 is in review in [#119](https://github.com/jesseleechan/mockup-motion/pull/119), with its stills and contact sheet in [`evidence/T1`](evidence/T1); its baselines wait for the owner.
+T1 is in review in [#119](https://github.com/jesseleechan/mockup-motion/pull/119), with its stills and contact sheet in [`evidence/T1`](evidence/T1). The owner approved its stills on 26 October 2026, and their baselines are committed.
 
-T4 is in review in [#120](https://github.com/jesseleechan/mockup-motion/pull/120), stacked on T1, with its stills and contact sheet in [`evidence/T4`](evidence/T4); the owner approved its stills on 26 October 2026, and their baselines are committed.
+T4 is in review in [#120](https://github.com/jesseleechan/mockup-motion/pull/120), with its stills and contact sheet in [`evidence/T4`](evidence/T4). The owner approved its stills on 26 October 2026, and their baselines are committed.
 
 T0, T1 and T3 start together. T1 merges after T0, so its demo content uses T0's pages. T2 and T4 start once T1 has merged.
 
