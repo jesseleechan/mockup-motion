@@ -1,6 +1,6 @@
 # Presets plan, round two: Site Tour, Before & After, Page Columns, Responsive Tour
 
-**Status: not started.** Written 26 October 2026.
+**Status: done.** Written 26 October 2026. All five tasks merged the same day: T0 [#118](https://github.com/jesseleechan/mockup-motion/pull/118), T1 [#119](https://github.com/jesseleechan/mockup-motion/pull/119), T2 [#121](https://github.com/jesseleechan/mockup-motion/pull/121), T4 [#120](https://github.com/jesseleechan/mockup-motion/pull/120) and T3 [#117](https://github.com/jesseleechan/mockup-motion/pull/117). The owner approved every new still in writing before its baseline was committed.
 
 On 26 October 2026 the owner reviewed a second shortlist with live previews ([shortlist](https://claude.ai/artifact/DEJpVekBeyHm97wU2SxhDU)). They chose four of the five proposals and skipped Filmstrip, and left every open question to the coordinator's recommendation ("Your recommendations"). The decisions below are those recommendations. Each preset is built in its own session. CLAUDE.md and fix plan §3 apply to every task.
 
@@ -49,19 +49,19 @@ Each task chooses its own types, within these lines:
 
 ## 3. Tasks
 
-| Task | Title                                                                    | Size | Depends on          | Status           |
-| ---- | ------------------------------------------------------------------------ | ---- | ------------------- | ---------------- |
-| T0   | Demo pages: Aurelia's extra pages in both sizes and an earlier home page | S–M  | —                   | Done (#118)      |
-| T1   | Desktop and Mobile Site Tour, with the two-screenshot screen             | M–L  | T0 for demo content | In review (#119) |
-| T2   | Desktop and Mobile Before & After                                        | M    | T1 (screen), T0     | In review (#121) |
-| T3   | Desktop and Mobile Page Columns                                          | M    | —                   | In review (#117) |
-| T4   | Responsive Tour                                                          | M    | T1 (screen), T0     | In review (#120) |
+| Task | Title                                                                    | Size | Depends on          | Status      |
+| ---- | ------------------------------------------------------------------------ | ---- | ------------------- | ----------- |
+| T0   | Demo pages: Aurelia's extra pages in both sizes and an earlier home page | S–M  | —                   | Done (#118) |
+| T1   | Desktop and Mobile Site Tour, with the two-screenshot screen             | M–L  | T0 for demo content | Done (#119) |
+| T2   | Desktop and Mobile Before & After                                        | M    | T1 (screen), T0     | Done (#121) |
+| T3   | Desktop and Mobile Page Columns                                          | M    | —                   | Done (#117) |
+| T4   | Responsive Tour                                                          | M    | T1 (screen), T0     | Done (#120) |
 
-T1 is in review in [#119](https://github.com/jesseleechan/mockup-motion/pull/119), with its stills and contact sheet in [`evidence/T1`](evidence/T1). The owner approved its stills on 26 October 2026, and their baselines are committed.
+T1 merged in [#119](https://github.com/jesseleechan/mockup-motion/pull/119), with its stills and contact sheet in [`evidence/T1`](evidence/T1). The owner approved its stills on 26 October 2026, and their baselines are committed.
 
-T2 is in review in [#121](https://github.com/jesseleechan/mockup-motion/pull/121), with its stills and contact sheet in [`evidence/T2`](evidence/T2). The owner approved its stills on 26 October 2026, and their baselines are committed.
+T2 merged in [#121](https://github.com/jesseleechan/mockup-motion/pull/121), with its stills and contact sheet in [`evidence/T2`](evidence/T2). The owner approved its stills on 26 October 2026, and their baselines are committed.
 
-T4 is in review in [#120](https://github.com/jesseleechan/mockup-motion/pull/120), with its stills and contact sheet in [`evidence/T4`](evidence/T4). The owner approved its stills on 26 October 2026, and their baselines are committed.
+T4 merged in [#120](https://github.com/jesseleechan/mockup-motion/pull/120), with its stills and contact sheet in [`evidence/T4`](evidence/T4). The owner approved its stills on 26 October 2026, and their baselines are committed.
 
 T0, T1 and T3 start together. T1 merges after T0, so its demo content uses T0's pages. T2 and T4 start once T1 has merged.
 
