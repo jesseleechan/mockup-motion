@@ -15,7 +15,7 @@ import {
   resolveLayout,
   schedule,
   sliderStepMax,
-  steppedAssetIds,
+  steppedCount,
   type Pace,
 } from "../src/motion";
 import { createEditorStore } from "../src/state/store";
@@ -66,7 +66,7 @@ const isFrames = (layout: Layout): layout is FramesLayout =>
 /** What the paced presets built before P5 (quality bar §2.2): today's Default timing. */
 function todaysKnob(shot: Shot, aspect: Aspect): number {
   if (isSteppedLayout(shot.layout)) {
-    return Math.min(2, sliderStepMax(steppedAssetIds(shot.layout).length));
+    return Math.min(2, sliderStepMax(steppedCount(shot.layout)));
   }
   if (isFrames(shot.layout)) return Math.max(15, framesDuration(shot.layout, aspect));
   return 1;
@@ -77,7 +77,7 @@ function expectedKnob(shot: Shot, aspect: Aspect, pace: Pace): number {
   const scale = { calm: 1.2, default: 1, brisk: 0.8 }[pace];
   const base = todaysKnob(shot, aspect);
   if (isSteppedLayout(shot.layout)) {
-    const max = sliderStepMax(steppedAssetIds(shot.layout).length);
+    const max = sliderStepMax(steppedCount(shot.layout));
     return Math.min(max, Math.max(1.6, Math.round(2 * scale * 10) / 10));
   }
   if (isFrames(shot.layout)) {
@@ -135,7 +135,7 @@ describe("Pace on every built-in template", () => {
           expect(shot.duration, label).toBeLessThanOrEqual(30);
           if (isSteppedLayout(shot.layout)) {
             expect(shot.duration, label).toBeCloseTo(
-              steppedAssetIds(shot.layout).length * shot.layout.step,
+              steppedCount(shot.layout) * shot.layout.step,
               9,
             );
           }

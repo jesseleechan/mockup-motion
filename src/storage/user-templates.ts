@@ -3,7 +3,7 @@ import { normalizeStyleAngles } from "../doc/gradient-angle";
 import { applyLegacyLook, legacyLook, mapLegacyLayout } from "../doc/legacy-layouts";
 import type { Aspect, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
 import { defaultShot } from "../doc/defaults";
-import { fitPace, isPacedShot, nearestPace } from "../motion";
+import { distinctPages, fitPace, isPacedShot, nearestPace } from "../motion";
 
 export interface UserTemplate {
   id: string;
@@ -91,6 +91,10 @@ export function convertDocToUserTemplate(
       case "orbit":
       case "tour":
         layout.assetIds = layout.assetIds.map(remapId);
+        break;
+      case "responsive-tour":
+        layout.desktopIds = layout.desktopIds.map(remapId);
+        layout.mobileIds = layout.mobileIds.map(remapId);
         break;
     }
 
@@ -211,6 +215,16 @@ export function fillUserTemplateSlots(
           // Fewer assets than slots reuse one; a stepped layout never shows a screenshot twice
           // (quality bar §4), and its length follows its screenshots so the loop stays native.
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
+          break;
+        }
+        case "responsive-tour": {
+          // The same for pages: a page that repeats an earlier page's screenshot is left out.
+          const pages = distinctPages(
+            layout.desktopIds.map(resolveSlot),
+            layout.mobileIds.map(resolveSlot),
+          );
+          layout.desktopIds = pages.desktopIds;
+          layout.mobileIds = pages.mobileIds;
           break;
         }
       }

@@ -1,9 +1,12 @@
 import type { Layout } from "../../doc/types";
-import { isSteppedLayout, steppedAssetIds } from "../../motion/layouts/duration";
+import { isSteppedLayout, steppedCount } from "../../motion/layouts/duration";
 
 /** What the slim timeline marks on its scrubber (docs/polish-plan/stage-timeline.md, item 2). */
 export interface TimelineMarks {
-  /** Shot times at which a step starts: one per screenshot for Slider, Stack and Orbit. */
+  /**
+   * Shot times at which a step starts: one per screenshot for Slider, Stack, Orbit and Site Tour,
+   * one per page for Responsive Tour.
+   */
   steps: number[];
   /** Frames lanes move one asset period per loop, so their loop point is worth marking. */
   loopPoint: boolean;
@@ -16,7 +19,7 @@ export interface TimelineMarks {
  */
 export function timelineMarks(layout: Layout, loop: number): TimelineMarks {
   if (isSteppedLayout(layout)) {
-    const count = Math.max(1, steppedAssetIds(layout).length);
+    const count = Math.max(1, steppedCount(layout));
     const steps: number[] = [];
     for (let k = 0; k < count; k++) {
       const time = k * layout.step;

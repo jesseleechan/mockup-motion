@@ -14,6 +14,8 @@ function layoutAssetIds(layout: Layout): string[] {
       return [layout.assetId];
     case "responsive":
       return [layout.desktopId, layout.mobileId];
+    case "responsive-tour":
+      return [...layout.desktopIds, ...layout.mobileIds];
     default:
       return layout.assetIds;
   }
@@ -28,6 +30,10 @@ function replaceLayoutAssetIds(layout: Layout, swap: (id: string) => string): vo
     case "responsive":
       layout.desktopId = swap(layout.desktopId);
       layout.mobileId = swap(layout.mobileId);
+      return;
+    case "responsive-tour":
+      layout.desktopIds = layout.desktopIds.map(swap);
+      layout.mobileIds = layout.mobileIds.map(swap);
       return;
     default:
       layout.assetIds = layout.assetIds.map(swap);

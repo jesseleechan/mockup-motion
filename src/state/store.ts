@@ -3,6 +3,13 @@ import { produce } from "immer";
 import { newProjectDoc } from "../doc/defaults";
 import { sanitizeDoc } from "../doc/validate";
 import { replaceLayoutAssetIds } from "../doc/assets";
+import {
+  addPageScreenshot,
+  movePage,
+  pageIndexOf,
+  pageSideFor,
+  removePage,
+} from "../doc/tour-pages";
 import { readLastExport, writeLastExport } from "../export/last-settings";
 import type {
   AssetMeta,
@@ -24,6 +31,7 @@ import {
   minShotScreenshots,
   setPace,
   steppedAssetIds,
+  steppedCount,
   type Pace,
 } from "../motion";
 import { deleteBlob, getBlob, putBlob, saveProject } from "../storage";
@@ -87,7 +95,10 @@ export interface EditorStoreState {
   duplicateAsset: (id: string) => Promise<string>;
   reorderAssets: (orderedIds: string[]) => void;
   assignAssetToSlot: (shotIndex: number, slotKeyOrNodeId: string, assetId: string) => void;
-  /** Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit). */
+  /**
+   * Adds a screenshot to a layout that shows a list of them (rows, columns, slider, orbit, Site
+   * Tour), or to its side of a Responsive Tour (`addPageScreenshot`).
+   */
   addAssetToShot: (shotIndex: number, assetId: string) => void;
   /**
    * Adds new screenshots to the project and to a list layout's shot in one undo step (the
@@ -98,9 +109,15 @@ export interface EditorStoreState {
     refs: AssetRef[],
     blobs: Record<string, Blob>,
   ) => Promise<void>;
-  /** Takes a screenshot out of a list layout; not below the layout's minimum (quality-bar §4). */
+  /**
+   * Takes a screenshot out of a list layout; not below the layout's minimum (quality-bar §4). A
+   * Responsive Tour loses the page that shows it, both screenshots.
+   */
   removeAssetFromShot: (shotIndex: number, assetId: string) => void;
-  /** Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. */
+  /**
+   * Moves a screenshot of a list layout to `toIndex` (clamped), in one undo step. A Responsive
+   * Tour moves the page that shows it.
+   */
   moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => void;
 
   // Timeline actions
@@ -111,9 +128,17 @@ export interface EditorStoreState {
   setSaveStatus: (status: SaveStatus, error?: string) => void;
 }
 
-/** Appends a screenshot to a list layout's shot. fitFixedShots refits a Frames shot's duration. */
+/**
+ * Appends a screenshot to a list layout's shot. fitFixedShots refits a Frames shot's duration. A
+ * Responsive Tour takes it on the side of its role, on the first page without one there.
+ */
 function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
   const shot = draft.shots[shotIndex];
+  if (shot?.layout.kind === "responsive-tour") {
+    const asset = draft.assets.find((a) => a.id === assetId);
+    addPageScreenshot(shot.layout, pageSideFor(asset), assetId);
+    return;
+  }
   if (!shot || !("assetIds" in shot.layout)) return;
   if (shot.layout.assetIds.includes(assetId)) return;
   shot.layout.assetIds.push(assetId);
@@ -490,6 +515,13 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
             } else {
               layout.desktopId = assetId;
             }
+          } else if (layout.kind === "responsive-tour") {
+            // A screenshot dropped on a card joins that card's side of the tour.
+            addPageScreenshot(
+              layout,
+              slotKeyOrNodeId.includes("mobile") ? "mobile" : "desktop",
+              assetId,
+            );
           } else if (isSteppedLayout(layout)) {
             // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
             // are a ring of the shown screenshots, so "slider:7" is shown screenshot 7 mod N.
@@ -543,6 +575,11 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
       get().apply(
         (draft) => {
           const shot = draft.shots[shotIndex];
+          if (shot?.layout.kind === "responsive-tour") {
+            if (steppedCount(shot.layout) <= minShotScreenshots(shot.layout)) return;
+            removePage(shot.layout, pageIndexOf(shot.layout, assetId));
+            return;
+          }
           if (!shot || !("assetIds" in shot.layout)) return;
           if (shot.layout.assetIds.length <= minShotScreenshots(shot.layout)) return;
           shot.layout.assetIds = shot.layout.assetIds.filter((id) => id !== assetId);
@@ -553,6 +590,20 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
 
     moveAssetInShot: (shotIndex: number, assetId: string, toIndex: number) => {
       const shot = get().doc.shots[shotIndex];
+      if (shot?.layout.kind === "responsive-tour") {
+        const from = pageIndexOf(shot.layout, assetId);
+        const pages = Math.max(shot.layout.desktopIds.length, shot.layout.mobileIds.length);
+        const to = Math.max(0, Math.min(pages - 1, toIndex));
+        if (from < 0 || from === to) return;
+        get().apply(
+          (draft) => {
+            const target = draft.shots[shotIndex];
+            if (target?.layout.kind === "responsive-tour") movePage(target.layout, from, to);
+          },
+          { label: "Reorder pages" },
+        );
+        return;
+      }
       if (!shot || !("assetIds" in shot.layout)) return;
       const from = shot.layout.assetIds.indexOf(assetId);
       const to = Math.max(0, Math.min(shot.layout.assetIds.length - 1, toIndex));

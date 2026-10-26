@@ -8,14 +8,23 @@ export { MAX_SHOT_DURATION };
 type SliderLayout = Extract<Layout, { kind: "slider" }>;
 type OrbitLayout = Extract<Layout, { kind: "orbit" }>;
 type TourLayout = Extract<Layout, { kind: "tour" }>;
+type ResponsiveTourLayout = Extract<Layout, { kind: "responsive-tour" }>;
+/** Stepped layouts that show one list of screenshots: slider, orbit and tour (Site Tour). */
+export type ListSteppedLayout = SliderLayout | OrbitLayout | TourLayout;
 /**
- * Layouts that step one screenshot per `step` seconds and loop natively: slider, orbit and
- * tour (Site Tour).
+ * Layouts that step one screenshot (or one page) per `step` seconds and loop natively: slider,
+ * orbit, tour (Site Tour) and responsive-tour (Responsive Tour, a desktop and a mobile
+ * screenshot per page).
  */
-export type SteppedLayout = SliderLayout | OrbitLayout | TourLayout;
+export type SteppedLayout = ListSteppedLayout | ResponsiveTourLayout;
 
 export function isSteppedLayout(layout: Layout): layout is SteppedLayout {
-  return layout.kind === "slider" || layout.kind === "orbit" || layout.kind === "tour";
+  return (
+    layout.kind === "slider" ||
+    layout.kind === "orbit" ||
+    layout.kind === "tour" ||
+    layout.kind === "responsive-tour"
+  );
 }
 
 // Quality bar §2.2 (carousel steps): 1.6–4.0 s per screenshot.
@@ -44,12 +53,14 @@ export const ORBIT_MAX_SCREENSHOTS = 6;
 
 /**
  * The fewest screenshots a list layout needs (quality-bar §4): 3 for a slider, stack or Site
- * Tour, 4 for an orbit or Frames. Other layouts have no list, so 0.
+ * Tour, 3 pages for a Responsive Tour, 4 for an orbit or Frames. Other layouts have no list, so
+ * 0.
  */
 export function minShotScreenshots(layout: Layout): number {
   switch (layout.kind) {
     case "slider":
     case "tour":
+    case "responsive-tour":
       return 3;
     case "orbit":
     case "rows":
@@ -66,8 +77,25 @@ export function orbitAssetIds(layout: OrbitLayout): string[] {
 }
 
 /** The screenshots a slider, orbit or Site Tour shot shows. */
-export function steppedAssetIds(layout: SteppedLayout): string[] {
+export function steppedAssetIds(layout: ListSteppedLayout): string[] {
   return layout.kind === "orbit" ? orbitAssetIds(layout) : sliderAssetIds(layout);
+}
+
+/**
+ * The pages a Responsive Tour shows: one per pair (page i is the i-th desktop and the i-th mobile
+ * screenshot, presets round two D12), at most the slider's SLIDER_MAX_SCREENSHOTS, so the loop
+ * fits in 30 s. Later pages are left out.
+ */
+export function responsiveTourPageCount(layout: ResponsiveTourLayout): number {
+  const pairs = Math.max(layout.desktopIds.length, layout.mobileIds.length);
+  return Math.min(SLIDER_MAX_SCREENSHOTS, pairs);
+}
+
+/** How many steps a stepped shot takes: one per shown screenshot, or per page of a tour. */
+export function steppedCount(layout: SteppedLayout): number {
+  return layout.kind === "responsive-tour"
+    ? responsiveTourPageCount(layout)
+    : steppedAssetIds(layout).length;
 }
 
 /**
@@ -90,7 +118,7 @@ export function clampSliderStep(step: number, count: number): number {
  * at most 6, so its 7th and later screenshots don't shorten its step.
  */
 export function steppedStepMax(layout: SteppedLayout): number {
-  return sliderStepMax(steppedAssetIds(layout).length);
+  return sliderStepMax(steppedCount(layout));
 }
 
 /** `step` limited to 1.6 s … steppedStepMax(layout). */
@@ -99,11 +127,11 @@ export function clampSteppedStep(step: number, layout: SteppedLayout): number {
 }
 
 /**
- * Shot length that keeps a stepped loop (slider, orbit, Site Tour) seamless: one step per shown
- * screenshot.
+ * Shot length that keeps a stepped loop (slider, orbit, Site Tour, Responsive Tour) seamless: one
+ * step per shown screenshot or page.
  */
 export function sliderDuration(layout: SteppedLayout): number {
-  return Math.max(1, steppedAssetIds(layout).length) * layout.step;
+  return Math.max(1, steppedCount(layout)) * layout.step;
 }
 
 /**

@@ -1,7 +1,7 @@
 import type { Aspect, AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
 import { demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
-import type { DemoSite } from "../lab/demo-assets";
+import type { DemoDevice, DemoPage, DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots, missingRequiredSlots } from "./slots";
 
@@ -9,6 +9,10 @@ const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
 const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
 const mobileFull = (site: DemoSite) => demoAssetId(site, "mobile", "full");
+// Aurelia's pages in its navigation's order (presets round two, D14).
+const AURELIA_TOUR: DemoPage[] = ["home", "studio", "works", "journal"];
+const aureliaTour = (device: DemoDevice) =>
+  AURELIA_TOUR.map((page) => demoAssetId("aurelia", device, "hero", page));
 
 /**
  * Demo captures per template, in slot order (fillSlots is greedy by role).
@@ -102,6 +106,9 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
   "mobile-scroll-story": [mobileFull("aurelia")],
   // One page at both sizes: Aurelia's full pages, with their capture sections.
   "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
+  // Four of Aurelia's pages at both sizes, an 8 s loop. fillSlots takes each size in this order,
+  // so page n pairs the n-th desktop with the n-th mobile capture.
+  "responsive-tour": [...aureliaTour("desktop"), ...aureliaTour("mobile")],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];

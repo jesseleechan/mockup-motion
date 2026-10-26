@@ -75,7 +75,7 @@ for (const [aspect, times] of MOBILE_FRAMES_STILLS) {
 }
 // The dark option of the flat presets, at 16:9 only: Frames mid-travel, the sliders and orbits
 // mid-step, where the neighbour fade (an sRGB blend) shows against the near-black fill, and the
-// Site Tours mid-step, a dark frame with two pages on its screen.
+// Site Tours and Responsive Tour mid-step, a dark frame with two pages on each screen.
 const DARK_STILLS: Record<string, number> = {
   frames: 2.4,
   "mobile-frames": 2.4,
@@ -87,6 +87,7 @@ const DARK_STILLS: Record<string, number> = {
   "mobile-orbit": 2.5,
   "desktop-site-tour": 2.5,
   "mobile-site-tour": 2.5,
+  "responsive-tour": 2.5,
 };
 for (const [id, t] of Object.entries(DARK_STILLS)) {
   STILLS.push({ name: `${id}-dark-16x9-t${t}`, fixture: `${id}-dark-16x9`, aspect: "16:9", t });
@@ -118,6 +119,18 @@ STILLS.push({
   fixture: "responsive-scroll",
   aspect: "16:9",
   t: 2.05,
+});
+// Responsive Tour: mid-step (2.5 s, both cards between two pages) at every aspect, side by side
+// or stacked, plus the 16:9 rest pose (1.9 s, page 2 alone on both cards). Presets round two T4.
+for (const aspect of ["16:9", "4:3", "1:1", "4:5", "9:16"]) {
+  const tag = aspect.replace(":", "x");
+  STILLS.push({ name: `responsive-tour-${tag}-t2.5`, fixture: "responsive-tour", aspect, t: 2.5 });
+}
+STILLS.push({
+  name: "responsive-tour-16x9-t1.9",
+  fixture: "responsive-tour",
+  aspect: "16:9",
+  t: 1.9,
 });
 // F01: quadrants on every device. F02: source colour bands on a frameless card.
 for (const device of DEVICES) {

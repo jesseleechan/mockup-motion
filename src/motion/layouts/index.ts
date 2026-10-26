@@ -7,6 +7,7 @@ import { resolveSingleLayout } from "./single";
 import { resolveOrbitLayout } from "./orbit";
 import { resolveSliderLayout } from "./slider";
 import { resolveTourLayout } from "./tour";
+import { resolveResponsiveTourLayout } from "./responsive-tour";
 import type { LayoutNode } from "./types";
 
 export * from "./types";
@@ -24,6 +25,7 @@ export {
   minShotScreenshots,
   ORBIT_MAX_SCREENSHOTS,
   orbitAssetIds,
+  responsiveTourPageCount,
   SLIDER_MAX_SCREENSHOTS,
   SLIDER_MAX_STEP,
   SLIDER_MIN_STEP,
@@ -31,9 +33,10 @@ export {
   sliderDuration,
   sliderStepMax,
   steppedAssetIds,
+  steppedCount,
   steppedStepMax,
 } from "./duration";
-export type { SteppedLayout } from "./duration";
+export type { ListSteppedLayout, SteppedLayout } from "./duration";
 export { columnsGeometry, resolveColumnsLayout } from "./columns";
 export { lanesAssetIds, lanesDuration, resolveLanes } from "./lanes";
 export type { LaneAxis, LaneGeometry, LaneOptions } from "./lanes";
@@ -49,6 +52,8 @@ export { orbitGeometry, resolveOrbitLayout } from "./orbit";
 export type { OrbitGeometry } from "./orbit";
 export { mainPane, resolveTourLayout, steppingPanes, tourGeometry } from "./tour";
 export type { TourGeometry } from "./tour";
+export { distinctPages, resolveResponsiveTourLayout, responsiveTourPages } from "./responsive-tour";
+export type { ResponsiveTourPage } from "./responsive-tour";
 
 export function resolveLayout(
   layout: Layout,
@@ -74,6 +79,8 @@ export function resolveLayout(
       return resolveTourLayout(layout, aspect, assets, shotT);
     case "responsive":
       return resolveResponsiveLayout(layout, aspect);
+    case "responsive-tour":
+      return resolveResponsiveTourLayout(layout, aspect, shotT);
     default: {
       const _exhaustive: never = layout;
       return [];

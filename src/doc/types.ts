@@ -60,7 +60,8 @@ export type Layout =
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
   | { kind: "tour"; device: "browser" | "phone"; assetIds: string[]; step: number }
-  | { kind: "responsive"; desktopId: string; mobileId: string };
+  | { kind: "responsive"; desktopId: string; mobileId: string }
+  | { kind: "responsive-tour"; desktopIds: string[]; mobileIds: string[]; step: number };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
 // asset period per loop, so the speed follows the shot duration. tilt: degrees of 3D tilt for the
 // whole group (the presets use 0).
@@ -81,6 +82,11 @@ export type Layout =
 // 18-screenshot cap applies. The URL pill shows style.browserUrl for every page.
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
+// responsive-tour: pages of one site, each as a desktop and a mobile screenshot, on Responsive
+// Scroll's two cards (Responsive Tour). Page i is desktopIds[i] with mobileIds[i]: both lists
+// have the same length, and "" is a side without a screenshot. Each step both cards slide to the
+// next page together, as a Site Tour's screen does. step as for slider, and the slider's
+// 18-screenshot cap applies to pages.
 // rows.cardHeight: stage units (default: the per-row-count value). rows.gap: stage units between
 // cards and rows (default: 0.14 × width across, 0.06 down).
 // columns.device (default "phone") and columns.cardWidth and gap mirror rows, turned 90°. "card"

@@ -7,6 +7,8 @@ export function layoutAssetIds(layout: Layout): string[] {
       return [layout.assetId];
     case "responsive":
       return [layout.desktopId, layout.mobileId];
+    case "responsive-tour":
+      return [...layout.desktopIds, ...layout.mobileIds];
     case "rows":
     case "columns":
     case "slider":
@@ -26,6 +28,10 @@ export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string
     case "responsive":
       layout.desktopId = swap(layout.desktopId);
       layout.mobileId = swap(layout.mobileId);
+      return;
+    case "responsive-tour":
+      layout.desktopIds = layout.desktopIds.map(swap);
+      layout.mobileIds = layout.mobileIds.map(swap);
       return;
     case "rows":
     case "columns":

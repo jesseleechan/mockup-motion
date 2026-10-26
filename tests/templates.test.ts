@@ -104,8 +104,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the
-    // Slider, Frames, Stack, Orbit, Site Tour and Scroll Story pairs, then Responsive Scroll. The
-    // first entry is the first-run default (presets plan D1).
+    // Slider, Frames, Stack, Orbit, Site Tour and Scroll Story pairs, then Responsive Scroll and
+    // Responsive Tour. The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -120,6 +120,7 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "scroll-story",
       "mobile-scroll-story",
       "responsive-scroll",
+      "responsive-tour",
     ]);
 
     for (const t of BUILTIN_TEMPLATES) {
@@ -146,9 +147,10 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "scroll-story": "desktop",
       "mobile-scroll-story": "mobile",
       "responsive-scroll": "both",
+      "responsive-tour": "both",
     });
     for (const t of BUILTIN_TEMPLATES) {
-      // A desktop + mobile template (Responsive Scroll) has a slot of each size.
+      // A desktop + mobile template (Responsive Scroll, Responsive Tour) has a slot of each size.
       const roles = t.category === "both" ? ["desktop", "mobile"] : [t.category];
       for (const slot of t.slots) expect(roles).toContain(slot.role);
       expect(new Set(t.slots.map((slot) => slot.role)).size).toBe(roles.length);
@@ -318,7 +320,8 @@ describe("Template loop seam", () => {
   // An orbit loops natively with a cut: after N steps the ring is back where it started.
   const ORBIT_TEMPLATES = ["desktop-orbit", "mobile-orbit"];
   // A Site Tour loops natively with a cut: after N steps its first page is back on the screen.
-  const TOUR_TEMPLATES = ["desktop-site-tour", "mobile-site-tour"];
+  // So does a Responsive Tour, on both of its cards.
+  const TOUR_TEMPLATES = ["desktop-site-tour", "mobile-site-tour", "responsive-tour"];
   // Both Frames presets loop natively with a cut: every lane travels one whole asset period
   // (contracts §5).
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];

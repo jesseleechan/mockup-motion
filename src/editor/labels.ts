@@ -23,6 +23,7 @@ export const LAYOUT_LABELS: Record<Layout["kind"], string> = {
   orbit: "Orbit",
   tour: "Site tour",
   responsive: "Responsive scroll",
+  "responsive-tour": "Responsive tour",
 };
 
 export const DEVICE_LABELS: Record<DeviceKind, string> = {
