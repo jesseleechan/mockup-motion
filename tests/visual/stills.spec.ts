@@ -48,6 +48,16 @@ for (const id of SLIDER_TEMPLATES) {
     }
   }
 }
+// Before & After sweeps from 1.0 to 3.0 s: 2.0 s is mid-sweep (both designs, both labels and the
+// divider) and 4.0 s holds the new design (presets round two, T2).
+const COMPARE_TEMPLATES = ["desktop-before-after", "mobile-before-after"];
+for (const id of COMPARE_TEMPLATES) {
+  for (const aspect of ["16:9", "9:16"]) {
+    for (const t of [2, 4]) {
+      STILLS.push({ name: `${id}-${aspect.replace(":", "x")}-t${t}`, fixture: id, aspect, t });
+    }
+  }
+}
 // Frames' row count depends on the aspect, so each aspect has its own fixture (LabPage).
 for (const aspect of ["16:9", "9:16"]) {
   const tag = aspect.replace(":", "x");
@@ -74,8 +84,8 @@ for (const [aspect, times] of MOBILE_FRAMES_STILLS) {
   }
 }
 // The dark option of the flat presets, at 16:9 only: Frames mid-travel, the sliders and orbits
-// mid-step, where the neighbour fade (an sRGB blend) shows against the near-black fill, and the
-// Site Tours mid-step, a dark frame with two pages on its screen.
+// mid-step, where the neighbour fade (an sRGB blend) shows against the near-black fill, the
+// Site Tours mid-step, a dark frame with two pages on its screen, and Before & After mid-sweep.
 const DARK_STILLS: Record<string, number> = {
   frames: 2.4,
   "mobile-frames": 2.4,
@@ -87,6 +97,8 @@ const DARK_STILLS: Record<string, number> = {
   "mobile-orbit": 2.5,
   "desktop-site-tour": 2.5,
   "mobile-site-tour": 2.5,
+  "desktop-before-after": 2,
+  "mobile-before-after": 2,
 };
 for (const [id, t] of Object.entries(DARK_STILLS)) {
   STILLS.push({ name: `${id}-dark-16x9-t${t}`, fixture: `${id}-dark-16x9`, aspect: "16:9", t });

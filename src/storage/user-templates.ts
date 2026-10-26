@@ -93,6 +93,10 @@ export function convertDocToUserTemplate(
       case "pageColumns":
         layout.assetIds = layout.assetIds.map(remapId);
         break;
+      case "compare":
+        layout.beforeId = remapId(layout.beforeId);
+        layout.afterId = remapId(layout.afterId);
+        break;
     }
 
     return shot;
@@ -216,6 +220,10 @@ export function fillUserTemplateSlots(
           layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
           break;
         }
+        case "compare":
+          layout.beforeId = resolveSlot(layout.beforeId);
+          layout.afterId = resolveSlot(layout.afterId);
+          break;
       }
       // Its pace sets its step or duration for the screenshots it got.
       fitPace(shot, aspect, assets);

@@ -33,6 +33,13 @@ export const PHONE_ISLAND = { width: 0.313, height: 0.092, top: 0.027 } as const
  */
 export const PHONE_STATUS_BAR = 62 / 874;
 
+/**
+ * The home indicator's area: the bottom 34 pt of the 874 pt screen, where iOS keeps content
+ * clear of the indicator. The engine draws no indicator; overlays at the bottom of the screen
+ * (Before & After's labels) stay above this area.
+ */
+export const PHONE_HOME_INDICATOR_AREA = 34 / 874;
+
 /** The status bar in points: the screen is 402 pt wide. */
 export const PHONE_SCREEN_POINTS = { width: 402, statusBar: 62 } as const;
 

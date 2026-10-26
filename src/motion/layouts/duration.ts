@@ -129,12 +129,15 @@ export function fixedShotDuration(
 /**
  * The camera a layout allows. A stepped layout's camera is still (quality bar §4): a camera
  * move would end the shot on another pose, so the native loop would pop. Responsive Scroll's and
- * Page Columns' are still too: the scroll or the drift is the shot's one move (quality bar §2.5).
- * Other layouts keep theirs.
+ * Before & After's and Page Columns' are still too: the scroll, the sweep or the drift is the
+ * shot's one move (quality bar §2.5). Other layouts keep theirs.
  */
 export function fixedShotCamera(layout: Layout, camera: CameraMove): CameraMove {
   const still =
-    isSteppedLayout(layout) || layout.kind === "responsive" || layout.kind === "pageColumns";
+    isSteppedLayout(layout) ||
+    layout.kind === "responsive" ||
+    layout.kind === "compare" ||
+    layout.kind === "pageColumns";
   if (!still || isStillCamera(camera)) return camera;
   return { preset: "static", intensity: 0, easing: camera.easing };
 }

@@ -60,6 +60,7 @@ export type Layout =
       arrangement?: "carousel" | "deck" }
   | { kind: "orbit"; assetIds: string[]; shape: "mobile" | "desktop"; step: number }
   | { kind: "tour"; device: "browser" | "phone"; assetIds: string[]; step: number }
+  | { kind: "compare"; device: "browser" | "phone"; beforeId: string; afterId: string }
   | { kind: "responsive"; desktopId: string; mobileId: string }
   | { kind: "pageColumns"; assetIds: string[]; shape: "mobile" | "desktop" };
 // rows and columns are Frames (Desktop Frames, Mobile Frames): lanes that each move exactly one
@@ -80,6 +81,10 @@ export type Layout =
 // step the next page slides in from the right while the current one leaves to the left, both
 // clipped to the screen; the device and camera stay still. step as for slider, and the slider's
 // 18-screenshot cap applies. The URL pill shows style.browserUrl for every page.
+// compare: an old and a new design of one page in one browser or phone (Desktop Before & After,
+// Mobile Before & After). The new design (afterId) sweeps across the old one (beforeId) from left
+// to right, then holds; the loop crossfades back to the old one. Its timing follows the shot's
+// duration, which Shot.pace sets (Brisk 5.6, Default 6.8, Calm 8.0 s with the 0.8 s wrap).
 // responsive: a desktop card (1.6) and a mobile card (0.4615) of one page that scroll together
 // (Responsive Scroll, quality-bar §4): side by side at 16:9, 4:3 and 1:1, stacked at 4:5 and 9:16.
 // pageColumns: full pages side by side as frameless cards, each drifting through its own page at

@@ -36,6 +36,11 @@ export interface Template {
    * a desktop and a mobile capture of the same page when the library has one.
    */
   samePage?: readonly [desktopSlot: string, mobileSlot: string];
+  /**
+   * Every slot takes a different screenshot (Before & After compares two): `fillSlots` leaves a
+   * slot empty rather than reuse one, so the missing one is reported (`missingRequiredSlots`).
+   */
+  distinct?: boolean;
   build: (ctx: TemplateBuildContext) => {
     style: Style;
     shots: Shot[];

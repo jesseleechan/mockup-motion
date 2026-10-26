@@ -456,6 +456,13 @@ function sanitizeLayout(
         desktopId: checkAsset(l.desktopId, "desktopId"),
         mobileId: checkAsset(l.mobileId, "mobileId"),
       };
+    case "compare":
+      return {
+        kind: "compare",
+        device: l.device === "phone" ? "phone" : "browser",
+        beforeId: checkAsset(l.beforeId, "beforeId"),
+        afterId: checkAsset(l.afterId, "afterId"),
+      };
     case "pageColumns":
       return {
         kind: "pageColumns",

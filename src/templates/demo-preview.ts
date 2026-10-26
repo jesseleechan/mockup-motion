@@ -97,6 +97,10 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("aurelia", "works"),
     mobileHero("aurelia", "journal"),
   ],
+  // Aurelia's home page, its earlier design first: the first in Library order is the old one
+  // (presets round two, D8, D14).
+  "desktop-before-after": [desktopHero("aurelia", "home-before"), desktopHero("aurelia")],
+  "mobile-before-after": [mobileHero("aurelia", "home-before"), mobileHero("aurelia")],
   // Three full pages, one per column (the shortlist's preview). Fewer columns show the first
   // ones: desktop 2 at 1:1 and 1 at 4:5 and 9:16, mobile 2 at 4:5 and 9:16.
   "desktop-page-columns": [

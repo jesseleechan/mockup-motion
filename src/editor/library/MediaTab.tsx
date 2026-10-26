@@ -67,6 +67,9 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
       const lay = shot.layout;
       let used = false;
       if (lay.kind === "single" && lay.assetId === assetId) used = true;
+      if (lay.kind === "compare" && (lay.beforeId === assetId || lay.afterId === assetId)) {
+        used = true;
+      }
       if (
         (lay.kind === "rows" ||
           lay.kind === "columns" ||

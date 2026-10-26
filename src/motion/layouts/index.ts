@@ -1,6 +1,7 @@
 import type { Aspect, AssetRef, Layout } from "../../doc/types";
 import { resolveDeckLayout } from "./deck";
 import { resolveColumnsLayout } from "./columns";
+import { resolveCompareLayout } from "./compare";
 import { resolveResponsiveLayout } from "./responsive";
 import { resolveRowsLayout } from "./rows";
 import { resolveSingleLayout } from "./single";
@@ -51,6 +52,20 @@ export type { OrbitGeometry } from "./orbit";
 export { mainPane, resolveTourLayout, steppingPanes, tourGeometry } from "./tour";
 export type { TourGeometry } from "./tour";
 export {
+  AFTER_LABEL,
+  BEFORE_LABEL,
+  COMPARE_LOOP,
+  COMPARE_WRAP_OVERLAP,
+  compareDivider,
+  compareDuration,
+  compareEdge,
+  compareGeometry,
+  comparePanes,
+  compareTiming,
+  resolveCompareLayout,
+} from "./compare";
+export type { CompareGeometry, CompareTiming } from "./compare";
+export {
   PAGE_COLUMNS_MAX_LOOP,
   PAGE_COLUMNS_MAX_SCREENSHOTS,
   PAGE_COLUMNS_MIN_LOOP,
@@ -91,6 +106,8 @@ export function resolveLayout(
       return resolveOrbitLayout(layout, aspect, assets, shotT);
     case "tour":
       return resolveTourLayout(layout, aspect, assets, shotT);
+    case "compare":
+      return resolveCompareLayout(layout, aspect, assets, shotT, shotDuration);
     case "responsive":
       return resolveResponsiveLayout(layout, aspect);
     case "pageColumns":

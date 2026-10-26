@@ -9,6 +9,8 @@ export interface TextLine {
   size: number;
   /** Glyph colour, #RRGGBB. */
   color: string;
+  /** Inter's weight: 400 (Regular, the URL pill's) when unset; Before & After's labels use 500. */
+  weight?: number;
 }
 
 export interface TextRaster {
@@ -22,7 +24,7 @@ export interface TextRaster {
 // The URL pill is set in Inter Regular with +2% tracking, at line height 1.3, padded by 0.2 em
 // above and below and 0.4 em on each side (quality-bar §3.2).
 const FAMILY = "Inter";
-const WEIGHT = 400;
+const DEFAULT_WEIGHT = 400;
 const TRACKING_EM = 0.02;
 const LINE_HEIGHT = 1.3;
 const MIN_SIZE_PERCENT = 1.6;
@@ -61,7 +63,9 @@ function context2d(
 
 /** Rasterizes one centred line of Inter with Canvas 2D at the output resolution. */
 export async function rasterizeText(line: TextLine, frameHeightPx: number): Promise<TextRaster> {
-  const key = [line.text, line.size, line.color, frameHeightPx].join("::");
+  const key = [line.text, line.size, line.color, line.weight ?? DEFAULT_WEIGHT, frameHeightPx].join(
+    "::",
+  );
   const cached = cache.get(key);
   if (cached) return cached;
   const raster = await drawLine(line, frameHeightPx);
@@ -74,7 +78,7 @@ async function drawLine(line: TextLine, frameHeightPx: number): Promise<TextRast
 
   const fontSizePx = (Math.max(MIN_SIZE_PERCENT, line.size) / 100) * frameHeightPx;
   const lineHeightPx = fontSizePx * LINE_HEIGHT;
-  const font = `${WEIGHT} ${fontSizePx}px "${FAMILY}", sans-serif`;
+  const font = `${line.weight ?? DEFAULT_WEIGHT} ${fontSizePx}px "${FAMILY}", sans-serif`;
   const text = line.text.trim();
 
   const measure = context2d(createCanvas(100, 100));
