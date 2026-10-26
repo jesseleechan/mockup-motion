@@ -33,8 +33,13 @@ const MAX_BUDGET_ATTEMPTS = 4;
 const BUDGET_HEADROOM = 0.97;
 const POSTER_TIME_FRACTION = 0.35;
 // Templates whose 35% frame doesn't show them best. Responsive Scroll's is Aurelia's dark works
-// section; its first hold shows the photographic hero on both screens.
-const POSTER_TIME_FRACTION_BY_TEMPLATE: Record<string, number> = { "responsive-scroll": 0.05 };
+// section; its first hold shows the photographic hero on both screens. Mobile Site Tour's is a
+// small phone of dark text pages; at 6.8 s the photographic home page slides in as Journal's
+// stone texture leaves.
+const POSTER_TIME_FRACTION_BY_TEMPLATE: Record<string, number> = {
+  "responsive-scroll": 0.05,
+  "mobile-site-tour": 0.85,
+};
 // Posters show until a card is hovered, so they are 2x the video (1280x720) for sharp cards.
 const POSTER_RESOLUTION = 720;
 const POSTER_WEBP_QUALITY = 82;
@@ -163,7 +168,8 @@ async function main(): Promise<void> {
           {
             id: template.id,
             settings: PREVIEW_SETTINGS,
-            posterTime: total * (POSTER_TIME_FRACTION_BY_TEMPLATE[template.id] ?? POSTER_TIME_FRACTION),
+            posterTime:
+              total * (POSTER_TIME_FRACTION_BY_TEMPLATE[template.id] ?? POSTER_TIME_FRACTION),
             posterResolution: POSTER_RESOLUTION,
             videoBitrate,
           },

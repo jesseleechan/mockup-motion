@@ -23,9 +23,11 @@ import {
 import { aspectRatioValue } from "../src/motion/camera";
 import { createEditorStore } from "../src/state/store";
 import { convertDocToUserTemplate, fillUserTemplateSlots } from "../src/storage/user-templates";
+import { demoAsset } from "../src/lab/demo-assets";
 import {
   BUILTIN_TEMPLATES,
   buildTemplate,
+  buildTemplatePreviewDoc,
   desktopSiteTourTemplate,
   missingRequiredSlots,
   mobileSiteTourTemplate,
@@ -305,6 +307,22 @@ describe("Desktop Site Tour and Mobile Site Tour templates", () => {
     const assets = pages("mobile", 3);
     const built = buildTemplate(mobileSiteTourTemplate, { aspect: "9:16", assets, name: "x" });
     expect((built.shots[0].layout as TourLayout).assetIds).toEqual(assets.map((a) => a.id));
+  });
+
+  it("preview the pages of one demo site in its nav order, under its domain", () => {
+    for (const template of [desktopSiteTourTemplate, mobileSiteTourTemplate]) {
+      const doc = buildTemplatePreviewDoc(template);
+      const ids = (doc.shots[0].layout as TourLayout).assetIds;
+      const shown = ids.map((id) => demoAsset(id));
+      expect(
+        shown.map((a) => [a.site, a.page, a.role]),
+        template.id,
+      ).toEqual(
+        ["home", "studio", "works", "journal"].map((page) => ["aurelia", page, template.category]),
+      );
+      // One site, so the URL pill shows its domain (D4).
+      expect(doc.style.browserUrl, template.id).toBe("aurelia.studio");
+    }
   });
 });
 

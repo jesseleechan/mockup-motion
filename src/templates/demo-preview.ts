@@ -1,18 +1,14 @@
 import type { Aspect, AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
 import { demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
-import type { DemoDevice, DemoPage, DemoSite } from "../lab/demo-assets";
+import type { DemoPage, DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots, missingRequiredSlots } from "./slots";
 
-const desktopHero = (site: DemoSite) => demoAssetId(site, "desktop", "hero");
+const desktopHero = (site: DemoSite, page?: DemoPage) => demoAssetId(site, "desktop", "hero", page);
 const desktopFull = (site: DemoSite) => demoAssetId(site, "desktop", "full");
-const mobileHero = (site: DemoSite) => demoAssetId(site, "mobile", "hero");
+const mobileHero = (site: DemoSite, page?: DemoPage) => demoAssetId(site, "mobile", "hero", page);
 const mobileFull = (site: DemoSite) => demoAssetId(site, "mobile", "full");
-// Aurelia's pages in its navigation's order (presets round two, D14).
-const AURELIA_TOUR: DemoPage[] = ["home", "studio", "works", "journal"];
-const aureliaTour = (device: DemoDevice) =>
-  AURELIA_TOUR.map((page) => demoAssetId("aurelia", device, "hero", page));
 
 /**
  * Demo captures per template, in slot order (fillSlots is greedy by role).
@@ -86,29 +82,38 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
     mobileHero("field-notes"),
     mobileHero("studio-kova"),
   ],
-  // Four pages, an 8 s loop. Until Aurelia's extra pages land (presets round two, T0), the
-  // heroes of four sites stand in for the pages of one. The poster (35%, 2.8 s) shows the second
-  // step: Aurelia's photographic hero sliding in.
+  // Four pages of one site in its nav order, an 8 s loop, so the URL pill reads aurelia.studio.
+  // Heroes, not full pages: a tour shows each page's top, which is the hero (the desktop one at
+  // twice the full page's resolution), and a full page would decode thousands of unseen rows.
   "desktop-site-tour": [
-    desktopHero("northwind"),
-    desktopHero("maison-oak"),
     desktopHero("aurelia"),
-    desktopHero("field-notes"),
+    desktopHero("aurelia", "studio"),
+    desktopHero("aurelia", "works"),
+    desktopHero("aurelia", "journal"),
   ],
   "mobile-site-tour": [
-    mobileHero("northwind"),
-    mobileHero("maison-oak"),
     mobileHero("aurelia"),
-    mobileHero("field-notes"),
+    mobileHero("aurelia", "studio"),
+    mobileHero("aurelia", "works"),
+    mobileHero("aurelia", "journal"),
   ],
   "scroll-story": [desktopFull("studio-kova")],
   // Aurelia's photographic hero; its page needs a 10.5 s shot at 0.9 viewport heights per second.
   "mobile-scroll-story": [mobileFull("aurelia")],
   // One page at both sizes: Aurelia's full pages, with their capture sections.
   "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
-  // Four of Aurelia's pages at both sizes, an 8 s loop. fillSlots takes each size in this order,
+  // Site Tour's four pages at both sizes, an 8 s loop. fillSlots takes each size in this order,
   // so page n pairs the n-th desktop with the n-th mobile capture.
-  "responsive-tour": [...aureliaTour("desktop"), ...aureliaTour("mobile")],
+  "responsive-tour": [
+    desktopHero("aurelia"),
+    desktopHero("aurelia", "studio"),
+    desktopHero("aurelia", "works"),
+    desktopHero("aurelia", "journal"),
+    mobileHero("aurelia"),
+    mobileHero("aurelia", "studio"),
+    mobileHero("aurelia", "works"),
+    mobileHero("aurelia", "journal"),
+  ],
 };
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
