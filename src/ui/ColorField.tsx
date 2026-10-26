@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import clsx from "clsx";
 import { Pipette } from "lucide-react";
@@ -40,6 +40,7 @@ export const ColorField: React.FC<ColorFieldProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [hexInput, setHexInput] = useState(value);
+  const hexId = useId();
 
   const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
 
@@ -100,8 +101,12 @@ export const ColorField: React.FC<ColorFieldProps> = ({
           />
 
           <div className="flex items-center gap-2">
-            <span className="font-num text-[11px] text-text-2">HEX</span>
+            {/* The visible "HEX" names the field. */}
+            <label htmlFor={hexId} className="font-num text-[11px] text-text-2">
+              HEX
+            </label>
             <Input
+              id={hexId}
               numeric
               value={hexInput}
               onChange={(e) => {

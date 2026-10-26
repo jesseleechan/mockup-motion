@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import clsx from "clsx";
 import { ChevronRight, RotateCcw } from "lucide-react";
 import { Icon } from "./Icon";
@@ -27,12 +27,15 @@ export const Section: React.FC<SectionProps> = ({
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const contentId = useId();
 
   return (
     <div className={clsx("flex flex-col gap-[9px] px-1.5 pt-2.5 pb-3", className)}>
       <div className="flex items-center justify-between gap-2 min-h-5 select-none">
         <button
           type="button"
+          aria-expanded={isOpen}
+          aria-controls={contentId}
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
             "flex items-center gap-1 -ml-0.5 pl-0.5 pr-1 rounded-[4px] cursor-pointer",
@@ -71,7 +74,10 @@ export const Section: React.FC<SectionProps> = ({
         )}
       </div>
 
-      {isOpen && <div className="flex flex-col gap-2.5">{children}</div>}
+      {/* Always rendered, so aria-controls names an element; closed, it is hidden and empty. */}
+      <div id={contentId} hidden={!isOpen} className="flex flex-col gap-2.5">
+        {isOpen && children}
+      </div>
     </div>
   );
 };
