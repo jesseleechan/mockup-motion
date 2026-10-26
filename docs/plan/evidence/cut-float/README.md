@@ -1,6 +1,6 @@
 # Cut: the camera's Float
 
-Evidence for [#FLOATPR](https://github.com/jesseleechan/mockup-motion/pull/FLOATPR), 26 October 2026. Before is `origin/main` at db8b456; after is this branch.
+Evidence for [#113](https://github.com/jesseleechan/mockup-motion/pull/113), 26 October 2026. Before is `origin/main` at db8b456; after is this branch.
 
 ## The Shot inspector's Camera section (1440×900)
 

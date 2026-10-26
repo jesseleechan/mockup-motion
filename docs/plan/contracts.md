@@ -226,7 +226,7 @@ Mesh, ambient and image backgrounds were removed on 19 October 2026. `sanitizeDo
 
 Device finishes and the `minimal` browser chrome were removed on 19 October 2026. `sanitizeDoc` drops a saved `deviceFinish`, so every device loads in its one finish (the phone in Silver, `quality-bar.md` §3.3), and loads a saved `minimal` chrome as `standard`.
 
-The camera's Float (`CameraMove.float`, a sine sway of up to 1.2° yaw, 0.8° pitch and 0.4% distance over the shot) was removed on 26 October 2026 ([#FLOATPR](https://github.com/jesseleechan/mockup-motion/pull/FLOATPR)). `sanitizeDoc` drops a saved `float`, so a camera loads as its move alone: Still stays still and Push in pushes in without sway. `cameraPose(move, aspect, p)` no longer takes the shot time and length.
+The camera's Float (`CameraMove.float`, a sine sway of up to 1.2° yaw, 0.8° pitch and 0.4% distance over the shot) was removed on 26 October 2026 ([#113](https://github.com/jesseleechan/mockup-motion/pull/113)). `sanitizeDoc` drops a saved `float`, so a camera loads as its move alone: Still stays still and Push in pushes in without sway. `cameraPose(move, aspect, p)` no longer takes the shot time and length.
 
 ## 3. Stage, units and camera
 

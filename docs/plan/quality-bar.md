@@ -58,7 +58,7 @@ The editor offers these two as Still and Push in. On 19 October 2026 the owner c
 
 ### 2.4 Float
 
-Cut on 26 October 2026 ([#FLOATPR](https://github.com/jesseleechan/mockup-motion/pull/FLOATPR)): the camera has no ambient sway, so nothing in a shot oscillates, and a saved project's float is dropped.
+Cut on 26 October 2026 ([#113](https://github.com/jesseleechan/mockup-motion/pull/113)): the camera has no ambient sway, so nothing in a shot oscillates, and a saved project's float is dropped.
 
 ### 2.5 Never
 
