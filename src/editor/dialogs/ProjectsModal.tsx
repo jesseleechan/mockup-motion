@@ -173,6 +173,10 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
       <DialogContent
         title="Your projects"
         description="Switch between projects, rename, duplicate, or delete."
+        // Radix closes on Escape before the rename field sees it; there, Escape cancels the rename.
+        onEscapeKeyDown={(e) => {
+          if ((e.target as HTMLElement | null)?.closest("[data-rename-input]")) e.preventDefault();
+        }}
         // Important, so it wins over DialogContent's own max-w-lg: Tailwind orders utilities for
         // the same property by name, not by their order in the class list.
         className="max-w-2xl!"
@@ -200,10 +204,13 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
             No saved projects found.
           </div>
         ) : (
-          // The padding leaves room for the open project's ring inside the scroll area.
-          <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-h-[60vh] overflow-y-auto -m-1 p-1">
+          // The padding leaves room inside the scroll area for the open project's ring and a
+          // focused face's outline (offset 4 px plus 2 px, tile.ts); the margin keeps the cards
+          // where they were.
+          <div className="grid grid-cols-3 gap-x-3 gap-y-4 max-h-[60vh] overflow-y-auto -m-2 p-2">
             {projects.map((p) => {
               const isCurrent = p.id === currentDoc.id;
+              const name = p.name || "Untitled project";
               const thumbUrl = thumbnails[p.id];
               const dateStr = new Date(p.updatedAt).toLocaleDateString(undefined, {
                 month: "short",
@@ -215,12 +222,20 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
               return (
                 <div
                   key={p.id}
+                  // A click anywhere on the card opens the project, the face's included. The face
+                  // is the button that does it from the keyboard (Layout Stage's "Open" button);
+                  // the caption's buttons sit beside it and stop their clicks.
                   onClick={() => handleSelect(p.id)}
                   data-testid="project-card"
                   data-project-id={p.id}
                   className={tileRoot}
                 >
-                  <div className={tileFace(isCurrent, "grid place-items-center")}>
+                  <button
+                    type="button"
+                    aria-label={`Open ${name}`}
+                    aria-current={isCurrent ? "true" : undefined}
+                    className={tileFace(isCurrent, "grid place-items-center cursor-pointer")}
+                  >
                     {thumbUrl ? (
                       <img src={thumbUrl} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
@@ -231,7 +246,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                         <ActiveBadge label="Current" />
                       </span>
                     )}
-                  </div>
+                  </button>
 
                   <div className="px-0.5 flex items-start justify-between gap-2 min-w-0">
                     <div className="min-w-0 flex-1">
@@ -239,6 +254,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                         <Input
                           autoFocus
                           aria-label="Project name"
+                          data-rename-input
                           value={editName}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setEditName(e.target.value)}
@@ -251,7 +267,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ open, onOpenChange
                         />
                       ) : (
                         <div className="h-7 leading-7 text-[12.5px] font-semibold text-[var(--color-text)] truncate">
-                          {p.name || "Untitled project"}
+                          {name}
                         </div>
                       )}
                       <div className="text-[11px] text-[var(--color-text-2)] truncate">
