@@ -10,6 +10,8 @@ import {
 
 interface ManifestItem {
   site: string;
+  /** Absent for a site's home page. */
+  page?: string;
   file: string;
   role: "hero" | "full";
   tall: boolean;
@@ -27,17 +29,27 @@ describe("WP-04 Demo Content & Capture Pipeline", () => {
     expect(typeof getBrowserLaunchOptions).toBe("function");
   });
 
-  it("validates manifest.json structure and all 20 assets exist on disk", () => {
+  it("validates manifest.json structure and every asset exists on disk", () => {
     const manifestPath = path.resolve("public/demo/manifest.json");
     expect(fs.existsSync(manifestPath)).toBe(true);
 
     const manifest: ManifestItem[] = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-    expect(manifest.length).toBe(20);
 
+    // Every site has a home page, and every page of every site has all four captures.
     const expectedSites = ["aurelia", "northwind", "maison-oak", "field-notes", "studio-kova"];
-    const sitesInManifest = new Set(manifest.map((m) => m.site));
+    const captures = (site: string, page: string) =>
+      manifest
+        .filter((m) => m.site === site && (m.page ?? "home") === page)
+        .map((m) => `${m.category}-${m.role}`)
+        .sort();
+    const allFour = ["desktop-full", "desktop-hero", "mobile-full", "mobile-hero"];
     for (const site of expectedSites) {
-      expect(sitesInManifest.has(site)).toBe(true);
+      expect(captures(site, "home")).toEqual(allFour);
+    }
+    for (const page of new Set(manifest.map((m) => `${m.site}/${m.page ?? "home"}`))) {
+      const [site, name] = page.split("/");
+      expect(expectedSites).toContain(site);
+      expect(captures(site, name)).toEqual(allFour);
     }
 
     let totalBytes = 0;

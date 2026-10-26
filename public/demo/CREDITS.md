@@ -34,3 +34,18 @@ All imagery and media assets included in MockupMotion demo sites are fully licen
    - Instrument Serif: SIL Open Font License 1.1 (Instrument & Rodrigo Fuenzalida)
    - Space Grotesk: SIL Open Font License 1.1 (Florian Karsten)
    - Fraunces: SIL Open Font License 1.1 (Phaedra Charles, Flavia Zimbardi, Undercase Type)
+   - Raleway: SIL Open Font License 1.1 (The Raleway Project Authors), used by Aurelia's earlier home page
+   - Open Sans: SIL Open Font License 1.1 (The Open Sans Project Authors), used by Aurelia's earlier home page
+   - Both come from the Fontsource packages `@fontsource-variable/raleway` and `@fontsource-variable/open-sans` (5.3.0), latin subset.
+
+7. **Aurelia Drawings (`demo-sites/aurelia/images/drawings/*.svg`)**
+   - Description: Section, long section, plan, site plan, elevation and axonometric drawings of Aurelia's projects, used by its Works and Studio pages
+   - Source: Original SVG drawings authored for MockupMotion (generated from seeded geometry; no traced or third-party material)
+   - License: MIT / Project License
+
+8. **Aurelia Material Textures (`demo-sites/aurelia/images/materials/*.svg`)**
+   - Description: Gneiss, hydraulic lime, charred larch and wool felt surfaces drawn with SVG filters, used by its Journal page
+   - Source: Original SVG textures authored for MockupMotion
+   - License: MIT / Project License
+
+Aurelia's Works page and earlier home page reuse the Lake House photograph (item 1); the earlier home page also reuses the home page's three project illustrations.
