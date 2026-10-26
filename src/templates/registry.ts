@@ -12,14 +12,16 @@ import { desktopOrbitTemplate } from "./desktop-orbit";
 import { mobileOrbitTemplate } from "./mobile-orbit";
 import { desktopSiteTourTemplate } from "./desktop-site-tour";
 import { mobileSiteTourTemplate } from "./mobile-site-tour";
+import { desktopBeforeAfterTemplate } from "./desktop-before-after";
+import { mobileBeforeAfterTemplate } from "./mobile-before-after";
 import { mobileScrollStoryTemplate } from "./mobile-scroll-story";
 import { responsiveScrollTemplate } from "./responsive-scroll";
 
 /**
  * Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the Slider,
- * Frames, Stack, Orbit and Site Tour pairs, then the Scroll Story pair, each desktop first, then
- * Responsive Scroll. The first entry is also the first-run default and the gallery's initial
- * selection.
+ * Frames, Stack, Orbit, Site Tour and Before & After pairs, then the Scroll Story pair, each
+ * desktop first, then Responsive Scroll. The first entry is also the first-run default and the
+ * gallery's initial selection.
  */
 export const BUILTIN_TEMPLATES: Template[] = [
   desktopSliderTemplate,
@@ -32,6 +34,8 @@ export const BUILTIN_TEMPLATES: Template[] = [
   mobileOrbitTemplate,
   desktopSiteTourTemplate,
   mobileSiteTourTemplate,
+  desktopBeforeAfterTemplate,
+  mobileBeforeAfterTemplate,
   scrollStoryTemplate,
   mobileScrollStoryTemplate,
   responsiveScrollTemplate,

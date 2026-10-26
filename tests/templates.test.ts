@@ -104,8 +104,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
     expect(ids.size).toBe(BUILTIN_TEMPLATES.length);
 
     // Gallery order (Frames plan D12, stack plan D5, orbit plan, presets round two D15): the
-    // Slider, Frames, Stack, Orbit, Site Tour and Scroll Story pairs, then Responsive Scroll. The
-    // first entry is the first-run default (presets plan D1).
+    // Slider, Frames, Stack, Orbit, Site Tour, Before & After and Scroll Story pairs, then
+    // Responsive Scroll. The first entry is the first-run default (presets plan D1).
     expect(BUILTIN_TEMPLATES.map((t) => t.id)).toEqual([
       "desktop-slider",
       "mobile-slider",
@@ -117,6 +117,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-orbit",
       "desktop-site-tour",
       "mobile-site-tour",
+      "desktop-before-after",
+      "mobile-before-after",
       "scroll-story",
       "mobile-scroll-story",
       "responsive-scroll",
@@ -143,6 +145,8 @@ describe("WP-11 & WP-12: Templates, Slot Filling, and Quality Bar", () => {
       "mobile-orbit": "mobile",
       "desktop-site-tour": "desktop",
       "mobile-site-tour": "mobile",
+      "desktop-before-after": "desktop",
+      "mobile-before-after": "mobile",
       "scroll-story": "desktop",
       "mobile-scroll-story": "mobile",
       "responsive-scroll": "both",
@@ -324,6 +328,8 @@ describe("Template loop seam", () => {
   const NATIVE_MARQUEE_TEMPLATES = ["frames", "mobile-frames"];
   // Responsive Scroll can't reverse its scroll, so it loops by the wrap crossfade (contracts §5).
   const WRAP_SCROLL_TEMPLATES = ["responsive-scroll"];
+  // Before & After's sweep never reverses either: it crossfades back to the old design.
+  const WRAP_SWEEP_TEMPLATES = ["desktop-before-after", "mobile-before-after"];
   const LOOPING_SINGLE_SHOT = BUILTIN_TEMPLATES.filter((template) => {
     const doc = buildTemplatePreviewDoc(template);
     return doc.loop && doc.shots.length === 1;
@@ -344,6 +350,7 @@ describe("Template loop seam", () => {
         ...ORBIT_TEMPLATES,
         ...TOUR_TEMPLATES,
         ...WRAP_SCROLL_TEMPLATES,
+        ...WRAP_SWEEP_TEMPLATES,
       ].sort(),
     );
   });
@@ -399,7 +406,8 @@ describe("Template loop seam", () => {
       for (const key of ["x", "y", "z", "rx", "ry", "rz", "scale"] as const) {
         expect(other.transform[key], `${where} ${key}`).toBeCloseTo(node.transform[key], 4);
       }
-      // A screen of several panes (Site Tour) shows the same screenshots in the same places.
+      // A screen of several panes (Site Tour, Before & After) shows the same screenshots in the
+      // same places, with the same labels, and its divider likewise.
       expect(other.panes?.length, `${where} panes`).toBe(node.panes?.length);
       node.panes?.forEach((pane, j) => {
         const twin = other.panes?.[j];
@@ -407,7 +415,9 @@ describe("Template loop seam", () => {
         expect(twin?.offset, `${where} pane ${j} offset`).toBeCloseTo(pane.offset, 4);
         expect(twin?.clip, `${where} pane ${j} clip`).toEqual(pane.clip);
         expect(twin?.scroll, `${where} pane ${j} scroll`).toBeCloseTo(pane.scroll, 4);
+        expect(twin?.label, `${where} pane ${j} label`).toEqual(pane.label);
       });
+      expect(other.divider, `${where} divider`).toEqual(node.divider);
     });
   }
 

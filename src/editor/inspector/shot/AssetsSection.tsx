@@ -7,7 +7,8 @@ import {
   ORBIT_MAX_SCREENSHOTS,
   SLIDER_MAX_SCREENSHOTS,
 } from "../../../motion";
-import { Field, Section, Select } from "../../../ui";
+import { ArrowUpDown } from "lucide-react";
+import { Button, Field, Icon, Section, Select } from "../../../ui";
 import { useEditorStore } from "../../../state/store";
 import { ScreenshotList } from "./ScreenshotList";
 import { assetDropProps, useShotUpdate } from "./useShotUpdate";
@@ -54,11 +55,15 @@ const STEPPED_LIST_LABELS = {
   tour: "Tour pages",
 } as const;
 
-/** The screenshots a single, responsive, slider, orbit, Site Tour or Frames layout shows. */
+/**
+ * The screenshots a single, responsive, slider, orbit, Site Tour, Before & After or Frames layout
+ * shows.
+ */
 export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) => {
   const update = useShotUpdate(shot.id);
   const shotIndex = useEditorStore((s) => s.doc.shots.findIndex((c) => c.id === shot.id));
   const aspect = useEditorStore((s) => s.doc.aspect);
+  const swapBeforeAfter = useEditorStore((s) => s.swapBeforeAfter);
   const { layout } = shot;
   const images = assets.filter((a) => a.kind === "image");
 
@@ -95,6 +100,49 @@ export const AssetsSection: React.FC<AssetsSectionProps> = ({ shot, assets }) =>
           shown={framesAssetIds(layout, aspect).length}
           minimum={minShotScreenshots(layout)}
         />
+      </Section>
+    );
+  }
+  if (layout.kind === "compare") {
+    return (
+      <Section title="Screenshots">
+        <AssetField
+          label="Before"
+          value={layout.beforeId || ""}
+          images={images}
+          droppable
+          onChange={(id) =>
+            update(
+              (target) => {
+                if (target.layout.kind === "compare") target.layout.beforeId = id;
+              },
+              { label: "Change the old design" },
+            )
+          }
+        />
+        <AssetField
+          label="After"
+          value={layout.afterId || ""}
+          images={images}
+          droppable
+          onChange={(id) =>
+            update(
+              (target) => {
+                if (target.layout.kind === "compare") target.layout.afterId = id;
+              },
+              { label: "Change the new design" },
+            )
+          }
+        />
+        <Button
+          size="sm"
+          variant="secondary"
+          className="w-full"
+          icon={<Icon icon={ArrowUpDown} size={14} />}
+          onClick={() => swapBeforeAfter(shotIndex)}
+        >
+          Swap before and after
+        </Button>
       </Section>
     );
   }

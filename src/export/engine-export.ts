@@ -1,6 +1,7 @@
 import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { chromeUrlRequests } from "../engine/text/chrome-url";
+import { screenLabelRequests } from "../engine/text/screen-labels";
 import { textureWidths } from "../engine/textures/sizing";
 import { schedule } from "../motion";
 import { calculateBitrate, outputDimensions } from "./destinations";
@@ -158,11 +159,11 @@ export async function exportWithEngine(
     images[id] = await createImageBitmap(source);
   }
 
-  // The browser URL pills, rasterized at export resolution.
+  // The browser URL pills and the screens' labels, rasterized at export resolution.
   const ss = settings.supersample ?? 1;
   const frameHeightPx = Math.round(height * ss);
   const texts: Record<string, TextRaster> = {};
-  for (const request of chromeUrlRequests(doc)) {
+  for (const request of [...chromeUrlRequests(doc), ...screenLabelRequests(doc)]) {
     texts[request.line.id] = await provider.getText(request.line, frameHeightPx);
     signal?.throwIfAborted();
   }

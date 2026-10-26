@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import type { ManagedTexture } from "../textures/TextureManager";
 import { releaseTopLeftQuad, retainTopLeftQuad } from "../geometry/quads";
+import { PHONE_HOME_INDICATOR_AREA, PHONE_STATUS_BAR } from "../../motion/phone-spec";
+import { ScreenOverlay, type OverlayDivider, type OverlayLabel } from "./screen-overlay";
 import { ScreenPage } from "./screen-page";
 
 export interface ScreenCompositorOptions {
@@ -75,9 +77,16 @@ export interface ComposedPane {
   offset: number;
   clip: readonly [number, number];
   hasStatusBar?: boolean;
+  /** A label drawn over the pane, clipped with it (Before & After). */
+  label?: OverlayLabel;
 }
 
 const WHOLE_SCREEN: readonly [number, number] = [0, 1];
+
+function sameLabel(a: OverlayLabel | undefined, b: OverlayLabel | undefined): boolean {
+  if (!a || !b) return a === b;
+  return a.text === b.text && a.corner === b.corner && a.size === b.size;
+}
 
 function samePane(a: ComposedPane, b: ComposedPane): boolean {
   return (
@@ -86,8 +95,14 @@ function samePane(a: ComposedPane, b: ComposedPane): boolean {
     a.offset === b.offset &&
     a.clip[0] === b.clip[0] &&
     a.clip[1] === b.clip[1] &&
-    Boolean(a.hasStatusBar) === Boolean(b.hasStatusBar)
+    Boolean(a.hasStatusBar) === Boolean(b.hasStatusBar) &&
+    sameLabel(a.label, b.label)
   );
+}
+
+function sameDivider(a: OverlayDivider | null, b: OverlayDivider | null): boolean {
+  if (!a || !b) return a === b;
+  return a.x === b.x && a.opacity === b.opacity && a.width === b.width;
 }
 
 /**
@@ -105,12 +120,17 @@ export class ScreenCompositor {
   private pages: ScreenPage[] = [];
   // Drawn under the panes where they leave part of the screen uncovered.
   private basePage: ScreenPage | null = null;
+  // Labels and a divider over the panes (Before & After), made for the first screen with one.
+  private overlay: ScreenOverlay | null = null;
 
   // Identity, not asset id: a wider reload of the same asset must recompose.
   private lastPanes: ComposedPane[] | null = null;
   private lastIsPhone = false;
-  // The textures every page was last drawn with once, so each is uploaded up front.
+  private lastDivider: OverlayDivider | null = null;
+  // The textures every page and label was last drawn with once, so each is uploaded up front.
   private primedTextures: (ManagedTexture | null)[] = [];
+  private primedLabels: (THREE.Texture | null)[] = [];
+  private primedDivider = false;
   // On-screen viewport size; the target is this times `targetScale`.
   private baseWidthPx: number;
   private baseHeightPx: number;
@@ -225,31 +245,38 @@ export class ScreenCompositor {
    * Draws several screenshots on the screen (contracts.md §4), in order: each fit to the screen's
    * width, its left edge at `offset` screen widths, and drawn only where it overlaps its `clip`
    * band and the screen, later panes over earlier ones. Where the panes leave part of the screen
-   * uncovered it shows the empty-state fill. Skipped when nothing changed since the last call.
+   * uncovered it shows the empty-state fill. A pane's label is drawn in its band, so it is clipped
+   * with it, and the divider over everything. Skipped when nothing changed since the last call.
    */
   composePanes(
     renderer: THREE.WebGLRenderer,
     panes: readonly ComposedPane[],
-    options?: { isPhone?: boolean },
+    options?: { isPhone?: boolean; divider?: OverlayDivider },
   ): void {
     const isPhone = Boolean(options?.isPhone);
+    const divider = options?.divider ?? null;
     if (
       this.lastPanes &&
       this.lastIsPhone === isPhone &&
       this.lastPanes.length === panes.length &&
-      this.lastPanes.every((pane, i) => samePane(pane, panes[i]))
+      this.lastPanes.every((pane, i) => samePane(pane, panes[i])) &&
+      sameDivider(this.lastDivider, divider)
     ) {
       return;
     }
     this.lastPanes = panes.map((pane) => ({ ...pane }));
     this.lastIsPhone = isPhone;
+    this.lastDivider = divider ? { ...divider } : null;
 
     const count = Math.max(1, panes.length);
     while (this.pages.length < count) this.pages.push(new ScreenPage());
     while (this.pages.length > count) this.pages.pop()?.dispose();
+    if (!this.overlay && (divider || panes.some((pane) => pane.label))) {
+      this.overlay = new ScreenOverlay();
+    }
 
     const prevTarget = renderer.getRenderTarget();
-    this.prime(renderer, panes, isPhone);
+    this.prime(renderer, panes, isPhone, divider);
 
     // Each pane's band of the target in px. Both sides of a shared edge round alike, so
     // neighbouring panes neither overlap nor leave a gap.
@@ -261,7 +288,7 @@ export class ScreenCompositor {
     if (!this.covers(bands)) {
       this.basePage ??= new ScreenPage();
       this.basePage.layout(null, 0, this.widthPx, this.heightPx, 0);
-      this.draw(renderer, this.basePage, null);
+      this.draw(renderer, this.basePage.scene, null);
     }
     panes.forEach((pane, i) => {
       const { x0, x1 } = bands[i];
@@ -281,35 +308,80 @@ export class ScreenCompositor {
       // A pane on the whole screen needs no scissor, so a one-screenshot screen draws as it
       // always has.
       const whole = x0 === 0 && x1 === this.widthPx;
-      this.draw(renderer, page, whole ? null : { x0, x1 });
+      this.draw(renderer, page.scene, whole ? null : { x0, x1 });
+      if (pane.label && this.layoutLabel(pane.label, isPhone)) {
+        this.draw(renderer, this.overlay!.labelScene, whole ? null : { x0, x1 });
+      }
     });
+    if (divider && this.layoutDivider(divider)) {
+      this.draw(renderer, this.overlay!.dividerScene, null);
+    }
     this.renderTarget.scissorTest = false;
     renderer.setRenderTarget(prevTarget);
   }
 
+  /** Stage units to target px: the mesh is `uSize.x` units wide and the target `widthPx`. */
+  private get pxPerUnit(): number {
+    const size = this.material.uniforms.uSize.value as THREE.Vector2;
+    return size.x > 0 ? this.widthPx / size.x : 0;
+  }
+
   /**
-   * The first time a screen of two or more panes gets its screenshots, every page is laid out
-   * and drawn once, so each texture is uploaded and each page's meshes are built in setDocument's
-   * warm-up render, never while playing (F03, F11). The frame is then drawn over it.
+   * Lays out a pane's label in the overlay. On a phone it keeps clear of the status bar the page
+   * leaves free (ScreenPage), so it never covers the time, and of the home indicator's area.
+   */
+  private layoutLabel(label: OverlayLabel, isPhone: boolean): boolean {
+    if (!this.overlay) return false;
+    const clearance = isPhone
+      ? {
+          top: Math.round(this.heightPx * PHONE_STATUS_BAR),
+          bottom: Math.round(this.heightPx * PHONE_HOME_INDICATOR_AREA),
+        }
+      : { top: 0, bottom: 0 };
+    return this.overlay.layoutLabel(label, this.widthPx, this.heightPx, this.pxPerUnit, clearance);
+  }
+
+  private layoutDivider(divider: OverlayDivider): boolean {
+    if (!this.overlay) return false;
+    return this.overlay.layoutDivider(divider, this.widthPx, this.heightPx, this.pxPerUnit);
+  }
+
+  /**
+   * The first time a screen of two or more panes gets its screenshots, every page and every
+   * label is laid out and drawn once, and the divider too, so each texture is uploaded and each
+   * mesh and shader is built in setDocument's warm-up render, never while playing (F03, F11).
+   * The frame is then drawn over it.
    */
   private prime(
     renderer: THREE.WebGLRenderer,
     panes: readonly ComposedPane[],
     isPhone: boolean,
+    divider: OverlayDivider | null,
   ): void {
     const textures = panes.map((pane) => pane.managed);
+    const labels = panes.map((pane) => pane.label?.text?.texture ?? null);
     const primed =
       textures.length === this.primedTextures.length &&
-      textures.every((managed, i) => managed === this.primedTextures[i]);
+      textures.every((managed, i) => managed === this.primedTextures[i]) &&
+      labels.every((texture, i) => texture === this.primedLabels[i]) &&
+      Boolean(divider) === this.primedDivider;
     this.primedTextures = textures;
+    this.primedLabels = labels;
+    this.primedDivider = Boolean(divider);
     if (primed || panes.length < 2) return;
     panes.forEach((pane, i) => {
       this.pages[i].layout(pane.managed, pane.scroll, this.widthPx, this.heightPx, 0, {
         hasStatusBar: pane.hasStatusBar,
         isPhone,
       });
-      this.draw(renderer, this.pages[i], null);
+      this.draw(renderer, this.pages[i].scene, null);
+      if (pane.label && this.layoutLabel(pane.label, isPhone)) {
+        this.draw(renderer, this.overlay!.labelScene, null);
+      }
     });
+    if (divider && this.layoutDivider({ ...divider, opacity: 1 })) {
+      this.draw(renderer, this.overlay!.dividerScene, null);
+    }
   }
 
   /** Whether the px bands cover the whole target width. */
@@ -323,10 +395,10 @@ export class ScreenCompositor {
     return reached >= this.widthPx;
   }
 
-  /** Renders a page into the target, inside the px band [x0, x1) when one is given. */
+  /** Renders a page or an overlay into the target, inside the px band [x0, x1) when one is given. */
   private draw(
     renderer: THREE.WebGLRenderer,
-    page: ScreenPage,
+    scene: THREE.Scene,
     band: { x0: number; x1: number } | null,
   ): void {
     if (band) {
@@ -337,7 +409,7 @@ export class ScreenCompositor {
     }
     // setRenderTarget applies the target's scissor.
     renderer.setRenderTarget(this.renderTarget);
-    renderer.render(page.scene, this.orthoCamera);
+    renderer.render(scene, this.orthoCamera);
   }
 
   dispose(): void {
@@ -347,6 +419,8 @@ export class ScreenCompositor {
     this.pages = [];
     this.basePage?.dispose();
     this.basePage = null;
+    this.overlay?.dispose();
+    this.overlay = null;
     this.renderTarget.dispose();
     this.material.dispose();
     releaseTopLeftQuad();
