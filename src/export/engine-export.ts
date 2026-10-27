@@ -144,52 +144,35 @@ export async function exportWithEngine(
   const container = settings.format === "webm" ? "webm" : "mp4";
   const codec = container === "mp4" ? "avc" : "vp9";
 
-  // Decode every image at the width it appears on screen (quality-bar §3.1), and only the rows
-  // the document can show, as the preview does (textureRows).
-  const decodeWidths = textureWidths(doc, {
-    outputWidthPx: width,
-    supersample: settings.supersample ?? 1,
-    quality: settings.quality,
-  });
-  const decodeRows = textureRows(doc);
-  const images: Record<string, ImageBitmap> = {};
-  for (const [id, decodeWidth] of decodeWidths) {
-    // The worker takes ownership of what it is sent, so send a copy: providers cache their
-    // bitmaps, and a transferred one is detached for the next export (a bundle's WebM) and
-    // for the editor preview.
-    const rows = decodeRows.get(id) ?? null;
-    const source = await provider.getImage(id, decodeWidth, rows);
-    signal?.throwIfAborted();
-    images[id] = await copyTopRows(source, rows);
+  const copies: ImageBitmap[] = [];
+  let encoded: { blob: Blob; mime: string };
+  try {
+    const size = { width, height };
+    const { images, texts } = await copyForWorker(doc, provider, settings, size, copies, signal);
+    const start: StartMessage = {
+      type: "start",
+      doc,
+      images,
+      texts,
+      settings,
+      codec,
+      container,
+      width,
+      height,
+      bitrate:
+        options.videoBitrate ??
+        calculateBitrate(settings.quality, codec, width, height, settings.fps),
+    };
+    const useWorker = typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined";
+    encoded = useWorker
+      ? await encodeInWorker(start, signal, onProgress)
+      : await encodeMainThread(doc, provider, start, signal, onProgress);
+  } finally {
+    // Closing a copy the worker took does nothing. This closes the ones it never got: on the
+    // main thread (which renders from the provider), after a cancel, or when the post failed.
+    for (const bitmap of copies) bitmap.close();
   }
-
-  // The browser URL pills and the screens' labels, rasterized at export resolution.
-  const ss = settings.supersample ?? 1;
-  const frameHeightPx = Math.round(height * ss);
-  const texts: Record<string, TextRaster> = {};
-  for (const request of [...chromeUrlRequests(doc), ...screenLabelRequests(doc)]) {
-    texts[request.line.id] = await provider.getText(request.line, frameHeightPx);
-    signal?.throwIfAborted();
-  }
-
-  const start: StartMessage = {
-    type: "start",
-    doc,
-    images,
-    texts,
-    settings,
-    codec,
-    container,
-    width,
-    height,
-    bitrate:
-      options.videoBitrate ??
-      calculateBitrate(settings.quality, codec, width, height, settings.fps),
-  };
-  const useWorker = typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined";
-  const { blob, mime } = useWorker
-    ? await encodeInWorker(start, signal, onProgress)
-    : await encodeMainThread(doc, provider, start, signal, onProgress);
+  const { blob, mime } = encoded;
 
   const result = await verifyExportBlob(blob, {
     width,
@@ -204,6 +187,54 @@ export async function exportWithEngine(
     warnings: [],
     verification: [{ label: container === "mp4" ? "MP4" : "WebM", result }],
   };
+}
+
+/**
+ * The images and text rasters `doc` shows, as copies for the export worker, which takes
+ * ownership of what it is sent. Providers cache the bitmaps they hand out (text rasters for the
+ * whole page, in rasterizeText), and a transferred one is detached for the next export (a
+ * bundle's WebM, the next template preview) and for the editor's preview. Each copy is pushed
+ * to `copies` as it is made, so the caller can close the ones the worker never takes.
+ */
+async function copyForWorker(
+  doc: ProjectDoc,
+  provider: AssetProvider,
+  settings: ExportSettings,
+  size: { width: number; height: number },
+  copies: ImageBitmap[],
+  signal?: AbortSignal,
+): Promise<Pick<StartMessage, "images" | "texts">> {
+  const ss = settings.supersample ?? 1;
+
+  // Decode every image at the width it appears on screen (quality-bar §3.1), and only the rows
+  // the document can show, as the preview does (textureRows).
+  const decodeWidths = textureWidths(doc, {
+    outputWidthPx: size.width,
+    supersample: ss,
+    quality: settings.quality,
+  });
+  const decodeRows = textureRows(doc);
+  const images: Record<string, ImageBitmap> = {};
+  for (const [id, decodeWidth] of decodeWidths) {
+    const rows = decodeRows.get(id) ?? null;
+    const source = await provider.getImage(id, decodeWidth, rows);
+    signal?.throwIfAborted();
+    const copy = await copyTopRows(source, rows);
+    copies.push(copy);
+    images[id] = copy;
+  }
+
+  // The browser URL pills and the screens' labels, rasterized at export resolution.
+  const frameHeightPx = Math.round(size.height * ss);
+  const texts: Record<string, TextRaster> = {};
+  for (const request of [...chromeUrlRequests(doc), ...screenLabelRequests(doc)]) {
+    const raster = await provider.getText(request.line, frameHeightPx);
+    signal?.throwIfAborted();
+    const copy = await createImageBitmap(raster.bitmap);
+    copies.push(copy);
+    texts[request.line.id] = { ...raster, bitmap: copy };
+  }
+  return { images, texts };
 }
 
 /**

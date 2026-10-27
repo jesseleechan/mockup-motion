@@ -198,7 +198,7 @@ Every WP above is marked Done (decided 7 Oct 2026). These are the acceptance cri
 - **WP-11:** no test runs the loop seam check on each template. `fillSlots` reuses assets across slots.
 - **WP-12:** the editor asset provider falls back silently to a demo image. `stage.spec`'s settle helper can't fail.
 - **WP-13:** Media tab cards show an icon instead of the screenshot. Duplicating a project doesn't copy its thumbnail.
-- **WP-16:** the dialog doesn't remember settings. `probe.canExport4K` is unused. Cached text rasters are transferred to the worker. X has no card of its own.
+- **WP-16:** the dialog doesn't remember settings. `probe.canExport4K` is unused. X has no card of its own.
 - **WP-18:** Safari, Firefox and Edge have never been run; they are out of scope for now ([`browser-matrix.md`](browser-matrix.md)). Perf numbers on real hardware aren't reported. The loop-watch, banding and shimmer items of quality bar §8 aren't verified for any template ([`quality-review.md`](quality-review.md)). The CI e2e job takes 39–68 min. The visual baselines are 21 MB. Three e2e tests are timing-sensitive on CI. e2e runs rewrite tracked screenshots. No dead-code check (`knip` or `ts-prune`) has been run.
 
 Sizes: S ≈ half a day of agent work, M ≈ 1–2 days, L ≈ 2–4 days, each including verification.
