@@ -2,7 +2,8 @@ import type { Aspect, ExportSettings, ProjectDoc } from "../doc/types";
 import { type AssetProvider, Engine, type TextRaster } from "../engine/Engine";
 import { chromeUrlRequests } from "../engine/text/chrome-url";
 import { screenLabelRequests } from "../engine/text/screen-labels";
-import { textureWidths } from "../engine/textures/sizing";
+import { textureRows, textureWidths } from "../engine/textures/sizing";
+import { copyTopRows } from "../engine/textures/top-rows";
 import { schedule } from "../motion";
 import { calculateBitrate, outputDimensions } from "./destinations";
 import { createWebEmbedBundle } from "./bundle";
@@ -143,20 +144,23 @@ export async function exportWithEngine(
   const container = settings.format === "webm" ? "webm" : "mp4";
   const codec = container === "mp4" ? "avc" : "vp9";
 
-  // Decode every image at the width it appears on screen (quality-bar §3.1)
+  // Decode every image at the width it appears on screen (quality-bar §3.1), and only the rows
+  // the document can show, as the preview does (textureRows).
   const decodeWidths = textureWidths(doc, {
     outputWidthPx: width,
     supersample: settings.supersample ?? 1,
     quality: settings.quality,
   });
+  const decodeRows = textureRows(doc);
   const images: Record<string, ImageBitmap> = {};
   for (const [id, decodeWidth] of decodeWidths) {
     // The worker takes ownership of what it is sent, so send a copy: providers cache their
     // bitmaps, and a transferred one is detached for the next export (a bundle's WebM) and
     // for the editor preview.
-    const source = await provider.getImage(id, decodeWidth);
+    const rows = decodeRows.get(id) ?? null;
+    const source = await provider.getImage(id, decodeWidth, rows);
     signal?.throwIfAborted();
-    images[id] = await createImageBitmap(source);
+    images[id] = await copyTopRows(source, rows);
   }
 
   // The browser URL pills and the screens' labels, rasterized at export resolution.

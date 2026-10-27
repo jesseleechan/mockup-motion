@@ -1,16 +1,24 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
+import { holdsRows } from "../engine/textures/sizing";
+import { keepTopRows } from "../engine/textures/top-rows";
 import { DEMO_ASSETS } from "../lab/demo-assets";
 import { getBlob } from "../storage/blobs";
 import { rasterizeText } from "../text";
 
 export function createEditorAssetProvider(): AssetProvider {
-  const cache = new Map<string, ImageBitmap>();
+  // One decode per asset and width: the most rows asked for so far (textureRows; null is the
+  // whole image). A decode that asks for more replaces it; the engine may still use the old one.
+  const cache = new Map<string, { bitmap: ImageBitmap; held: number | null }>();
 
   return {
-    async getImage(assetId: string, maxWidth: number): Promise<ImageBitmap> {
+    async getImage(
+      assetId: string,
+      maxWidth: number,
+      rows: number | null = null,
+    ): Promise<ImageBitmap> {
       const cacheKey = `${assetId}:${maxWidth}`;
       const cached = cache.get(cacheKey);
-      if (cached) return cached;
+      if (cached && holdsRows(cached.held, rows)) return cached.bitmap;
 
       try {
         let blob: Blob | null = null;
@@ -63,8 +71,9 @@ export function createEditorAssetProvider(): AssetProvider {
               resizeQuality: "high",
             });
           }
-          cache.set(cacheKey, bmp);
-          return bmp;
+          const top = await keepTopRows(bmp, rows);
+          cache.set(cacheKey, top);
+          return top.bitmap;
         }
       } catch (err) {
         console.warn(`[AssetProvider] Failed to load asset ${assetId}:`, err);
@@ -95,7 +104,7 @@ export function createEditorAssetProvider(): AssetProvider {
         );
       }
       const bmp = await createImageBitmap(canvas);
-      cache.set(cacheKey, bmp);
+      cache.set(cacheKey, { bitmap: bmp, held: null });
       return bmp;
     },
 

@@ -85,12 +85,15 @@ describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
       close: ReturnType<typeof vi.fn>;
     };
   }
+  // Decodes whole images, whatever rows are asked for; the manager keeps the rows it needs.
   function provider(sizes: Record<string, [number, number]>) {
     const calls: { id: string; maxWidth: number }[] = [];
+    const rowsAsked: (number | null | undefined)[] = [];
     const bitmaps: ReturnType<typeof mockBitmap>[] = [];
     const assets: AssetProvider = {
-      getImage: async (id, maxWidth) => {
+      getImage: async (id, maxWidth, rows) => {
         calls.push({ id, maxWidth });
+        rowsAsked.push(rows);
         const [w, h] = sizes[id];
         const scale = Math.min(1, maxWidth / w);
         const bitmap = mockBitmap(Math.round(w * scale), Math.round(h * scale));
@@ -101,7 +104,7 @@ describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
         throw new Error("Not implemented");
       },
     };
-    return { assets, calls, bitmaps };
+    return { assets, calls, rowsAsked, bitmaps };
   }
   function stubSlicing() {
     const slices: { args: number[]; bitmap: ReturnType<typeof mockBitmap> }[] = [];
@@ -186,6 +189,55 @@ describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
 
     tm.dispose();
     expect(disposed).toEqual(["tall", "tall", "tall", "short"]);
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps the rows asked for, and decodes again when a document needs more", async () => {
+    const slices = stubSlicing();
+    const tm = new TextureManager(4096, 1);
+    const { assets, calls, rowsAsked, bitmaps } = provider({ page: [1440, 4000] });
+
+    // 1440 × 0.75 = 1080 rows, kept in blocks of 64.
+    const top = await tm.getTexture("page", 1440, assets, 0.75);
+    expect(top?.height).toBe(1088);
+    expect(slices.map((slice) => slice.args)).toEqual([[0, 0, 1440, 1088]]);
+    expect(top?.strips.map((strip) => strip.texture.image)).toEqual([slices[0].bitmap]);
+    const disposed: string[] = [];
+    top?.strips[0].texture.addEventListener("dispose", () => disposed.push("top"));
+
+    // Fewer rows or a narrower width reuse it.
+    expect(await tm.getTexture("page", 1024, assets, 0.5)).toBe(top);
+
+    // A document that scrolls the page needs it whole, at no less than the width loaded.
+    const whole = await tm.getTexture("page", 1024, assets, null);
+    expect(whole?.height).toBe(4000);
+    expect(whole?.strips.map((strip) => strip.texture.image)).toEqual([bitmaps[1]]);
+    expect(calls.map((call) => call.maxWidth)).toEqual([1440, 1440]);
+    expect(rowsAsked).toEqual([0.75, null]);
+    expect(disposed).toEqual(["top"]);
+    expect(slices[0].bitmap.close).toHaveBeenCalledTimes(1);
+
+    // Back to showing the top: the whole decode stays.
+    expect(await tm.getTexture("page", 1440, assets, 0.75)).toBe(whole);
+    expect(calls.length).toBe(2);
+    tm.dispose();
+    vi.unstubAllGlobals();
+  });
+
+  it("never lets a load for fewer rows replace a later one for more", async () => {
+    stubSlicing();
+    const tm = new TextureManager(4096, 1);
+    const { assets, rowsAsked } = provider({ page: [1440, 4000] });
+    // A document that shows the top is still loading when one that scrolls the page arrives.
+    const [top, whole] = await Promise.all([
+      tm.getTexture("page", 1440, assets, 0.75),
+      tm.getTexture("page", 1440, assets, null),
+    ]);
+    expect(top?.height).toBe(1088);
+    expect(whole?.height).toBe(4000);
+    expect(rowsAsked).toEqual([0.75, null]);
+    expect(tm.getLoadedTexture("page")).toBe(whole);
+    tm.dispose();
     vi.unstubAllGlobals();
   });
 });
