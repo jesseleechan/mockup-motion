@@ -13,7 +13,7 @@ import { BackgroundRenderer } from "./background/BackgroundRenderer";
 import { DeviceFadePass, fadeBlendFor, type DeviceDraw } from "./devices/DeviceFade";
 import { DevicePool } from "./devices/DevicePool";
 import { applyCameraPose } from "./stage";
-import { textureWidths } from "./textures/sizing";
+import { textureRows, textureWidths } from "./textures/sizing";
 import { TextureManager } from "./textures/TextureManager";
 
 export interface EngineOptions {
@@ -29,8 +29,12 @@ export interface EngineOptions {
 export type { TextLine, TextRaster };
 
 export interface AssetProvider {
-  /** Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. */
-  getImage(assetId: string, maxWidth: number): Promise<ImageBitmap>;
+  /**
+   * Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. With `rows`
+   * (textureRows), only its top `keptRows(rows, width, height)` rows are needed; returning more
+   * is allowed.
+   */
+  getImage(assetId: string, maxWidth: number, rows?: number | null): Promise<ImageBitmap>;
   /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
   getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
 }
@@ -259,11 +263,13 @@ export class Engine {
       quality: doc.export?.quality,
       cameraDistanceOverride: this.opts.cameraDistanceOverride,
     });
+    const rows = textureRows(doc);
     const frameHeightPx = Math.round(this.opts.height * ss);
 
     const loads: Promise<unknown>[] = [];
     for (const [assetId, widthPx] of widths) {
-      loads.push(this.textureManager.getTexture(assetId, widthPx, assets));
+      const assetRows = rows.get(assetId) ?? null;
+      loads.push(this.textureManager.getTexture(assetId, widthPx, assets, assetRows));
     }
     let chromeUrls = new Map<string, LoadedChromeUrl>();
     loads.push(

@@ -1,4 +1,6 @@
 import type { AssetProvider, TextRaster } from "../engine/Engine";
+import { holdsRows } from "../engine/textures/sizing";
+import { keepTopRows } from "../engine/textures/top-rows";
 import { rasterizeText } from "../text";
 import { DEMO_ASSETS } from "./demo-assets";
 import { labTestImageFromId } from "./test-images";
@@ -19,17 +21,23 @@ export function resolveLabAssetUrl(assetId: string): string {
 }
 
 export function createLabAssetProvider(): AssetProvider {
-  const cache = new Map<string, ImageBitmap>();
+  // As the editor's provider: one decode per asset and width, the most rows asked for so far.
+  const cache = new Map<string, { bitmap: ImageBitmap; held: number | null }>();
 
   return {
-    async getImage(assetId: string, maxWidth: number): Promise<ImageBitmap> {
+    async getImage(
+      assetId: string,
+      maxWidth: number,
+      rows: number | null = null,
+    ): Promise<ImageBitmap> {
       const cacheKey = `${assetId}:${maxWidth}`;
       const cached = cache.get(cacheKey);
-      if (cached) return cached;
+      if (cached && holdsRows(cached.held, rows)) return cached.bitmap;
 
+      // Generated fixtures stay whole; the engine keeps the rows it needs.
       const testImage = await labTestImageFromId(assetId, maxWidth);
       if (testImage) {
-        cache.set(cacheKey, testImage);
+        cache.set(cacheKey, { bitmap: testImage, held: null });
         return testImage;
       }
 
@@ -47,8 +55,9 @@ export function createLabAssetProvider(): AssetProvider {
           resizeQuality: "high",
         });
       }
-      cache.set(cacheKey, bmp);
-      return bmp;
+      const top = await keepTopRows(bmp, rows);
+      cache.set(cacheKey, top);
+      return top.bitmap;
     },
 
     async getText(line, frameHeightPx): Promise<TextRaster> {
