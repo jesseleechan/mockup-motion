@@ -1,3 +1,4 @@
+import { PAGE_KEYS, samePageBy } from "./same-page";
 import type { AssetRef, Layout } from "./types";
 
 /**
@@ -35,25 +36,77 @@ export function pageIndexOf(layout: ResponsiveTourLayout, assetId: string): numb
 }
 
 /**
- * Adds a screenshot to one side of the tour: on the first page that has no screenshot on that
- * side, or as a new page whose other side is empty. A screenshot the side already shows is left
- * where it is.
+ * Adds a screenshot to one side of the tour, pairing it with the capture of its page (D12): on the
+ * page whose other side shows its page, by capture URL, then by file name (`PAGE_KEYS`).
+ * Otherwise it takes the first page with no screenshot on that side, or starts a new page whose
+ * other side is empty. A page whose other side is waiting for a Library screenshot of its page
+ * isn't taken, and a screenshot whose own page's capture is waiting in the Library starts a new
+ * page for the two. Without page data this is the first page by order. A screenshot the side
+ * already shows is left where it is. `assets` is the Library.
  */
 export function addPageScreenshot(
   layout: ResponsiveTourLayout,
   side: PageSide,
   assetId: string,
+  assets: readonly AssetRef[] = [],
 ): void {
   evenPages(layout);
   const ids = sideIds(layout, side);
   if (!assetId || ids.includes(assetId)) return;
-  const hole = ids.indexOf("");
-  if (hole >= 0) {
-    ids[hole] = assetId;
+  const page = pageFor(layout, side, assetId, assets);
+  if (page >= 0) {
+    ids[page] = assetId;
     return;
   }
   layout.desktopIds.push(side === "desktop" ? assetId : "");
   layout.mobileIds.push(side === "mobile" ? assetId : "");
+}
+
+const otherSide = (side: PageSide): PageSide => (side === "mobile" ? "desktop" : "mobile");
+
+const sameCapturePage = (a: AssetRef, b: AssetRef) =>
+  PAGE_KEYS.some((key) => samePageBy(key, a, b));
+
+/** The page a screenshot joins on `side`, or -1 for a new page. */
+function pageFor(
+  layout: ResponsiveTourLayout,
+  side: PageSide,
+  assetId: string,
+  assets: readonly AssetRef[],
+): number {
+  const byId = new Map(assets.map((a) => [a.id, a]));
+  const ids = sideIds(layout, side);
+  const others = sideIds(layout, otherSide(side));
+  const holes = ids.flatMap((id, i) => (id ? [] : [i]));
+  const asset = byId.get(assetId);
+  if (!asset) return holes[0] ?? -1;
+
+  for (const key of PAGE_KEYS) {
+    const own = holes.find((i) => {
+      const other = byId.get(others[i]);
+      return other !== undefined && samePageBy(key, asset, other);
+    });
+    if (own !== undefined) return own;
+  }
+
+  // Whether the Library holds a capture of `capture`'s page for `on` that the tour doesn't show.
+  const waiting = (capture: AssetRef, on: PageSide) => {
+    const shown = new Set(sideIds(layout, on));
+    return assets.some(
+      (a) =>
+        a.id !== assetId &&
+        a.kind === "image" &&
+        pageSideFor(a) === on &&
+        !shown.has(a.id) &&
+        sameCapturePage(capture, a),
+    );
+  };
+  if (waiting(asset, otherSide(side))) return -1;
+  const free = holes.find((i) => {
+    const other = byId.get(others[i]);
+    return other === undefined || !waiting(other, side);
+  });
+  return free ?? -1;
 }
 
 /** Puts `assetId` on one side of page `index` (an empty id clears it). */

@@ -1,6 +1,10 @@
 import type { Layout, ProjectDoc, Style } from "./types";
 
-/** Image asset ids that a layout puts on device screens, in slot order. */
+/**
+ * Image asset ids that a layout puts on device screens, in slot order. Every layout kind is
+ * handled here and in `mapLayoutAssetIds`, so a new kind fails to compile until both list its
+ * screenshots: saved templates, the Library's "used in shot" marker and texture loading read them.
+ */
 export function layoutAssetIds(layout: Layout): string[] {
   switch (layout.kind) {
     case "single":
@@ -18,27 +22,31 @@ export function layoutAssetIds(layout: Layout): string[] {
     case "tour":
     case "pageColumns":
       return [...layout.assetIds];
+    default:
+      return unknownLayout(layout, []);
   }
 }
 
-/** Swaps screen asset ids in a layout, `from` id to `to` id; ids not in the map stay. */
-export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string>): void {
-  const swap = (id: string) => map[id] ?? id;
+/**
+ * Maps every screen asset id in a layout through `map`, empty ones ("") included, in place (an
+ * immer draft or a plain object).
+ */
+export function mapLayoutAssetIds(layout: Layout, map: (id: string) => string): void {
   switch (layout.kind) {
     case "single":
-      layout.assetId = swap(layout.assetId);
+      layout.assetId = map(layout.assetId);
       return;
     case "responsive":
-      layout.desktopId = swap(layout.desktopId);
-      layout.mobileId = swap(layout.mobileId);
+      layout.desktopId = map(layout.desktopId);
+      layout.mobileId = map(layout.mobileId);
       return;
     case "compare":
-      layout.beforeId = swap(layout.beforeId);
-      layout.afterId = swap(layout.afterId);
+      layout.beforeId = map(layout.beforeId);
+      layout.afterId = map(layout.afterId);
       return;
     case "responsive-tour":
-      layout.desktopIds = layout.desktopIds.map(swap);
-      layout.mobileIds = layout.mobileIds.map(swap);
+      layout.desktopIds = layout.desktopIds.map(map);
+      layout.mobileIds = layout.mobileIds.map(map);
       return;
     case "rows":
     case "columns":
@@ -46,9 +54,32 @@ export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string
     case "orbit":
     case "tour":
     case "pageColumns":
-      layout.assetIds = layout.assetIds.map(swap);
+      layout.assetIds = layout.assetIds.map(map);
       return;
+    default:
+      return unknownLayout(layout, undefined);
   }
+}
+
+/**
+ * Compile-time exhaustiveness: `layout` is `never` once every kind has a case. At run time an
+ * unknown kind, such as one in a template saved by a later version, shows no screenshots.
+ */
+function unknownLayout<T>(_layout: never, fallback: T): T {
+  return fallback;
+}
+
+/** Swaps screen asset ids in a layout, `from` id to `to` id; ids not in the map stay. */
+export function replaceLayoutAssetIds(layout: Layout, map: Record<string, string>): void {
+  mapLayoutAssetIds(layout, (id) => map[id] ?? id);
+}
+
+/** The shots, numbered from 1, that show `assetId` on a screen (the Library's "used in shot"). */
+export function shotsShowingAsset(doc: Pick<ProjectDoc, "shots">, assetId: string): number[] {
+  if (!assetId) return [];
+  return doc.shots.flatMap((shot, i) =>
+    layoutAssetIds(shot.layout).includes(assetId) ? [i + 1] : [],
+  );
 }
 
 /** Shot style: the document style with the shot's overrides applied. */

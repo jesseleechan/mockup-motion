@@ -32,11 +32,15 @@ Never update baselines to make a failing check pass when the look was not suppos
    git push origin HEAD:visual-baselines/<name>
    ```
 
-2. When it finishes, download the `visual-baselines` artifact. It holds the full set of `*-linux.png` files. The workflow rewrites only stills that are missing or no longer match, so unchanged baselines keep their bytes.
+2. When it finishes, download the `visual-baselines` artifact into an empty folder outside the repository, then copy its PNGs over the baselines. Don't download it straight into `stills.spec.ts-snapshots`: `gh run download` refuses to overwrite a file that exists, so there it fails with "file exists" and writes nothing.
 
    ```sh
-   gh run download <run-id> -n visual-baselines -D tests/visual/stills.spec.ts-snapshots
+   dir="$(mktemp -d)"
+   gh run download <run-id> -n visual-baselines -D "$dir"
+   cp "$dir"/*-linux.png tests/visual/stills.spec.ts-snapshots/
    ```
+
+   The artifact holds the full set of `*-linux.png` files, but the workflow rewrites only stills that are missing or no longer match, so unchanged baselines keep their bytes and `git status` then shows only the stills that changed.
 
 3. Open every changed PNG (`git status`) and check it: orientation, colours, real screenshots, no black screens. Do not recompress them. Playwright compares decoded pixels, and the files should stay exactly as the runner wrote them.
 4. Commit them with the change that caused them, then get the approval described above.
