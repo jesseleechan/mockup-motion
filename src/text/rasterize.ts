@@ -1,4 +1,5 @@
 import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import { RASTER_PADDING_Y_EM, RASTER_SIDE_PADDING_EM } from "./metrics";
 
 /** One line of Inter text to rasterize, such as the browser URL pill's domain. */
 export interface TextLine {
@@ -22,7 +23,7 @@ export interface TextRaster {
 }
 
 // The URL pill is set in Inter Regular with +2% tracking, at line height 1.3, padded by 0.2 em
-// above and below and 0.4 em on each side (quality-bar §3.2).
+// above and below and 0.4 em on each side (quality-bar §3.2, ./metrics.ts).
 const FAMILY = "Inter";
 const DEFAULT_WEIGHT = 400;
 const TRACKING_EM = 0.02;
@@ -86,8 +87,8 @@ async function drawLine(line: TextLine, frameHeightPx: number): Promise<TextRast
   measure.letterSpacing = `${TRACKING_EM}em`;
   const textWidth = measure.measureText(text).width;
 
-  const paddingY = Math.round(fontSizePx * 0.2);
-  const paddingX = Math.round(fontSizePx * 0.4);
+  const paddingY = Math.round(fontSizePx * RASTER_PADDING_Y_EM);
+  const paddingX = Math.round(fontSizePx * RASTER_SIDE_PADDING_EM);
   const width = Math.max(16, Math.ceil(textWidth + paddingX * 2));
   const height = Math.max(16, Math.ceil(lineHeightPx + paddingY * 2));
 

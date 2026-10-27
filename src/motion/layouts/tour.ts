@@ -42,16 +42,18 @@ export function steppingPanes(
   });
 }
 
+/** How much of the screen's width a pane draws on, 0 to 1: the width of its band. */
+export function paneShare(pane: ScreenPane): number {
+  const left = Math.max(pane.clip[0], pane.offset, 0);
+  const right = Math.min(pane.clip[1], pane.offset + 1, 1);
+  return Math.max(0, right - left);
+}
+
 /** The pane that covers most of the screen; a tie goes to the later pane, which draws on top. */
 export function mainPane(panes: readonly ScreenPane[]): ScreenPane | undefined {
-  const covered = (pane: ScreenPane) => {
-    const left = Math.max(pane.clip[0], pane.offset, 0);
-    const right = Math.min(pane.clip[1], pane.offset + 1, 1);
-    return Math.max(0, right - left);
-  };
   // Later panes draw over earlier ones, so they win a tie.
   return panes.reduce<ScreenPane | undefined>(
-    (best, pane) => (!best || covered(pane) >= covered(best) ? pane : best),
+    (best, pane) => (!best || paneShare(pane) >= paneShare(best) ? pane : best),
     undefined,
   );
 }

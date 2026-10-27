@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { RASTER_CAP_MIDDLE_EM, RASTER_SIDE_PADDING_EM } from "../../text/metrics";
 import { createTopLeftQuad } from "../geometry/quads";
 import type { ChromeUrlText } from "../text/ChromeUrlTextures";
 
@@ -29,12 +30,6 @@ export interface OverlayDivider {
 const PILL_HEIGHT_EM = 2.1;
 const PILL_PADDING_EM = 0.9;
 const LABEL_INSET_EM = 1.2;
-// rasterizeText pads the glyphs by 0.4 em on each side, so the pill is the raster plus 1.0 em.
-const RASTER_SIDE_PADDING_EM = 0.4;
-// Where Inter's capitals sit in a raster: from 0.24 em below its top to the baseline at 1.0 em
-// (measured in Chromium), so their middle is 0.62 em down. The pill centres them there, as the
-// preview's CSS centres the line.
-const RASTER_CAP_MIDDLE_EM = 0.62;
 // The preview's pill is #111114 at 72%, blended in sRGB. Screens blend in linear light, where
 // 90% looks the same over a light page (a white page shows 92 for the preview's 84, a mid grey
 // 45 for 48) and keeps a dark photo's detail faintly visible.
@@ -202,6 +197,7 @@ export class ScreenOverlay {
     const rasterScale = em / text.fontPx;
     const textWidth = text.raster.width * rasterScale;
     const textHeight = text.raster.height * rasterScale;
+    // The raster already pads the glyphs by RASTER_SIDE_PADDING_EM on each side.
     const pillWidth = textWidth + 2 * (PILL_PADDING_EM - RASTER_SIDE_PADDING_EM) * em;
     const pillHeight = PILL_HEIGHT_EM * em;
     const inset = LABEL_INSET_EM * em;
@@ -229,7 +225,8 @@ export class ScreenOverlay {
 
     this.glyphs.material.uniforms.map.value = text.texture;
     this.glyphs.scale.set(textWidth, textHeight, 1);
-    // y is up: the raster's top edge sits the capitals' middle above the pill's centre.
+    // y is up: the raster's top edge sits the capitals' middle above the pill's centre, so the
+    // pill centres the capitals, as the preview's CSS centres the line.
     this.glyphs.position.set(
       Math.round(centreX - textWidth / 2),
       Math.round(centreY + RASTER_CAP_MIDDLE_EM * em - textHeight),

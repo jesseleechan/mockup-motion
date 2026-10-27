@@ -3,7 +3,7 @@ import type { Style } from "../../doc/types";
 import type { LayoutNode } from "../../motion";
 import { ScreenCompositor } from "../materials/screen";
 import { DeviceShadowGroup } from "../shadows/DeviceShadow";
-import { chromeUrlKey, toolbarHeightFor, URL_TEXT_FRACTION } from "../text/chrome-url";
+import { chromeUrlKey, shownUrls, toolbarHeightFor, URL_TEXT_FRACTION } from "../text/chrome-url";
 import { createRoundedExtrudeGeometry, createRoundedRectShape } from "./body";
 import type { DeviceBuilderContext, DeviceInstance } from "./DeviceBuilder";
 import { createHairline, setHairlineAppearance, UrlText } from "./details";
@@ -143,7 +143,7 @@ export function buildBrowserDevice(
     chromeGroup.add(pillMesh);
 
     urlText = new UrlText();
-    urlText.mesh.position.set(0, lightCenterY, 0.00034);
+    urlText.place(0, lightCenterY, 0.00034);
     group.add(urlText.mesh);
     pillWidth = pillW;
   }
@@ -168,10 +168,15 @@ export function buildBrowserDevice(
 
     bodyMat.color.set(dark ? 0x1e1e21 : 0xf6f6f7);
     setHairlineAppearance(hairline, dark);
+    // At most one URL is over half the screen, so at most one shows (pillUrls).
+    const url = shownUrls(updatedNode, updatedStyle.browserUrl).find((u) => u.opacity > 0);
     urlText?.update(
-      updatedStyle.browserUrl ? (ctx.chromeUrlText?.(chromeUrlKey(updatedStyle)) ?? null) : null,
+      url
+        ? (ctx.chromeUrlText?.(chromeUrlKey(updatedStyle.frameAppearance, url.text)) ?? null)
+        : null,
       toolbarHeight * URL_TEXT_FRACTION,
       pillWidth,
+      url?.opacity ?? 0,
     );
   }
 

@@ -186,10 +186,10 @@ describe("demo pages", () => {
           url: `/demo/aurelia/${page}/${device}-${capture}.webp`,
         });
       }
-      // A full page carries its own page's sections, not the home page's.
+      // A full page carries its own page's sections and URL, not the home page's.
       const ref = demoAssetRef(demoAssetId("aurelia", device, "full", page));
       expect(ref.name).toBe(`aurelia-${page}-${device}-full.webp`);
-      expect(ref.meta?.page).toBe(`http://localhost:3591/aurelia/${page}.html`);
+      expect(ref.meta?.page).toBe(`https://aurelia.studio/${page}.html`);
       expect(ref.meta?.sections?.length).toBeGreaterThan(0);
     }
   });

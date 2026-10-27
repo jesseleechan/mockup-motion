@@ -52,7 +52,7 @@ export { resolveSliderLayout, sliderStep, SLIDER_MOVE_DURATION } from "./slider"
 export { deckDepth, resolveDeckLayout } from "./deck";
 export { orbitGeometry, resolveOrbitLayout } from "./orbit";
 export type { OrbitGeometry } from "./orbit";
-export { mainPane, resolveTourLayout, steppingPanes, tourGeometry } from "./tour";
+export { mainPane, paneShare, resolveTourLayout, steppingPanes, tourGeometry } from "./tour";
 export type { TourGeometry } from "./tour";
 export {
   AFTER_LABEL,

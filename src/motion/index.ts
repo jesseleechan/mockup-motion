@@ -10,3 +10,4 @@ export * from "./evaluate";
 export type { DeviceKind } from "../doc";
 export * from "./responsive-scroll";
 export * from "./pace";
+export * from "./page-url";

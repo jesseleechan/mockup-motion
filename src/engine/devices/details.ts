@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { oklch, formatHex } from "culori";
+import { RASTER_CAP_MIDDLE_EM } from "../../text/metrics";
 import type { ChromeUrlText } from "../text/ChromeUrlTextures";
 import { createRoundedRectShape } from "./body";
 
@@ -36,11 +37,15 @@ const urlFragmentShader = /* glsl */ `
   }
 `;
 
-/** The domain text centred in the browser's URL pill. */
+/**
+ * The URL text in the browser's pill, its capitals centred on the pill's centre line (quality bar
+ * §3.2). A Site Tour fades it from page to page (`LayoutNode.urls`).
+ */
 export class UrlText {
   readonly mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private current: ChromeUrlText | null = null;
+  private centreY = 0;
 
   constructor() {
     this.material = new THREE.ShaderMaterial({
@@ -59,9 +64,18 @@ export class UrlText {
     this.mesh.visible = false;
   }
 
-  /** Shows `text` with its glyphs at `glyphHeight` stage units, fitted inside `maxWidth`. */
-  update(text: ChromeUrlText | null, glyphHeight: number, maxWidth: number): void {
-    if (!text) {
+  /** Puts the text in a pill whose centre is at (x, y), at depth z (stage units). */
+  place(x: number, y: number, z: number): void {
+    this.centreY = y;
+    this.mesh.position.set(x, y, z);
+  }
+
+  /**
+   * Shows `text` with its glyphs at `glyphHeight` stage units, fitted inside `maxWidth`, at
+   * `opacity` of the pill text's own opacity. Hidden without a raster or at opacity 0.
+   */
+  update(text: ChromeUrlText | null, glyphHeight: number, maxWidth: number, opacity = 1): void {
+    if (!text || opacity <= 0) {
       this.mesh.visible = false;
       this.current = null;
       return;
@@ -71,10 +85,16 @@ export class UrlText {
       this.material.uniforms.map.value = text.texture;
       (this.material.uniforms.uColor.value as THREE.Color).set(text.raster.color ?? "#000000");
     }
+    this.material.uniforms.uOpacity.value = URL_TEXT_OPACITY * Math.min(1, opacity);
     let unitsPerPx = glyphHeight / text.fontPx;
     const width = text.raster.width * unitsPerPx;
     if (width > maxWidth * URL_PILL_FILL) unitsPerPx *= (maxWidth * URL_PILL_FILL) / width;
-    this.mesh.scale.set(text.raster.width * unitsPerPx, text.raster.height * unitsPerPx, 1);
+    const height = text.raster.height * unitsPerPx;
+    const em = text.fontPx * unitsPerPx;
+    this.mesh.scale.set(text.raster.width * unitsPerPx, height, 1);
+    // The plane is centred on the raster, whose capitals sit above its middle. y is up: move the
+    // raster down so the capitals' middle is on the pill's centre, as Before & After's labels do.
+    this.mesh.position.y = this.centreY - height / 2 + RASTER_CAP_MIDDLE_EM * em;
     this.mesh.visible = true;
   }
 
