@@ -17,11 +17,11 @@ function ignoreRaycast(mesh: THREE.Mesh): void {
   mesh.raycast = () => {};
 }
 
-// The raster is twice the text's on-screen size (chrome-url.ts), so its half-resolution mip
-// shows one texel per output pixel. Off the pixel grid, each pixel blends two of those texels and
-// the glyphs' horizontal strokes go soft: half a pixel off, the 720p pill has 10% less edge
-// contrast. With uSnap on, the whole plane moves by under half a pixel so its top-left corner,
-// and with it the texel grid, sits on whole output pixels, as Before & After's labels do (§4).
+// The raster is twice the text's on-screen size (chrome-url.ts), two texels per output pixel.
+// Off the pixel grid, the half-resolution mip is resampled and the glyphs go soft: half a pixel
+// off, the 720p pill has 10% less edge contrast. With uSnap on, the whole plane moves by under
+// half a pixel so its top-left corner sits on whole output pixels, as Before & After's labels do
+// (§4), and the fragment shader averages each pixel's own 2x2 texels.
 const urlVertexShader = /* glsl */ `
   uniform vec2 uOutputSize;
   uniform float uSnap;
@@ -38,14 +38,20 @@ const urlVertexShader = /* glsl */ `
   }
 `;
 
-// The raster's alpha is glyph coverage; uColor is its exact glyph colour in linear sRGB.
+// The raster's alpha is glyph coverage; uColor is its exact glyph colour in linear sRGB. Snapped,
+// a bias of -1 samples one mip level finer, between the pixel's own 2x2 texels: their exact
+// average, whatever the raster's size. The half-resolution mip of an odd-sized raster is not
+// made of whole texel pairs: at 720p, aurelia.studio's 227-texel raster shows 10% less edge
+// contrast on it.
 const urlFragmentShader = /* glsl */ `
   varying vec2 vUv;
   uniform sampler2D map;
   uniform vec3 uColor;
   uniform float uOpacity;
+  uniform float uSnap;
   void main() {
-    float coverage = texture2D(map, vec2(vUv.x, 1.0 - vUv.y)).a;
+    float bias = uSnap > 0.5 ? -1.0 : 0.0;
+    float coverage = texture2D(map, vec2(vUv.x, 1.0 - vUv.y), bias).a;
     gl_FragColor = vec4(uColor, coverage * uOpacity);
   }
 `;
