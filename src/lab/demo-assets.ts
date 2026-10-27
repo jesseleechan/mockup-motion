@@ -54,6 +54,15 @@ const SITES: readonly DemoSite[] = [
 
 const PAGES: readonly DemoPage[] = ["home", "works", "studio", "journal", "home-before"];
 
+/** Fictional domains for the demo sites, shown in the browser's URL pill. */
+export const DEMO_SITE_DOMAINS: Record<DemoSite, string> = {
+  aurelia: "aurelia.studio",
+  northwind: "northwind.dev",
+  "maison-oak": "maisonoak.design",
+  "field-notes": "fieldnotes.press",
+  "studio-kova": "studiokova.co",
+};
+
 const pageKey = (site: DemoSite, page: DemoPage) => `${site}/${page}`;
 
 /** Each page's capture JSON per device: the sections of its full-page screenshots. */
@@ -140,10 +149,26 @@ export function demoAsset(id: string): DemoAsset {
   return asset;
 }
 
+/**
+ * A demo page's URL on its site's own domain. The demo capture served every site from its own
+ * folder of one local server (`http://localhost:3591/aurelia/works.html`); on the site the page is
+ * `https://aurelia.studio/works.html`, so a Site Tour's pill shows `aurelia.studio/works`.
+ */
+function demoPageUrl(site: DemoSite, captureUrl: string): string {
+  const folder = `/${site}/`;
+  const path = captureUrl.replace(/^[a-z]+:\/\/[^/]+/i, "");
+  if (!path.startsWith(folder)) throw new Error(`Demo capture ${captureUrl} is not in ${folder}`);
+  return `https://${DEMO_SITE_DOMAINS[site]}/${path.slice(folder.length)}`;
+}
+
 /** An `AssetRef` for a demo capture with its true pixel size. */
 export function demoAssetRef(id: string): AssetRef {
   const asset = demoAsset(id);
   const pagePart = asset.page === "home" ? "" : `-${asset.page}`;
+  const capture = CAPTURES[pageKey(asset.site, asset.page)][asset.role];
+  // Every capture of a page carries its URL, the hero (its first viewport) too. A full page also
+  // carries its capture's sections, as an imported capture does (R02).
+  const page = demoPageUrl(asset.site, capture.url);
   return {
     id: asset.id,
     kind: "image",
@@ -153,13 +178,9 @@ export function demoAssetRef(id: string): AssetRef {
     width: asset.width,
     height: asset.height,
     role: asset.role,
-    // A full page carries its capture's sections, as an imported capture does (R02).
     meta:
       asset.capture === "full"
-        ? {
-            tall: asset.tall,
-            ...captureMeta(CAPTURES[pageKey(asset.site, asset.page)][asset.role]),
-          }
-        : { tall: asset.tall },
+        ? { tall: asset.tall, ...captureMeta(capture), page }
+        : { tall: asset.tall, page },
   };
 }

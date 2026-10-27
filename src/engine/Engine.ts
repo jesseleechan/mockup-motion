@@ -290,6 +290,7 @@ export class Engine {
     this.currentAssets = assets;
     this.textureManager.retainOnly(collectAssetIds(doc));
     this.chromeUrls.replaceAll(chromeUrls);
+    this.chromeUrls.upload(this.renderer);
     this.screenLabels.replaceAll(screenLabels);
     this.devices.sync(doc);
     // Slider neighbours, orbit cards and a deck's entering card are faded cards (quality bar

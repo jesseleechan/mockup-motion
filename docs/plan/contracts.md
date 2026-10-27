@@ -20,6 +20,7 @@ src/
                compositor.ts (shots → RT → transition) · post/ (composite, final pass)
                react/EngineCanvas.tsx (thin preview wrapper)
   text/        rasterize.ts (main thread only: one line of Inter → ImageBitmap, for the URL pill)
+               metrics.ts (where the line sits in a raster, for the engine's layout)
   templates/   registry.ts · slots.ts · <one file per template>.ts
   export/      probe.ts · encode.ts · engine-worker.ts · engine-export.ts · destinations.ts
                verify.ts · bundle.ts
@@ -55,7 +56,7 @@ export interface AssetRef {
     hasStatusBar?: boolean;
     bottomColor?: string; // image analysis (WP-13, WP-06)
     sections?: { id: string; top: number }[]; // from the capture's JSON: top in image px, ascending (Responsive Scroll)
-    page?: string; // the capture's URL, used to pair a desktop and a mobile capture of one page
+    page?: string; // the capture's URL: pairs a desktop and a mobile capture of one page, and gives a Site Tour's pill its path (§4)
   };
   family?: string; // font: CSS family name registered via FontFace
 }
@@ -71,7 +72,7 @@ export interface Style {
   background: Background;
   frameAppearance: "light" | "dark";
   browserChrome: BrowserChrome;
-  browserUrl: string; // shown in URL pill; "" hides text
+  browserUrl: string; // shown in URL pill (a Site Tour adds each page's path, §4); "" hides text
   shadow: ShadowPreset;
   grain: number; // 0..1 (0.25 ≈ quality-bar default)
   vignette: number; // 0..1
@@ -136,8 +137,9 @@ export type Layout =
 // tour: pages of one site in one browser or phone (Desktop Site Tour, Mobile Site Tour). Each
 // step the next page slides in from the right while the current one leaves to the left, both
 // clipped to the screen (§4, "A screen that draws two screenshots"); the device and the camera
-// stay still. step as for slider, and the slider's 18-screenshot cap applies. The URL pill shows
-// style.browserUrl for every page.
+// stay still. step as for slider, and the slider's 18-screenshot cap applies. A browser's URL pill
+// shows each page's URL (style.browserUrl's domain plus the page's path), faded in step with the
+// slide (§4, "A Site Tour's URL pill").
 // compare: an old and a new design of one page in one browser or phone (Desktop Before & After,
 // Mobile Before & After). The new design (afterId) sweeps across the old one (beforeId) from left
 // to right, then holds, and the loop crossfades back to the old one (§4, §5). Its timeline
@@ -284,6 +286,7 @@ export interface LayoutNode {
   depthOrder: number; // tie-breaker for transparent sorting
   cardShape?: "desktop" | "mobile"; // a card's corner radius whatever its aspect (Page Columns)
   panes?: ScreenPane[]; // a screen that draws more than one screenshot (below)
+  urls?: PillUrl[]; // a Site Tour browser's URL pill, one per page (below); unset shows browserUrl
 }
 
 export function resolveLayout(
@@ -333,6 +336,30 @@ export interface ScreenDivider {
 - **Labels and a divider** (Before & After, T2). A pane's `label` is drawn right after the pane, with the pane's scissor, so it shows only where its pane does; a node's `divider` is drawn after every pane, across the whole screen. Both go into the screen's target over the screenshots (`ScreenOverlay`, `src/engine/materials/screen-overlay.ts`), so the screenshots stay unlit and colour-exact; they blend in linear light like any translucent draw. A screen that ever shows a divider lists it in every frame (hidden by `opacity: 0`), and the warm-up render draws every label and the divider once, so no texture or shader is made while playing. The labels' text is rasterized by `src/text/rasterize.ts` (Inter, `TextLine.weight` 500, §7) through `AssetProvider.getText`, one raster per distinct label at twice its largest size (`screenLabelRequests`, `src/engine/text/screen-labels.ts`), and export hands those rasters to the worker with the URL pill's.
 - `steppingPanes(ids, step, t)` (`src/motion/layouts/tour.ts`) is the Site Tour step on any screen: during step k (`sliderStep`), page k mod N has `offset: −p` and the next page `1 − p`, edge to edge; the rest wait at `1`. `comparePanes(beforeId, afterId, e, labelSize)` (`src/motion/layouts/compare.ts`) is Before & After's screen: two panes at `offset: 0` with complementary clips, the old design on `[e, 1]` with "Before" bottom right, the new one on `[0, e]` with "After" bottom left, and `compareDivider(e, width)` at the edge.
 - Responsive Tour (`resolveResponsiveTourLayout`, `src/motion/layouts/responsive-tour.ts`) puts `steppingPanes` on both of its cards, `responsive-tour:desktop` and `responsive-tour:mobile`, with the same step and time: pane i of each card is page i's screenshot of that size (`responsiveTourPages`; a missing one is a `null` pane), and page i has the same offset on both cards in every frame.
+
+### A Site Tour's URL pill (`PillUrl`, follow-ups from presets round two)
+
+A Desktop Site Tour's pill shows each page's own URL; every other browser shows `style.browserUrl`, and the phone has no URL bar. `src/motion/page-url.ts` holds the rule; it is pure.
+
+```ts
+export interface PillUrl {
+  text: string;
+  opacity: number; // 0 hides it; 1 is the pill text's own 55% (quality bar §3.2)
+}
+export function capturePath(captureUrl: string): string; // "https://aurelia.studio/works.html" → "/works"; the home page is ""
+export function pageUrl(browserUrl: string, asset?: Pick<AssetRef, "meta">): string;
+export function pillUrls(
+  layout: Layout,
+  node: LayoutNode,
+  browserUrl: string,
+  assets: readonly AssetRef[],
+): PillUrl[] | undefined;
+```
+
+- **Where the capture URL comes from** (`attachCaptures`, `src/assets/capture-json.ts`): import gives a capture's URL to its full-page screenshot, with the sections, and to its first-viewport screenshot (the same file stem, the capture's width, not its full height), without them.
+- **The URL** (`pageUrl`): `browserUrl` up to its path, as the user typed it (`aurelia.studio`, or `https://aurelia.studio`), plus the page's path from its capture URL (`AssetRef.meta.page`). `capturePath` drops the scheme and host, the query and fragment, `index.html`, `.html` and the trailing slash, so the home page shows the domain alone. A page without `meta.page` (an uploaded screenshot) shows `browserUrl` as it is, and an empty `browserUrl` shows nothing. The demo's captures carry their page's URL on the demo site's domain (`https://aurelia.studio/works.html`; the capture served each site from a folder of one local server), heroes included.
+- **The fade** (`pillUrls`): each distinct URL once, in page order, in every frame. A URL's share is how much of the screen its pages cover (`paneShare`), and its opacity is max(0, 2 × share − 1): during a step the leaving page's URL fades out over the first half of the eased progress `p` and the arriving page's fades in over the second half, as the slider's window fade does. So at most one URL shows at a time, two pages with the same URL never fade, and frame(N × step) is frame(0).
+- `evaluate` sets `LayoutNode.urls` on a `tour` browser from `pillUrls`. `chromeUrlRequests` (`src/engine/text/chrome-url.ts`) lists every page's URL from the layout at t = 0, so the preview and the export rasterize each one up front, and `setDocument` uploads every URL texture (`ChromeUrlTextures.upload`), so no texture is uploaded while playing; textures a new document no longer shows are disposed.
 
 ## 5. Timeline (`src/motion/timeline.ts`)
 
@@ -444,13 +471,13 @@ export class Engine {
 }
 ```
 
-`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. It keeps only the rows from `textureRows` (same file), which export also uses: a screenshot that no shot scrolls keeps its top, as tall as its tallest screen at the screen's width plus 10%, rounded up to a block of 64 rows (`keptRows`), and one that any shot scrolls (a single screen or Responsive Scroll with scroll on, Page Columns), or that is no taller than that, is kept whole. A document that needs more rows of a loaded image decodes it again and disposes the old textures; one that needs fewer keeps the larger decode until the image leaves the document. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses.
+`setDocument` loads every image in `collectAssetIds(doc)` (`src/doc/assets.ts`: every layout's screens) at the width from `textureWidths` (`src/engine/textures/sizing.ts`), which export also uses for its decode widths. It keeps only the rows from `textureRows` (same file), which export also uses: a screenshot that no shot scrolls keeps its top, as tall as its tallest screen at the screen's width plus 10%, rounded up to a block of 64 rows (`keptRows`), and one that any shot scrolls (a single screen or Responsive Scroll with scroll on, Page Columns), or that is no taller than that, is kept whole. A document that needs more rows of a loaded image decodes it again and disposes the old textures; one that needs fewer keeps the larger decode until the image leaves the document. Each call bumps a generation; a call superseded while loading changes nothing. When loading finishes it keeps device instances whose key (`node.id`, device, stage size, frame appearance, chrome, URL, shadow) still exists, disposes the rest, and releases textures and URL pill rasters the document no longer uses. It uploads every URL pill raster before its warm-up render (a Site Tour's pill shows one per page, §4).
 
 Renderer invariants: `WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer })`, `outputColorSpace = SRGBColorSpace`, `toneMapping = NoToneMapping`. Shots render into MSAA render targets (`samples: 4`). A composite pass blends the active layers and the wrap crossfade into one linear target; the final pass then handles downsample, vignette, sRGB conversion, grain and dither to the canvas. `renderAt(t)` is `renderComposite` plus the final pass.
 
 Render targets hold linear-light values. Every custom shader that writes to a render target outputs linear sRGB-primaries values. Only the final pass converts to sRGB, and it does so explicitly (no `colorspace_fragment` include). Grain and dither are added after that conversion. Byte sRGB targets may encode storage on write and decode on sampling; sampled values and blending remain linear, preserving dark-colour byte precision.
 
-`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour. Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
+`TextRaster.color` is canonical opaque sRGB hex for the monochrome glyphs; bitmap alpha supplies coverage. The URL pill samples coverage and draws it in that colour, with the raster's capitals on the pill's centre line (`RASTER_CAP_MIDDLE_EM`, `src/text/metrics.ts`, as Before & After's labels). Raster bitmaps are created with `premultiplyAlpha: "premultiply"`.
 
 `EngineOptions.cameraDistanceOverride?: number` is an isolated fixture override, not serialized document state. The lab exposes it through a development-only `cameraDistance` URL parameter so the F02 frontal screenshot test can use distance 0.7 without changing the CameraMove contract. `EngineOptions.hideDevices` is the same kind of override: the development-only `devices=0` URL parameter draws the background alone, for tests of backgrounds, transitions and grain.
 
@@ -519,4 +546,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises the URL pill text at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text (each page's URL for a Site Tour) at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.

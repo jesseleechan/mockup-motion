@@ -43,6 +43,14 @@ export class ChromeUrlTextures {
     return this.entries.get(key) ?? null;
   }
 
+  /**
+   * Uploads every texture to the GPU now. A Site Tour's pill shows a URL per page, most of them
+   * not at t = 0, so the warm-up render alone would leave them to upload while playing (F03).
+   */
+  upload(renderer: THREE.WebGLRenderer): void {
+    for (const entry of this.entries.values()) renderer.initTexture(entry.texture);
+  }
+
   /** Disposes textures whose key is not in `keys`. */
   retainOnly(keys: Iterable<string>): void {
     const keep = new Set(keys);

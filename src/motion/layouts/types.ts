@@ -34,6 +34,13 @@ export interface ScreenLabel {
   size: number;
 }
 
+/** A URL in the browser's pill and how opaque it is (a Site Tour fades from page to page). */
+export interface PillUrl {
+  text: string;
+  /** 0 hides it; 1 shows it at the pill text's own opacity (quality bar §3.2). */
+  opacity: number;
+}
+
 /** A white line with a soft shadow across the whole screen (Before & After's divider). */
 export interface ScreenDivider {
   /** The line's centre, in screen widths from the screen's left edge. */
@@ -82,6 +89,13 @@ export interface LayoutNode {
    * one has it in every frame, hidden by `opacity: 0`, so the engine prepares it once.
    */
   divider?: ScreenDivider;
+  /**
+   * The browser's URL pill when it shows more than the document's URL: a Site Tour's pages, each
+   * with its opacity at this frame (`pillUrls`, `src/motion/page-url.ts`). Every frame lists every
+   * URL the shot shows, in the same order, so the engine rasterizes and uploads each up front.
+   * Unset, the pill shows `style.browserUrl`.
+   */
+  urls?: PillUrl[];
 }
 
 /**

@@ -1,6 +1,6 @@
 import type { Aspect, AssetRef, ProjectDoc } from "../doc/types";
 import { createDoc } from "../doc/defaults";
-import { demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
+import { DEMO_SITE_DOMAINS, demoAsset, demoAssetId, demoAssetRef } from "../lab/demo-assets";
 import type { DemoPage, DemoSite } from "../lab/demo-assets";
 import type { Template } from "./types";
 import { fillSlots, missingRequiredSlots } from "./slots";
@@ -114,9 +114,9 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
   "mobile-scroll-story": [mobileFull("aurelia")],
   // One page at both sizes: Aurelia's full pages, with their capture sections.
   "responsive-scroll": [desktopFull("aurelia"), mobileFull("aurelia")],
-  // Site Tour's four pages at both sizes, an 8 s loop. A hero carries no capture URL and its file
-  // name keeps its size (`aurelia-studio-desktop-hero`), so fillSlots pairs them in this order:
-  // page n is the n-th desktop with the n-th mobile capture.
+  // Site Tour's four pages at both sizes, an 8 s loop. Each hero carries its page's URL
+  // (`demoAssetRef`), so fillSlots pairs each desktop capture with its page's mobile one, which
+  // here is also this order: page n is the n-th desktop with the n-th mobile capture.
   "responsive-tour": [
     desktopHero("aurelia"),
     desktopHero("aurelia", "studio"),
@@ -131,23 +131,15 @@ const DEMO_IDS_BY_TEMPLATE: Record<string, string[]> = {
 
 const DEFAULT_DEMO_IDS = [desktopFull("aurelia"), mobileHero("aurelia")];
 
-/** Fictional domains for the demo sites, shown in the browser's URL pill. */
-const DEMO_SITE_URLS: Record<DemoSite, string> = {
-  aurelia: "aurelia.studio",
-  northwind: "northwind.dev",
-  "maison-oak": "maisonoak.design",
-  "field-notes": "fieldnotes.press",
-  "studio-kova": "studiokova.co",
-};
-
 /**
  * The demo site's domain for template previews, or "" when the screens show more than
- * one site: the pill shows one URL for every browser in the document.
+ * one site: the pill shows one domain for every browser in the document. A Site Tour adds
+ * each page's path to it (`pageUrl`).
  */
 export function demoBrowserUrl(assets: AssetRef[]): string {
   const sites = new Set(assets.map((asset) => demoAsset(asset.id).site));
   const [site] = [...sites];
-  return sites.size === 1 && site ? DEMO_SITE_URLS[site] : "";
+  return sites.size === 1 && site ? DEMO_SITE_DOMAINS[site] : "";
 }
 
 /** Demo assets that fill the template's slots; the same set the template preview uses. */

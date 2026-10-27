@@ -10,6 +10,7 @@ import type {
 import { cameraPose } from "./camera";
 import { frameDistance } from "./framing";
 import { isSteppedLayout, type LayoutNode, resolveLayout } from "./layouts";
+import { pillUrls } from "./page-url";
 import { scrollableFramesFor, scrollPosition } from "./scroll";
 import { responsiveScreens, responsiveScrollAt } from "./responsive-scroll";
 import { activeLayers, schedule } from "./timeline";
@@ -133,6 +134,12 @@ export function evaluate(doc: ProjectDoc, t: number): FrameState {
 
     // Resolved style
     const style: Style = shot.styleOverrides ? { ...doc.style, ...shot.styleOverrides } : doc.style;
+
+    // A Site Tour's browser shows each page's own URL, faded in step with the slide (§4).
+    for (const node of nodes) {
+      const urls = pillUrls(shot.layout, node, style.browserUrl, doc.assets);
+      if (urls) node.urls = urls;
+    }
 
     const frame: ShotFrame = {
       shotId: shot.id,

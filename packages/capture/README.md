@@ -39,7 +39,7 @@ Each JSON file looks like this:
 
 ## Import into MockupMotion
 
-Drop the `captures` folder onto the editor. The screenshots are imported with their roles and section data in one step.
+Drop the `captures` folder onto the editor. The screenshots are imported with their roles, section data and page URL in one step. When the folder has both screenshots of a page, only the full page is imported. A first-viewport screenshot imported without its full page (`--mode viewport`) still takes its page's URL, which Site Tour shows in the browser's URL bar, but no section data.
 
 ## Options
 
