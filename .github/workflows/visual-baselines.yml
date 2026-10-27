@@ -4,10 +4,17 @@ name: Visual baselines
 # `visual` CI job, and uploads them as an artifact. It never commits anything: a person
 # reviews the PNGs and commits them (tests/visual/README.md).
 #
-# Run it from the Actions tab (any branch), or push a branch named visual-baselines/<name>.
+# Run it from the Actions tab on any branch, or with
+# `gh workflow run visual-baselines.yml --ref <branch> [-f fresh=true]`. Pushing a branch named
+# visual-baselines/<name> also runs it, but leaves a branch to delete; prefer the dispatch.
 
 on:
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: "Render every still from scratch, to compare two branches pixel for pixel"
+        type: boolean
+        default: false
   push:
     branches: ["visual-baselines/**"]
 
@@ -31,6 +38,13 @@ jobs:
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      # The update below rewrites only stills that are missing or fail the 0.2% tolerance, so
+      # a change under the tolerance comes back as the old baseline. Deleting the committed
+      # stills first makes it render every one.
+      - name: Remove committed baselines
+        if: inputs.fresh
+        run: rm -f tests/visual/stills.spec.ts-snapshots/*-linux.png
 
       # Writes only stills that are missing or no longer match, so unchanged baselines keep
       # their bytes.
