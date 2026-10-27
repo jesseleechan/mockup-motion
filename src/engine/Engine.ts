@@ -4,6 +4,7 @@ import type { DeviceKind, ProjectDoc } from "../doc/types";
 import type { TextLine, TextRaster } from "../text/rasterize";
 import {
   evaluate,
+  holdsStill,
   isSteppedLayout,
   type FrameState,
   type LayoutNode,
@@ -337,6 +338,11 @@ export class Engine {
     const draws: DeviceDraw[] = [];
 
     const nodes = this.opts.hideDevices ? [] : frame.nodes;
+    // Only a browser draws text that snaps to whole pixels when nothing moves (quality bar §3.2).
+    const still =
+      this.currentDoc !== null &&
+      nodes.some((node) => node.device === "browser") &&
+      holdsStill(this.currentDoc, frame);
     for (const node of nodes) {
       const dev = this.devices.acquire(node, frame.style);
       dev.object3d.userData.nodeId = node.id;
@@ -366,7 +372,7 @@ export class Engine {
           isPhone,
         });
       }
-      dev.update(node, frame.style, frame.localT);
+      dev.update(node, frame.style, frame.localT, still);
     }
 
     // 4. Render the devices into the MSAA target with their opacity

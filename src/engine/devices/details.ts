@@ -17,22 +17,41 @@ function ignoreRaycast(mesh: THREE.Mesh): void {
   mesh.raycast = () => {};
 }
 
+// The raster is twice the text's on-screen size (chrome-url.ts), two texels per output pixel.
+// Off the pixel grid, the half-resolution mip is resampled and the glyphs go soft: half a pixel
+// off, the 720p pill has 10% less edge contrast. With uSnap on, the whole plane moves by under
+// half a pixel so its top-left corner sits on whole output pixels, as Before & After's labels do
+// (§4), and the fragment shader averages each pixel's own 2x2 texels.
 const urlVertexShader = /* glsl */ `
+  uniform vec2 uOutputSize;
+  uniform float uSnap;
   varying vec2 vUv;
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    mat4 mvp = projectionMatrix * modelViewMatrix;
+    gl_Position = mvp * vec4(position, 1.0);
+    if (uSnap > 0.5) {
+      vec4 corner = mvp * vec4(-0.5, 0.5, 0.0, 1.0);
+      vec2 px = (corner.xy / corner.w * 0.5 + 0.5) * uOutputSize;
+      gl_Position.xy += (floor(px + 0.5) - px) * 2.0 / uOutputSize * gl_Position.w;
+    }
   }
 `;
 
-// The raster's alpha is glyph coverage; uColor is its exact glyph colour in linear sRGB.
+// The raster's alpha is glyph coverage; uColor is its exact glyph colour in linear sRGB. Snapped,
+// a bias of -1 samples one mip level finer, between the pixel's own 2x2 texels: their exact
+// average, whatever the raster's size. The half-resolution mip of an odd-sized raster is not
+// made of whole texel pairs: at 720p, aurelia.studio's 227-texel raster shows 10% less edge
+// contrast on it.
 const urlFragmentShader = /* glsl */ `
   varying vec2 vUv;
   uniform sampler2D map;
   uniform vec3 uColor;
   uniform float uOpacity;
+  uniform float uSnap;
   void main() {
-    float coverage = texture2D(map, vec2(vUv.x, 1.0 - vUv.y)).a;
+    float bias = uSnap > 0.5 ? -1.0 : 0.0;
+    float coverage = texture2D(map, vec2(vUv.x, 1.0 - vUv.y), bias).a;
     gl_FragColor = vec4(uColor, coverage * uOpacity);
   }
 `;
@@ -55,6 +74,8 @@ export class UrlText {
         map: { value: null },
         uColor: { value: new THREE.Color(0, 0, 0) },
         uOpacity: { value: URL_TEXT_OPACITY },
+        uOutputSize: { value: new THREE.Vector2(1, 1) },
+        uSnap: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
@@ -62,6 +83,12 @@ export class UrlText {
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
     ignoreRaycast(this.mesh);
     this.mesh.visible = false;
+    // The renderer's size is the output frame in px, whatever the supersample of the target the
+    // scene draws into, so the snap lands on the output's pixels.
+    const outputSize = this.material.uniforms.uOutputSize.value as THREE.Vector2;
+    this.mesh.onBeforeRender = (renderer) => {
+      renderer.getSize(outputSize);
+    };
   }
 
   /** Puts the text in a pill whose centre is at (x, y), at depth z (stage units). */
@@ -72,9 +99,18 @@ export class UrlText {
 
   /**
    * Shows `text` with its glyphs at `glyphHeight` stage units, fitted inside `maxWidth`, at
-   * `opacity` of the pill text's own opacity. Hidden without a raster or at opacity 0.
+   * `opacity` of the pill text's own opacity. Hidden without a raster or at opacity 0. `snap`
+   * puts it on whole output pixels; only text that holds still is snapped (`holdsStill`), so
+   * moving text never steps against its pill.
    */
-  update(text: ChromeUrlText | null, glyphHeight: number, maxWidth: number, opacity = 1): void {
+  update(
+    text: ChromeUrlText | null,
+    glyphHeight: number,
+    maxWidth: number,
+    opacity = 1,
+    snap = false,
+  ): void {
+    this.material.uniforms.uSnap.value = snap ? 1 : 0;
     if (!text || opacity <= 0) {
       this.mesh.visible = false;
       this.current = null;

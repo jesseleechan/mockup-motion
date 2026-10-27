@@ -148,7 +148,7 @@ export function buildBrowserDevice(
     pillWidth = pillW;
   }
 
-  function update(updatedNode: LayoutNode, updatedStyle: Style, _t: number): void {
+  function update(updatedNode: LayoutNode, updatedStyle: Style, _t: number, still = false): void {
     const tf = updatedNode.transform;
     group.position.set(tf.x, tf.y, tf.z);
     group.rotation.set(tf.rx, tf.ry, tf.rz);
@@ -177,6 +177,7 @@ export function buildBrowserDevice(
       toolbarHeight * URL_TEXT_FRACTION,
       pillWidth,
       url?.opacity ?? 0,
+      still,
     );
   }
 
