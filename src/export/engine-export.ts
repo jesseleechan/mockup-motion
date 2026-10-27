@@ -90,26 +90,28 @@ export async function exportFrames(
     preserveDrawingBuffer: true,
   });
 
-  await engine.setDocument(doc, provider);
-  const blobs: Blob[] = [];
-  for (const time of times) {
-    engine.renderAt(time);
-    if (canvas instanceof OffscreenCanvas) {
-      blobs.push(await canvas.convertToBlob({ type: `image/${format}` }));
-    } else {
-      blobs.push(
-        await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error("Failed to capture canvas snapshot"));
-          }, `image/${format}`);
-        }),
-      );
+  try {
+    await engine.setDocument(doc, provider);
+    const blobs: Blob[] = [];
+    for (const time of times) {
+      engine.renderAt(time);
+      if (canvas instanceof OffscreenCanvas) {
+        blobs.push(await canvas.convertToBlob({ type: `image/${format}` }));
+      } else {
+        blobs.push(
+          await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((b) => {
+              if (b) resolve(b);
+              else reject(new Error("Failed to capture canvas snapshot"));
+            }, `image/${format}`);
+          }),
+        );
+      }
     }
+    return blobs;
+  } finally {
+    engine.dispose();
   }
-
-  engine.dispose();
-  return blobs;
 }
 
 /**
@@ -218,10 +220,15 @@ async function copyForWorker(
   for (const [id, decodeWidth] of decodeWidths) {
     const rows = decodeRows.get(id) ?? null;
     const source = await provider.getImage(id, decodeWidth, rows);
-    signal?.throwIfAborted();
-    const copy = await copyTopRows(source, rows);
-    copies.push(copy);
-    images[id] = copy;
+    try {
+      signal?.throwIfAborted();
+      const copy = await copyTopRows(source, rows);
+      copies.push(copy);
+      images[id] = copy;
+    } finally {
+      // The copy is all the export needs, so the provider can close its decode now.
+      provider.releaseImage?.(source);
+    }
   }
 
   // The browser URL pills and the screens' labels, rasterized at export resolution.
