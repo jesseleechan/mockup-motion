@@ -191,8 +191,8 @@ export const LabPage: React.FC = () => {
         window.__labSchedule = schedule;
         window.__labSetDoc = async (nextDoc, images = {}, providerOverride?: AssetProvider) => {
           const testProvider: AssetProvider = providerOverride ?? {
-            async getImage(assetId: string, maxWidth: number) {
-              return images[assetId] ?? provider.getImage(assetId, maxWidth);
+            async getImage(assetId: string, maxWidth: number, rows?: number | null) {
+              return images[assetId] ?? provider.getImage(assetId, maxWidth, rows);
             },
             getText: provider.getText.bind(provider),
           };
