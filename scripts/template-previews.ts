@@ -138,7 +138,7 @@ async function main(): Promise<void> {
             for (const shot of videoDoc.shots) {
               if (shot.styleOverrides?.grain !== undefined) shot.styleOverrides.grain = 0;
             }
-            // The export transfers its bitmaps to the worker, so each render gets its own provider.
+            // Each render gets its own provider; the export sends the worker copies of its bitmaps.
             const video = await exportVideo(
               videoDoc,
               createProvider(),
