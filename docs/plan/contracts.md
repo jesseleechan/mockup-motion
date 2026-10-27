@@ -426,9 +426,16 @@ export interface AssetProvider {
   /**
    * Decoded image, downscaled with high-quality resampling so width ≤ maxWidth. With `rows`
    * (textureRows), only its top `keptRows(rows, width, height)` rows are needed; returning more
-   * is allowed.
+   * is allowed. The bitmap stays the provider's: the caller never closes it.
    */
   getImage(assetId: string, maxWidth: number, rows?: number | null): Promise<ImageBitmap>;
+  /**
+   * Optional: takes back a bitmap `getImage` returned, once per call, when the caller no longer
+   * uses it. The provider may then close it, so the caller must not touch it again. The engine
+   * hands back a texture's image when it releases the texture, and a tall page's once it has cut
+   * it into strips (TextureManager).
+   */
+  releaseImage?(bitmap: ImageBitmap): void;
   /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */
   getText(line: TextLine, frameHeightPx: number): Promise<TextRaster>;
 }

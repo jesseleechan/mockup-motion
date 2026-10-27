@@ -33,6 +33,12 @@ interface CacheEntry {
   requestedRows: number | null;
   /** Strip bitmaps sliced here. Provider bitmaps are never closed by this class. */
   ownedBitmaps: ImageBitmap[];
+  /**
+   * The provider's bitmap when the texture shows it itself, handed back to the provider
+   * (`releaseImage`) when the entry is released: a WebGL context restore uploads it again.
+   * Strips are copies, so a bitmap cut into strips goes back as soon as they are cut.
+   */
+  borrowed: { bitmap: ImageBitmap; provider: AssetProvider } | null;
 }
 
 interface PendingLoad {
@@ -43,7 +49,8 @@ interface PendingLoad {
 
 /**
  * GPU textures for image assets: one entry per asset, at the largest width and the most rows
- * any document has asked for since the asset was last released by `retainOnly`.
+ * any document has asked for since the asset was last released by `retainOnly`. Every bitmap a
+ * provider lends goes back to it (`AssetProvider.releaseImage`) once no texture shows it.
  */
 export class TextureManager {
   private cache = new Map<string, CacheEntry>();
@@ -51,6 +58,7 @@ export class TextureManager {
   private pending = new Map<string, PendingLoad>();
   private maxTextureSize: number;
   private maxAnisotropy: number;
+  private disposed = false;
 
   constructor(maxTextureSize: number = 4096, maxAnisotropy: number = 1) {
     this.maxTextureSize = maxTextureSize;
@@ -131,41 +139,55 @@ export class TextureManager {
     const stripMaxHeight = Math.min(this.maxTextureSize, 4096);
     const strips: TextureStrip[] = [];
     const ownedBitmaps: ImageBitmap[] = [];
+    let entry: CacheEntry | null = null;
 
-    if (height === bitmap.height && height <= stripMaxHeight) {
-      strips.push({ texture: this.createTexture(bitmap), yOffset: 0, height });
-    } else {
-      // Tile tall images into vertical strips; the slices leave out any rows not held.
-      const stripCount = Math.ceil(height / stripMaxHeight);
-      for (let i = 0; i < stripCount; i++) {
-        const yOffset = i * stripMaxHeight;
-        const stripHeight = Math.min(stripMaxHeight, height - yOffset);
-        const stripBitmap = await createImageBitmap(bitmap, 0, yOffset, width, stripHeight);
-        ownedBitmaps.push(stripBitmap);
-        strips.push({ texture: this.createTexture(stripBitmap), yOffset, height: stripHeight });
+    try {
+      const showsBitmap = height === bitmap.height && height <= stripMaxHeight;
+      if (showsBitmap) {
+        strips.push({ texture: this.createTexture(bitmap), yOffset: 0, height });
+      } else {
+        // Tile tall images into vertical strips; the slices leave out any rows not held.
+        const stripCount = Math.ceil(height / stripMaxHeight);
+        for (let i = 0; i < stripCount; i++) {
+          const yOffset = i * stripMaxHeight;
+          const stripHeight = Math.min(stripMaxHeight, height - yOffset);
+          const stripBitmap = await createImageBitmap(bitmap, 0, yOffset, width, stripHeight);
+          ownedBitmaps.push(stripBitmap);
+          strips.push({ texture: this.createTexture(stripBitmap), yOffset, height: stripHeight });
+        }
       }
+
+      const managed: ManagedTexture = {
+        assetId,
+        width,
+        height,
+        strips,
+        bottomRowColor: this.extractRowColor(bitmap, height - 1),
+        topRowColor: this.extractRowColor(bitmap, 0),
+      };
+      entry = {
+        managed,
+        requestedWidth: targetWidthPx,
+        requestedRows: rows,
+        ownedBitmaps,
+        borrowed: showsBitmap ? { bitmap, provider } : null,
+      };
+    } finally {
+      // Nothing shows the provider's bitmap: its strips are copies, or the load failed.
+      if (!entry?.borrowed) provider.releaseImage?.(bitmap);
     }
 
-    const managed: ManagedTexture = {
-      assetId,
-      width,
-      height,
-      strips,
-      bottomRowColor: this.extractRowColor(bitmap, height - 1),
-      topRowColor: this.extractRowColor(bitmap, 0),
-    };
-
+    if (this.disposed) {
+      // dispose() ran during this load, so nothing else would ever release the entry.
+      this.release(entry);
+      return null;
+    }
     // No other load of this asset ran meanwhile (getTexture), and this one asked for at least
     // what the entry holds, so it replaces the entry.
     const existing = this.cache.get(assetId);
     if (existing) this.release(existing);
-    this.cache.set(assetId, {
-      managed,
-      requestedWidth: targetWidthPx,
-      requestedRows: rows,
-      ownedBitmaps,
-    });
-    return managed;
+    this.cache.set(assetId, entry);
+    return entry.managed;
   }
 
   /** Disposes textures for every asset not in `assetIds`. */
@@ -181,6 +203,7 @@ export class TextureManager {
   private release(entry: CacheEntry): void {
     for (const strip of entry.managed.strips) strip.texture.dispose();
     for (const bitmap of entry.ownedBitmaps) bitmap.close();
+    entry.borrowed?.provider.releaseImage?.(entry.borrowed.bitmap);
   }
 
   private createTexture(imageSource: ImageBitmap | HTMLCanvasElement): THREE.Texture {
@@ -240,6 +263,7 @@ export class TextureManager {
   }
 
   dispose(): void {
+    this.disposed = true;
     for (const entry of this.cache.values()) this.release(entry);
     this.cache.clear();
   }
