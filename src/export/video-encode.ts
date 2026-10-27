@@ -81,12 +81,18 @@ export function encodeInWorker(
       if (finish()) reject(new Error(`Export worker failed: ${event.message}`));
     };
 
-    // Transfer ImageBitmap ownership to worker
+    // The worker takes ownership of the bitmaps. They are the export's own copies, never a
+    // provider's cached ones (copyForWorker in engine-export.ts).
     const transferList: Transferable[] = [
       ...Object.values(start.images),
       ...Object.values(start.texts).map((t) => t.bitmap),
     ];
-    worker.postMessage(start, transferList);
+    try {
+      worker.postMessage(start, transferList);
+    } catch (error) {
+      // A failed post (DataCloneError) transfers nothing; stop the worker it never reached.
+      if (finish()) reject(error);
+    }
   });
 }
 

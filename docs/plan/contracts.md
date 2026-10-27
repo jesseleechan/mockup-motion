@@ -553,4 +553,4 @@ type FromWorker =
   | { type: "error"; message: string };
 ```
 
-Before posting, the main thread rasterises the URL pill text (each page's URL for a Site Tour) at export resolution and decodes all images at the needed size, then transfers the bitmaps. The worker never needs fonts or the DOM.
+Before posting, the main thread rasterises the URL pill text (each page's URL for a Site Tour) at export resolution and decodes all images at the needed size, then transfers copies of those bitmaps: providers cache what they hand out, and a transferred bitmap is detached for the next export. The worker never needs fonts or the DOM.
