@@ -108,14 +108,54 @@ describe("capture JSON (Responsive Scroll R02)", () => {
     expect(two.unmatched).toEqual(["sections.json"]);
   });
 
-  it("never attaches by name to an image of another size", () => {
+  it("never attaches sections by name to an image of another size", () => {
     const result = attachCaptures(
       [image("a", "site-mobile-390@2x.png", 780, 1688)],
       [{ name: "site-mobile-390@2x.json", capture: MOBILE }],
       [],
     );
     expect(result.images[0].meta?.sections).toBeUndefined();
-    expect(result.unmatched).toEqual(["site-mobile-390@2x.json"]);
+    // Another width isn't the capture's screenshot at all.
+    const other = attachCaptures(
+      [image("a", "site-mobile-390@2x.png", 1170, 2532)],
+      [{ name: "site-mobile-390@2x.json", capture: MOBILE }],
+      [],
+    );
+    expect(other.images[0].meta).toBeUndefined();
+    expect(other.unmatched).toEqual(["site-mobile-390@2x.json"]);
+  });
+
+  // A Site Tour usually shows first viewports, and each page's URL in the browser's pill.
+  it("gives a capture's URL, not its sections, to its first-viewport screenshot", () => {
+    const capture = { name: "site-mobile-390@2x.json", capture: MOBILE };
+    const page = { page: "http://localhost:3591/aurelia/" };
+    const both = attachCaptures(
+      [
+        image("full", "site-mobile-390@2x-full.png", 780, 11436),
+        image("hero", "site-mobile-390@2x.png", 780, 1688),
+      ],
+      [capture],
+      [],
+    );
+    expect(both.images[0].meta).toMatchObject(page);
+    expect(both.images[0].meta?.sections?.length).toBeGreaterThan(0);
+    expect(both.images[1].meta).toEqual(page);
+    // Captured with --mode viewport, so without its full page.
+    const alone = attachCaptures(
+      [image("hero", "site-mobile-390@2x.png", 780, 1688)],
+      [capture],
+      [],
+    );
+    expect(alone.images[0].meta).toEqual(page);
+    expect(alone.unmatched).toEqual([]);
+    // Dropped after its screenshot is in the library.
+    const later = attachCaptures(
+      [],
+      [capture],
+      [image("lib", "site-mobile-390@2x.png", 780, 1688)],
+    );
+    expect(later.libraryUpdates).toEqual([{ id: "lib", meta: page }]);
+    expect(later.unmatched).toEqual([]);
   });
 
   it("attaches a capture dropped alone to its screenshot in the library", () => {

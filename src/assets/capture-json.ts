@@ -135,8 +135,22 @@ function matchImage(file: CaptureFile, candidates: AssetRef[]): AssetRef | undef
   return bySize.length === 1 ? bySize[0] : undefined;
 }
 
+/**
+ * Whether an image is the capture's first-viewport screenshot (`<stem>.png` beside
+ * `<stem>-full.png`): its name shares the capture's stem, and it is the capture's width (within
+ * 2 px) but not its full-page size. The capture doesn't record the viewport's height.
+ */
+function isViewportImage(file: CaptureFile, image: AssetRef): boolean {
+  if (image.kind !== "image" || !image.width) return false;
+  if (captureStem(image.name) !== captureStem(file.name)) return false;
+  const width = file.capture.viewportWidth * file.capture.scale;
+  return (
+    Math.abs(width - image.width) <= SIZE_TOLERANCE_PX && !captureFitsImage(file.capture, image)
+  );
+}
+
 export interface AttachedCaptures {
-  /** The new images, with the sections of their captures. */
+  /** The new images, with the sections and URLs of their captures. */
   images: AssetRef[];
   /** Library assets that a capture in this import belongs to. */
   libraryUpdates: { id: string; meta: Pick<AssetMeta, "sections" | "page"> }[];
@@ -144,7 +158,11 @@ export interface AttachedCaptures {
   unmatched: string[];
 }
 
-/** Attaches each capture's sections to its screenshot, new in this import or in the library. */
+/**
+ * Attaches each capture to its screenshots, new in this import or in the library: the full page
+ * takes its sections and URL, and the first-viewport screenshot of the same capture its URL (a Site
+ * Tour shows it in the browser's pill). The sections describe the full page only.
+ */
 export function attachCaptures(
   images: AssetRef[],
   captures: CaptureFile[],
@@ -153,18 +171,31 @@ export function attachCaptures(
   const result: AttachedCaptures = { images: [...images], libraryUpdates: [], unmatched: [] };
   for (const file of captures) {
     const meta = captureMeta(file.capture);
+    let matched = false;
     const fresh = matchImage(file, result.images);
+    const existing = fresh ? undefined : matchImage(file, library);
     if (fresh) {
       const index = result.images.indexOf(fresh);
       result.images[index] = { ...fresh, meta: { ...fresh.meta, ...meta } };
-      continue;
-    }
-    const existing = matchImage(file, library);
-    if (existing) {
+      matched = true;
+    } else if (existing) {
       result.libraryUpdates.push({ id: existing.id, meta });
-      continue;
+      matched = true;
     }
-    result.unmatched.push(file.name);
+    if (meta.page) {
+      const page = meta.page;
+      result.images = result.images.map((image) => {
+        if (!isViewportImage(file, image)) return image;
+        matched = true;
+        return { ...image, meta: { ...image.meta, page } };
+      });
+      for (const image of library) {
+        if (!isViewportImage(file, image)) continue;
+        result.libraryUpdates.push({ id: image.id, meta: { page } });
+        matched = true;
+      }
+    }
+    if (!matched) result.unmatched.push(file.name);
   }
   return result;
 }
