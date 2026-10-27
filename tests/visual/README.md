@@ -26,11 +26,13 @@ Never update baselines to make a failing check pass when the look was not suppos
 
 ## How to update baselines
 
-1. Push your branch, then run the **Visual baselines** workflow (`.github/workflows/visual-baselines.yml`) on it from the Actions tab. Alternatively, push the same commit to a branch named `visual-baselines/<name>`:
+1. Push your branch, then run the **Visual baselines** workflow (`.github/workflows/visual-baselines.yml`) on it from the Actions tab, or:
 
    ```sh
-   git push origin HEAD:visual-baselines/<name>
+   gh workflow run visual-baselines.yml --ref <branch>
    ```
+
+   Pushing the commit to a branch named `visual-baselines/<name>` runs it too, but leaves a branch behind to delete. Vercel doesn't deploy those branches (`vercel.json`).
 
 2. When it finishes, download the `visual-baselines` artifact into an empty folder outside the repository, then copy its PNGs over the baselines. Don't download it straight into `stills.spec.ts-snapshots`: `gh run download` refuses to overwrite a file that exists, so there it fails with "file exists" and writes nothing.
 
@@ -45,3 +47,18 @@ Never update baselines to make a failing check pass when the look was not suppos
 3. Open every changed PNG (`git status`) and check it: orientation, colours, real screenshots, no black screens. Do not recompress them. Playwright compares decoded pixels, and the files should stay exactly as the runner wrote them.
 4. Commit them with the change that caused them, then get the approval described above.
 5. If you removed or renamed a still, delete its old baseline by hand.
+
+## Comparing two commits pixel for pixel
+
+A normal run keeps every committed still that is within the 0.2% tolerance, so its artifact can't show that a change leaves the stills untouched, or what a change under the tolerance does to them. Tick **Render every still** (`-f fresh=true`) to delete the committed baselines first and render all of them. Run it on your branch and on `main`, download both artifacts into empty folders, and compare them:
+
+```sh
+gh workflow run visual-baselines.yml --ref <branch> -f fresh=true
+gh workflow run visual-baselines.yml --ref main -f fresh=true
+# when both finish:
+gh run download <branch-run-id> -n visual-baselines -D /tmp/vb-branch
+gh run download <main-run-id> -n visual-baselines -D /tmp/vb-main
+for f in /tmp/vb-main/*.png; do cmp -s "$f" "/tmp/vb-branch/${f##*/}" || echo "changed: ${f##*/}"; done
+```
+
+The renders are deterministic, so stills that print nothing are byte-identical. The fresh run on `main` should also match the committed baselines byte for byte; if it doesn't, a merged change moved them within the tolerance, and they need refreshing with the owner's approval.
