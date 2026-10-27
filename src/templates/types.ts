@@ -37,6 +37,12 @@ export interface Template {
    */
   samePage?: readonly [desktopSlot: string, mobileSlot: string];
   /**
+   * Slot pairs that each show one page at two sizes, in page order (Responsive Tour). `fillSlots`
+   * fills the desktop slots in Library order and gives each page the mobile capture of its
+   * desktop's page, else the next mobile screenshot in Library order (`pairByPage`).
+   */
+  pages?: readonly (readonly [desktopSlot: string, mobileSlot: string])[];
+  /**
    * Every slot takes a different screenshot (Before & After compares two): `fillSlots` leaves a
    * slot empty rather than reuse one, so the missing one is reported (`missingRequiredSlots`).
    */

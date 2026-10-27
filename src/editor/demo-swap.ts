@@ -2,49 +2,11 @@
  * "Use my screenshots": after "Try with demo content", swaps the demo screenshots in the project
  * for the user's uploads, in order, desktop for desktop and mobile for mobile. Pure: no DOM.
  */
-import type { AssetRef, Layout, ProjectDoc } from "../doc/types";
+import { layoutAssetIds, mapLayoutAssetIds } from "../doc/assets";
+import type { AssetRef, ProjectDoc } from "../doc/types";
 import { isDemoAssetId } from "../lab/demo-assets";
 
 type SwapRole = "desktop" | "mobile";
-
-/** The screenshot ids a layout shows, in slot order. */
-function layoutAssetIds(layout: Layout): string[] {
-  switch (layout.kind) {
-    case "single":
-      return [layout.assetId];
-    case "responsive":
-      return [layout.desktopId, layout.mobileId];
-    case "compare":
-      return [layout.beforeId, layout.afterId];
-    case "responsive-tour":
-      return [...layout.desktopIds, ...layout.mobileIds];
-    default:
-      return layout.assetIds;
-  }
-}
-
-/** Replaces the screenshot ids of a layout in place (an immer draft). */
-function replaceLayoutAssetIds(layout: Layout, swap: (id: string) => string): void {
-  switch (layout.kind) {
-    case "single":
-      layout.assetId = swap(layout.assetId);
-      return;
-    case "responsive":
-      layout.desktopId = swap(layout.desktopId);
-      layout.mobileId = swap(layout.mobileId);
-      return;
-    case "compare":
-      layout.beforeId = swap(layout.beforeId);
-      layout.afterId = swap(layout.afterId);
-      return;
-    case "responsive-tour":
-      layout.desktopIds = layout.desktopIds.map(swap);
-      layout.mobileIds = layout.mobileIds.map(swap);
-      return;
-    default:
-      layout.assetIds = layout.assetIds.map(swap);
-  }
-}
 
 function usedAssetIds(doc: ProjectDoc): string[] {
   return doc.shots.flatMap((shot) => layoutAssetIds(shot.layout)).filter(Boolean);
@@ -98,7 +60,7 @@ export function applyDemoSwap(draft: ProjectDoc, replacements: Map<string, strin
   const swap = (id: string) => replacements.get(id) ?? id;
   for (const shot of draft.shots) {
     const before = layoutAssetIds(shot.layout);
-    replaceLayoutAssetIds(shot.layout, swap);
+    mapLayoutAssetIds(shot.layout, swap);
     if (before.some((id) => replacements.has(id)) && shot.scroll?.sections) {
       delete shot.scroll.sections;
     }

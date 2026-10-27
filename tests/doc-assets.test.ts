@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateAndDecodeAsset } from "../src/assets/decode";
-import { collectAssetIds } from "../src/doc/assets";
+import { collectAssetIds, shotsShowingAsset } from "../src/doc/assets";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import type { Aspect, AssetRef, Layout, ProjectDoc } from "../src/doc/types";
 import { replacementRef } from "../src/editor/library/replace-file";
@@ -69,6 +69,70 @@ describe("F03: collectAssetIds", () => {
       { kind: "rows", assetIds: ["a", "b"], rows: 2, device: "card", tilt: 0, travel: "period" },
     ]);
     expect([...collectAssetIds(doc)].sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("The Library's used-in-shot marker (shotsShowingAsset)", () => {
+  // One layout of each kind and the screenshots it shows. A layout kind missing here fails to
+  // compile.
+  const kinds: {
+    [K in Layout["kind"]]: { layout: Extract<Layout, { kind: K }>; shows: string[] };
+  } = {
+    single: { layout: { kind: "single", device: "phone", assetId: "s" }, shows: ["s"] },
+    rows: {
+      layout: {
+        kind: "rows",
+        assetIds: ["r1", "r2"],
+        rows: 2,
+        device: "card",
+        tilt: 0,
+        travel: "period",
+      },
+      shows: ["r1", "r2"],
+    },
+    columns: {
+      layout: { kind: "columns", assetIds: ["c1", "c2"], columns: 2, tilt: 0, travel: "period" },
+      shows: ["c1", "c2"],
+    },
+    slider: {
+      layout: { kind: "slider", assetIds: ["k1", "k2"], axis: "x", shape: "mobile", step: 2 },
+      shows: ["k1", "k2"],
+    },
+    orbit: {
+      layout: { kind: "orbit", assetIds: ["o1", "o2"], shape: "desktop", step: 2 },
+      shows: ["o1", "o2"],
+    },
+    tour: {
+      layout: { kind: "tour", device: "browser", assetIds: ["t1", "t2"], step: 2 },
+      shows: ["t1", "t2"],
+    },
+    compare: {
+      layout: { kind: "compare", device: "browser", beforeId: "old", afterId: "new" },
+      shows: ["old", "new"],
+    },
+    responsive: {
+      layout: { kind: "responsive", desktopId: "page-desktop", mobileId: "page-mobile" },
+      shows: ["page-desktop", "page-mobile"],
+    },
+    pageColumns: {
+      layout: { kind: "pageColumns", assetIds: ["p1", "p2"], shape: "desktop" },
+      shows: ["p1", "p2"],
+    },
+    "responsive-tour": {
+      layout: { kind: "responsive-tour", desktopIds: ["d1", "d2"], mobileIds: ["m1", ""], step: 2 },
+      shows: ["d1", "d2", "m1"],
+    },
+  };
+
+  it("counts every screenshot of every layout kind, and no empty screen", () => {
+    for (const { layout, shows } of Object.values(kinds)) {
+      const doc = docWith([{ kind: "single", device: "browser", assetId: "elsewhere" }, layout]);
+      for (const id of shows) {
+        expect(shotsShowingAsset(doc, id), `${layout.kind}: ${id}`).toEqual([2]);
+      }
+      expect(shotsShowingAsset(doc, "elsewhere"), layout.kind).toEqual([1]);
+      expect(shotsShowingAsset(doc, ""), layout.kind).toEqual([]);
+    }
   });
 });
 
