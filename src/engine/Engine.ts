@@ -40,7 +40,8 @@ export interface AssetProvider {
    * Optional: takes back a bitmap `getImage` returned, once per call, when the caller no longer
    * uses it. The provider may then close it, so the caller must not touch it again. The engine
    * hands back a texture's image when it releases the texture, and a tall page's once it has cut
-   * it into strips (TextureManager).
+   * it into strips (TextureManager); the video export hands back each image once it has copied it
+   * for the worker (engine-export).
    */
   releaseImage?(bitmap: ImageBitmap): void;
   /** Pre-rasterised text line at the given output height (main thread rasterises; see src/text). */

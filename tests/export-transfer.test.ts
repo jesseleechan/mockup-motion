@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDoc, defaultShot } from "../src/doc/defaults";
 import type { ExportSettings } from "../src/doc/types";
-import type { AssetProvider, TextRaster } from "../src/engine/Engine";
-import { exportWithEngine, liveExportWorkers } from "../src/export/engine-export";
+import { type AssetProvider, Engine, type TextRaster } from "../src/engine/Engine";
+import { exportFrames, exportWithEngine, liveExportWorkers } from "../src/export/engine-export";
 import type { StartMessage } from "../src/export/video-encode";
 
 // Node has no Worker, OffscreenCanvas or createImageBitmap. These stand-ins follow the browser
@@ -82,9 +82,11 @@ async function fakeCreateImageBitmap(source: FakeBitmap, ...crop: unknown[]): Pr
 /**
  * Hands out one bitmap per image and one raster per text line and size, and keeps them, as the
  * editor's and lab's providers do (rasterizeText caches text rasters for the whole page).
+ * `lent` counts each image's `getImage` calls not yet handed back with `releaseImage`.
  */
 function cachingProvider() {
   const handedOut = new Set<FakeBitmap>();
+  const lent = new Map<FakeBitmap, number>();
   const images = new Map<string, FakeBitmap>();
   const texts = new Map<string, TextRaster>();
   const provider: AssetProvider = {
@@ -93,7 +95,12 @@ function cachingProvider() {
       const bitmap = images.get(key) ?? new FakeBitmap(maxWidth, Math.round(maxWidth * 0.6));
       images.set(key, bitmap);
       handedOut.add(bitmap);
+      lent.set(bitmap, (lent.get(bitmap) ?? 0) + 1);
       return bitmap as unknown as ImageBitmap;
+    },
+    releaseImage(bitmap) {
+      const fake = bitmap as unknown as FakeBitmap;
+      lent.set(fake, (lent.get(fake) ?? 0) - 1);
     },
     async getText(line, frameHeightPx) {
       const key = `${line.id}:${frameHeightPx}`;
@@ -109,7 +116,7 @@ function cachingProvider() {
       return raster;
     },
   };
-  return { provider, handedOut, texts };
+  return { provider, handedOut, lent, texts };
 }
 
 const WEBM_360: ExportSettings = {
@@ -138,11 +145,12 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("exportWithEngine's worker bitmaps", () => {
   it("are copies, so two exports with one provider both send live bitmaps", async () => {
-    const { provider, handedOut, texts } = cachingProvider();
+    const { provider, handedOut, lent, texts } = cachingProvider();
 
     await exportWithEngine(doc, provider, WEBM_360);
     await exportWithEngine(doc, provider, WEBM_360);
@@ -159,10 +167,12 @@ describe("exportWithEngine's worker bitmaps", () => {
       expect(text.bitmap).toMatchObject({ width: pill.width, height: pill.height });
     }
     expect([...handedOut].filter((bitmap) => bitmap.detached)).toEqual([]);
+    // Each export borrowed the screenshot's decode and handed it back once copied.
+    expect([...lent.values()]).toEqual([0]);
   });
 
   it("are closed when the post fails, and the worker is stopped", async () => {
-    const { provider, handedOut } = cachingProvider();
+    const { provider, handedOut, lent } = cachingProvider();
     const workersBefore = liveExportWorkers();
     refusePosts = true;
 
@@ -174,5 +184,24 @@ describe("exportWithEngine's worker bitmaps", () => {
     expect(copies.length).toBeGreaterThan(0);
     expect(copies.filter((bitmap) => !bitmap.closed)).toEqual([]);
     expect([...handedOut].filter((bitmap) => bitmap.detached)).toEqual([]);
+    expect([...lent.values()]).toEqual([0]);
+  });
+});
+
+describe("exportFrames", () => {
+  it("disposes its engine when the document fails to load", async () => {
+    const dispose = vi.fn();
+    const failing = {
+      setDocument: vi.fn().mockRejectedValue(new Error("The screenshot failed to decode.")),
+      renderAt: vi.fn(),
+      dispose,
+    };
+    vi.spyOn(Engine, "create").mockResolvedValue(failing as unknown as Engine);
+
+    await expect(exportFrames(doc, cachingProvider().provider, [0], 360)).rejects.toThrow(
+      "The screenshot failed to decode.",
+    );
+
+    expect(dispose).toHaveBeenCalledOnce();
   });
 });
