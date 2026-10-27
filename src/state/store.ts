@@ -132,13 +132,13 @@ export interface EditorStoreState {
 
 /**
  * Appends a screenshot to a list layout's shot. fitFixedShots refits a Frames shot's duration. A
- * Responsive Tour takes it on the side of its role, on the first page without one there.
+ * Responsive Tour takes it on the side of its role, on its page (`addPageScreenshot`).
  */
 function pushShotAsset(draft: ProjectDoc, shotIndex: number, assetId: string): void {
   const shot = draft.shots[shotIndex];
   if (shot?.layout.kind === "responsive-tour") {
     const asset = draft.assets.find((a) => a.id === assetId);
-    addPageScreenshot(shot.layout, pageSideFor(asset), assetId);
+    addPageScreenshot(shot.layout, pageSideFor(asset), assetId, draft.assets);
     return;
   }
   if (!shot || !("assetIds" in shot.layout)) return;
@@ -534,6 +534,7 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
               layout,
               slotKeyOrNodeId.includes("mobile") ? "mobile" : "desktop",
               assetId,
+              draft.assets,
             );
           } else if (isSteppedLayout(layout)) {
             // A slider or orbit adds the screenshot after the card it was dropped on. Its nodes
@@ -581,8 +582,10 @@ export function createEditorStore(initialDoc?: ProjectDoc) {
         (draft) => {
           for (const ref of refs) {
             if (!draft.assets.some((a) => a.id === ref.id)) draft.assets.push(ref);
-            pushShotAsset(draft, shotIndex, ref.id);
           }
+          // All are in the Library first, so a Responsive Tour pairs each with its page's other
+          // capture among them, whatever order they come in.
+          for (const ref of refs) pushShotAsset(draft, shotIndex, ref.id);
         },
         { label: refs.length === 1 ? "Add screenshot" : "Add screenshots" },
       );

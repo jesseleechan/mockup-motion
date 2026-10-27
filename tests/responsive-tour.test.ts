@@ -58,6 +58,27 @@ function shotOf(role: Role, i: number): AssetRef {
 const shots = (role: Role, n: number) => Array.from({ length: n }, (_, i) => shotOf(role, i));
 const ids = (role: Role, n: number) => shots(role, n).map((a) => a.id);
 
+/**
+ * A capture of one page, `desktop-<page>` or `mobile-<page>`, that names its page by its capture
+ * URL (`meta.page`) or only by its file name, as `npm run capture` writes it
+ * (packages/capture/src/naming.mjs).
+ */
+function pageCapture(role: Role, page: string, by: "url" | "name"): AssetRef {
+  const size = role === "mobile" ? "mobile-390@2x" : "desktop-1440";
+  return {
+    ...shotOf(role, 0),
+    id: `${role}-${page}`,
+    name: by === "name" ? `example.com_${page}-${size}.png` : `${role}-${page}.png`,
+    meta: by === "url" ? { page: `https://example.com/${page}` } : undefined,
+  };
+}
+
+/** The tour's pages, each as its desktop and mobile screenshot. */
+function pagesOf(layout: Layout): [string, string][] {
+  if (layout.kind !== "responsive-tour") throw new Error(`Not a tour: ${layout.kind}`);
+  return layout.desktopIds.map((id, i) => [id, layout.mobileIds[i]]);
+}
+
 function tour(n: number, step = 2): TourLayout {
   return {
     kind: "responsive-tour",
@@ -295,6 +316,49 @@ describe("The Responsive Tour template", () => {
     expect(tourDoc(3, 6).shots[0].layout).toEqual(tour(3));
   });
 
+  it("pairs each desktop capture with its page's mobile capture, whatever the Library order", () => {
+    const build = (assets: AssetRef[]) =>
+      pagesOf(
+        buildTemplate(responsiveTourTemplate, { aspect: "16:9", assets, name: "Test" }).shots[0]
+          .layout,
+      );
+    const pages = ["home", "about", "work", "blog"];
+    const shuffled = ["work", "blog", "home", "about"];
+    for (const by of ["url", "name"] as const) {
+      const assets = [
+        ...shuffled.map((page) => pageCapture("mobile", page, by)),
+        ...pages.map((page) => pageCapture("desktop", page, by)),
+      ];
+      expect(build(assets), by).toEqual(pages.map((p) => [`desktop-${p}`, `mobile-${p}`]));
+    }
+
+    // A desktop capture without a match takes the next mobile screenshot in Library order.
+    const unmatched = (id: string): AssetRef => ({ ...shotOf("mobile", 0), id, name: `${id}.png` });
+    expect(
+      build([
+        ...["home", "about", "work"].map((page) => pageCapture("desktop", page, "url")),
+        pageCapture("mobile", "about", "url"),
+        unmatched("phone-1"),
+        unmatched("phone-2"),
+      ]),
+    ).toEqual([
+      ["desktop-home", "phone-1"],
+      ["desktop-about", "mobile-about"],
+      ["desktop-work", "phone-2"],
+    ]);
+
+    // With too few mobile captures, the page without its own is the one left out.
+    expect(
+      build([
+        ...["home", "about", "work"].map((page) => pageCapture("desktop", page, "url")),
+        ...["work", "home"].map((page) => pageCapture("mobile", page, "url")),
+      ]),
+    ).toEqual([
+      ["desktop-home", "mobile-home"],
+      ["desktop-work", "mobile-work"],
+    ]);
+  });
+
   it("previews Aurelia's home, studio, works and journal pages in both sizes", () => {
     const doc = buildTemplatePreviewDoc(responsiveTourTemplate);
     const pages = ["home", "studio", "works", "journal"] as const;
@@ -365,6 +429,39 @@ describe("A Responsive Tour is a stepped shot", () => {
     expect(layout().step).toBe(2.4);
     expect(duration()).toBeCloseTo(7.2, 12);
   });
+
+  it("puts an added screenshot on its page, by capture URL or file name", async () => {
+    const doc = tourDoc(3, 3);
+    const added = (store: ReturnType<typeof createEditorStore>) =>
+      pagesOf(store.getState().doc.shots[0].layout).slice(3);
+
+    // One at a time, by URL. Blog's desktop capture starts a page, since its mobile one waits in
+    // the Library; Contact's mobile capture doesn't take that page, and Blog's joins it.
+    const blog = [pageCapture("desktop", "blog", "url"), pageCapture("mobile", "blog", "url")];
+    const contact = pageCapture("mobile", "contact", "url");
+    const one = createEditorStore({ ...doc, assets: [...doc.assets, ...blog, contact] });
+    for (const id of ["desktop-blog", "mobile-contact", "mobile-blog"]) {
+      one.getState().addAssetToShot(0, id);
+    }
+    expect(added(one)).toEqual([
+      ["desktop-blog", "mobile-blog"],
+      ["", "mobile-contact"],
+    ]);
+
+    // Uploaded together in any order, by file name: each page's two captures make one page.
+    const uploads = [
+      pageCapture("mobile", "about", "name"),
+      pageCapture("desktop", "home", "name"),
+      pageCapture("mobile", "home", "name"),
+      pageCapture("desktop", "about", "name"),
+    ];
+    const many = createEditorStore(doc);
+    await many.getState().addScreenshotsToShot(0, uploads, {});
+    expect(added(many)).toEqual([
+      ["desktop-about", "mobile-about"],
+      ["desktop-home", "mobile-home"],
+    ]);
+  });
 });
 
 describe("Saved Responsive Tours", () => {
@@ -409,5 +506,20 @@ describe("Saved Responsive Tours", () => {
       step: 2,
     });
     expect(filled.shots[0].duration).toBe(8);
+  });
+
+  it("pair pages by capture when a user template is applied to a Library in another order", () => {
+    const pages = ["home", "about", "work"];
+    const desktops = pages.map((page) => pageCapture("desktop", page, "url"));
+    const mobiles = pages.map((page) => pageCapture("mobile", page, "url"));
+    const assets = [...desktops, ...mobiles];
+    const built = buildTemplate(responsiveTourTemplate, { aspect: "16:9", assets, name: "Test" });
+    const template = convertDocToUserTemplate({ ...createDoc(), assets, ...built }, "Mine");
+    // Another project with the same pages, its mobile captures in another order.
+    const fresh = (a: AssetRef) => ({ ...a, id: `new-${a.id}` });
+    const other = [...desktops, mobiles[2], mobiles[0], mobiles[1]].map(fresh);
+    expect(pagesOf(fillUserTemplateSlots(template, other, "16:9").shots[0].layout)).toEqual(
+      pages.map((p) => [`new-desktop-${p}`, `new-mobile-${p}`]),
+    );
   });
 });

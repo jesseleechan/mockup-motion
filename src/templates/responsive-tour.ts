@@ -41,11 +41,13 @@ export const responsiveTourTemplate: Template = {
   description: "Each page in desktop and mobile. Every step moves both to the next page.",
   category: "both",
   slots: SLOTS,
+  pages: PAGE_NUMBERS.map((n) => [`desktop${n}`, `mobile${n}`] as const),
   defaultDuration: DEMO_PAGES * TOUR_STEP,
   build: (ctx: TemplateBuildContext) => {
-    // Pages pair by order (D12): the n-th desktop screenshot with the n-th mobile one. fillSlots
-    // reuses a screenshot when a size runs short; a tour shows each page once, so a page that
-    // would repeat one is left out.
+    // Page n is the n-th desktop screenshot in Library order, with the mobile capture of its page
+    // (D12, `pages`), else the next mobile screenshot in Library order. fillSlots reuses a
+    // screenshot when a size runs short; a tour shows each page once, so a page that would
+    // repeat one is left out.
     const { desktopIds, mobileIds } = distinctPages(
       PAGE_NUMBERS.map((n) => ctx.slots[`desktop${n}`]?.id ?? ""),
       PAGE_NUMBERS.map((n) => ctx.slots[`mobile${n}`]?.id ?? ""),
