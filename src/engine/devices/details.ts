@@ -17,11 +17,24 @@ function ignoreRaycast(mesh: THREE.Mesh): void {
   mesh.raycast = () => {};
 }
 
+// The raster is twice the text's on-screen size (chrome-url.ts), so its half-resolution mip
+// shows one texel per output pixel. Off the pixel grid, each pixel blends two of those texels and
+// the glyphs' horizontal strokes go soft: half a pixel off, the 720p pill has 10% less edge
+// contrast. With uSnap on, the whole plane moves by under half a pixel so its top-left corner,
+// and with it the texel grid, sits on whole output pixels, as Before & After's labels do (§4).
 const urlVertexShader = /* glsl */ `
+  uniform vec2 uOutputSize;
+  uniform float uSnap;
   varying vec2 vUv;
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    mat4 mvp = projectionMatrix * modelViewMatrix;
+    gl_Position = mvp * vec4(position, 1.0);
+    if (uSnap > 0.5) {
+      vec4 corner = mvp * vec4(-0.5, 0.5, 0.0, 1.0);
+      vec2 px = (corner.xy / corner.w * 0.5 + 0.5) * uOutputSize;
+      gl_Position.xy += (floor(px + 0.5) - px) * 2.0 / uOutputSize * gl_Position.w;
+    }
   }
 `;
 
@@ -55,6 +68,8 @@ export class UrlText {
         map: { value: null },
         uColor: { value: new THREE.Color(0, 0, 0) },
         uOpacity: { value: URL_TEXT_OPACITY },
+        uOutputSize: { value: new THREE.Vector2(1, 1) },
+        uSnap: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
@@ -62,6 +77,12 @@ export class UrlText {
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.material);
     ignoreRaycast(this.mesh);
     this.mesh.visible = false;
+    // The renderer's size is the output frame in px, whatever the supersample of the target the
+    // scene draws into, so the snap lands on the output's pixels.
+    const outputSize = this.material.uniforms.uOutputSize.value as THREE.Vector2;
+    this.mesh.onBeforeRender = (renderer) => {
+      renderer.getSize(outputSize);
+    };
   }
 
   /** Puts the text in a pill whose centre is at (x, y), at depth z (stage units). */
@@ -72,9 +93,18 @@ export class UrlText {
 
   /**
    * Shows `text` with its glyphs at `glyphHeight` stage units, fitted inside `maxWidth`, at
-   * `opacity` of the pill text's own opacity. Hidden without a raster or at opacity 0.
+   * `opacity` of the pill text's own opacity. Hidden without a raster or at opacity 0. `snap`
+   * puts it on whole output pixels; only text that holds still is snapped (`holdsStill`), so
+   * moving text never steps against its pill.
    */
-  update(text: ChromeUrlText | null, glyphHeight: number, maxWidth: number, opacity = 1): void {
+  update(
+    text: ChromeUrlText | null,
+    glyphHeight: number,
+    maxWidth: number,
+    opacity = 1,
+    snap = false,
+  ): void {
+    this.material.uniforms.uSnap.value = snap ? 1 : 0;
     if (!text || opacity <= 0) {
       this.mesh.visible = false;
       this.current = null;

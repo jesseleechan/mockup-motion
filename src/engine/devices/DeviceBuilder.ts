@@ -18,7 +18,11 @@ export interface DeviceBuilderContext {
 export interface DeviceInstance {
   object3d: THREE.Object3D;
   compositor: ScreenCompositor;
-  update(node: LayoutNode, style: Style, t: number): void;
+  /**
+   * Poses the device for a frame. `still`: the camera and every device hold still at `t`
+   * (`holdsStill`), so a browser snaps its URL text to whole output pixels.
+   */
+  update(node: LayoutNode, style: Style, t: number, still?: boolean): void;
   dispose(): void;
 }
 
