@@ -2,7 +2,9 @@ import { getDB } from "./db";
 import { normalizeStyleAngles } from "../doc/gradient-angle";
 import { applyLegacyLook, legacyLook, mapLegacyLayout } from "../doc/legacy-layouts";
 import type { Aspect, AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { mapLayoutAssetIds } from "../doc/assets";
 import { defaultShot } from "../doc/defaults";
+import { pairByPage } from "../doc/same-page";
 import { distinctPages, fitPace, isPacedShot, nearestPace } from "../motion";
 
 export interface UserTemplate {
@@ -76,33 +78,10 @@ export function convertDocToUserTemplate(
     return assetIdToSlotKey.get(id) ?? id;
   };
 
-  // Clone and replace asset references in shots
+  // Clone and replace the asset references on every screen of every layout kind.
   const templatedShots: Shot[] = doc.shots.map((s) => {
     const shot = structuredClone(s);
-    const layout = shot.layout;
-
-    switch (layout.kind) {
-      case "single":
-        layout.assetId = remapId(layout.assetId);
-        break;
-      case "rows":
-      case "columns":
-      case "slider":
-      case "orbit":
-      case "tour":
-      case "pageColumns":
-        layout.assetIds = layout.assetIds.map(remapId);
-        break;
-      case "compare":
-        layout.beforeId = remapId(layout.beforeId);
-        layout.afterId = remapId(layout.afterId);
-        break;
-      case "responsive-tour":
-        layout.desktopIds = layout.desktopIds.map(remapId);
-        layout.mobileIds = layout.mobileIds.map(remapId);
-        break;
-    }
-
+    mapLayoutAssetIds(shot.layout, remapId);
     return shot;
   });
 
@@ -206,14 +185,9 @@ export function fillUserTemplateSlots(
       delete (shot as { texts?: unknown }).texts;
       const layout = shot.layout;
 
+      // Every screen of every layout kind takes its slot's screenshot.
+      mapLayoutAssetIds(layout, resolveSlot);
       switch (layout.kind) {
-        case "single":
-          layout.assetId = resolveSlot(layout.assetId);
-          break;
-        case "rows":
-        case "columns":
-          layout.assetIds = layout.assetIds.map(resolveSlot);
-          break;
         case "slider":
         case "orbit":
         case "tour":
@@ -221,19 +195,11 @@ export function fillUserTemplateSlots(
           // Fewer assets than slots reuse one; a stepped layout or a Page Columns shot never shows
           // a screenshot twice (quality bar §4), and its length follows its screenshots so the
           // loop stays seamless.
-          layout.assetIds = [...new Set(layout.assetIds.map(resolveSlot).filter(Boolean))];
+          layout.assetIds = [...new Set(layout.assetIds.filter(Boolean))];
           break;
         }
-        case "compare":
-          layout.beforeId = resolveSlot(layout.beforeId);
-          layout.afterId = resolveSlot(layout.afterId);
-          break;
         case "responsive-tour": {
-          // The same for pages: a page that repeats an earlier page's screenshot is left out.
-          const pages = distinctPages(
-            layout.desktopIds.map(resolveSlot),
-            layout.mobileIds.map(resolveSlot),
-          );
+          const pages = tourPages(layout.desktopIds, layout.mobileIds, assets);
           layout.desktopIds = pages.desktopIds;
           layout.mobileIds = pages.mobileIds;
           break;
@@ -255,6 +221,29 @@ export function fillUserTemplateSlots(
     shots: shots.length > 0 ? shots : [defaultShot()],
     loop: template.loop,
   };
+}
+
+/**
+ * A saved Responsive Tour's pages in the project it is applied to (presets round two, D12). Fewer
+ * screenshots than slots reuse one, so a page that repeats an earlier page's screenshot, or misses
+ * a side, is left out (`distinctPages`). Then each page's desktop screenshot takes the mobile
+ * capture of its page among the pages' mobile screenshots, else the next one in the saved order
+ * (`pairByPage`), so pages without page data stay as saved.
+ */
+function tourPages(
+  desktopIds: readonly string[],
+  mobileIds: readonly string[],
+  assets: readonly AssetRef[],
+): { desktopIds: string[]; mobileIds: string[] } {
+  const pages = distinctPages(desktopIds, mobileIds);
+  const byId = new Map(assets.map((a) => [a.id, a]));
+  const capture = (id: string) => ({
+    id,
+    name: byId.get(id)?.name ?? "",
+    meta: byId.get(id)?.meta,
+  });
+  const mobiles = pairByPage(pages.desktopIds.map(capture), pages.mobileIds.map(capture));
+  return { desktopIds: pages.desktopIds, mobileIds: mobiles.map((mobile) => mobile?.id ?? "") };
 }
 
 /** Drops the title cards a template saved before October 2026 may hold. */

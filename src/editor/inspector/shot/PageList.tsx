@@ -47,7 +47,7 @@ interface PageListProps {
  * A Responsive Tour's pages in order (presets round two, D12): each row is a page, its desktop
  * and its mobile screenshot side by side. Drag (or Alt+↑ / Alt+↓) to reorder a page, X to remove
  * it, a thumbnail to change that side, and Add screenshot to put a screenshot on its size's side
- * of the first page without one (src/doc/tour-pages.ts).
+ * of its page, else of a page without one (`addPageScreenshot`, src/doc/tour-pages.ts).
  */
 export const PageList: React.FC<PageListProps> = ({
   shotId,
@@ -315,8 +315,8 @@ export const PageList: React.FC<PageListProps> = ({
         </p>
       )}
       <p className="text-[11px] leading-4 text-text-2">
-        Each page pairs a desktop and a mobile screenshot. A screenshot joins the first page without
-        one of its size. Drag to reorder.
+        Each page pairs a desktop and a mobile screenshot. A screenshot joins its page by URL or
+        file name, else a page without one of its size. Drag to reorder.
       </p>
     </div>
   );

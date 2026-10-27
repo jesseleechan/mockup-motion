@@ -9,7 +9,7 @@ import {
   useToast,
 } from "../../ui";
 import { isSteppedLayout } from "../../motion";
-import { layoutAssetIds } from "../../doc/assets";
+import { layoutAssetIds, shotsShowingAsset } from "../../doc/assets";
 import { useEditorStore } from "../../state/store";
 import { useUIStore } from "../../state/ui-store";
 import { useAssetUrls } from "../assets/useAssetUrls";
@@ -66,30 +66,6 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const assetThumbnails = useAssetUrls(doc.assets);
-
-  // Which shots use this asset?
-  const getAssetUsage = (assetId: string): number[] => {
-    const shotIndices: number[] = [];
-    doc.shots.forEach((shot, idx) => {
-      const lay = shot.layout;
-      let used = false;
-      if (lay.kind === "single" && lay.assetId === assetId) used = true;
-      if (lay.kind === "compare" && (lay.beforeId === assetId || lay.afterId === assetId)) {
-        used = true;
-      }
-      if (
-        (lay.kind === "rows" ||
-          lay.kind === "columns" ||
-          lay.kind === "pageColumns" ||
-          isSteppedLayout(lay)) &&
-        layoutAssetIds(lay).includes(assetId)
-      )
-        used = true;
-
-      if (used) shotIndices.push(idx + 1);
-    });
-    return shotIndices;
-  };
 
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!replacingAssetId || !e.target.files || e.target.files.length === 0) return;
@@ -190,7 +166,8 @@ export const MediaTab: React.FC<MediaTabProps> = ({ onSelectAsset, headingId }) 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2">
           {doc.assets.map((asset) => {
             const thumb = assetThumbnails[asset.id];
-            const usage = getAssetUsage(asset.id);
+            // Which shots show it, in any layout kind (src/doc/assets.ts).
+            const usage = shotsShowingAsset(doc, asset.id);
             const isUsed = usage.length > 0;
 
             return (

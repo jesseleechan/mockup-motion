@@ -1,6 +1,9 @@
 import type { AssetRef, AssetRole, ProjectDoc, Shot, Style } from "../doc/types";
+import { PAGE_KEYS, pairByPage, samePageBy } from "../doc/same-page";
 import type { SlotSpec, Template } from "./types";
 import { setPresetTone, templateTones } from "./looks";
+
+export { capturePageName } from "../doc/same-page";
 
 interface RoleNeed {
   role: AssetRole;
@@ -131,54 +134,83 @@ export function fillSlots(
     }
   }
 
-  // Phase 2: Greedily assign remaining slots by role and tall preference
-  for (const slot of t.slots) {
-    if (result[slot.key]) continue; // Already preserved
+  const roleCandidates = (role: AssetRole) =>
+    assets.filter((a) => a.kind === "image" && a.role === role);
 
-    const roleCandidates = assets.filter((a) => a.kind === "image" && a.role === slot.role);
+  /** Phase 2 for one slot: greedily by role and tall preference. */
+  const fillSlot = (slot: SlotSpec) => {
+    if (result[slot.key]) return; // Already preserved
+
+    const candidates = roleCandidates(slot.role);
 
     // 1. Try unused candidate matching prefer === "tall"
     if (slot.prefer === "tall") {
-      const tallUnused = roleCandidates.find((a) => !used.has(a.id) && a.meta?.tall);
+      const tallUnused = candidates.find((a) => !used.has(a.id) && a.meta?.tall);
       if (tallUnused) {
         result[slot.key] = tallUnused;
         used.add(tallUnused.id);
-        continue;
+        return;
       }
     }
 
     // 2. Try any unused candidate with matching role
-    const unusedRole = roleCandidates.find((a) => !used.has(a.id));
+    const unusedRole = candidates.find((a) => !used.has(a.id));
     if (unusedRole) {
       result[slot.key] = unusedRole;
       used.add(unusedRole.id);
-      continue;
+      return;
     }
 
     // 3. Fallback: reuse an already-used asset of the same role (never cross-role), unless the
     // template compares its screenshots
-    if (roleCandidates.length > 0 && !t.distinct) {
-      result[slot.key] = roleCandidates[0];
-      continue;
+    if (candidates.length > 0 && !t.distinct) {
+      result[slot.key] = candidates[0];
+      return;
     }
 
     // 4. No matching role asset available
     result[slot.key] = undefined;
+  };
+
+  // Phase 1.75: Pages at two sizes (Responsive Tour, D12). The desktop slots fill first, in
+  // Library order; then each page takes the mobile capture of its desktop's page, else the next
+  // mobile screenshot no page matched, in Library order (pairByPage).
+  if (t.pages) {
+    const slotOf = (key: string) => t.slots.find((s) => s.key === key);
+    for (const [desktopKey] of t.pages) {
+      const slot = slotOf(desktopKey);
+      if (slot) fillSlot(slot);
+    }
+    // The pages still without a mobile screenshot. A page that repeats an earlier page's desktop
+    // screenshot is left out of the tour, so it takes none here.
+    const open: { desktop: AssetRef; mobileSlot: SlotSpec }[] = [];
+    const shown = new Set<string>();
+    for (const [desktopKey, mobileKey] of t.pages) {
+      const desktop = result[desktopKey];
+      const mobileSlot = slotOf(mobileKey);
+      if (!desktop || shown.has(desktop.id)) continue;
+      shown.add(desktop.id);
+      if (mobileSlot && !result[mobileKey]) open.push({ desktop, mobileSlot });
+    }
+    const mobiles = pairByPage(
+      open.map((page) => page.desktop),
+      roleCandidates(open[0]?.mobileSlot.role ?? "mobile").filter((a) => !used.has(a.id)),
+    );
+    // With too few mobile screenshots, a page reuses the first page's, so the template leaves out
+    // that page as a repeat rather than the page whose own screenshot it is.
+    const firstPageMobile = t.pages[0][1];
+    open.forEach(({ mobileSlot }, i) => {
+      const mobile = mobiles[i] ?? (t.distinct ? undefined : result[firstPageMobile]);
+      if (!mobile) return;
+      result[mobileSlot.key] = mobile;
+      used.add(mobile.id);
+    });
   }
 
-  return result;
-}
+  // Phase 2: Greedily assign remaining slots by role and tall preference
+  for (const slot of t.slots) fillSlot(slot);
 
-/**
- * A capture's page name from its file name: without the extension, `-full`, and the size suffix
- * `npm run capture` adds, so `site-desktop-1440-full.png` and `site-mobile-390@2x-full.png` are
- * both `site`.
- */
-export function capturePageName(fileName: string): string {
-  return fileName
-    .replace(/\.[^./]+$/, "")
-    .replace(/-full$/, "")
-    .replace(/-(desktop|mobile)(-\d+(@\d+x)?)?$/, "");
+  return result;
 }
 
 /**
@@ -197,14 +229,9 @@ function samePagePair(
     assets.filter((a) => a.kind === "image" && a.role === role && !used.has(a.id)).sort(byTall);
   const desktops = candidates(desktopRole);
   const mobiles = candidates(mobileRole);
-  const keys: ((a: AssetRef) => string | undefined)[] = [
-    (a) => a.meta?.page || undefined,
-    (a) => capturePageName(a.name) || undefined,
-  ];
-  for (const key of keys) {
+  for (const key of PAGE_KEYS) {
     for (const desktop of desktops) {
-      const page = key(desktop);
-      const mobile = page ? mobiles.find((m) => key(m) === page) : undefined;
+      const mobile = mobiles.find((m) => samePageBy(key, desktop, m));
       if (mobile) return [desktop, mobile];
     }
   }
