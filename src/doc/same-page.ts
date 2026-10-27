@@ -7,6 +7,9 @@ import type { AssetRef } from "./types";
 /** What pairing reads of a screenshot: its file name and its capture's URL. */
 export type PageCapture = Pick<AssetRef, "name" | "meta">;
 
+/** A capture of no known page: it pairs with no other capture, only by order. */
+export const NO_PAGE: PageCapture = { name: "" };
+
 /**
  * A capture's page name from its file name: without the extension, `-full`, and the size suffix
  * `npm run capture` adds, so `site-desktop-1440-full.png` and `site-mobile-390@2x-full.png` are
@@ -44,12 +47,12 @@ export function samePageBy(
  * first mobile no desktop matched, in order, so screenshots without page data pair by order.
  * Undefined when the mobiles run out.
  */
-export function pairByPage<T extends PageCapture>(
-  desktops: readonly T[],
-  mobiles: readonly T[],
-): (T | undefined)[] {
-  const pairs: (T | undefined)[] = desktops.map(() => undefined);
-  const taken = new Set<T>();
+export function pairByPage<D extends PageCapture, M extends PageCapture>(
+  desktops: readonly D[],
+  mobiles: readonly M[],
+): (M | undefined)[] {
+  const pairs: (M | undefined)[] = desktops.map(() => undefined);
+  const taken = new Set<M>();
   for (const key of PAGE_KEYS) {
     desktops.forEach((desktop, i) => {
       if (pairs[i]) return;

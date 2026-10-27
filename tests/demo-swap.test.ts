@@ -82,6 +82,49 @@ describe("Use my screenshots", () => {
     expect(planDemoSwap(once).replacements.size).toBe(0);
   });
 
+  it("pairs a page's desktop and mobile uploads by page, else in Library order", () => {
+    const pagesAfterSwap = (templateId: string, uploads: AssetRef[]) => {
+      const doc = demoDoc(templateId, uploads);
+      const swapped = produce(doc, (draft) => applyDemoSwap(draft, planDemoSwap(doc).replacements));
+      const layout = swapped.shots[0].layout;
+      if (layout.kind === "responsive") return [[layout.desktopId, layout.mobileId]];
+      if (layout.kind !== "responsive-tour") throw new Error(`Unexpected ${layout.kind}`);
+      return layout.desktopIds.map((id, i) => [id, layout.mobileIds[i]]);
+    };
+    const byUrl = (id: string, role: "desktop" | "mobile", page: string): AssetRef => ({
+      ...upload(id, role),
+      meta: { page: `https://example.com/${page}` },
+    });
+
+    // Responsive Tour, by capture URL: the mobile uploads sit in another order.
+    const pages = ["home", "about", "work", "blog"];
+    const shuffled = ["work", "blog", "home", "about"];
+    expect(
+      pagesAfterSwap("responsive-tour", [
+        ...pages.map((page) => byUrl(`d-${page}`, "desktop", page)),
+        ...shuffled.map((page) => byUrl(`m-${page}`, "mobile", page)),
+      ]),
+    ).toEqual(pages.map((page) => [`d-${page}`, `m-${page}`]));
+
+    // Responsive Scroll, by file name: the pair of one page, not the first of each size.
+    expect(
+      pagesAfterSwap("responsive-scroll", [
+        upload("example.com_about-desktop-1440", "desktop"),
+        upload("example.com_home-desktop-1440", "desktop"),
+        upload("example.com_home-mobile-390@2x", "mobile"),
+      ]),
+    ).toEqual([["example.com_home-desktop-1440", "example.com_home-mobile-390@2x"]]);
+
+    // Without page data, Library order as before.
+    const plain = [
+      ...pages.map((page) => upload(`desktop ${page}`, "desktop")),
+      ...shuffled.map((page) => upload(`mobile ${page}`, "mobile")),
+    ];
+    expect(pagesAfterSwap("responsive-tour", plain)).toEqual(
+      pages.map((page, i) => [`desktop ${page}`, `mobile ${shuffled[i]}`]),
+    );
+  });
+
   it("offers nothing without demo screenshots on screen", () => {
     const doc = { ...createDoc(), assets: [upload("a", "desktop")] };
     expect(planDemoSwap(doc).replacements.size).toBe(0);
