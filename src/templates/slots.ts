@@ -216,8 +216,9 @@ export function fillSlots(
 /**
  * Two screenshots of one page (decision D4): first a pair whose captures share a URL, then a pair
  * whose file names name the same page. Tall screenshots first. Undefined when there is none.
+ * Responsive Scroll's fill and "Use my screenshots" (src/editor/demo-swap.ts) pick its pair so.
  */
-function samePagePair(
+export function samePagePair(
   assets: AssetRef[],
   desktopRole: AssetRole,
   mobileRole: AssetRole,
