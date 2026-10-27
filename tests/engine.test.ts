@@ -197,9 +197,10 @@ describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
     const tm = new TextureManager(4096, 1);
     const { assets, calls, rowsAsked, bitmaps } = provider({ page: [1440, 4000] });
 
+    // 1440 × 0.75 = 1080 rows, kept in blocks of 64.
     const top = await tm.getTexture("page", 1440, assets, 0.75);
-    expect(top?.height).toBe(1080);
-    expect(slices.map((slice) => slice.args)).toEqual([[0, 0, 1440, 1080]]);
+    expect(top?.height).toBe(1088);
+    expect(slices.map((slice) => slice.args)).toEqual([[0, 0, 1440, 1088]]);
     expect(top?.strips.map((strip) => strip.texture.image)).toEqual([slices[0].bitmap]);
     const disposed: string[] = [];
     top?.strips[0].texture.addEventListener("dispose", () => disposed.push("top"));
@@ -232,7 +233,7 @@ describe("TextureManager (src/engine/textures/TextureManager.ts)", () => {
       tm.getTexture("page", 1440, assets, 0.75),
       tm.getTexture("page", 1440, assets, null),
     ]);
-    expect(top?.height).toBe(1080);
+    expect(top?.height).toBe(1088);
     expect(whole?.height).toBe(4000);
     expect(rowsAsked).toEqual([0.75, null]);
     expect(tm.getLoadedTexture("page")).toBe(whole);

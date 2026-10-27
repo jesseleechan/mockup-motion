@@ -38,6 +38,13 @@ function kept(doc: ProjectDoc, asset: AssetRef): number {
   return keptRows(rows ?? null, asset.width!, asset.height!);
 }
 
+/** Kept rows are the first whole block of 64 at or past `rows`, so mip levels halve exactly. */
+function expectBlockAbove(kept: number, rows: number) {
+  expect(kept % 64).toBe(0);
+  expect(kept).toBeGreaterThanOrEqual(rows);
+  expect(kept).toBeLessThan(rows + 64);
+}
+
 /** A node's screen in screen widths, as the engine's devices build it (src/engine/devices). */
 function screenHeightPerWidth(node: LayoutNode): number {
   if (node.device === "phone") {
@@ -104,10 +111,11 @@ describe("textureRows: the rows of a screenshot a texture keeps", () => {
   it("keeps a Site Tour of six 1440 × 4000 pages to a browser screen plus the margin", () => {
     const doc = docWith([topOnly[0][1]], desktops);
     const [screen] = evaluate(doc, 0).layers[0].frame.nodes;
-    const rows = Math.ceil(1440 * screenHeightPerWidth(screen) * (1 + ROWS_MARGIN));
-    for (const asset of desktops) expect(kept(doc, asset)).toBe(rows);
-    // The screen shows the top 1440 / 1.6 rows of each page.
-    expect(rows).toBeGreaterThan(1440 / 1.6);
+    // The screen shows the top 1440 / 1.6 rows of each page; its window bounds it.
+    const windowRows = 1440 * screenHeightPerWidth(screen);
+    expect(windowRows).toBeGreaterThan(1440 / 1.6);
+    const rows = windowRows * (1 + ROWS_MARGIN);
+    for (const asset of desktops) expectBlockAbove(kept(doc, asset), rows);
   });
 
   it("keeps the whole page where a shot scrolls it", () => {
@@ -158,7 +166,7 @@ describe("textureRows: the rows of a screenshot a texture keeps", () => {
     const doc = docWith([topOnly[1][1]], mobiles);
     // A phone screen is 0.4615 as wide as it is tall: 780 px of width shows 1690 rows.
     const screen = 780 / PHONE_SCREEN_ASPECT;
-    expect(kept(doc, mobiles[0])).toBe(Math.ceil(screen * (1 + ROWS_MARGIN)));
+    expectBlockAbove(kept(doc, mobiles[0]), screen * (1 + ROWS_MARGIN));
   });
 
   it("never keeps fewer rows than a frame of any template shows", () => {
@@ -225,9 +233,10 @@ describe("keepTopRows: a provider's decode cut to the rows kept", () => {
       }),
     );
     const tall = bitmap(1440, 4000);
+    // 1440 × 0.75 = 1080 rows, kept in blocks of 64.
     const top = await keepTopRows(tall, 0.75);
-    expect(crops).toEqual([[0, 0, 1440, 1080]]);
-    expect(top.bitmap.height).toBe(1080);
+    expect(crops).toEqual([[0, 0, 1440, 1088]]);
+    expect(top.bitmap.height).toBe(1088);
     expect(top.held).toBe(0.75);
     expect(tall.close).toHaveBeenCalledTimes(1);
 

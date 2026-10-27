@@ -159,9 +159,19 @@ export function textureRows(doc: ProjectDoc): Map<string, number | null> {
   return rows;
 }
 
+/**
+ * Kept rows come in blocks of 64, so a kept texture's first six mip levels halve exactly, as a
+ * tall page's 4096-row first strip's do. A screen that minifies the page then samples the same
+ * mip texels from either; a mip level of odd height shifts its rows, which moved text edges in
+ * Mobile Frames by up to 39 levels of 255 in a 1280 × 720 frame. A block adds under 64 rows,
+ * 6% of a 1440 px desktop page's kept rows.
+ */
+const ROWS_BLOCK = 64;
+
 /** How many of a decoded `width` × `height` image's rows `rows` (textureRows) keeps. */
 export function keptRows(rows: number | null, width: number, height: number): number {
-  return rows === null ? height : Math.min(height, Math.ceil(width * rows));
+  if (rows === null) return height;
+  return Math.min(height, Math.ceil((width * rows) / ROWS_BLOCK) * ROWS_BLOCK);
 }
 
 /** Whether a decode that kept `held` rows (textureRows) holds every row `wanted` asks for. */
